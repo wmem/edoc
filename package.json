@@ -1,0 +1,15 @@
+{
+  "name": "engdoc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "bin": { "engdoc": "./packages/cli/engdoc.ts" },
+  "scripts": {
+    "engdoc": "node packages/cli/engdoc.ts",
+    "test:schema": "node --test tests/schema.test.ts",
+    "test:core": "node --test tests/core.test.ts",
+    "test:query": "node --test tests/query.test.ts",
+    "test:cli": "node --test tests/cli.test.ts"
+  }
+}
