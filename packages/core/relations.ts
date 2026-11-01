@@ -18,6 +18,17 @@ export function validateRelations(graph: Graph): void {
         else throw error;
       }
     }
+    if(entry.type==='row' && (entry.entity as any).objectId) reference(entry,(entry.entity as any).objectId,'/objectId',['node','port','connection','document','group']);
+    if(entry.type==='reference') { const e=entry.entity as any; const types=[...new Set([...graph.index.values()].map(e=>e.type))];reference(entry,e.fromId,'/fromId',types);reference(entry,e.targetId,'/targetId',types);}
+    if(entry.type==='waveform') {
+      const signals=(entry.entity as any).data.signal;
+      const valid=(signal:any):boolean=>Array.isArray(signal)?typeof signal[0]==='string'&&signal.slice(1).every(valid):signal&&typeof signal==='object'&&(signal.name===undefined||typeof signal.name==='string')&&(signal.wave===undefined||typeof signal.wave==='string');
+      if(!signals.every(valid))report(entry,'WAVEJSON','/data/signal','WaveJSON signal 必须是信号对象或命名分组');
+    }
+    if(entry.type==='table') { const table=entry.entity as any;
+      for(const row of table.rows){const data=row.objectId?graph.index.get(row.objectId)?.entity:row.values;if(!data)continue;for(const column of table.columns){const value=column.field.split('.').reduce((v:any,k:string)=>v&&Object.hasOwn(v,k)?v[k]:undefined,data);if(value!==undefined&&column.type!=='json'&&typeof value!==column.type)report(entry,'TABLE_VALUE','/rows',`行 ${row.id} 的 ${column.field} 与列类型不符`);}}
+    }
+    if(entry.type==='table') { const cols=(entry.entity as any).columns.map((c:any)=>c.field);if(new Set(cols).size!==cols.length)report(entry,'TABLE_COLUMN','/columns','表格列字段重复'); }
     if (entry.type === 'node') {
       const node = entry.entity as Node;
       if (node.parentId) reference(entry, node.parentId, '/parentId', ['node']);

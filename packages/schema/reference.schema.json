@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engdoc.local/schema/v1/reference.schema.json",
+  "type": "object",
+  "properties": {
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "kind": {
+            "const": "reference"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fromId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "targetId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "class": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "fromId",
+          "targetId",
+          "class"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "references"
+  ],
+  "additionalProperties": false
+}

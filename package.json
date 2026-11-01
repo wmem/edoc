@@ -1,15 +1,41 @@
 {
   "name": "engdoc",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.0.0" },
-  "bin": { "engdoc": "./packages/cli/engdoc.ts" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "bin": {
+    "engdoc": "./packages/cli/engdoc.ts"
+  },
   "scripts": {
     "engdoc": "node packages/cli/engdoc.ts",
     "test:schema": "node --test tests/schema.test.ts",
     "test:core": "node --test tests/core.test.ts",
     "test:query": "node --test tests/query.test.ts",
-    "test:cli": "node --test tests/cli.test.ts"
+    "test:cli": "node --test tests/cli.test.ts",
+    "typecheck": "tsc --noEmit",
+    "test:graph": "node --test tests/graph.test.ts",
+    "test:document": "node --test tests/document.test.ts",
+    "test:adapter": "node --test tests/adapter.test.ts",
+    "test:browser": "node --test tests/browser.test.ts",
+    "test:pdf": "node --test tests/pdf.test.ts",
+    "test:quality": "node --test tests/quality.test.ts"
+  },
+  "dependencies": {
+    "@antv/x6": "3.1.8",
+    "@fontsource/noto-sans-sc": "5.3.1",
+    "@markdoc/markdoc": "0.5.11",
+    "ajv": "8.20.0",
+    "elkjs": "0.12.1",
+    "playwright": "1.64.1",
+    "tslib": "2.9.1",
+    "vite": "8.3.5",
+    "wavedrom": "3.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2"
   }
 }

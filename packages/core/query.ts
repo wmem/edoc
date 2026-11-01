@@ -1,3 +1,4 @@
+import {anchor} from './identity.ts';
 import type { Graph, RecordEntry, Connection, Node, Port, Group, View } from './types.ts';
 import { failure } from './errors.ts';
 
@@ -18,6 +19,10 @@ function links(graph: Graph, entry: RecordEntry): string[] {
   }
   if (entry.type === 'connection') return (entry.entity as Connection).endpoints;
   if (entry.type === 'group') return (entry.entity as Group).members;
+  if(entry.type==='reference') { const e=entry.entity as any;return [e.fromId,e.targetId]; }
+  if(entry.type==='table') return (entry.entity as any).rows.map((r:any)=>r.id);
+  if(entry.type==='row') return (entry.entity as any).objectId?[(entry.entity as any).objectId]:[];
+  if(entry.type!=='view') return [];
   const view = entry.entity as View;
   return [...view.include.objects, ...view.include.relations];
 }
@@ -37,7 +42,8 @@ export function query(graph: Graph, id: string, options: { depth?: number; maxIt
   for (let cursor = 0; cursor < queue.length; cursor++) {
     const current = queue[cursor];
     if (current.level >= depth) continue;
-    for (const next of links(graph, graph.index.get(current.id)!)) {
+    const reverse=[...graph.index.values()].filter(e=>e.type==='reference'&&((e.entity as any).fromId===current.id||(e.entity as any).targetId===current.id)).map(e=>e.id);
+    for (const next of [...links(graph, graph.index.get(current.id)!),...reverse]) {
       if (seen.has(next)) continue;
       if (expanded.length >= maxItems) { truncated = true; continue; }
       seen.add(next);
@@ -47,7 +53,8 @@ export function query(graph: Graph, id: string, options: { depth?: number; maxIt
   }
   return {
     irVersion: graph.manifest.irVersion, projectId: graph.manifest.projectId,
-    target: item(target), directRelations,
+    target: {...item(target),anchor:anchor(id)}, directRelations,
+    references:[...graph.index.values()].filter(e=>e.type==='reference'&&((e.entity as any).fromId===id||(e.entity as any).targetId===id)).map(item),
     expansion: { depth, maxItems, truncated, items: expanded },
   };
 }

@@ -11,7 +11,7 @@ test('config Schema 正例', () => assert.deepEqual(validateSchema('config', jso
 
 const cases: [string, Parameters<typeof validateSchema>[0], any, string][] = [
   ['manifest 缺少 projectId', 'manifest', { irVersion: '1.0', resources: [], entryDocuments: [] }, '/projectId'],
-  ['未知资源类型不能忽略', 'manifest', { irVersion: '1.0', projectId: 'p', resources: [{ type: 'tables', path: 't.json' }], entryDocuments: [] }, '/resources/0/type'],
+  ['未知资源类型不能忽略', 'manifest', { irVersion: '1.0', projectId: 'p', resources: [{ type: 'unknown', path: 't.json' }], entryDocuments: [] }, '/resources/0/type'],
   ['端口方向必须显式合法', 'object', { objects: [{ id: 'a', kind: 'node', label: 'A', ports: [{ id: 'a.p', label: 'p', direction: 'input' }] }] }, '/objects/0/ports/0/direction'],
   ['未知对象类型', 'object', { objects: [{ id: 'a', kind: 'magic', label: 'A' }] }, '/objects/0'],
   ['空 ID', 'object', { objects: [{ id: '', kind: 'node', label: 'A' }] }, '/objects/0/id'],
@@ -40,9 +40,9 @@ test('未知信息与领域扩展原样保留', () => {
 test('自定义连接 class 与双向端点可接受', () => {
   assert.deepEqual(validateSchema('relation', { relations: [{ id: 'n', kind: 'connection', class: 'project-class', endpoints: ['a', 'b', 'c'] }] }), []);
 });
-test('不支持的 Schema 关键字显式失败，含未使用 defs', () => {
-  expectCode(() => checkSchemaDefinition({ type: 'string', maxLength: 10 }), 'SCHEMA_KEYWORD');
-  expectCode(() => checkSchemaDefinition({ $defs: { next: { if: {} } } }), 'SCHEMA_KEYWORD');
+test('正式 Schema 支持标准关键字并拒绝未知断言', () => {
+  expectCode(() => checkSchemaDefinition({ type: 'string', unknownKeyword: 10 }), 'SCHEMA_KEYWORD');
+  checkSchemaDefinition({type:'string',maxLength:10});
 });
 test('视图 include 中的 ID 不得重复', () => {
   assert.ok(validateSchema('view', { views: [{ id: 'v', kind: 'wiring', include: { objects: ['a', 'a'], relations: [] } }] }).length > 0);

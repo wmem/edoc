@@ -1,0 +1,116 @@
+{
+  "groups": [
+    {
+      "id": "board:qspi",
+      "kind": "group",
+      "label": "QSPI",
+      "members": [
+        "board:U1.QSPI_CLK",
+        "board:U1.QSPI_CS_N",
+        "board:U1.QSPI_DQ0",
+        "board:U1.QSPI_DQ1",
+        "board:U1.QSPI_DQ2",
+        "board:U1.QSPI_DQ3",
+        "board:U5.CLK",
+        "board:U5.CS_N",
+        "board:U5.IO0",
+        "board:U5.IO1",
+        "board:U5.IO2",
+        "board:U5.IO3"
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "id": "board:pins",
+      "kind": "table",
+      "label": "引脚与连接事实",
+      "columns": [
+        {
+          "field": "id",
+          "label": "稳定 ID",
+          "type": "string"
+        },
+        {
+          "field": "label",
+          "label": "端口",
+          "type": "string"
+        },
+        {
+          "field": "direction",
+          "label": "方向",
+          "type": "string"
+        },
+        {
+          "field": "attributes.ball",
+          "label": "FPGA Ball",
+          "type": "string"
+        },
+        {
+          "field": "attributes.pin",
+          "label": "外设 Pin",
+          "type": "string"
+        },
+        {
+          "field": "attributes.function",
+          "label": "功能",
+          "type": "string"
+        }
+      ],
+      "rows": [
+        {
+          "id": "board:row.U1.QSPI_CLK",
+          "objectId": "board:U1.QSPI_CLK"
+        },
+        {
+          "id": "board:row.U1.QSPI_CS_N",
+          "objectId": "board:U1.QSPI_CS_N"
+        },
+        {
+          "id": "board:row.U1.QSPI_DQ0",
+          "objectId": "board:U1.QSPI_DQ0"
+        },
+        {
+          "id": "board:row.U1.QSPI_DQ1",
+          "objectId": "board:U1.QSPI_DQ1"
+        },
+        {
+          "id": "board:row.U1.QSPI_DQ2",
+          "objectId": "board:U1.QSPI_DQ2"
+        },
+        {
+          "id": "board:row.U1.QSPI_DQ3",
+          "objectId": "board:U1.QSPI_DQ3"
+        },
+        {
+          "id": "board:row.U5.CLK",
+          "objectId": "board:U5.CLK"
+        },
+        {
+          "id": "board:row.U5.CS_N",
+          "objectId": "board:U5.CS_N"
+        },
+        {
+          "id": "board:row.U5.IO0",
+          "objectId": "board:U5.IO0"
+        },
+        {
+          "id": "board:row.U5.IO1",
+          "objectId": "board:U5.IO1"
+        },
+        {
+          "id": "board:row.U5.IO2",
+          "objectId": "board:U5.IO2"
+        },
+        {
+          "id": "board:row.U5.IO3",
+          "objectId": "board:U5.IO3"
+        },
+        {
+          "id": "board:row.J1.SCK",
+          "objectId": "board:J1.SCK"
+        }
+      ]
+    }
+  ]
+}

@@ -1,13 +1,16 @@
-# FPGA–Flash：P0 虚构协议样例
+# FPGA–Flash 工程样例
 
-**本例完全虚构，不对应任何真实 FPGA、Flash 或板卡。所有 Ball/Pin 值都不能用于硬件设计。**
+**本例为虚构工程，不对应厂商实际器件。所有 Ball/Pin 数值不能用于硬件设计。**
 
-此阶段手工维护 IR，用于验证协议。它不是要求实际项目复制维护引脚数据。真实 EDA/约束源及 Adapter 在 P3 实现；图形在 P1 实现。
+本工程实际使用 CSV 源文件运行项目 Adapter，演示三层分离：
 
-U1 表示演示 FPGA，U5 表示演示 Flash，J1 表示时钟测试端点。QSPI 六根真实独立信号分别保留为六条连接；FLASH_SCK 一条 Net 包含第三端点 J1.SCK，不拆成两条 Net。
+- board/devices.csv 是器件身份与名称来源。
+- board/pins.csv 是端口、Ball/Pin、功能名和端点所属 Net 的唯一来源。
+- board/nets.csv 定义 Net 身份、名称和类别。
+- docs/views.json 和 docs/projections.json 只定义视图、分组及表格投影引用。
 
-精确端口值仅定义于 ir/objects.json，连接端点仅定义于 ir/relations.json，视图仅保存 ID 与显示策略。source 指向实际存在的本例手工 IR，不虚构原理图来源。
+修改引脚只需修改 pins.csv，重新 build/validate/query 会运行 Adapter。接口表、连接图与查询共用转换后的同一 IR。
 
-使用配置文件运行 validate/query。精确查询入口：board:U1.QSPI_CLK、board:net.FLASH_SCK、board:flash-wiring。label 可以改名；稳定 ID 不因展示名称改变。
+时钟 Net 有三个端点；它仍然是一条连接关系。HTML 的 QSPI 总览只改变显示，展开后保留全部独立信号。source 指向实际存在的 CSV 文件和稳定选择器。
 
-P0 未提供表格、SVG、HTML、PDF，不能把协议验收当作图形可读性验收。
+本例验证文档工具与 Adapter 契约，不替代真实板卡的电气审核。

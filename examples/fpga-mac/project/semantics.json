@@ -1,0 +1,246 @@
+{
+  "groups": [
+    {
+      "id": "mac:tx-axis",
+      "kind": "group",
+      "label": "TX AXI-Stream",
+      "members": [
+        "mac:top.s_axis_tdata",
+        "mac:top.s_axis_tkeep",
+        "mac:top.s_axis_tvalid",
+        "mac:top.s_axis_tlast",
+        "mac:top.s_axis_tready"
+      ]
+    },
+    {
+      "id": "mac:rx-axis",
+      "kind": "group",
+      "label": "RX AXI-Stream",
+      "members": [
+        "mac:top.m_axis_tdata",
+        "mac:top.m_axis_tkeep",
+        "mac:top.m_axis_tvalid",
+        "mac:top.m_axis_tlast",
+        "mac:top.m_axis_tready"
+      ]
+    },
+    {
+      "id": "mac:apb",
+      "kind": "group",
+      "label": "APB4 control",
+      "members": [
+        "mac:top.paddr",
+        "mac:top.pwdata",
+        "mac:top.psel",
+        "mac:top.penable",
+        "mac:top.pwrite",
+        "mac:top.prdata",
+        "mac:top.pready"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "mac:tx",
+      "kind": "node",
+      "label": "TX datapath"
+    },
+    {
+      "id": "mac:rx",
+      "kind": "node",
+      "label": "RX datapath"
+    },
+    {
+      "id": "mac:fifo",
+      "kind": "node",
+      "label": "RX FIFO"
+    },
+    {
+      "id": "mac:control",
+      "kind": "node",
+      "label": "Control / APB"
+    }
+  ],
+  "relations": [
+    {
+      "id": "mac:rel.txctl",
+      "kind": "connection",
+      "class": "control",
+      "endpoints": [
+        "mac:control",
+        "mac:tx"
+      ],
+      "label": "enable / pause",
+      "direction": {
+        "sources": [
+          "mac:control"
+        ],
+        "targets": [
+          "mac:tx"
+        ]
+      }
+    },
+    {
+      "id": "mac:rel.rxctl",
+      "kind": "connection",
+      "class": "control",
+      "endpoints": [
+        "mac:control",
+        "mac:rx"
+      ],
+      "label": "configuration",
+      "direction": {
+        "sources": [
+          "mac:control"
+        ],
+        "targets": [
+          "mac:rx"
+        ]
+      }
+    },
+    {
+      "id": "mac:rel.rxfifo",
+      "kind": "connection",
+      "class": "data",
+      "endpoints": [
+        "mac:rx",
+        "mac:fifo"
+      ],
+      "label": "received frame",
+      "direction": {
+        "sources": [
+          "mac:rx"
+        ],
+        "targets": [
+          "mac:fifo"
+        ]
+      }
+    },
+    {
+      "id": "mac:rel.event",
+      "kind": "connection",
+      "class": "event",
+      "endpoints": [
+        "mac:fifo",
+        "mac:control"
+      ],
+      "label": "occupancy event",
+      "direction": {
+        "sources": [
+          "mac:fifo"
+        ],
+        "targets": [
+          "mac:control"
+        ]
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "mac:overview",
+      "kind": "architecture",
+      "label": "MAC architecture（规范示意）",
+      "include": {
+        "objects": [
+          "mac:tx",
+          "mac:rx",
+          "mac:fifo",
+          "mac:control"
+        ],
+        "relations": [
+          "mac:rel.txctl",
+          "mac:rel.rxctl",
+          "mac:rel.rxfifo",
+          "mac:rel.event"
+        ]
+      },
+      "layout": {
+        "direction": "LR",
+        "routing": "orthogonal"
+      }
+    },
+    {
+      "id": "mac:tx-view",
+      "kind": "interface",
+      "label": "TX AXI-Stream",
+      "include": {
+        "objects": [
+          "mac:tx-axis"
+        ],
+        "relations": []
+      },
+      "layout": {
+        "direction": "LR",
+        "routing": "orthogonal"
+      }
+    },
+    {
+      "id": "mac:rx-view",
+      "kind": "interface",
+      "label": "RX AXI-Stream",
+      "include": {
+        "objects": [
+          "mac:rx-axis"
+        ],
+        "relations": []
+      },
+      "layout": {
+        "direction": "LR",
+        "routing": "orthogonal"
+      }
+    },
+    {
+      "id": "mac:apb-view",
+      "kind": "interface",
+      "label": "APB4 control",
+      "include": {
+        "objects": [
+          "mac:apb"
+        ],
+        "relations": []
+      },
+      "layout": {
+        "direction": "LR",
+        "routing": "orthogonal"
+      }
+    }
+  ],
+  "references": [
+    {
+      "id": "mac:ref.tx-case",
+      "kind": "reference",
+      "class": "covers",
+      "fromId": "MAC-CASE-TX",
+      "targetId": "MAC-TX-001"
+    },
+    {
+      "id": "mac:ref.rx-case",
+      "kind": "reference",
+      "class": "covers",
+      "fromId": "MAC-CASE-RX",
+      "targetId": "MAC-RX-001"
+    },
+    {
+      "id": "mac:ref.verify-tx",
+      "kind": "reference",
+      "class": "contains",
+      "fromId": "MAC-VERIFY",
+      "targetId": "MAC-CASE-TX"
+    },
+    {
+      "id": "mac:ref.verify-rx",
+      "kind": "reference",
+      "class": "contains",
+      "fromId": "MAC-VERIFY",
+      "targetId": "MAC-CASE-RX"
+    },
+    {
+      "id": "mac:ref.tx-arch",
+      "kind": "reference",
+      "class": "describes",
+      "fromId": "mac:tx",
+      "targetId": "MAC-TX-001"
+    }
+  ],
+  "clock": "clk"
+}

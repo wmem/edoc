@@ -1,0 +1,4 @@
+id,label
+board:U1,FPGA（虚构）
+board:U5,Flash（虚构）
+board:J1,测试连接器（虚构）

@@ -8,6 +8,47 @@
     },
     "irDirectory": {
       "$ref": "common.schema.json#/$defs/path"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adapter": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/path"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "command",
+        "version",
+        "inputs"
+      ],
+      "additionalProperties": false
+    },
+    "chromiumExecutable": {
+      "$ref": "common.schema.json#/$defs/path"
     }
   },
   "required": [

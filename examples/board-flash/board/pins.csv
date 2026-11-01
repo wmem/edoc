@@ -1,0 +1,14 @@
+id,device,label,direction,width,ball,pin,function,net
+board:U1.QSPI_CLK,board:U1,QSPI_CLK,out,1,A12,,QSPI_CLK,board:net.FLASH_SCK
+board:U1.QSPI_CS_N,board:U1,QSPI_CS_N,out,1,B11,,QSPI_CS_N,board:net.FLASH_CS_N
+board:U1.QSPI_DQ0,board:U1,QSPI_DQ0,inout,1,C10,,QSPI_DQ0,board:net.FLASH_DQ0
+board:U1.QSPI_DQ1,board:U1,QSPI_DQ1,inout,1,D10,,QSPI_DQ1,board:net.FLASH_DQ1
+board:U1.QSPI_DQ2,board:U1,QSPI_DQ2,inout,1,E10,,QSPI_DQ2,board:net.FLASH_DQ2
+board:U1.QSPI_DQ3,board:U1,QSPI_DQ3,inout,1,F10,,QSPI_DQ3,board:net.FLASH_DQ3
+board:U5.CLK,board:U5,CLK,in,1,,6,CLK,board:net.FLASH_SCK
+board:U5.CS_N,board:U5,CS_N,in,1,,1,CS_N,board:net.FLASH_CS_N
+board:U5.IO0,board:U5,IO0,inout,1,,5,IO0,board:net.FLASH_DQ0
+board:U5.IO1,board:U5,IO1,inout,1,,2,IO1,board:net.FLASH_DQ1
+board:U5.IO2,board:U5,IO2,inout,1,,3,IO2,board:net.FLASH_DQ2
+board:U5.IO3,board:U5,IO3,inout,1,,7,IO3,board:net.FLASH_DQ3
+board:J1.SCK,board:J1,SCK_PROBE,passive,,,1,SCK probe,board:net.FLASH_SCK

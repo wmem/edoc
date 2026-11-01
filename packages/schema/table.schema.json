@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engdoc.local/schema/v1/table.schema.json",
+  "type": "object",
+  "properties": {
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "kind": {
+            "const": "table"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "json"
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "field",
+                "label",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "objectId": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "objectId"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "values": {
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "values"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "columns",
+          "rows"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "tables"
+  ],
+  "additionalProperties": false
+}

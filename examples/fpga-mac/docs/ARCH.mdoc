@@ -1,0 +1,32 @@
+{% section id="mac:architecture" title="ARCH：结构与接口" %}
+
+{% diagram id="mac:overview" /%}
+
+{% columns ratio="2:1" %}
+{% panel title="接口视角" %}
+{% tabs %}
+{% tab name="TX" %}
+{% diagram id="mac:tx-view" /%}
+{% interface id="mac:tx-axis" mode="detailed" /%}
+{% /tab %}
+{% tab name="RX" %}
+{% diagram id="mac:rx-view" /%}
+{% interface id="mac:rx-axis" mode="detailed" /%}
+{% /tab %}
+{% tab name="APB4" %}
+{% diagram id="mac:apb-view" /%}
+{% interface id="mac:apb" mode="detailed" /%}
+{% /tab %}
+{% /tabs %}
+{% /panel %}
+{% panel title="关键机制" %}
+
+TX、RX、控制与 FIFO 的结构关系是项目补充语义，通用工具不推断其硬件实现。
+
+> 点击图中对象可查看完整属性和来源。
+
+{% reference id="MAC-TX-001" /%}
+
+{% /panel %}
+{% /columns %}
+{% /section %}

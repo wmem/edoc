@@ -41,7 +41,7 @@ const badCases: [string, string, (data: any) => void, string][] = [
   ['折叠组引用不存在', 'views', d => d.views[0].display.collapsedGroups = ['missing'], 'REFERENCE_MISSING'],
   ['布局位置不能重复', 'views', d => d.views[0].layout.positions = [{ objectId: 'board:U1', x: 0, y: 0 }, { objectId: 'board:U1', x: 1, y: 2 }], 'POSITION_DUPLICATE'],
   ['未知 major', 'manifest', d => d.irVersion = '2.0', 'IR_VERSION'],
-  ['未实现 minor 不假装兼容', 'manifest', d => d.irVersion = '1.1', 'IR_VERSION'],
+  ['未支持 major 不假装兼容', 'manifest', d => d.irVersion = '7.1', 'IR_VERSION'],
   ['同一分片不能重复', 'manifest', d => d.resources.push(d.resources[0]), 'DUPLICATE_RESOURCE'],
 ];
 for (const [name, resource, mutate, code] of badCases) test(name, t => {

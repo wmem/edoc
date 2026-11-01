@@ -1,0 +1,29 @@
+{% section id="board:architecture" title="FPGA–Flash 连接验证" %}
+
+这是虚构板级工程的连接验证。芯片编号与引脚值只从 IR 读取，图形与接口表引用同一事实。
+
+{% diagram id="board:flash-wiring" /%}
+
+{% columns ratio="1:1" %}
+{% panel title="FPGA 接口" %}
+{% interface id="board:U1" mode="detailed" /%}
+{% /panel %}
+{% panel title="操作说明" %}
+
+- 点击节点和连线查看完整工程属性。
+- 按类别过滤连线，使用总览按钮折叠 QSPI，展开后逐信号查看。
+- 时钟连接仍是一条具有三个端点的 Net。
+
+{% reference id="board:net.FLASH_SCK" /%}
+
+{% /panel %}
+{% /columns %}
+{% /section %}
+
+{% section id="board:pin-table" title="完整引脚表" collapsed=true %}
+
+此表直接投影端口对象；修改 CSV 中的 Ball 后，重新转换即可同时更新表与图。
+
+{% table id="board:pins" /%}
+
+{% /section %}

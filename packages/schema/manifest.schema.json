@@ -19,7 +19,10 @@
             "enum": [
               "objects",
               "relations",
-              "views"
+              "views",
+              "tables",
+              "waveforms",
+              "references"
             ]
           },
           "path": {
@@ -44,6 +47,13 @@
     "adapterVersion": {
       "type": "string",
       "minLength": 1
+    },
+    "requiredFeatures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
     }
   },
   "required": [

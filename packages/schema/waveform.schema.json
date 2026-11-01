@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engdoc.local/schema/v1/waveform.schema.json",
+  "type": "object",
+  "properties": {
+    "waveforms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "kind": {
+            "const": "waveform"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "format": {
+            "const": "wavejson"
+          },
+          "semantic": {
+            "enum": [
+              "specification",
+              "simulation"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "signal": {
+                "type": "array",
+                "items": {},
+                "minItems": 1
+              },
+              "edge": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "head": {
+                "type": "object"
+              },
+              "foot": {
+                "type": "object"
+              },
+              "config": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "signal"
+            ],
+            "additionalProperties": false
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "format",
+          "semantic",
+          "data",
+          "source"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "waveforms"
+  ],
+  "additionalProperties": false
+}

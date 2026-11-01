@@ -1,4 +1,20 @@
 {
   "projectId": "demo-board",
-  "irDirectory": "ir"
+  "title": "FPGA–Flash 工程连接文档（虚构样例）",
+  "irDirectory": ".engdoc-build/ir",
+  "adapter": {
+    "command": [
+      "python3",
+      "doc-adapter/convert.py"
+    ],
+    "version": "1.0",
+    "timeoutMs": 10000,
+    "inputs": [
+      "board/devices.csv",
+      "board/pins.csv",
+      "board/nets.csv",
+      "docs/views.json",
+      "docs/projections.json"
+    ]
+  }
 }

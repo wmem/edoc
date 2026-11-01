@@ -1,0 +1,15 @@
+{% section id="mac:spec" title="SPEC：行为规范示例" %}
+
+{% section id="MAC-TX-001" title="TX 反压" %}
+
+当接收方 ready 为低时，发送方应保持当前 valid 数据，直到握手成功。此条为文档能力演示，不构成已实现 MAC 的验收声明。
+
+{% waveform id="mac:tx-handshake" /%}
+{% /section %}
+
+{% section id="MAC-RX-001" title="RX FIFO" %}
+
+RX 使用 FIFO 隔离数据接收和上层消费。具体缓存深度应由实际项目规范确定，本样例不猜测该值。
+
+{% /section %}
+{% /section %}

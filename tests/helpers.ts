@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { EngDocError, loadIR } from '../packages/core/index.ts';
 
 export const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const sample = join(repository, 'examples/board-flash');
+export const sample = join(repository, 'tests/fixtures/board-flash');
 export const json = (file: string): any => JSON.parse(readFileSync(file, 'utf8'));
 export const save = (file: string, data: unknown) => writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
 

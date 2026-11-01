@@ -1,0 +1,7 @@
+id,label,class
+board:net.FLASH_SCK,FLASH_SCK,clock
+board:net.FLASH_CS_N,FLASH_CS_N,control
+board:net.FLASH_DQ0,FLASH_DQ0,data
+board:net.FLASH_DQ1,FLASH_DQ1,data
+board:net.FLASH_DQ2,FLASH_DQ2,data
+board:net.FLASH_DQ3,FLASH_DQ3,data
