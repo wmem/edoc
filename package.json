@@ -17,11 +17,17 @@
     "test:cli": "node --test tests/cli.test.ts",
     "typecheck": "tsc --noEmit",
     "test:graph": "node --test tests/graph.test.ts",
+    "test:layout": "node --test tests/layout.test.ts",
     "test:document": "node --test tests/document.test.ts",
+    "test:outline": "node --test tests/outline.test.ts",
     "test:adapter": "node --test tests/adapter.test.ts",
     "test:browser": "node --test tests/browser.test.ts",
     "test:pdf": "node --test tests/pdf.test.ts",
-    "test:quality": "node --test tests/quality.test.ts"
+    "test:quality": "node --test tests/quality.test.ts",
+    "demo": "node scripts/demo.ts",
+    "demo:build": "node scripts/demo.ts --build",
+    "test:wave": "node --test tests/wave.test.ts",
+    "test:interface": "node --test tests/interface.test.ts tests/interface-browser.test.ts"
   },
   "dependencies": {
     "@antv/x6": "3.1.8",

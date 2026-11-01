@@ -11,6 +11,23 @@ function run(args: string[], cwd = repository) {
   return result;
 }
 
+test('guide 无需项目配置，默认与 JSON 读取同一推荐指南',()=>{
+ const plain=run(['guide']),json=run(['guide','--format','json']);
+ assert.equal(plain.status,0,plain.stderr);assert.equal(json.status,0,json.stderr);
+ assert.equal(JSON.parse(json.stdout).content,plain.stdout);
+ assert.match(plain.stdout,/理解性内容与查询性内容/);
+ assert.equal(run(['guide','--config','x']).status,2);
+});
+test('outline 返回章节树与源位置，不要求生成 HTML',t=>{
+ const f=fixture(t);writeFileSync(join(f.root,'docs/book.mdoc'),'{% section id="parent" title="父章节" %}\n{% section id="child" title="子章节" %}\n## 详情\n{% /section %}\n{% /section %}');
+ f.edit('manifest',d=>d.entryDocuments=['docs/book.mdoc']);
+ const result=run(['outline','--config',join(f.root,'engdoc.config.json')]);assert.equal(result.status,0,result.stderr);
+ const tree=JSON.parse(result.stdout);assert.equal(tree.chapters[0].children[0].label,'子章节');
+ assert.equal(tree.chapters[0].children[0].children[0].source.file,'docs/book.mdoc');
+ const plain=run(['outline','--config',join(f.root,'engdoc.config.json'),'--format','text']);
+ assert.equal(plain.stdout,'父章节\n  子章节\n    详情\n');
+});
+
 test('CLI validate 输出纯 JSON 与正确退出码', t => {
   const f = fixture(t);
   const result = run(['validate', '--config', join(f.root, 'engdoc.config.json'), '--format', 'json'], f.workspace);

@@ -81,6 +81,128 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "interfaceOrder": {
+                "$ref": "common.schema.json#/$defs/ids"
+              },
+              "interfaceSides": {
+                "type": "object",
+                "additionalProperties": {
+                  "enum": [
+                    "left",
+                    "right"
+                  ]
+                }
+              },
+              "constraints": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "order"
+                        },
+                        "axis": {
+                          "enum": [
+                            "x",
+                            "y"
+                          ]
+                        },
+                        "nodes": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "common.schema.json#/$defs/id"
+                          },
+                          "minItems": 2,
+                          "uniqueItems": true
+                        },
+                        "gap": {
+                          "type": "number",
+                          "minimum": 16
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "axis",
+                        "nodes"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "align"
+                        },
+                        "axis": {
+                          "enum": [
+                            "x",
+                            "y"
+                          ]
+                        },
+                        "nodes": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "common.schema.json#/$defs/id"
+                          },
+                          "minItems": 2,
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "axis",
+                        "nodes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "relationHints": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "backbone": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "common.schema.json#/$defs/id"
+                      },
+                      "minItems": 2,
+                      "uniqueItems": true,
+                      "maxItems": 2
+                    },
+                    "endpointSides": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "enum": [
+                          "left",
+                          "right",
+                          "top",
+                          "bottom"
+                        ]
+                      }
+                    },
+                    "channel": {
+                      "enum": [
+                        "left",
+                        "right",
+                        "top",
+                        "bottom"
+                      ]
+                    },
+                    "priority": {
+                      "enum": [
+                        "main",
+                        "normal"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
               }
             },
             "required": [],
@@ -89,6 +211,12 @@
           "display": {
             "type": "object",
             "properties": {
+              "showPortAttributes": {
+                "type": "boolean"
+              },
+              "showRelationLabels": {
+                "type": "boolean"
+              },
               "portAttributes": {
                 "type": "array",
                 "items": {
@@ -107,6 +235,21 @@
                   "minLength": 1
                 },
                 "uniqueItems": true
+              },
+              "interfaceMode": {
+                "enum": [
+                  "collapsed",
+                  "expanded"
+                ]
+              },
+              "interfaceOverrides": {
+                "type": "object",
+                "additionalProperties": {
+                  "enum": [
+                    "collapsed",
+                    "expanded"
+                  ]
+                }
               }
             },
             "required": [],

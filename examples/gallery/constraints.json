@@ -1,0 +1,49 @@
+{
+  "views": [
+    {
+      "id": "gallery:architecture-intent",
+      "kind": "architecture",
+      "label": "相对布局 · 主数据流与反馈",
+      "include": {
+        "objects": ["mac:control", "mac:data-plane", "mac:tx", "mac:rx", "mac:fifo"],
+        "relations": ["mac:rel.txctl", "mac:rel.rxctl", "mac:rel.rxfifo", "mac:rel.event"]
+      },
+      "layout": {
+        "direction": "LR",
+        "constraints": [
+          {"type": "order", "axis": "x", "nodes": ["mac:control", "mac:data-plane"], "gap": 140},
+          {"type": "align", "axis": "y", "nodes": ["mac:control", "mac:data-plane"]},
+          {"type": "order", "axis": "y", "nodes": ["mac:tx", "mac:rx"], "gap": 100},
+          {"type": "order", "axis": "x", "nodes": ["mac:rx", "mac:fifo"], "gap": 220},
+          {"type": "align", "axis": "x", "nodes": ["mac:tx", "mac:rx"]},
+          {"type": "align", "axis": "y", "nodes": ["mac:rx", "mac:fifo"]}
+        ],
+        "relationHints": {
+          "mac:rel.rxfifo": {"priority": "main", "endpointSides": {"mac:rx": "right", "mac:fifo": "left"}},
+          "mac:rel.event": {"channel": "bottom"}
+        }
+      }
+    },
+    {
+      "id": "gallery:wiring-intent",
+      "kind": "wiring",
+      "label": "主干与短支路 · 全部原 Net 保留",
+      "include": {
+        "objects": ["board:U1", "board:U5", "board:J1"],
+        "relations": ["board:net.FLASH_SCK", "board:net.FLASH_CS_N", "board:net.FLASH_DQ0", "board:net.FLASH_DQ1", "board:net.FLASH_DQ2", "board:net.FLASH_DQ3"]
+      },
+      "layout": {
+        "direction": "LR",
+        "constraints": [
+          {"type": "order", "axis": "x", "nodes": ["board:U1", "board:U5"], "gap": 600},
+          {"type": "align", "axis": "y", "nodes": ["board:U1", "board:U5"]},
+          {"type": "order", "axis": "y", "nodes": ["board:J1", "board:U1"], "gap": 120}
+        ],
+        "relationHints": {
+          "board:net.FLASH_SCK": {"backbone": ["board:U1.QSPI_CLK", "board:U5.CLK"]}
+        }
+      },
+      "display": {"portAttributes": ["ball", "pin"]}
+    }
+  ]
+}

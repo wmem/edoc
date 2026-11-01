@@ -1,5 +1,5 @@
 import {anchor} from './identity.ts';
-import type { Graph, RecordEntry, Connection, Node, Port, Group, View } from './types.ts';
+import type { Graph, RecordEntry, Connection, Node, Port, Group, View, Interface } from './types.ts';
 import { failure } from './errors.ts';
 
 function item(entry: RecordEntry) {
@@ -11,14 +11,15 @@ function links(graph: Graph, entry: RecordEntry): string[] {
   const adjacent = [...(graph.adjacency.get(entry.id) ?? [])];
   if (entry.type === 'node') {
     const node = entry.entity as Node;
-    return [...adjacent, ...(node.ports ?? []).map(p => p.id), ...(node.parentId ? [node.parentId] : [])];
+    return [...adjacent, ...(node.ports ?? []).map(p => p.id),...(node.interfaces??[]).map(i=>i.id), ...(node.parentId ? [node.parentId] : [])];
   }
   if (entry.type === 'port') {
     const port = entry.entity as Port;
-    return [...adjacent, entry.ownerId!, ...[port.groupId, port.clockDomainId].filter(Boolean) as string[]];
+    return [...adjacent, entry.ownerId!, ...[port.groupId, port.clockDomainId,graph.interfaceByPort?.get(entry.id)].filter(Boolean) as string[]];
   }
   if (entry.type === 'connection') return (entry.entity as Connection).endpoints;
   if (entry.type === 'group') return (entry.entity as Group).members;
+  if (entry.type === 'interface') return [...adjacent,entry.ownerId!,...(entry.entity as Interface).members];
   if(entry.type==='reference') { const e=entry.entity as any;return [e.fromId,e.targetId]; }
   if(entry.type==='table') return (entry.entity as any).rows.map((r:any)=>r.id);
   if(entry.type==='row') return (entry.entity as any).objectId?[(entry.entity as any).objectId]:[];

@@ -1,0 +1,26 @@
+{
+  "objects": [
+    {"id":"gallery:source","kind":"node","label":"调度与分发"},
+    {"id":"gallery:compute","kind":"node","label":"数据处理"},
+    {"id":"gallery:storage","kind":"node","label":"存储服务"},
+    {"id":"gallery:monitor","kind":"node","label":"状态监测"},
+    {"id":"gallery:report","kind":"node","label":"结果输出"},
+    {"id":"gallery:left","kind":"node","label":"请求端"},
+    {"id":"gallery:block","kind":"node","label":"固定障碍节点"},
+    {"id":"gallery:right","kind":"node","label":"响应端"}
+  ],
+  "relations": [
+    {"id":"gallery:dispatch-compute","kind":"connection","class":"data","label":"任务数据","endpoints":["gallery:source","gallery:compute"],"direction":{"sources":["gallery:source"],"targets":["gallery:compute"]}},
+    {"id":"gallery:dispatch-storage","kind":"connection","class":"data","label":"持久化","endpoints":["gallery:source","gallery:storage"],"direction":{"sources":["gallery:source"],"targets":["gallery:storage"]}},
+    {"id":"gallery:dispatch-monitor","kind":"connection","class":"control","label":"运行控制","endpoints":["gallery:source","gallery:monitor"],"direction":{"sources":["gallery:source"],"targets":["gallery:monitor"]}},
+    {"id":"gallery:dispatch-report","kind":"connection","class":"event","label":"完成事件","endpoints":["gallery:source","gallery:report"],"direction":{"sources":["gallery:source"],"targets":["gallery:report"]}},
+    {"id":"gallery:compute-report","kind":"connection","class":"data","label":"处理结果","endpoints":["gallery:compute","gallery:report"],"direction":{"sources":["gallery:compute"],"targets":["gallery:report"]}},
+    {"id":"gallery:bypass","kind":"connection","class":"control","label":"绕开中间节点","endpoints":["gallery:left","gallery:right"],"direction":{"sources":["gallery:left"],"targets":["gallery:right"]}}
+  ],
+  "directions": ["LR","RL","TB","BT"],
+  "fixedPositions": [
+    {"objectId":"gallery:left","x":0,"y":100},
+    {"objectId":"gallery:block","x":390,"y":80},
+    {"objectId":"gallery:right","x":780,"y":100}
+  ]
+}

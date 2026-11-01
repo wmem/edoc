@@ -1,0 +1,1026 @@
+{
+  "objects": [
+    {
+      "id": "ifdemo:host",
+      "kind": "node",
+      "label": "控制模块（虚构）",
+      "ports": [
+        {
+          "id": "ifdemo:host.ctrl_awaddr",
+          "label": "ctrl_awaddr",
+          "width": 32,
+          "direction": "out",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_awaddr"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_awvalid",
+          "label": "ctrl_awvalid",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_awvalid"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_awready",
+          "label": "ctrl_awready",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_awready"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_wdata",
+          "label": "ctrl_wdata",
+          "width": 32,
+          "direction": "out",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_wdata"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_wvalid",
+          "label": "ctrl_wvalid",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_wvalid"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_wready",
+          "label": "ctrl_wready",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_wready"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_bresp",
+          "label": "ctrl_bresp",
+          "width": 2,
+          "direction": "in",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_bresp"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_bvalid",
+          "label": "ctrl_bvalid",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_bvalid"
+          }
+        },
+        {
+          "id": "ifdemo:host.ctrl_bready",
+          "label": "ctrl_bready",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:host.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.ctrl_bready"
+          }
+        },
+        {
+          "id": "ifdemo:host.clk",
+          "label": "clk",
+          "direction": "in",
+          "width": 1,
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.clk"
+          }
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "ifdemo:host.m_ctrl",
+          "label": "M_AXI_CTRL",
+          "protocol": "AXI4-Lite",
+          "role": "master",
+          "members": [
+            "ifdemo:host.ctrl_awaddr",
+            "ifdemo:host.ctrl_awvalid",
+            "ifdemo:host.ctrl_awready",
+            "ifdemo:host.ctrl_wdata",
+            "ifdemo:host.ctrl_wvalid",
+            "ifdemo:host.ctrl_wready",
+            "ifdemo:host.ctrl_bresp",
+            "ifdemo:host.ctrl_bvalid",
+            "ifdemo:host.ctrl_bready"
+          ],
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:host.m_ctrl"
+          }
+        }
+      ],
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:host"
+      }
+    },
+    {
+      "id": "ifdemo:engine",
+      "kind": "node",
+      "label": "双接口处理模块（虚构）",
+      "ports": [
+        {
+          "id": "ifdemo:engine.ctrl_awaddr",
+          "label": "ctrl_awaddr",
+          "width": 32,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_awaddr"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_awvalid",
+          "label": "ctrl_awvalid",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_awvalid"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_awready",
+          "label": "ctrl_awready",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_awready"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_wdata",
+          "label": "ctrl_wdata",
+          "width": 32,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_wdata"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_wvalid",
+          "label": "ctrl_wvalid",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_wvalid"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_wready",
+          "label": "ctrl_wready",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_wready"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_bresp",
+          "label": "ctrl_bresp",
+          "width": 2,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_bresp"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_bvalid",
+          "label": "ctrl_bvalid",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_bvalid"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_bready",
+          "label": "ctrl_bready",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_bready"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_araddr",
+          "label": "dma_araddr",
+          "width": 32,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_araddr"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_arlen",
+          "label": "dma_arlen",
+          "width": 8,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_arlen"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_arvalid",
+          "label": "dma_arvalid",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_arvalid"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_arready",
+          "label": "dma_arready",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_arready"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_rdata",
+          "label": "dma_rdata",
+          "width": 64,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_rdata"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_rvalid",
+          "label": "dma_rvalid",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_rvalid"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_rlast",
+          "label": "dma_rlast",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_rlast"
+          }
+        },
+        {
+          "id": "ifdemo:engine.dma_rready",
+          "label": "dma_rready",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:engine.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.dma_rready"
+          }
+        },
+        {
+          "id": "ifdemo:engine.ctrl_optional",
+          "label": "ctrl_optional",
+          "direction": "unknown",
+          "widthExpr": "OPTION_WIDTH",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.ctrl_optional"
+          }
+        },
+        {
+          "id": "ifdemo:engine.clk",
+          "label": "clk",
+          "direction": "in",
+          "width": 1,
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.clk"
+          }
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "ifdemo:engine.s_ctrl",
+          "label": "S_AXI_CTRL",
+          "protocol": "AXI4-Lite",
+          "role": "slave",
+          "members": [
+            "ifdemo:engine.ctrl_awaddr",
+            "ifdemo:engine.ctrl_awvalid",
+            "ifdemo:engine.ctrl_awready",
+            "ifdemo:engine.ctrl_wdata",
+            "ifdemo:engine.ctrl_wvalid",
+            "ifdemo:engine.ctrl_wready",
+            "ifdemo:engine.ctrl_bresp",
+            "ifdemo:engine.ctrl_bvalid",
+            "ifdemo:engine.ctrl_bready",
+            "ifdemo:engine.ctrl_optional"
+          ],
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.s_ctrl"
+          }
+        },
+        {
+          "id": "ifdemo:engine.m_dma",
+          "label": "M_AXI_DMA",
+          "protocol": "AXI4",
+          "role": "master",
+          "members": [
+            "ifdemo:engine.dma_araddr",
+            "ifdemo:engine.dma_arlen",
+            "ifdemo:engine.dma_arvalid",
+            "ifdemo:engine.dma_arready",
+            "ifdemo:engine.dma_rdata",
+            "ifdemo:engine.dma_rvalid",
+            "ifdemo:engine.dma_rlast",
+            "ifdemo:engine.dma_rready"
+          ],
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:engine.m_dma"
+          }
+        }
+      ],
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:engine"
+      }
+    },
+    {
+      "id": "ifdemo:memory",
+      "kind": "node",
+      "label": "存储控制模块（虚构）",
+      "ports": [
+        {
+          "id": "ifdemo:memory.dma_araddr",
+          "label": "dma_araddr",
+          "width": 32,
+          "direction": "in",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_araddr"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_arlen",
+          "label": "dma_arlen",
+          "width": 8,
+          "direction": "in",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_arlen"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_arvalid",
+          "label": "dma_arvalid",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_arvalid"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_arready",
+          "label": "dma_arready",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_arready"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_rdata",
+          "label": "dma_rdata",
+          "width": 64,
+          "direction": "out",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_rdata"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_rvalid",
+          "label": "dma_rvalid",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_rvalid"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_rlast",
+          "label": "dma_rlast",
+          "width": 1,
+          "direction": "out",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_rlast"
+          }
+        },
+        {
+          "id": "ifdemo:memory.dma_rready",
+          "label": "dma_rready",
+          "width": 1,
+          "direction": "in",
+          "clockDomainId": "ifdemo:memory.clk",
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.dma_rready"
+          }
+        },
+        {
+          "id": "ifdemo:memory.clk",
+          "label": "clk",
+          "direction": "in",
+          "width": 1,
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.clk"
+          }
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "ifdemo:memory.s_dma",
+          "label": "S_AXI_DMA",
+          "protocol": "AXI4",
+          "role": "slave",
+          "members": [
+            "ifdemo:memory.dma_araddr",
+            "ifdemo:memory.dma_arlen",
+            "ifdemo:memory.dma_arvalid",
+            "ifdemo:memory.dma_arready",
+            "ifdemo:memory.dma_rdata",
+            "ifdemo:memory.dma_rvalid",
+            "ifdemo:memory.dma_rlast",
+            "ifdemo:memory.dma_rready"
+          ],
+          "source": {
+            "file": "examples/gallery/interfaces.json",
+            "selector": "ifdemo:memory.s_dma"
+          }
+        }
+      ],
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:memory"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": "ifdemo:net.ctrl_awaddr",
+      "kind": "connection",
+      "class": "data",
+      "label": "CTRL_AWADDR",
+      "endpoints": [
+        "ifdemo:host.ctrl_awaddr",
+        "ifdemo:engine.ctrl_awaddr"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:host.ctrl_awaddr"
+        ],
+        "targets": [
+          "ifdemo:engine.ctrl_awaddr"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_awaddr"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_awvalid",
+      "kind": "connection",
+      "class": "control",
+      "label": "CTRL_AWVALID",
+      "endpoints": [
+        "ifdemo:host.ctrl_awvalid",
+        "ifdemo:engine.ctrl_awvalid"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:host.ctrl_awvalid"
+        ],
+        "targets": [
+          "ifdemo:engine.ctrl_awvalid"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_awvalid"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_awready",
+      "kind": "connection",
+      "class": "control",
+      "label": "CTRL_AWREADY",
+      "endpoints": [
+        "ifdemo:host.ctrl_awready",
+        "ifdemo:engine.ctrl_awready"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.ctrl_awready"
+        ],
+        "targets": [
+          "ifdemo:host.ctrl_awready"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_awready"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_wdata",
+      "kind": "connection",
+      "class": "data",
+      "label": "CTRL_WDATA",
+      "endpoints": [
+        "ifdemo:host.ctrl_wdata",
+        "ifdemo:engine.ctrl_wdata"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:host.ctrl_wdata"
+        ],
+        "targets": [
+          "ifdemo:engine.ctrl_wdata"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_wdata"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_wvalid",
+      "kind": "connection",
+      "class": "control",
+      "label": "CTRL_WVALID",
+      "endpoints": [
+        "ifdemo:host.ctrl_wvalid",
+        "ifdemo:engine.ctrl_wvalid"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:host.ctrl_wvalid"
+        ],
+        "targets": [
+          "ifdemo:engine.ctrl_wvalid"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_wvalid"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_wready",
+      "kind": "connection",
+      "class": "control",
+      "label": "CTRL_WREADY",
+      "endpoints": [
+        "ifdemo:host.ctrl_wready",
+        "ifdemo:engine.ctrl_wready"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.ctrl_wready"
+        ],
+        "targets": [
+          "ifdemo:host.ctrl_wready"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_wready"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_bresp",
+      "kind": "connection",
+      "class": "data",
+      "label": "CTRL_BRESP",
+      "endpoints": [
+        "ifdemo:host.ctrl_bresp",
+        "ifdemo:engine.ctrl_bresp"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.ctrl_bresp"
+        ],
+        "targets": [
+          "ifdemo:host.ctrl_bresp"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_bresp"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_bvalid",
+      "kind": "connection",
+      "class": "control",
+      "label": "CTRL_BVALID",
+      "endpoints": [
+        "ifdemo:host.ctrl_bvalid",
+        "ifdemo:engine.ctrl_bvalid"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.ctrl_bvalid"
+        ],
+        "targets": [
+          "ifdemo:host.ctrl_bvalid"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_bvalid"
+      }
+    },
+    {
+      "id": "ifdemo:net.ctrl_bready",
+      "kind": "connection",
+      "class": "control",
+      "label": "CTRL_BREADY",
+      "endpoints": [
+        "ifdemo:host.ctrl_bready",
+        "ifdemo:engine.ctrl_bready"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:host.ctrl_bready"
+        ],
+        "targets": [
+          "ifdemo:engine.ctrl_bready"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.ctrl_bready"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_araddr",
+      "kind": "connection",
+      "class": "data",
+      "label": "DMA_ARADDR",
+      "endpoints": [
+        "ifdemo:engine.dma_araddr",
+        "ifdemo:memory.dma_araddr"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.dma_araddr"
+        ],
+        "targets": [
+          "ifdemo:memory.dma_araddr"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_araddr"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_arlen",
+      "kind": "connection",
+      "class": "data",
+      "label": "DMA_ARLEN",
+      "endpoints": [
+        "ifdemo:engine.dma_arlen",
+        "ifdemo:memory.dma_arlen"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.dma_arlen"
+        ],
+        "targets": [
+          "ifdemo:memory.dma_arlen"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_arlen"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_arvalid",
+      "kind": "connection",
+      "class": "control",
+      "label": "DMA_ARVALID",
+      "endpoints": [
+        "ifdemo:engine.dma_arvalid",
+        "ifdemo:memory.dma_arvalid"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.dma_arvalid"
+        ],
+        "targets": [
+          "ifdemo:memory.dma_arvalid"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_arvalid"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_arready",
+      "kind": "connection",
+      "class": "control",
+      "label": "DMA_ARREADY",
+      "endpoints": [
+        "ifdemo:engine.dma_arready",
+        "ifdemo:memory.dma_arready"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:memory.dma_arready"
+        ],
+        "targets": [
+          "ifdemo:engine.dma_arready"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_arready"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_rdata",
+      "kind": "connection",
+      "class": "data",
+      "label": "DMA_RDATA",
+      "endpoints": [
+        "ifdemo:engine.dma_rdata",
+        "ifdemo:memory.dma_rdata"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:memory.dma_rdata"
+        ],
+        "targets": [
+          "ifdemo:engine.dma_rdata"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_rdata"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_rvalid",
+      "kind": "connection",
+      "class": "control",
+      "label": "DMA_RVALID",
+      "endpoints": [
+        "ifdemo:engine.dma_rvalid",
+        "ifdemo:memory.dma_rvalid"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:memory.dma_rvalid"
+        ],
+        "targets": [
+          "ifdemo:engine.dma_rvalid"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_rvalid"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_rlast",
+      "kind": "connection",
+      "class": "control",
+      "label": "DMA_RLAST",
+      "endpoints": [
+        "ifdemo:engine.dma_rlast",
+        "ifdemo:memory.dma_rlast"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:memory.dma_rlast"
+        ],
+        "targets": [
+          "ifdemo:engine.dma_rlast"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_rlast"
+      }
+    },
+    {
+      "id": "ifdemo:net.dma_rready",
+      "kind": "connection",
+      "class": "control",
+      "label": "DMA_RREADY",
+      "endpoints": [
+        "ifdemo:engine.dma_rready",
+        "ifdemo:memory.dma_rready"
+      ],
+      "direction": {
+        "sources": [
+          "ifdemo:engine.dma_rready"
+        ],
+        "targets": [
+          "ifdemo:memory.dma_rready"
+        ]
+      },
+      "source": {
+        "file": "examples/gallery/interfaces.json",
+        "selector": "ifdemo:net.dma_rready"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "gallery:interface-buses",
+      "kind": "interface",
+      "label": "接口 ↔ 信号 · 独立展开与连线聚合",
+      "include": {
+        "objects": [
+          "ifdemo:host",
+          "ifdemo:engine",
+          "ifdemo:memory"
+        ],
+        "relations": [
+          "ifdemo:net.ctrl_awaddr",
+          "ifdemo:net.ctrl_awvalid",
+          "ifdemo:net.ctrl_awready",
+          "ifdemo:net.ctrl_wdata",
+          "ifdemo:net.ctrl_wvalid",
+          "ifdemo:net.ctrl_wready",
+          "ifdemo:net.ctrl_bresp",
+          "ifdemo:net.ctrl_bvalid",
+          "ifdemo:net.ctrl_bready",
+          "ifdemo:net.dma_araddr",
+          "ifdemo:net.dma_arlen",
+          "ifdemo:net.dma_arvalid",
+          "ifdemo:net.dma_arready",
+          "ifdemo:net.dma_rdata",
+          "ifdemo:net.dma_rvalid",
+          "ifdemo:net.dma_rlast",
+          "ifdemo:net.dma_rready"
+        ]
+      },
+      "layout": {
+        "direction": "LR",
+        "interfaceSides": {
+          "ifdemo:host.m_ctrl": "right",
+          "ifdemo:engine.s_ctrl": "left",
+          "ifdemo:engine.m_dma": "right",
+          "ifdemo:memory.s_dma": "left"
+        }
+      },
+      "display": {
+        "interfaceMode": "collapsed"
+      }
+    },
+    {
+      "id": "gallery:interface-ctrl-signals",
+      "kind": "interface",
+      "label": "控制接口 · 逐信号详图",
+      "include": {
+        "objects": [
+          "ifdemo:engine.s_ctrl"
+        ],
+        "relations": [
+          "ifdemo:net.ctrl_awaddr",
+          "ifdemo:net.ctrl_awvalid",
+          "ifdemo:net.ctrl_awready",
+          "ifdemo:net.ctrl_wdata",
+          "ifdemo:net.ctrl_wvalid",
+          "ifdemo:net.ctrl_wready",
+          "ifdemo:net.ctrl_bresp",
+          "ifdemo:net.ctrl_bvalid",
+          "ifdemo:net.ctrl_bready"
+        ]
+      },
+      "layout": {
+        "direction": "LR",
+        "interfaceSides": {
+          "ifdemo:host.m_ctrl": "right",
+          "ifdemo:engine.s_ctrl": "left",
+          "ifdemo:engine.m_dma": "right",
+          "ifdemo:memory.s_dma": "left"
+        }
+      },
+      "display": {
+        "interfaceMode": "expanded"
+      }
+    },
+    {
+      "id": "gallery:interface-dma-signals",
+      "kind": "interface",
+      "label": "DMA接口 · 逐信号详图",
+      "include": {
+        "objects": [
+          "ifdemo:engine.m_dma"
+        ],
+        "relations": [
+          "ifdemo:net.dma_araddr",
+          "ifdemo:net.dma_arlen",
+          "ifdemo:net.dma_arvalid",
+          "ifdemo:net.dma_arready",
+          "ifdemo:net.dma_rdata",
+          "ifdemo:net.dma_rvalid",
+          "ifdemo:net.dma_rlast",
+          "ifdemo:net.dma_rready"
+        ]
+      },
+      "layout": {
+        "direction": "LR",
+        "interfaceSides": {
+          "ifdemo:host.m_ctrl": "right",
+          "ifdemo:engine.s_ctrl": "left",
+          "ifdemo:engine.m_dma": "right",
+          "ifdemo:memory.s_dma": "left"
+        }
+      },
+      "display": {
+        "interfaceMode": "expanded"
+      }
+    }
+  ]
+}

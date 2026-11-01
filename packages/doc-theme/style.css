@@ -2,3 +2,24 @@
 @media print{body{font-size:10pt;line-height:1.5}table{font-size:8pt;line-height:1.4}th,td{padding:4px 5px}h2{margin-top:14px}article .panel{padding:12px}.tab{padding:10px;break-inside:auto}.tab+.tab{break-before:page}.graph-box[data-kind="interface"] .static-svg svg{max-height:80mm}.appendix .fact{padding:4px 0;margin:4px 0}.appendix .fact pre{font-size:9px;line-height:1.4;margin:4px 0;padding:6px}.appendix summary{font-size:9pt}}
 @media print{.tab,.tab[hidden]{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;align-items:start;break-inside:avoid}.tab:before{grid-column:1/-1}.tab>:not(figure):not(table){grid-column:1/-1}.tab>.graph-box{grid-column:1;margin:8px 0}.tab>table{grid-column:2;margin:8px 0}.tab>p{margin:4px 0}}
 pre,code{font-family:Consolas,'Noto Sans SC',monospace}
+
+@media print{.appendix.compact{display:none}}article{overflow-wrap:anywhere}.canvas{max-width:100%}
+
+/* 章节树与正文共享层级，布局标题不进入书签。 */
+#toc ul{list-style:none;margin:0;padding:0}#toc ul ul{padding-left:12px;margin-left:5px;border-left:1px solid #49647a}
+#toc li{margin:2px 0}#toc li[hidden]{display:none!important}#toc details{margin:0}#toc summary{display:flex;gap:5px;align-items:baseline;list-style:none}
+#toc summary:before{content:'▸';color:#99b8cb;font-size:10px}#toc details[open]>summary:before{content:'▾'}
+#toc a{overflow-wrap:anywhere;line-height:1.55}#toc a[aria-current]{color:white;background:#284d68;border-radius:4px;padding-left:5px}
+.panel-title{font-size:18px;font-weight:700;margin:0 0 12px;color:#12354e}.heading-anchor{break-after:avoid}
+[data-heading-level]{line-height:1.45;break-after:avoid}[data-heading-level="1"]{font-size:26px}[data-heading-level="2"]{font-size:22px}[data-heading-level="3"]{font-size:19px}[data-heading-level="4"]{font-size:17px}[data-heading-level="5"]{font-size:16px}
+@media print{main details:not(.fact)>summary{display:none!important}[data-heading-level="1"]{font-size:21pt}[data-heading-level="2"]{font-size:17pt}[data-heading-level="3"]{font-size:14pt}[data-heading-level="4"]{font-size:12pt}[data-heading-level="5"]{font-size:11pt}}
+
+.print-toc-title{font-size:26px;font-weight:700;margin:0 0 18px}
+@media print{.print-toc-title{break-after:avoid}.print-toc-entry,.print-toc-entry a{break-inside:avoid}.print-toc-entry a{break-after:auto}main article [data-heading-level="1"]{break-before:page}}
+
+/* 大图使用同一画布；关闭后恢复文档流，打印仍只使用完整静态图。 */
+@media screen{.graph-box.diagram-expanded{position:fixed;inset:16px;z-index:1000;margin:0;display:flex;flex-direction:column;background:#f8fafc;box-shadow:0 0 0 32px #13324bb0}.diagram-expanded .canvas{flex:1;min-height:0;height:auto!important}.diagram-expanded>figcaption{padding:6px 12px;margin:0}.diagram-expanded .toolbar,.diagram-expanded .filters,.diagram-expanded .groups{flex-shrink:0}}
+/* 图内文字开关保持逐图独立，名称与端口本体不受影响。 */
+.toolbar .display-control{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;font-size:12px;cursor:pointer}
+.interface-status{padding:6px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}.interface-status.error{color:#a12635;background:#fff0f0}#selection-actions{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}#selection-actions a{display:block;width:100%;font-size:12px}@media print{.interface-status{display:none!important}}
+.interface-selection{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;background:#eaf3fb;border-top:1px solid var(--line);font-size:12px;max-height:150px;overflow:auto;flex-shrink:0}.interface-selection[hidden]{display:none!important}.interface-selection details{margin:0}.interface-selection details a{display:block;padding:2px 0}@media print{.interface-selection{display:none!important}}

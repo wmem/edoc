@@ -1,9 +1,12 @@
-import type { Diagnostic, Graph, Node, Group, Port, Connection, View, RecordEntry } from './types.ts';
+import type { Diagnostic, Graph, Node, Group, Port, Connection, View, RecordEntry,Interface } from './types.ts';
 import { EngDocError } from './errors.ts';
 import { projectPath } from './paths.ts';
+import {validateViewLayout} from './view-layout.ts';
 
 export function validateRelations(graph: Graph): void {
   const errors: Diagnostic[] = [];
+  const checkedSources = new Set<string>();
+  const interfaceOwners=new Map<string,string>();
   const report = (entry: RecordEntry, code: string, path: string, message: string) => errors.push({ code, file: entry.location.file, path: `${entry.location.path}${path}`, id: entry.id, message });
   const reference = (entry: RecordEntry, id: string, path: string, types: RecordEntry['type'][]) => {
     const target = graph.index.get(id);
@@ -11,14 +14,14 @@ export function validateRelations(graph: Graph): void {
     else if (!types.includes(target.type)) report(entry, 'REFERENCE_TYPE', path, `引用 ${id} 需要 ${types.join('/')}，实际为 ${target.type}`);
   };
   for (const entry of graph.index.values()) {
-    if (entry.entity.source) {
-      try { projectPath(graph.projectRoot, graph.projectRoot, entry.entity.source.file, false); }
+    if (entry.entity.source && !checkedSources.has(entry.entity.source.file)) {
+      try { projectPath(graph.projectRoot, graph.projectRoot, entry.entity.source.file, false); checkedSources.add(entry.entity.source.file); }
       catch (error) {
         if (error instanceof EngDocError) for (const d of error.diagnostics) report(entry, d.code, '/source/file', d.message);
         else throw error;
       }
     }
-    if(entry.type==='row' && (entry.entity as any).objectId) reference(entry,(entry.entity as any).objectId,'/objectId',['node','port','connection','document','group']);
+    if(entry.type==='row' && (entry.entity as any).objectId) reference(entry,(entry.entity as any).objectId,'/objectId',['node','port','connection','document','group','interface']);
     if(entry.type==='reference') { const e=entry.entity as any; const types=[...new Set([...graph.index.values()].map(e=>e.type))];reference(entry,e.fromId,'/fromId',types);reference(entry,e.targetId,'/targetId',types);}
     if(entry.type==='waveform') {
       const signals=(entry.entity as any).data.signal;
@@ -41,6 +44,15 @@ export function validateRelations(graph: Graph): void {
     if (entry.type === 'group') {
       (entry.entity as Group).members.forEach((id, i) => reference(entry, id, `/members/${i}`, ['node', 'port', 'group']));
     }
+    if(entry.type==='interface'){
+      if(!graph.manifest.requiredFeatures?.includes('interface-groups'))report(entry,'IR_FEATURE_REQUIRED','','接口定义需要声明 requiredFeatures: interface-groups');
+      (entry.entity as Interface).members.forEach((id,i)=>{
+        reference(entry,id,`/members/${i}`,['port']);const target=graph.index.get(id);
+        if(target?.type==='port'&&target.ownerId!==entry.ownerId)report(entry,'INTERFACE_OWNER',`/members/${i}`,'接口成员必须属于同一模块');
+        if(interfaceOwners.has(id))report(entry,'INTERFACE_MEMBER',`/members/${i}`,`端口已归属接口 ${interfaceOwners.get(id)}`);
+        else interfaceOwners.set(id,entry.id);
+      });
+    }
     if (entry.type === 'connection') {
       const connection = entry.entity as Connection;
       connection.endpoints.forEach((id, i) => reference(entry, id, `/endpoints/${i}`, ['node', 'port']));
@@ -53,9 +65,13 @@ export function validateRelations(graph: Graph): void {
     }
     if (entry.type === 'view') {
       const view = entry.entity as View;
-      view.include.objects.forEach((id, i) => reference(entry, id, `/include/objects/${i}`, ['node', 'port', 'group']));
+      validateViewLayout(graph,entry,(code,path,message)=>report(entry,code,path,message));
+      view.include.objects.forEach((id, i) => reference(entry, id, `/include/objects/${i}`, ['node', 'port', 'group','interface']));
       view.include.relations.forEach((id, i) => reference(entry, id, `/include/relations/${i}`, ['connection']));
       view.layout?.portOrder?.forEach((id, i) => reference(entry, id, `/layout/portOrder/${i}`, ['port']));
+      view.layout?.interfaceOrder?.forEach((id,i)=>reference(entry,id,`/layout/interfaceOrder/${i}`,['interface']));
+      for(const id of Object.keys(view.layout?.interfaceSides??{}))reference(entry,id,'/layout/interfaceSides/'+id,['interface']);
+      for(const id of Object.keys(view.display?.interfaceOverrides??{}))reference(entry,id,'/display/interfaceOverrides/'+id,['interface']);
       view.display?.collapsedGroups?.forEach((id, i) => reference(entry, id, `/display/collapsedGroups/${i}`, ['group']));
       const positions = new Set<string>();
       view.layout?.positions?.forEach((pos, i) => {

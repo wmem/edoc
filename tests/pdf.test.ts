@@ -21,3 +21,27 @@ test('长表格跨页保留所有行与重复表头',{timeout:40000},t=>{
  for(let i=0;i<160;i++)assert.ok(d.text.includes('ROW_SENTINEL_'+String(i).padStart(3,'0')));
  assert.ok(d.text.split('ROW_HEADER_SENTINEL').length>3);
 });
+test('PDF 书签保留模块父子路径，目录标题与面板不抢占层级',{timeout:40000},t=>{
+ const f=fixture(t);f.edit('manifest',d=>d.entryDocuments=['docs/hierarchy.mdoc']);
+ const extra=Array.from({length:80},(_,i)=>'### 查询条目 '+i+'\n说明\n').join('\n');
+ writeFileSync(join(f.root,'docs/hierarchy.mdoc'),'{% section id="modules" title="功能模块" %}\n{% section id="storage" title="存储与配置" %}\n{% section id="qspi" title="QSPI 模块" %}\n## 职责与边界\n正文\n{% panel title="布局面板" %}说明{% /panel %}\n'+extra+'\n{% /section %}\n{% /section %}\n{% /section %}');
+ const output=join(f.workspace,'hierarchy.pdf');build(['--ir',f.ir,'--project-root',f.root,'--format','pdf','--output',output]);
+ const code=`import json,sys
+from pypdf import PdfReader
+paths=[]
+def walk(items,parents=()):
+ last=None
+ for item in items:
+  if isinstance(item,list): walk(item,parents+((last,) if last else ()))
+  else:
+   last=str(item['/Title']);paths.append(parents+(last,))
+reader=PdfReader(sys.argv[1])
+walk(reader.outline)
+print(json.dumps({'paths':paths,'toc':reader.pages[1].extract_text()},ensure_ascii=False))`;
+ const result=spawnSync('python3',['-c',code,output],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stderr);
+ const data=JSON.parse(result.stdout),paths:string[][]=data.paths;
+ const first=data.toc.replace(/\s/g,'');
+ assert.ok(first.includes('目录')&&first.includes('功能模块'),'长目录首页应同时包含标题和首个条目：'+JSON.stringify(data.toc));
+ assert.ok(paths.some(p=>p.slice(-4).join('/')==='功能模块/存储与配置/QSPI 模块/职责与边界'));
+ assert.ok(paths.every(p=>!p.includes('目录')&&!p.includes('布局面板')));
+});
