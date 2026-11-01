@@ -1,0 +1,56 @@
+{
+  "views": [
+    {
+      "id": "board:flash-wiring",
+      "kind": "wiring",
+      "label": "FPGA–Flash（虚构）",
+      "include": {
+        "objects": [
+          "board:U1",
+          "board:U5",
+          "board:J1",
+          "board:qspi"
+        ],
+        "relations": [
+          "board:net.FLASH_SCK",
+          "board:net.FLASH_CS_N",
+          "board:net.FLASH_DQ0",
+          "board:net.FLASH_DQ1",
+          "board:net.FLASH_DQ2",
+          "board:net.FLASH_DQ3"
+        ]
+      },
+      "layout": {
+        "direction": "LR",
+        "routing": "orthogonal",
+        "portOrder": [
+          "board:U1.QSPI_CLK",
+          "board:U1.QSPI_CS_N",
+          "board:U1.QSPI_DQ0",
+          "board:U1.QSPI_DQ1",
+          "board:U1.QSPI_DQ2",
+          "board:U1.QSPI_DQ3",
+          "board:U5.CLK",
+          "board:U5.CS_N",
+          "board:U5.IO0",
+          "board:U5.IO1",
+          "board:U5.IO2",
+          "board:U5.IO3",
+          "board:J1.SCK"
+        ]
+      },
+      "display": {
+        "portAttributes": [
+          "ball",
+          "pin",
+          "function"
+        ],
+        "classes": [
+          "clock",
+          "control",
+          "data"
+        ]
+      }
+    }
+  ]
+}

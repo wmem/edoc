@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engdoc.local/schema/v1/object.schema.json",
+  "type": "object",
+  "properties": {
+    "objects": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "attributes": {
+                "$ref": "common.schema.json#/$defs/attributes"
+              },
+              "source": {
+                "$ref": "common.schema.json#/$defs/source"
+              },
+              "kind": {
+                "const": "node"
+              },
+              "parentId": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "ports": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/port"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "attributes": {
+                "$ref": "common.schema.json#/$defs/attributes"
+              },
+              "source": {
+                "$ref": "common.schema.json#/$defs/source"
+              },
+              "kind": {
+                "const": "group"
+              },
+              "members": {
+                "$ref": "common.schema.json#/$defs/ids"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "label",
+              "members"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "objects"
+  ],
+  "additionalProperties": false
+}

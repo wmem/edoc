@@ -1,0 +1,21 @@
+{
+  "irVersion": "1.0",
+  "projectId": "demo-board",
+  "resources": [
+    {
+      "type": "objects",
+      "path": "objects.json"
+    },
+    {
+      "type": "relations",
+      "path": "relations.json"
+    },
+    {
+      "type": "views",
+      "path": "views.json"
+    }
+  ],
+  "entryDocuments": [
+    "docs/README.md"
+  ]
+}

@@ -1,0 +1,108 @@
+# P0 IR 与查询契约
+
+本文描述已实现的 IR 1.0 子集。完整 V1 目标以独立方案仓库内已批准基线为准，本文不改变其语义。
+
+## 数据边界
+
+配置文件 `engdoc.config.json` 具有 `projectId`、`irDirectory` 两个字段。配置文件实际所在目录是允许的工程范围；所有 IR、入口文档和来源路径不得越界。P0 不执行 Adapter。使用 `--ir` 时可用 `--project-root` 指定祖先工程目录，否则范围为 IR 目录。
+
+manifest 必需字段：
+
+```json
+{
+  "irVersion": "1.0",
+  "projectId": "demo-board",
+  "resources": [
+    { "type": "objects", "path": "objects.json" },
+    { "type": "relations", "path": "relations.json" },
+    { "type": "views", "path": "views.json" }
+  ],
+  "entryDocuments": ["docs/README.md"]
+}
+```
+
+资源路径相对 manifest 所在目录；文档及 source.file 相对工程根目录。resources 可重复 type 以声明多个分片，不能重复同一实际文件。文件必须是合法 UTF-8 JSON，单个分片最多 16 MiB。所有资源校验通过才建立可供查询的图，失败不返回部分成功结果。
+
+`adapterVersion` 可选，P0 样例没有 Adapter，因此不伪造其版本。表格、时序、独立 Reference 和文档条款索引留在后续阶段；未知资源类型明确失败。当前仅接收 `1.0`，尚未完成 P4 的同 major 兼容性策略。
+
+## 稳定身份与对象
+
+所有 node、port、group、connection、view 的 ID 在项目内跨文件全局唯一，非空且不能全部为空白。ID 由项目约定的符号身份提供，不由 label、行号或内容 hash 派生。改变 label 不应改 ID。没有强制把协议名或某一硬件命名法写入 ID 格式。
+
+| 资源 | 文件外层 | 字段 |
+| --- | --- | --- |
+| node | objects 数组 | id、kind=node、label；可选 parentId、ports、attributes、source |
+| port | node.ports 数组 | id、label、direction；所属 node 从嵌套位置推导 |
+| group | objects 数组 | id、kind=group、label、members；可选 attributes、source |
+| connection | relations 数组 | id、kind=connection、class、endpoints；可选 label、direction、attributes、source |
+| view | views 数组 | id、kind、include；可选 label、layout、display、source |
+
+node.parentId 仅指向 node，禁止自循环和多节点循环；group.members 只指向 node、port、group，允许多个组共享同一子组，但禁止 group 循环。两类关系独立，不能用逻辑分组替代层级。
+
+端口 direction 为 in/out/inout/passive/unknown。端口可用 width 表示已解析正整数位宽，或保留 widthExpr、parameterContext；不自行计算表达式、不猜测未知宽度或方向。可选 groupId 指向逻辑分组，clockDomainId 指向已声明 node/port/group；通用层只验证引用存在和类型，不推断时钟语义。
+
+attributes 是开放 JSON 对象，Ball、Pin、功能名和项目自定义信息均在此保存。端点、父子和引用关系必须使用正式字段，不能藏在 attributes 里代替正式关系。P0 不解释领域字段，也不验证字段是否符合真实硬件。
+
+source 为 `{ "file": "工程相对路径", "selector": "稳定符号选择器", "line": 1 }`，selector/line 可选。来源路径会做边界检查；来源文件可未随工程打包，此时只保留追溯信息，不声称已验证其存在或内容。实际加载资源与入口文档必须存在。符号链接不能绕过边界。
+
+## 多端点连接
+
+connection.endpoints 至少有两个不同的 node/port ID。一个 Net 只保存一条 connection，三端点不拆成三条两两连线。它的 class 是非空字符串，允许 clock/data/control 等内置建议类别及项目自定义类别；通用层不根据名称推测电气类型。
+
+可选 direction 为 `{ "sources": ["端点ID"], "targets": ["端点ID"] }`，两数组非空、各自不重复、互不相交，所有 ID 必须属于该连接。它不要求覆盖所有被动端点，不根据端口方向自动生成。双向或未知方向的 Net 可省略 direction。
+
+view.kind 允许 architecture/interface/wiring/state，共用同一事实。include.objects 引用 node/port/group，include.relations 引用 connection。暂时不显示某个对象不会删除它，也不影响 query。P0 不检查视图是否包含关系的全部可见端点，P1 必须决定边界端点如何准确显示，不能改写原连接。
+
+layout 提供 direction、routing、portOrder 和 positions；display 提供 portAttributes（字段名）、collapsedGroups 和 classes。位置只存放于视图；禁止在视图复制 endpoints、引脚值或任意 HTML/CSS。P0 验证引用，不承诺已经应用布局或过滤。
+
+## 校验与诊断
+
+机器 Schema 位于 packages/schema，使用 JSON Schema Draft 2020-12 的受控子集。本地校验器只支持这些 Schema 使用的关键字；新 Schema 引入未支持关键字会失败。它不接受任意第三方 Schema，也没有通过 JSON Schema 官方全量一致性测试。
+
+字段结构校验之后检查跨分片唯一 ID、引用类型和存在性、方向所属端点、层级及分组循环、视图引用、重复布局提示和路径边界。可一次报告同一资源中的多个错误；结构错误时停止语义遍历。
+
+诊断结构：
+
+```json
+{
+  "code": "REFERENCE_MISSING",
+  "file": "/project/ir/relations.json",
+  "path": "/relations/0/endpoints/2",
+  "id": "board:net.FLASH_SCK",
+  "message": "引用不存在：missing"
+}
+```
+
+id 仅在可识别对象时提供；path 是 JSON Pointer。Schema 和通用引用检查不等于 RTL/EDA 一致性验收。
+
+## 结构化查询
+
+`query --id ID --format json` 返回：
+
+| 字段 | 含义 |
+| --- | --- |
+| irVersion、projectId | 数据协议和项目身份 |
+| target | id、type、原始 entity、location；端口另有 ownerId |
+| target.location | IR 文件及 JSON Pointer；P0 不虚构 HTML/PDF 文内锚点 |
+| directRelations | 端口或节点直接相连的完整 connection；节点包含自己的端口连接 |
+| expansion | depth、maxItems、truncated、items |
+
+默认 depth=0，只返回目标和必要的直接连接，不递归展开。查询 connection 时，其完整 endpoints 已在 target.entity 中，directRelations 不重复该 connection。节点目标保留自己的端口列表。
+
+显式 `--depth 1` 可展开 connection 端点、node 的端口/父节点/直接连接、port 的所属节点/分组/时钟域/直接连接、group 成员、view 的 include。深度范围 0–10。此展开不是全面的反向引用或 Spec 覆盖查询，后续按基线增加文档与验证覆盖索引。
+
+`--max-items` 默认 1000，范围 1–10000，限制展开实体数量（不含 target）。到达限额会标记 truncated=true；不会截短目标或直接连接的 endpoints。查询只使用本次重新加载且校验通过的 IR，没有增量缓存。
+
+CLI 成功数据写 stdout；错误诊断写 stderr。query 默认 JSON，validate 默认可读文字，也可指定 JSON。退出码：0 成功、1 数据/文件错误、2 命令用法错误、3 未找到查询 ID。build/export 在 P0 明确未支持。
+
+## TypeScript API
+
+```typescript
+import { loadConfig, loadIR, query, EngDocError } from './packages/core/index.ts';
+
+const config = loadConfig('examples/board-flash/engdoc.config.json');
+const graph = loadIR(config.irDirectory, config);
+const result = query(graph, 'board:net.FLASH_SCK', { depth: 1 });
+```
+
+不通过生成文档读取事实，不回写源项目，不把未知工程值变成猜测值。HTML/PDF、文档引用和渲染安全验证在 P2–P4 验收。

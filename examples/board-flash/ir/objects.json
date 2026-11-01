@@ -1,0 +1,243 @@
+{
+  "objects": [
+    {
+      "id": "board:U1",
+      "kind": "node",
+      "label": "FPGA（虚构）",
+      "attributes": {
+        "fixture": true
+      },
+      "ports": [
+        {
+          "id": "board:U1.QSPI_CLK",
+          "label": "QSPI_CLK",
+          "direction": "out",
+          "width": 1,
+          "attributes": {
+            "ball": "A12",
+            "function": "QSPI_CLK"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U1.QSPI_CLK"
+          }
+        },
+        {
+          "id": "board:U1.QSPI_CS_N",
+          "label": "QSPI_CS_N",
+          "direction": "out",
+          "width": 1,
+          "attributes": {
+            "ball": "B11",
+            "function": "QSPI_CS_N"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U1.QSPI_CS_N"
+          }
+        },
+        {
+          "id": "board:U1.QSPI_DQ0",
+          "label": "QSPI_DQ0",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "ball": "C10",
+            "function": "QSPI_DQ0"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U1.QSPI_DQ0"
+          }
+        },
+        {
+          "id": "board:U1.QSPI_DQ1",
+          "label": "QSPI_DQ1",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "ball": "D10",
+            "function": "QSPI_DQ1"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U1.QSPI_DQ1"
+          }
+        },
+        {
+          "id": "board:U1.QSPI_DQ2",
+          "label": "QSPI_DQ2",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "ball": "E10",
+            "function": "QSPI_DQ2"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U1.QSPI_DQ2"
+          }
+        },
+        {
+          "id": "board:U1.QSPI_DQ3",
+          "label": "QSPI_DQ3",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "ball": "F10",
+            "function": "QSPI_DQ3"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U1.QSPI_DQ3"
+          }
+        }
+      ],
+      "source": {
+        "file": "ir/objects.json",
+        "selector": "U1"
+      }
+    },
+    {
+      "id": "board:U5",
+      "kind": "node",
+      "label": "Flash（虚构）",
+      "attributes": {
+        "fixture": true
+      },
+      "ports": [
+        {
+          "id": "board:U5.CLK",
+          "label": "CLK",
+          "direction": "in",
+          "width": 1,
+          "attributes": {
+            "pin": "6",
+            "function": "CLK"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U5.CLK"
+          }
+        },
+        {
+          "id": "board:U5.CS_N",
+          "label": "CS_N",
+          "direction": "in",
+          "width": 1,
+          "attributes": {
+            "pin": "1",
+            "function": "CS_N"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U5.CS_N"
+          }
+        },
+        {
+          "id": "board:U5.IO0",
+          "label": "IO0",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "pin": "5",
+            "function": "IO0"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U5.IO0"
+          }
+        },
+        {
+          "id": "board:U5.IO1",
+          "label": "IO1",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "pin": "2",
+            "function": "IO1"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U5.IO1"
+          }
+        },
+        {
+          "id": "board:U5.IO2",
+          "label": "IO2",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "pin": "3",
+            "function": "IO2"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U5.IO2"
+          }
+        },
+        {
+          "id": "board:U5.IO3",
+          "label": "IO3",
+          "direction": "inout",
+          "width": 1,
+          "attributes": {
+            "pin": "7",
+            "function": "IO3"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "U5.IO3"
+          }
+        }
+      ],
+      "source": {
+        "file": "ir/objects.json",
+        "selector": "U5"
+      }
+    },
+    {
+      "id": "board:J1",
+      "kind": "node",
+      "label": "测试连接器（虚构）",
+      "ports": [
+        {
+          "id": "board:J1.SCK",
+          "label": "SCK_PROBE",
+          "direction": "passive",
+          "attributes": {
+            "pin": "1",
+            "function": "SCK probe"
+          },
+          "source": {
+            "file": "ir/objects.json",
+            "selector": "J1.SCK"
+          }
+        }
+      ],
+      "source": {
+        "file": "ir/objects.json",
+        "selector": "J1"
+      }
+    },
+    {
+      "id": "board:qspi",
+      "kind": "group",
+      "label": "QSPI",
+      "members": [
+        "board:U1.QSPI_CLK",
+        "board:U1.QSPI_CS_N",
+        "board:U1.QSPI_DQ0",
+        "board:U1.QSPI_DQ1",
+        "board:U1.QSPI_DQ2",
+        "board:U1.QSPI_DQ3",
+        "board:U5.CLK",
+        "board:U5.CS_N",
+        "board:U5.IO0",
+        "board:U5.IO1",
+        "board:U5.IO2",
+        "board:U5.IO3"
+      ]
+    }
+  ]
+}

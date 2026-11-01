@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engdoc.local/schema/v1/common.schema.json",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "$ref": "#/$defs/path"
+        },
+        "selector": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false
+    },
+    "attributes": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direction": {
+          "enum": [
+            "in",
+            "out",
+            "inout",
+            "passive",
+            "unknown"
+          ]
+        },
+        "groupId": {
+          "$ref": "#/$defs/id"
+        },
+        "attributes": {
+          "$ref": "#/$defs/attributes"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "widthExpr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parameterContext": {
+          "type": "object"
+        },
+        "clockDomainId": {
+          "$ref": "#/$defs/id"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "direction"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

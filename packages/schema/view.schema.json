@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engdoc.local/schema/v1/view.schema.json",
+  "type": "object",
+  "properties": {
+    "views": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "architecture",
+              "interface",
+              "wiring",
+              "state"
+            ]
+          },
+          "include": {
+            "type": "object",
+            "properties": {
+              "objects": {
+                "$ref": "common.schema.json#/$defs/ids"
+              },
+              "relations": {
+                "$ref": "common.schema.json#/$defs/ids"
+              }
+            },
+            "required": [
+              "objects",
+              "relations"
+            ],
+            "additionalProperties": false
+          },
+          "layout": {
+            "type": "object",
+            "properties": {
+              "direction": {
+                "enum": [
+                  "LR",
+                  "RL",
+                  "TB",
+                  "BT"
+                ]
+              },
+              "routing": {
+                "enum": [
+                  "orthogonal",
+                  "polyline"
+                ]
+              },
+              "portOrder": {
+                "$ref": "common.schema.json#/$defs/ids"
+              },
+              "positions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "objectId": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "objectId",
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "display": {
+            "type": "object",
+            "properties": {
+              "portAttributes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "collapsedGroups": {
+                "$ref": "common.schema.json#/$defs/ids"
+              },
+              "classes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "include"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "views"
+  ],
+  "additionalProperties": false
+}

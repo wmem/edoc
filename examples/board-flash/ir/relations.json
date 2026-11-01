@@ -1,0 +1,106 @@
+{
+  "relations": [
+    {
+      "id": "board:net.FLASH_SCK",
+      "kind": "connection",
+      "class": "clock",
+      "label": "FLASH_SCK",
+      "endpoints": [
+        "board:U1.QSPI_CLK",
+        "board:U5.CLK",
+        "board:J1.SCK"
+      ],
+      "source": {
+        "file": "ir/relations.json",
+        "selector": "FLASH_SCK"
+      },
+      "direction": {
+        "sources": [
+          "board:U1.QSPI_CLK"
+        ],
+        "targets": [
+          "board:U5.CLK",
+          "board:J1.SCK"
+        ]
+      }
+    },
+    {
+      "id": "board:net.FLASH_CS_N",
+      "kind": "connection",
+      "class": "control",
+      "label": "FLASH_CS_N",
+      "endpoints": [
+        "board:U1.QSPI_CS_N",
+        "board:U5.CS_N"
+      ],
+      "source": {
+        "file": "ir/relations.json",
+        "selector": "FLASH_CS_N"
+      },
+      "direction": {
+        "sources": [
+          "board:U1.QSPI_CS_N"
+        ],
+        "targets": [
+          "board:U5.CS_N"
+        ]
+      }
+    },
+    {
+      "id": "board:net.FLASH_DQ0",
+      "kind": "connection",
+      "class": "data",
+      "label": "FLASH_DQ0",
+      "endpoints": [
+        "board:U1.QSPI_DQ0",
+        "board:U5.IO0"
+      ],
+      "source": {
+        "file": "ir/relations.json",
+        "selector": "FLASH_DQ0"
+      }
+    },
+    {
+      "id": "board:net.FLASH_DQ1",
+      "kind": "connection",
+      "class": "data",
+      "label": "FLASH_DQ1",
+      "endpoints": [
+        "board:U1.QSPI_DQ1",
+        "board:U5.IO1"
+      ],
+      "source": {
+        "file": "ir/relations.json",
+        "selector": "FLASH_DQ1"
+      }
+    },
+    {
+      "id": "board:net.FLASH_DQ2",
+      "kind": "connection",
+      "class": "data",
+      "label": "FLASH_DQ2",
+      "endpoints": [
+        "board:U1.QSPI_DQ2",
+        "board:U5.IO2"
+      ],
+      "source": {
+        "file": "ir/relations.json",
+        "selector": "FLASH_DQ2"
+      }
+    },
+    {
+      "id": "board:net.FLASH_DQ3",
+      "kind": "connection",
+      "class": "data",
+      "label": "FLASH_DQ3",
+      "endpoints": [
+        "board:U1.QSPI_DQ3",
+        "board:U5.IO3"
+      ],
+      "source": {
+        "file": "ir/relations.json",
+        "selector": "FLASH_DQ3"
+      }
+    }
+  ]
+}
