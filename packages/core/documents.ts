@@ -27,6 +27,7 @@ export function validateDocuments(graph:Graph){
  const errors:any[]=[];
  const types:Record<string,string[]>= {diagram:['view'],interface:['view','node','group'],table:['table'],waveform:['waveform']};
  for(const {file,ast} of documentAST(graph)){
+  const containers=(node:any,parent?:any)=>{if(node.type==='tag'&&node.tag==='tab'&&parent?.tag!=='tabs')errors.push({code:'DOCUMENT_CONTAINER',file,path:'',message:'tab 必须直接位于 tabs 中'});if(node.type==='tag'&&node.tag==='tabs'){const tabs=node.children.filter((c:any)=>c.type==='tag'&&c.tag==='tab');if(!tabs.length||node.children.some((c:any)=>c.type!=='tag'||c.tag!=='tab')||new Set(tabs.map((c:any)=>c.attributes.name)).size!==tabs.length)errors.push({code:'DOCUMENT_CONTAINER',file,path:'',message:'tabs 必须包含名称唯一的 tab'});}for(const child of node.children??[])containers(child,node);};containers(ast);
   for(const error of Markdoc.validate(ast,{tags})) errors.push({code:'DOCUMENT_TAG',file,path:`#L${(error.lines?.[0]??0)+1}`,message:error.error.message});
   for(const node of ast.walk()){
    if(node.type==='tag'){

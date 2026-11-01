@@ -33,3 +33,5 @@ export ENGDOC_CHROMIUM=/path/to/chromium/chromium_headless_shell-1243/chrome-hea
 - Windows/macOS 未在本轮实际运行；Node 入口与项目转换脚本应可移植，文件权限和符号链接需在目标平台复验。
 - 样例是虚构工程。MAC RTL 仅提供接口声明，Adapter 明确仅解析所示 ANSI 声明/整数参数子集，不声称理解完整 SystemVerilog 或完成 MAC 功能仿真。
 - 自动布局针对适度规模图形；复杂工程应拆视图并使用显式位置提示，不能据此宣称任意密度均无需调整。
+
+PDF 结构测试另外依赖 Python pypdf（requirements-test.txt 锁定本轮版本）；视觉检查使用 Poppler 的 pdftoppm。它们不是 build HTML/PDF 的运行依赖。可用 `python3 -m pip install -r requirements-test.txt` 配置结构测试环境。

@@ -37,28 +37,61 @@
         "mac:top.prdata",
         "mac:top.pready"
       ]
+    },
+    {
+      "id": "mac:pipeline-group",
+      "kind": "group",
+      "label": "Datapath group",
+      "members": [
+        "mac:tx",
+        "mac:rx",
+        "mac:fifo"
+      ]
     }
   ],
   "nodes": [
     {
       "id": "mac:tx",
       "kind": "node",
-      "label": "TX datapath"
+      "label": "TX datapath",
+      "parentId": "mac:data-plane"
     },
     {
       "id": "mac:rx",
       "kind": "node",
-      "label": "RX datapath"
+      "label": "RX datapath",
+      "parentId": "mac:data-plane"
     },
     {
       "id": "mac:fifo",
       "kind": "node",
-      "label": "RX FIFO"
+      "label": "RX FIFO",
+      "parentId": "mac:data-plane"
     },
     {
       "id": "mac:control",
       "kind": "node",
       "label": "Control / APB"
+    },
+    {
+      "id": "mac:data-plane",
+      "kind": "node",
+      "label": "Data plane"
+    },
+    {
+      "id": "mac:state.idle",
+      "kind": "node",
+      "label": "IDLE"
+    },
+    {
+      "id": "mac:state.active",
+      "kind": "node",
+      "label": "ACTIVE"
+    },
+    {
+      "id": "mac:state.hold",
+      "kind": "node",
+      "label": "HOLD"
     }
   ],
   "relations": [
@@ -133,6 +166,60 @@
           "mac:control"
         ]
       }
+    },
+    {
+      "id": "mac:transition.start",
+      "kind": "connection",
+      "class": "data",
+      "label": "valid",
+      "endpoints": [
+        "mac:state.idle",
+        "mac:state.active"
+      ],
+      "direction": {
+        "sources": [
+          "mac:state.idle"
+        ],
+        "targets": [
+          "mac:state.active"
+        ]
+      }
+    },
+    {
+      "id": "mac:transition.stall",
+      "kind": "connection",
+      "class": "control",
+      "label": "!ready",
+      "endpoints": [
+        "mac:state.active",
+        "mac:state.hold"
+      ],
+      "direction": {
+        "sources": [
+          "mac:state.active"
+        ],
+        "targets": [
+          "mac:state.hold"
+        ]
+      }
+    },
+    {
+      "id": "mac:transition.resume",
+      "kind": "connection",
+      "class": "event",
+      "label": "ready",
+      "endpoints": [
+        "mac:state.hold",
+        "mac:state.active"
+      ],
+      "direction": {
+        "sources": [
+          "mac:state.hold"
+        ],
+        "targets": [
+          "mac:state.active"
+        ]
+      }
     }
   ],
   "views": [
@@ -145,7 +232,8 @@
           "mac:tx",
           "mac:rx",
           "mac:fifo",
-          "mac:control"
+          "mac:control",
+          "mac:data-plane"
         ],
         "relations": [
           "mac:rel.txctl",
@@ -156,7 +244,29 @@
       },
       "layout": {
         "direction": "LR",
-        "routing": "orthogonal"
+        "routing": "orthogonal",
+        "positions": [
+          {
+            "objectId": "mac:control",
+            "x": 0,
+            "y": 220
+          },
+          {
+            "objectId": "mac:tx",
+            "x": 400,
+            "y": 0
+          },
+          {
+            "objectId": "mac:rx",
+            "x": 400,
+            "y": 220
+          },
+          {
+            "objectId": "mac:fifo",
+            "x": 800,
+            "y": 220
+          }
+        ]
       }
     },
     {
@@ -198,6 +308,27 @@
           "mac:apb"
         ],
         "relations": []
+      },
+      "layout": {
+        "direction": "LR",
+        "routing": "orthogonal"
+      }
+    },
+    {
+      "id": "mac:tx-state",
+      "kind": "state",
+      "label": "TX state（规范示意）",
+      "include": {
+        "objects": [
+          "mac:state.idle",
+          "mac:state.active",
+          "mac:state.hold"
+        ],
+        "relations": [
+          "mac:transition.start",
+          "mac:transition.stall",
+          "mac:transition.resume"
+        ]
       },
       "layout": {
         "direction": "LR",

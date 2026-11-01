@@ -6,14 +6,23 @@
 {% panel title="接口视角" %}
 {% tabs %}
 {% tab name="TX" %}
+
+TX 视角独有正文：发送接口。
+
 {% diagram id="mac:tx-view" /%}
 {% interface id="mac:tx-axis" mode="detailed" /%}
 {% /tab %}
 {% tab name="RX" %}
+
+RX 视角独有正文：接收接口。
+
 {% diagram id="mac:rx-view" /%}
 {% interface id="mac:rx-axis" mode="detailed" /%}
 {% /tab %}
 {% tab name="APB4" %}
+
+APB4 视角独有正文：控制接口。
+
 {% diagram id="mac:apb-view" /%}
 {% interface id="mac:apb" mode="detailed" /%}
 {% /tab %}
@@ -29,4 +38,11 @@ TX、RX、控制与 FIFO 的结构关系是项目补充语义，通用工具不�
 
 {% /panel %}
 {% /columns %}
+{% /section %}
+
+{% section id="mac:states" title="状态图（规范示意）" %}
+
+下图表达状态与带条件标签的迁移，不宣称从 RTL 自动解析 FSM。
+
+{% diagram id="mac:tx-state" /%}
 {% /section %}

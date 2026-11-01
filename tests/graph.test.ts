@@ -19,3 +19,4 @@ test('端口位于节点边缘、框不重叠、过滤不丢连接端点',async 
  for(const n of s.nodes) for(const p of n.ports) assert.ok(p.x===n.x||p.x===n.x+n.width);
  for(const a of s.nodes)for(const b of s.nodes)if(a!==b) assert.ok(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y);
 });
+test('相反状态迁移使用分离的条件标签，避免重叠',async t=>{const f=fixture(t);f.edit('objects',d=>d.objects=[{id:'a',kind:'node',label:'A'},{id:'b',kind:'node',label:'B'}]);f.edit('relations',d=>d.relations=[{id:'ab',kind:'connection',class:'control',label:'!ready',endpoints:['a','b']},{id:'ba',kind:'connection',class:'event',label:'ready',endpoints:['b','a']}]);f.edit('views',d=>d.views=[{id:'states',kind:'state',include:{objects:['a','b'],relations:['ab','ba']}}]);const s=await scene(f.load(),'states');assert.ok(Math.abs(s.nets[0].hub.y-s.nets[1].hub.y)>30);assert.match(svg(s,false),/!ready/);});

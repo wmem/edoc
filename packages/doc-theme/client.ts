@@ -21,6 +21,7 @@ for(const holder of document.querySelectorAll<HTMLElement>('[data-diagram]')){
   graph.addNode({id:n.id,x:n.x,y:n.y,width:n.width,height:n.height,markup,attrs,ports:{groups:{absolute:{position:{name:'absolute'},attrs:{circle:{r:4,magnet:false,stroke:'#447599',fill:'white'}}}},items:n.ports.map(p=>({id:p.id,group:'absolute',args:{x:p.x-n.x,y:p.y-n.y}}))},data:{entityId:n.id}});
  }
  for(const n of s.nodes)if(n.parentId&&graph.getCellById(n.parentId))graph.getCellById(n.parentId).addChild(graph.getCellById(n.id));
+ for(const n of s.nodes)if(s.nodes.some(child=>child.parentId===n.id)){const parent=graph.getCellById(n.id);parent.toBack({deep:false});parent.attr('body/fill','#f1f6f9');}
  const connectionCells=new Map<string,string[]>();
  for(const net of s.nets){
   const style=styles[net.class]??styles.other;
@@ -38,11 +39,11 @@ for(const holder of document.querySelectorAll<HTMLElement>('[data-diagram]')){
  holder.querySelector('[data-action=fit]')!.addEventListener('click',fit);
  holder.querySelector('[data-action=plus]')!.addEventListener('click',()=>graph.zoom(.15));
  holder.querySelector('[data-action=minus]')!.addEventListener('click',()=>graph.zoom(-.15));
- holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));panel.textContent='选择图中对象查看工程属性';fit();});
+ holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));s.nodes.forEach(n=>graph.getCellById(n.id).attr('body/stroke','#93a9bd'));panel.textContent='选择图中对象查看工程属性';fit();});
  holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const blob=new Blob([holder.querySelector('.static-svg')!.innerHTML.replace('<defs>', '<style>'+document.head.querySelector('style')!.textContent+'</style><defs>')],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
- const filtered=new Set<string>(),collapsed=new Set<string>();
+ const filtered=new Set<string>(s.visibleClasses?s.nets.filter(n=>!s.visibleClasses!.includes(n.class)).map(n=>n.class):[]),collapsed=new Set<string>();
  function visibility(){for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));for(const id of connectionCells.get(net.id)!)graph.getCellById(id).setVisible(!hide);}}
- for(const cls of new Set(s.nets.map(n=>n.class))){const label=document.createElement('label');const check=document.createElement('input');check.type='checkbox';check.checked=true;check.dataset.class=cls;label.append(check,document.createTextNode(cls));holder.querySelector('.filters')!.append(label);check.onchange=()=>{check.checked?filtered.delete(cls):filtered.add(cls);visibility();};}
+ for(const cls of new Set(s.nets.map(n=>n.class))){const label=document.createElement('label');const check=document.createElement('input');check.type='checkbox';check.checked=!filtered.has(cls);check.dataset.class=cls;label.append(check,document.createTextNode(cls));holder.querySelector('.filters')!.append(label);check.onchange=()=>{check.checked?filtered.delete(cls):filtered.add(cls);visibility();};}
  for(const group of s.groups.filter(g=>g.members.some(id=>s.nodes.some(n=>n.id===id||n.ports.some(p=>p.id===id))))){
   const button=document.createElement('button');button.textContent='总览 '+group.label;button.dataset.group=group.id;holder.querySelector('.groups')!.append(button);
   const related=s.nets.filter(n=>group.members.some(p=>n.endpoints.includes(p)));
@@ -50,7 +51,7 @@ for(const holder of document.querySelectorAll<HTMLElement>('[data-diagram]')){
   const busIds:string[]=[];const members=s.nodes.filter(n=>group.members.includes(n.id));
   button.onclick=()=>{if(collapsed.has(group.id)){collapsed.delete(group.id);busIds.splice(0).forEach(id=>graph.removeCell(id));members.forEach(n=>graph.getCellById(n.id).show());button.textContent='总览 '+group.label;}else{collapsed.add(group.id);button.textContent='展开 '+group.label;if(members.length){members.forEach(n=>graph.getCellById(n.id).hide());const aggregate=graph.addNode({id:'aggregate:'+group.id,shape:'rect',x:members[0].x,y:members[0].y,width:200,height:90,attrs:{body:{fill:'#eaf3f7',stroke:'#52788e',rx:10},label:{text:group.label+'\n'+related.length+' independent nets',fontFamily:'Noto Sans SC'}},data:{entityId:group.id}});busIds.push(aggregate.id);for(const net of related){for(const endpoint of net.endpoints){const owner=s.nodes.find(n=>n.id===endpoint||n.ports.some(p=>p.id===endpoint))!;if(members.some(n=>n.id===owner.id))continue;const edge=graph.addEdge({source:{cell:aggregate.id},target:{cell:owner.id,...(endpoint!==owner.id?{port:endpoint}:{})},router:{name:'orth'},attrs:{line:{stroke:(styles[net.class]??styles.other).color,targetMarker:null}},labels:[{attrs:{label:{text:net.label}}}],data:{entityId:net.id}});busIds.push(edge.id);}}}else owners.slice(1).forEach((id,i)=>{const bus=graph.addEdge({id:'bus:'+group.id+':'+i,source:{cell:owners[0]},target:{cell:id},router:{name:'orth'},attrs:{line:{stroke:'#52687d',strokeWidth:5,targetMarker:null}},labels:[{attrs:{label:{text:`${group.label} · ${related.length} independent nets`}}}],data:{entityId:group.id}});busIds.push(bus.id);});select(group.id);}visibility();};if(s.collapsedGroups.includes(group.id))button.click();
  }
- fit();new ResizeObserver(()=>{graph.resize(canvas.clientWidth,height);fit();}).observe(canvas);
+ visibility();fit();new ResizeObserver(()=>{graph.resize(canvas.clientWidth,height);fit();}).observe(canvas);
 }
 for(const tabs of document.querySelectorAll<HTMLElement>('.tabs')){
  const children=[...tabs.children].filter(e=>e.classList.contains('tab')) as HTMLElement[];

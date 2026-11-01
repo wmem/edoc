@@ -1,4 +1,4 @@
-id,label
-board:U1,FPGA（虚构）
-board:U5,Flash（虚构）
-board:J1,测试连接器（虚构）
+id,label,numbering
+board:U1,FPGA（虚构）,ball
+board:U5,Flash（虚构）,pin
+board:J1,测试连接器（虚构）,pin

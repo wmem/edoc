@@ -13,9 +13,12 @@ devices=csvrows('devices.csv');pins=csvrows('pins.csv');nets=csvrows('nets.csv')
 for rows in [devices,pins,nets]:unique(rows)
 objects={d['id']:{'id':d['id'],'kind':'node','label':d['label'],'ports':[],'source':src('devices.csv',d['id'])}for d in devices}
 relations={n['id']:{'id':n['id'],'kind':'connection','class':n['class'],'label':n['label'],'endpoints':[],'source':src('nets.csv',n['id'])}for n in nets}
+numbering={d['id']:d['numbering']for d in devices}
 for p in pins:
  if p['device']not in objects or p['net']not in relations:raise ValueError('源网表引用了未声明器件或 Net')
  if not p['direction']:raise ValueError('方向缺失，必须显式填写 unknown')
+ field=numbering[p['device']]
+ if field not in ['ball','pin']or not p.get(field):raise ValueError('物理编号缺失，请明确填写 unknown 或已知编号')
  port={'id':p['id'],'label':p['label'],'direction':p['direction'],'attributes':{k:p[k]for k in ['ball','pin','function']if p[k]},'source':src('pins.csv',p['id'])}
  if p['width']:port['width']=int(p['width'])
  objects[p['device']]['ports'].append(port);relations[p['net']]['endpoints'].append(p['id'])

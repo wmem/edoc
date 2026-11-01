@@ -28,3 +28,5 @@ test('未来兼容 minor 保留可选字段，拒绝未知必需能力',t=>{
  const f=fixture(t);f.edit('manifest',d=>{d.irVersion='1.1';d.futureOptional='metadata';});f.edit('objects',d=>d.objects[0].futureOptional=true);assert.equal((f.load().index.get('board:U1')?.entity as any).futureOptional,true);
  f.edit('manifest',d=>d.requiredFeatures=['future-executable']);expectCode(f.load,'IR_FEATURE');
 });
+test('接口 overview 汇总分组，detailed 保留真实端口',async t=>{const overview=doc(t,'{% interface id="board:U1" mode="overview" /%}');const a=await renderDocument(overview.load(),'x');assert.match(a.chapters,/interface-overview/);assert.match(a.chapters,/QSPI/);assert.ok(!a.chapters.includes('QSPI_DQ0</a>'));const detailed=doc(t,'{% interface id="board:U1" mode="detailed" /%}');assert.match((await renderDocument(detailed.load(),'x')).chapters,/QSPI_DQ0/);});
+test('Tabs 容器和名称必须有效',t=>{expectCode(doc(t,'{% tab name="outside" %}text{% /tab %}').load,'DOCUMENT_CONTAINER');expectCode(doc(t,'{% tabs %}\n{% tab name="same" %}a{% /tab %}\n{% tab name="same" %}b{% /tab %}\n{% /tabs %}').load,'DOCUMENT_CONTAINER');});

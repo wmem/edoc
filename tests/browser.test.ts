@@ -22,7 +22,7 @@ test('两个项目单文件 file:// 断网、交互、引用、窄屏与打印�
   const first=page.locator('[data-diagram]').first();await first.scrollIntoViewIfNeeded();
   const zoom=await page.evaluate(()=>window.EngDocGraphs[0].zoom());await first.locator('[data-action=plus]').click();assert.ok(await page.evaluate(()=>window.EngDocGraphs[0].zoom())>zoom);
   await first.locator('[data-action=fit]').click();
-  await first.locator('.x6-node rect').first().click();await page.locator('#properties').getByText(/./).count();assert.match(await page.locator('#properties').innerText(),/id/);
+  await first.locator(name==='fpga-mac'?'.x6-node[data-cell-id="mac:tx"] rect':'.x6-node[data-cell-id="board:U1"] rect').click();await page.locator('#properties').getByText(/./).count();assert.match(await page.locator('#properties').innerText(),/id/);
   if(name==='board-flash'){
    await first.locator('input[data-class="clock"]').uncheck();assert.equal(await page.evaluate(()=>window.EngDocGraphs[0].getCellById('branch:board:net.FLASH_SCK:0').isVisible()),false);
    await first.locator('input[data-class="clock"]').check();
@@ -31,9 +31,10 @@ test('两个项目单文件 file:// 断网、交互、引用、窄屏与打印�
    const data=await page.locator('#engdoc-data').textContent();assert.equal(JSON.parse(data!).scenes['board:flash-wiring'].nets[0].endpoints.length,3);
    const download=page.waitForEvent('download');await first.locator('[data-action=svg]').click();assert.ok((await download).suggestedFilename().endsWith('.svg'));
   }else{
+   await first.locator('[data-group="mac:pipeline-group"]').click();assert.equal(await page.evaluate(()=>window.EngDocGraphs[0].getCellById('mac:tx').isVisible()),false);await first.locator('[data-group="mac:pipeline-group"]').click();assert.equal(await page.evaluate(()=>window.EngDocGraphs[0].getCellById('mac:tx').isVisible()),true);
    await page.getByRole('button',{name:'RX',exact:true}).click();assert.equal(await page.locator('.tab[data-name="RX"]').isVisible(),true);
    await page.getByRole('button',{name:'APB4',exact:true}).click();assert.equal(await page.locator('.tab[data-name="APB4"]').isVisible(),true);
-   assert.match(await page.locator('.wave').innerText(),/规范示意/);
+   assert.match(await page.locator('.wave').innerText(),/规范示意/);assert.match(await page.locator('.static-svg text').first().evaluate(e=>getComputedStyle(e).fontFamily),/Noto Sans SC/);await page.locator('#search').fill('接收接口');assert.ok(await page.locator('#results a').count()>0);
   }
   await page.locator('#search').fill(name==='board-flash'?'A12':'MAC-TX-001');assert.ok(await page.locator('#results a').count()>0);
   await page.locator('#results a').first().click();assert.ok((await page.evaluate(()=>location.hash)).startsWith('#ed-'));
