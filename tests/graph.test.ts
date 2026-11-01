@@ -1,9 +1,11 @@
 import test from 'node:test';
+import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers.ts';
 import {scene,svg} from '../packages/render-graph/index.ts';
 test('同一三端点 Net 渲染三分支，Ball/Pin 来自同一事实',async t=>{
  const f=fixture(t); const s=await scene(f.load(),'board:flash-wiring'); const n=s.nets.find(n=>n.id==='board:net.FLASH_SCK')!;
+ const xml=spawnSync('python3',['-c','import sys,xml.etree.ElementTree as ET;ET.fromstring(sys.stdin.read())'],{input:svg(s),encoding:'utf8',timeout:5000});assert.equal(xml.status,0,xml.stderr);
  assert.equal(n.endpoints.length,3);assert.equal(n.branches.length,3);assert.match(svg(s),/ball A12/);assert.match(svg(s),/pin 6/);
  f.edit('objects',d=>d.objects[0].ports[0].attributes.ball='Z99');assert.match(svg(await scene(f.load(),s.id)),/ball Z99/);
 });
