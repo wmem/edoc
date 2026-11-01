@@ -50,6 +50,7 @@ def main():
 git clone EngDoc-latest.git.bundle engdoc
 git clone EngDoc-solution.git.bundle engdoc-solution
 cd engdoc
+npm ci
 node packages/cli/engdoc.ts validate --config examples/board-flash/engdoc.config.json --format json
 ```
 

@@ -1,21 +1,35 @@
-# 环境记录
+# 环境与可移植性
 
-## 已验证
+## 当前已验证
 
-- Linux，Node.js 24.22.1；使用 Node 原生 TypeScript 类型擦除与内置 test runner。
-- 运行与测试无第三方依赖，无需 npm install；包脚本仅调用 node。
-- UTF-8 中文源码、JSON 和诊断正常；路径越界及 Linux 符号链接保护有自动测试。
-- 可执行 CLI 文件必须保留 Git 的 executable 位；调用 `node packages/cli/engdoc.ts` 不依赖此位。
+- Linux、Node.js 24.22.1、Python 3.12；Node 原生运行 TypeScript，正式 tsc 严格类型检查。
+- 本轮实际 npm 访问正常；P0 的依赖限制已解除。使用 npm ci 与 package-lock.json 恢复锁定依赖。
+- Markdoc、AntV X6、ELK、WaveDrom、Vite、Ajv 2020-12、Playwright 均已接入。X6 3.1.8 的发布包引用 tslib，工程显式声明该运行依赖。
+- Vite 8 使用 Rolldown；本项目 IIFE 构建无需旧版 inlineDynamicImports 配置。
+- HTML 和 SVG 内嵌 Noto Sans SC 字体；不依赖系统中文字体或 CDN。环境原来缺少中文字体，已通过内嵌字体解决。
 
-## 当前限制
+## Chromium
 
-- 环境未提供 tsc、Ajv 或其他第三方 JSON Schema 库；未执行 TypeScript 静态类型检查，原生执行成功不能替代它。
-- 网络仅开放会话指定域名；未尝试绕过限制安装依赖。environment_status 工具和 /etc/codex/network-policy.json 在本环境未提供，未据此假设额外网络授权。
-- P0 校验器覆盖仓库使用的 Schema 关键字，未知关键字拒绝加载，不是任意 JSON Schema 的完整实现。未来接入通用校验器时需要保持 IR 与诊断契约，并验证一致性。
-- 当前一次加载全部分片，分片有单文件 16 MiB 保护；尚未验证超大工程的流式加载或性能。
-- 未验证 Windows/macOS；Windows 用户先用 node 入口，不依赖 shebang 或 Unix 权限。符号链接及文件系统边界测试在目标平台还需复验。
-- Chromium/X6/ELK/Markdoc/WaveDrom/Vite/Playwright 尚未安装或验证，不对绘图、离线 HTML 或 PDF 做成功声明。
+本轮使用用户提供的 chromium-headless-shell-1243.tar.zst，浏览器版本为 Chromium 153。
 
-## 构建状态
+```bash
+mkdir -p /path/to/chromium
+# --no-same-owner 避免托管文件系统无法还原归档 UID/GID 的报错。
+tar --no-same-owner --zstd -xf chromium-headless-shell-1243.tar.zst -C /path/to/chromium
+export ENGDOC_CHROMIUM=/path/to/chromium/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+```
 
-P0 的 validate/query 每次重新读取 IR，不保存增量状态或成功缓存，不使用文件内容 hash。工程恢复使用 Git commit/bundle，不把 Git 提交 ID 用作源文件变更检测。
+也可安装 Playwright 对应 Chromium 后省略 ENGDOC_CHROMIUM。HTML 构建本身不需要浏览器；PDF 和浏览器测试需要。没有启动 Web Server。
+
+## 状态与恢复
+
+- 每次从配置执行的 validate/query/build 都重新运行项目 Adapter，不做文件内容 hash 缓存。
+- Adapter 输入范围显式声明；检查输入 mtime/size 未被转换脚本修改。输出在临时目录校验成功后切换，状态记录在生成目录旁。
+- 构建失败移除指定的旧交付文件，避免把旧文件当作本次成功产物；错误不会回退旧 IR 查询结果。
+- checkpoint 包含代码和锁文件，不包含 node_modules 或 Chromium 大型工具包；恢复时先 npm ci，再配置浏览器路径。工程 Git 提交 ID 只用于恢复，不参与文件增量检测。
+
+## 范围限制
+
+- Windows/macOS 未在本轮实际运行；Node 入口与项目转换脚本应可移植，文件权限和符号链接需在目标平台复验。
+- 样例是虚构工程。MAC RTL 仅提供接口声明，Adapter 明确仅解析所示 ANSI 声明/整数参数子集，不声称理解完整 SystemVerilog 或完成 MAC 功能仿真。
+- 自动布局针对适度规模图形；复杂工程应拆视图并使用显式位置提示，不能据此宣称任意密度均无需调整。

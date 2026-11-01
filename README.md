@@ -1,59 +1,73 @@
-# EngDoc
+# EngDoc V1
 
-通用工程文档系统。当前完成 **P0 协议最小闭环**：JSON IR → 校验 → 稳定 ID 索引 → 结构化查询。实现使用 TypeScript，运行需要 Node.js 24+，无需安装依赖或启动服务器。
+通用工程文档系统：**项目源数据 → 项目 Adapter → JSON IR → 校验/查询 → Markdoc → 单文件离线 HTML 或 PDF**。
 
-V1 保持三层架构：通用工具、项目原始数据、项目 Adapter。当前演示 IR 为手工协议样例；不要求实际项目重复定义原始工程事实。
+图、表、接口详情与查询共用工程事实。通用层不理解 FPGA/QSPI/AXIS，不要求项目迁移到统一数据库。生成文档只读，Agent 精确读取使用 query。
 
-## 立即运行
+## 安装与立即运行
 
-在本仓库根目录执行：
+需要 Node.js 24+、Python 3（示例 Adapter）；PDF 另需 Chromium。
 
 ```bash
-node packages/cli/engdoc.ts validate \
-  --config examples/board-flash/engdoc.config.json --format json
-
-node packages/cli/engdoc.ts query \
-  --config examples/board-flash/engdoc.config.json \
-  --id board:net.FLASH_SCK --depth 1 --format json
+npm ci
+node packages/cli/engdoc.ts validate --config examples/board-flash/engdoc.config.json --format json
+node packages/cli/engdoc.ts query --config examples/board-flash/engdoc.config.json --id board:net.FLASH_SCK --depth 1 --format json
+node packages/cli/engdoc.ts export --config examples/board-flash/engdoc.config.json --view board:flash-wiring --format svg --output output/flash.svg
+node packages/cli/engdoc.ts build --config examples/board-flash/engdoc.config.json --format html --output output/board.html
+node packages/cli/engdoc.ts build --config examples/fpga-mac/engdoc.config.json --format html --output output/mac.html
 ```
 
-也可以使用 `npm run engdoc -- ...`，或在 Linux/macOS 下直接执行 `./packages/cli/engdoc.ts ...`。`--help` 列出选项，`--version` 显示工具和 IR 版本。
+HTML 内嵌 CSS、JavaScript、SVG、工程数据和中文字体，直接双击打开，无服务器或外部运行资源。文件较大是内嵌字体及交互资源的结果。
 
-预期校验通过：3 个 node、13 个 port、1 个 group、6 条 connection、1 个 view。查询时钟 Net 得到 **同一条关系中的三个端点**，包括测试连接器；`--depth 1` 进一步显示端点的 Ball/Pin 和来源。
+PDF 使用相同配置、正文和 IR：
 
-**FPGA–Flash 所有数据均为虚构，不代表真实芯片或板卡，不得用于硬件设计。** 真实数据 Adapter 在 P3 实现。
+```bash
+export ENGDOC_CHROMIUM=/path/to/chrome-headless-shell
+node packages/cli/engdoc.ts build --config examples/fpga-mac/engdoc.config.json --format pdf --output output/mac.pdf
+```
 
-## 阅读与修改入口
+PDF 使用完整静态图形，展开 Tabs 和折叠内容，包含目录、书签、文内链接和页码。
+
+## 能力与入口
 
 | 内容 | 入口 |
 | --- | --- |
-| P0 IR 契约、查询结构和边界 | [docs/IR-P0.md](docs/IR-P0.md) |
-| 阶段验收与未完成项 | [docs/P0-验收.md](docs/P0-验收.md) |
-| 环境与移植限制 | [env-notes.md](env-notes.md) |
-| 机器 Schema | [packages/schema](packages/schema) |
-| 加载、校验、查询公共 API | [packages/core/index.ts](packages/core/index.ts) |
-| 命令行 | [packages/cli/engdoc.ts](packages/cli/engdoc.ts) |
-| 虚构硬件数据及视图 | [examples/board-flash](examples/board-flash) |
+| 完整 V1 契约与新项目接入 | [docs/V1-开发与使用.md](docs/V1-开发与使用.md) |
+| V1 验收矩阵 | [docs/V1-验收.md](docs/V1-验收.md) |
+| 初始 P0 验收历史 | [docs/P0-验收.md](docs/P0-验收.md) |
+| 环境、浏览器与移植限制 | [env-notes.md](env-notes.md) |
+| IR Schema / 核心 API | packages/schema / packages/core/index.ts |
+| 图形与布局 | packages/render-graph |
+| Markdoc / HTML / PDF | packages/doc-theme / packages/pack-html / packages/render-pdf |
+| 板级 CSV 网表 Adapter | examples/board-flash |
+| RTL 接口与规范文档 Adapter | examples/fpga-mac |
 
-修改工程事实应改原始数据并由 Adapter 重建 IR；P0 手工样例临时以 `objects.json` 为端口事实来源，以 `relations.json` 为连接来源。视图只保存引用和呈现策略。精确检索使用 query，不读取未来生成的 HTML、SVG 或前端打包文件。
+**两个样例均为虚构工程。Ball/Pin 不代表真实芯片；MAC RTL 不是可用 MAC 实现，VERIFY 是覆盖关系样例，不代表 RTL 仿真已完成。**
 
-当前只接受 IR 1.0 与 objects/relations/views 资源；未知类型或版本明确报错。后续阶段补齐资源与兼容性策略。通用代码不包含 QSPI/FPGA 协议或引脚知识。
+## 针对性验证
 
-## 针对性测试
-
-分别运行，不提供默认全量测试命令：
+按需要分别运行：
 
 ```bash
+npm run typecheck
 npm run test:schema
 npm run test:core
 npm run test:query
+npm run test:graph
+npm run test:document
+npm run test:adapter
 npm run test:cli
+npm run test:browser
+npm run test:pdf
+npm run test:quality
 ```
 
-测试使用 Node 自带的 test runner。CLI 子进程有 10 秒超时。源文件只读，不缓存校验或查询结果，不使用文件内容 hash。
+浏览器/PDF 测试使用 ENGDOC_CHROMIUM。没有默认全量测试命令。
 
-## 恢复与下一阶段
+## 恢复与数据纪律
 
-工程与方案分别由 Git 管理。外部 checkpoint 包含工程 bundle、方案 bundle 和当前 task；解压后按 task 中命令恢复。`scripts/checkpoint.py` 可在两个仓库都干净时重新创建检查点，并将两个提交号写入 task。Git 自身的对象 ID 仅用于提交与恢复，不用于文件增量或状态检测。
+工程与方案分别 Git 管理；checkpoint 打包两个完整 bundle 和最新 EngDoc-task.md。恢复先核对提交号，再 npm ci。scripts/checkpoint.py 在两个仓库干净时生成同一检查点的三项文件。
 
-P1 将使用 FPGA–Flash 方向实现端口图、分类连线、Ball/Pin/功能标签、总览与逐信号模式及 SVG，验证布局和连线可读性。P2 实现 Markdown/Markdoc 与单文件离线 HTML；P3 增加 PDF 和真实 Adapter；P4 做离线、打印与兼容性回归。P0 尚无绘图、HTML/PDF 或真实硬件一致性验收结果。
+改变工程事实时修改项目源，调整 Adapter 并运行一致性检查；改变显示时只改视图引用和布局；改变规范行为时直接修改有稳定 ID 的正文条款。禁止静默改变规范语义。dist、生成 HTML/SVG 不作为 Agent 检索入口。
+
+当前构建每次完整转换，不默认使用文件内容 hash 进行状态跟踪或缓存。

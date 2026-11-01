@@ -57,7 +57,7 @@ export async function scene(graph:Graph, id:string):Promise<Scene> {
  result.forEach(n=>enclose(n.id));
  const shiftX=Math.max(0,35-Math.min(35,...result.map(n=>n.x))),shiftY=Math.max(0,65-Math.min(65,...result.map(n=>n.y)));
  result.forEach(n=>{n.x+=shiftX;n.y+=shiftY;n.ports.forEach(p=>{p.x+=shiftX;p.y+=shiftY;});});
- const point=(id:string,neighbors:string[])=>{ 
+ const point=(id:string,neighbors:string[])=>{
   const p=result.flatMap(n=>n.ports).find(p=>p.id===id);if(p)return {x:p.x,y:p.y};
   const n=result.find(n=>n.id===id)!;const others=neighbors.map(id=>result.find(node=>node.id===(graph.index.get(id)?.ownerId??id))!).filter(Boolean);const avg=others.length?others.reduce((v,e)=>v+e.x+e.width/2,0)/others.length:n.x+n.width;return {x:avg<n.x+n.width/2?n.x:n.x+n.width,y:n.y+n.height/2};
  };
