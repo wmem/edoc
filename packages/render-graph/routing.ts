@@ -95,7 +95,11 @@ function fixedRoutes(nodes:SceneNode[],relations:Connection[],graph:Graph,view:V
     const first=simplify([ends[0].point,...orthogonal(ends[0].stub,entry,blocked,foreign,optionsFor(relation)),hub]);
     const branches=[first,...ends.slice(1).map(end=>simplify([end.point,...orthogonal(end.stub,hub,blocked,foreign,optionsFor(relation))]))];
     if(ends.length===2){const path=simplify([...first,...branches[1].slice().reverse().slice(1)]),split=splitPath(path);return {box:candidate,hub:split.hub,paths:[path],branches:[split.first,split.last]};}
-    return {box:candidate,hub,paths:branches,branches};
+    // 汇合点归一化可能裁掉承载候选标题的无端点尾巴，必须在保留的树上重新安放。
+    const normalized=normalizeNet({...netBase(relation),hub,labelBox:candidate,branches:relation.endpoints.map((endpoint,i)=>({endpoint,points:branches[i],arrow:!!relation.direction?.targets.includes(endpoint)}))});
+    const finalPaths=normalized.branches.map(branch=>branch.points),joints=(normalized.junctions??[]).map(p=>({x:p.x-7,y:p.y-7,width:14,height:14}));
+    const actual=placeLabel(candidate,finalPaths,[...labelNodes,...labelReserved,...joints],placed,foreign,{x:candidate.x+candidate.width/2,y:candidate.y+candidate.height/2});
+    return {box:actual,hub:normalized.hub,paths:finalPaths,branches:finalPaths};
    }catch{/* 另一侧进线或下一个空白通道仍可能可用。 */}
   }
   throw new Error('固定视图没有可用的标题通道');

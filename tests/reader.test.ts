@@ -4,7 +4,7 @@ import {rmSync,readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {resolveProjectConfig} from '../packages/core/project.ts';
 import {loadBook,bookNavigation} from '../packages/core/book.ts';
-import {compileBook} from '../packages/pack-html/book.ts';
+import {compileBook,bookPrintHTML,bookHTML} from '../packages/pack-html/book.ts';
 import {targetKey,routeHash,parseRoute} from '../packages/core/routes.ts';
 import {query} from '../packages/core/query.ts';
 import {readerFixture,samplePdf} from './reader-fixture.ts';
@@ -83,4 +83,15 @@ test('目录发现与 file include 不跨已声明子工程边界，显式 proje
  // 发现整个父目录也不能把子工程正文当父工程页面读取。
  const book=await load(p.root);assert.deepEqual([...book.projects.keys()],['system','fpga','core','board']);assert.ok(book.root.documents.documents.every(d=>!d.file.startsWith('fpga/')&&!d.file.startsWith('board/')));
  p.write('docs/index.mdoc','{% include file="fpga/docs/index.mdoc" /%}');await assert.rejects(()=>load(p.root),/DOCUMENT_PROJECT_SCOPE/);
+});
+test('多篇打印遵循 compactIndex，保留被引用对象的有效目标，全量事实仍可查询',async t=>{
+ const p=readerFixture(t);
+ const config=(compactIndex:boolean)=>`export default {projectId:'system',documents:['docs/index.mdoc','docs/details.mdoc'],compactIndex:${compactIndex}};`;
+ p.write('engdoc.config.js',config(true));p.write('docs/index.mdoc','# 正文\n[细节](details.mdoc)\n{% reference id="shown" label="查看对象" /%}');p.write('docs/details.mdoc','# 细节\n精确说明。');
+ p.write('docs/ir/facts.json',{objects:[{id:'shown',kind:'node',label:'引用对象',attributes:{payload:'FACT_JSON_SENTINEL'}},{id:'unused',kind:'node',label:'不应打印的未引用对象'}]});
+ const book=await load(p.root),printed=await bookPrintHTML(book);
+ assert.ok(printed.includes('引用对象'));assert.ok(!printed.includes('FACT_JSON_SENTINEL'));assert.ok(!printed.includes('不应打印的未引用对象'));
+ const ids=new Set([...printed.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));for(const match of printed.matchAll(/href="#([^"]+)"/g))assert.ok(ids.has(match[1]),'PDF 内部引用目标必须存在：'+match[1]);
+ assert.equal((query(book.root.graph,'shown').target.entity as any).attributes.payload,'FACT_JSON_SENTINEL');assert.ok((await bookHTML(book)).includes('FACT_JSON_SENTINEL'));
+ p.write('engdoc.config.js',config(false));assert.ok((await bookPrintHTML(await load(p.root))).includes('FACT_JSON_SENTINEL'),'缺省完整对象附录的语义保持');
 });

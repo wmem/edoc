@@ -75,7 +75,7 @@ output 默认 {html: 'output/index.html', pdf: false}。html/pdf 可写相对根
 
 chromiumExecutable 指定已有 Chromium，或使用 ENGDOC_CHROMIUM。只有导出文档 PDF 需要；内嵌 PDF 阅读不需要。工具不会自动下载浏览器。
 
-compactIndex 默认 false，控制旧单文档打印链路的对象附录；新的按页阅读器在对象详情中按需显示，不把全部对象作为正文附录。
+compactIndex 默认 false，控制文档 PDF 的对象附录。单文档和多篇/组合打印均遵循各工程的设置：true 时不展开全量机器 JSON，多篇打印只为正文直接引用的对象保留简短身份与来源，内部链接仍可达；精确事实保留在正文投影表、HTML 对象详情和 query 中。HTML 按页阅读器始终按需显示详情。
 
 {% /section %}
 {% /section %}

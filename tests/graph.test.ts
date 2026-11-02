@@ -116,3 +116,19 @@ test('固定位置短出线通道为线上标题绕线，保留真实端口与�
   assert.deepEqual(net.endpoints,ids.map(id=>id+'.p'));assert.ok(net.branches.every(b=>same(b.points.at(-1)!,net.hub)));
  }
 });
+
+test('多端点标题绕线在清理虚拟汇合点后仍落在保留的真实连接树上',async t=>{
+ const f=fixture(t);
+ f.edit('objects',d=>d.objects=[
+  {id:'a',kind:'node',label:'传感器',ports:[{id:'a.scl',label:'SCL',direction:'unknown'},{id:'a.sda',label:'SDA',direction:'unknown'}]},
+  {id:'b',kind:'node',label:'控制器',ports:[{id:'b.scl',label:'SCL',direction:'unknown'},{id:'b.sda',label:'SDA',direction:'unknown'}]},
+  ...['data-pull','clock-pull'].map(id=>({id,kind:'node',label:id,ports:[{id:id+'.p',label:'1',direction:'unknown'}]}))
+ ]);
+ f.edit('relations',d=>d.relations=[
+  {id:'sda',kind:'connection',class:'control',label:'I2C_MCU_TMP_SDA',endpoints:['a.sda','b.sda','data-pull.p']},
+  {id:'scl',kind:'connection',class:'control',label:'I2C_MCU_TMP_SCL',endpoints:['a.scl','clock-pull.p','b.scl']}
+ ]);
+ f.edit('views',d=>d.views=[{id:'v',kind:'wiring',include:{objects:[],relations:['sda','scl']},layout:{positions:[{objectId:'a',x:0,y:0},{objectId:'b',x:540,y:60},{objectId:'data-pull',x:0,y:320},{objectId:'clock-pull',x:540,y:380}]}}]);
+ const s=await scene(f.load(),'v');clean(s);
+ for(const net of s.nets){assert.equal(net.branches.length,3);assert.deepEqual(net.branches.map(b=>b.endpoint),net.endpoints);}
+});

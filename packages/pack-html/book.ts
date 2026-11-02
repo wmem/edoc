@@ -76,7 +76,20 @@ export async function bookPrintHTML(book:Book):Promise<string>{
  const rewrite=(text:string,project:string,page:string)=>text.replace(/\bid="([^"]+)"/g,(_all,id)=>'id="'+printId(project,page,id)+'"').replace(/((?:xlink:)?href=")#(?!engdoc=)([^"]+)(")/g,(_all,before,id,after)=>before+'#'+printId(project,page,id)+after).replace(/url\(#([^)]*)\)/g,(_all,id)=>'url(#'+printId(project,page,id)+')').replace(/(<a\b[^>]*href=")#engdoc=([^"]+)(")/g,(_all,before,encoded,after)=>{const target=destination(JSON.parse(decodeURIComponent(encoded)));return target?before+'#'+target+after:before.replace(/href="$/,'data-print-reference="')+'HTML'+after;});
  const toc=(nodes:ReturnType<typeof bookNavigation>,depth=0):string=>nodes.map(n=>`<div class="print-toc-entry" style="padding-left:${depth*18}px">${n.page?`<a href="#${printId(n.project,n.page,n.anchor??'')}">${esc(n.label)}</a>`:`<span>${esc(n.label)}</span>`}</div>`+toc(n.children,depth+1)).join('');
  const chapters=Object.values(data.pages).map(p=>`<section class="print-project" id="${printId(p.project,p.id)}"><h1>${esc(data.projects[p.project].title)} / ${esc(p.title)}</h1>${rewrite(p.html,p.project,p.id)}</section>`).join('');
- const facts=Object.values(data.projects).map(p=>`<section class="appendix"><h2>${esc(p.title)} · 工程对象</h2>`+Object.entries(p.entities).map(([id,e])=>`<details class="fact" id="${printId(p.id,'objects',id)}"><summary>${esc(e.label??id)}</summary><pre>${esc(JSON.stringify(e))}</pre></details>`).join('')+'</section>').join('');
+ const referenced=new Map<string,Set<string>>();
+ for(const page of Object.values(data.pages))for(const match of page.html.matchAll(/<a\b[^>]*href="#engdoc=([^"]+)"/g)){
+  const route=JSON.parse(decodeURIComponent(match[1]));
+  if(route.kind!=='entity'||!data.projects[route.project]?.entities[route.id]||data.projects[route.project].sections[route.id])continue;
+  if(!referenced.has(route.project))referenced.set(route.project,new Set());referenced.get(route.project)!.add(route.id);
+ }
+ const facts=Object.values(data.projects).map(p=>{
+  const compact=book.projects.get(p.id)!.config.compactIndex;
+  const entries=Object.entries(p.entities).filter(([id])=>!compact||referenced.get(p.id)?.has(id));
+  if(!entries.length)return '';
+  return `<section class="appendix"><h2>${esc(p.title)} · 工程对象${compact?'引用':''}</h2>`+entries.map(([id,e])=>compact
+   ?`<div class="fact" id="${printId(p.id,'objects',id)}"><strong>${esc(e.label??id)}</strong><p>${esc(id)} · ${esc(e.source?.file??p.records[id].location.file)}</p></div>`
+   :`<details class="fact" id="${printId(p.id,'objects',id)}"><summary>${esc(e.label??id)}</summary><pre>${esc(JSON.stringify(e))}</pre></details>`).join('')+'</section>';
+ }).join('');
  const css=readFileSync(resolve(directory,'../doc-theme/style.css'),'utf8')+readFileSync(resolve(directory,'../doc-theme/reader.css'),'utf8');
  return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><style>${fontCSS()}${css}</style></head><body><main><header class="cover"><h1>${esc(data.title)}</h1></header><div class="print-toc"><p class="print-toc-title">目录</p>${toc(data.navigation)}</div>${chapters}${facts}</main><script>window.EngDocReady=true</script></body></html>`;
 }
