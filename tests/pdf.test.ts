@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {mkdtempSync,rmSync,writeFileSync,cpSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,rmSync,writeFileSync,cpSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {repository,fixture,save,prepareExample} from './helpers.ts';
@@ -45,4 +45,29 @@ print(json.dumps({'paths':paths,'toc':reader.pages[1].extract_text()},ensure_asc
  assert.ok(first.includes('目录')&&first.includes('功能模块'),'长目录首页应同时包含标题和首个条目：'+JSON.stringify(data.toc));
  assert.ok(paths.some(p=>p.slice(-4).join('/')==='功能模块/存储与配置/QSPI 模块/职责与边界'));
  assert.ok(paths.every(p=>!p.includes('目录')&&!p.includes('布局面板')));
+});
+
+test('分篇目录的 PDF 书签与网页分组一致，文章标题不重复为顶层',{timeout:40000},t=>{
+ const root=mkdtempSync(join(tmpdir(),'engdoc-multipage-outline-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ const write=(file:string,text:string)=>{mkdirSync(join(root,file,'..'),{recursive:true});writeFileSync(join(root,file),text);};
+ write('docs/engdoc.config.js',"export default {documents:'docs',compactIndex:true};");
+ write('docs/index.mdoc','{% section id="home" title="手册入口" %}总览。{% /section %}');
+ write('docs/modules/index.mdoc','{% section id="modules" title="功能模块" %}按职责选择。{% /section %}');
+ write('docs/modules/storage/index.mdoc','{% section id="storage" title="存储与配置" %}模块分组。{% /section %}');
+ write('docs/modules/storage/qspi.mdoc','{% section id="qspi" title="QSPI 模块" %}\n## 职责与边界\n查证来源。\n{% /section %}');
+ const output=join(root,'result.pdf');build(['--config',join(root,'docs/engdoc.config.js'),'--format','pdf','--output',output]);
+ const code=`import json,sys
+from pypdf import PdfReader
+paths=[]
+def walk(items,parents=()):
+ last=None
+ for item in items:
+  if isinstance(item,list):walk(item,parents+((last,) if last else ()))
+  else:
+   last=str(item['/Title']);paths.append(parents+(last,))
+walk(PdfReader(sys.argv[1]).outline)
+print(json.dumps(paths,ensure_ascii=False))`;
+ const result=spawnSync('python3',['-c',code,output],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stderr);const paths:string[][]=JSON.parse(result.stdout);
+ assert.ok(paths.some(p=>p.slice(-4).join('/')==='功能模块/存储与配置/QSPI 模块/职责与边界'),JSON.stringify(paths));
+ assert.equal(paths.filter(p=>p.at(-1)==='QSPI 模块').length,1,'不额外创建同名文章标题书签');
 });

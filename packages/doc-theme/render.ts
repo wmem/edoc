@@ -29,12 +29,12 @@ function interfaceHTML(graph:Graph,id:string,mode:string):string{
 
  return `<table><caption>${esc(entry.entity.label??id)} · ${esc(mode)}</caption><thead><tr><th>信号</th><th>方向</th><th>位宽</th><th>时钟域</th><th>属性 / 来源</th></tr></thead><tbody>${ports.map(e=>{const p=e.entity as Port;return `<tr><td><a href="#${anchor(e.id)}">${esc(p.label)}</a></td><td>${esc(p.direction)}</td><td>${esc(p.width??p.widthExpr??'unknown')}</td><td>${esc(p.clockDomainId??'unknown')}</td><td>${esc(JSON.stringify(p.attributes??{}))}<br>${esc(p.source?.file??'')}</td></tr>`}).join('')}</tbody></table>`;
 }
-export async function renderDocument(graph:Graph,title:string,options:{compactIndex?:boolean;projectLink?:(alias:string)=>{project:string;page:string;title:string};documentLink?:(href:string,source:string)=>string}={}){
+export async function renderDocument(graph:Graph,title:string,options:{compactIndex?:boolean;headingLevel?:(id:string,level:number)=>number;projectLink?:(alias:string)=>{project:string;page:string;title:string};documentLink?:(href:string,source:string)=>string}={}){
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
  const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['diagram','interface'].includes(node.tag??'')&&graph.index.get(node.attributes.id)?.type==='view')usedViews.add(node.attributes.id);
  for(const id of usedViews){scenes[id]=await scene(graph,id);printScenes[id]=scenes[id].interfaceModel?await scene(graph,id,{interfaces:'expanded'}):scenes[id];}
  const plan=prepareOutline(graph),headings=new Map(plan.flat.map(e=>[e.id,e]));let counter=0,wave=0;
- const heading=(level:number,body:string,section=false)=>{const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${body}</${tag}>`;};
+ const heading=(id:string,level:number,body:string,section=false)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${body}</${tag}>`;};
  function render(tree:any):string{
   if(tree===null||tree===undefined||tree===false)return '';
   if(Array.isArray(tree))return tree.map(render).join('');
@@ -42,8 +42,8 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   const n=tree.name,a=tree.attributes??{},children=()=>render(tree.children);
   if(n.startsWith('ed-')){
    const type=n.slice(3),id=a.id;
-   if(type==='section'){const body=`${a.title?heading(a.outlineLevel,esc(a.title),true):''}${children()}`;return a.collapsed?`<details id="${anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${anchor(id)}">${body}</section>`;}
-   if(type==='heading')return `<div id="${id}" class="heading-anchor">${heading(a.outlineLevel,children())}</div>`;
+   if(type==='section'){const body=`${a.title?heading(anchor(id),a.outlineLevel,esc(a.title),true):''}${children()}`;return a.collapsed?`<details id="${anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${anchor(id)}">${body}</section>`;}
+   if(type==='heading')return `<div id="${id}" class="heading-anchor">${heading(id,a.outlineLevel,children())}</div>`;
    if(type==='columns')return `<div class="columns" style="--columns:${(a.ratio??'1:1').split(':').map((v:string)=>v+'fr').join(' ')}">${children()}</div>`;
    if(type==='panel')return `<div class="panel">${a.title?`<p class="panel-title">${esc(a.title)}</p>`:''}${children()}</div>`;
    if(type==='tabs')return `<div class="tabs">${children()}</div>`;

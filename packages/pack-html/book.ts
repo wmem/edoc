@@ -6,7 +6,7 @@ import {build} from 'vite';
 import type {Book} from '../core/book.ts';
 import {bookNavigation,pageGraph,pageId,pageTitle} from '../core/book.ts';
 import {routeHash,targetKey} from '../core/routes.ts';
-import type {ReaderData} from '../core/reader-model.ts';
+import type {ReaderData,ReaderPage} from '../core/reader-model.ts';
 import {localDocumentLink} from '../core/documents.ts';
 import {renderDocument} from '../doc-theme/render.ts';
 import {anchor} from '../core/identity.ts';
@@ -17,7 +17,7 @@ import {licenses} from './licenses.ts';
 import {assertSelfContained,html as documentHTML} from './index.ts';
 const directory=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url),clients=new Map<string,string>();
 const json=(value:unknown)=>JSON.stringify(value).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
-export async function compileBook(book:Book):Promise<ReaderData>{
+export async function compileBook(book:Book,options:{headingLevel?:(project:string,page:string,id:string,level:number)=>number}={}):Promise<ReaderData>{
  const data:ReaderData={title:book.root.config.title,home:{project:book.root.config.projectId,id:pageId(book.root.documents.documents[0].file)},navigation:bookNavigation(book),pages:Object.create(null),projects:Object.create(null),pdfFiles:Object.create(null)};
  const filePayloads=new Map<string,string>();
  for(const node of book.projects.values()){
@@ -29,7 +29,7 @@ export async function compileBook(book:Book):Promise<ReaderData>{
  }
  for(const node of book.projects.values())for(const document of node.documents.documents){
   const project=node.config.projectId,id=pageId(document.file),page=data.pages[targetKey(project,id)];
-  const rendered=await renderDocument(pageGraph(node,document),page.title,{compactIndex:true,projectLink(alias){const child=node.children.get(alias)!;return {project:child.config.projectId,page:pageId(child.documents.documents[0].file),title:child.config.title};},documentLink(href,source){
+  const rendered=await renderDocument(pageGraph(node,document),page.title,{compactIndex:true,headingLevel:options.headingLevel?(heading,level)=>options.headingLevel!(project,id,heading,level):undefined,projectLink(alias){const child=node.children.get(alias)!;return {project:child.config.projectId,page:pageId(child.documents.documents[0].file),title:child.config.title};},documentLink(href,source){
    const link=localDocumentLink(node.config.root,source||document.file,href);if(!link)return href;
    const target=pageId(link.file);if(!Object.hasOwn(data.pages,targetKey(project,target)))failure('DOCUMENT_LINK',source,'','链接文档未参与发布：'+link.file);
    return routeHash({kind:'page',project,id:target,...(link.anchor?{anchor:link.anchor}:{})});
@@ -69,13 +69,30 @@ export async function bookHTML(book:Book):Promise<string>{
 // 文档导出继续复用单文档打印；组合工程分别保留自己的索引及身份。
 export async function bookPrintHTML(book:Book):Promise<string>{
  const legacySafe=[...book.root.documents.documents].every(d=>[...d.ast.walk()].every(n=>!(n.type==='tag'&&(['page','attachment'].includes(n.tag??'')||n.attributes.project!==undefined))&&!(n.type==='link'&&!/^(#|https?:|mailto:)/i.test(n.attributes.href??''))));
- if(book.projects.size===1&&legacySafe)return documentHTML(book.root.graph,book.root.config.title,{compactIndex:book.root.config.compactIndex});
- const data=await compileBook(book);
+ if(book.projects.size===1&&book.root.documents.documents.length===1&&legacySafe)return documentHTML(book.root.graph,book.root.config.title,{compactIndex:book.root.config.compactIndex});
+ // 打印与网页共用逻辑目录，在渲染标题时保留分组深度。
+ const navigation=bookNavigation(book),levels=new Map<string,number>(),emitted=new Set<string>();
+ const headingKey=(project:string,page:string,id:string)=>JSON.stringify([project,page,id]);
+ const collectLevels=(nodes:typeof navigation,depth=0)=>{for(const node of nodes){if(node.anchor)levels.set(headingKey(node.project,node.page,node.anchor),depth);collectLevels(node.children,depth+1);}};
+ collectLevels(navigation);
+ const data=await compileBook(book,{headingLevel:(project,page,id,level)=>levels.get(headingKey(project,page,id))??level});
  const printId=(project:string,page:string,id='')=>'print-'+Array.from(new TextEncoder().encode(JSON.stringify([project,page,id])),b=>b.toString(16).padStart(2,'0')).join('');
  const destination=(route:any)=>{if(!data.projects[route.project])return '';if(route.kind==='page'&&!Object.hasOwn(data.pages,targetKey(route.project,route.id)))return '';if(route.kind==='entity'&&!Object.hasOwn(data.projects[route.project].entities,route.id))return '';if(route.kind==='page')return printId(route.project,route.id,route.anchor??'');if(route.kind==='entity'){const section=data.projects[route.project]?.sections[route.id];return section?printId(route.project,section.page,section.anchor):printId(route.project,'objects',route.id);}return '';};
  const rewrite=(text:string,project:string,page:string)=>text.replace(/\bid="([^"]+)"/g,(_all,id)=>'id="'+printId(project,page,id)+'"').replace(/((?:xlink:)?href=")#(?!engdoc=)([^"]+)(")/g,(_all,before,id,after)=>before+'#'+printId(project,page,id)+after).replace(/url\(#([^)]*)\)/g,(_all,id)=>'url(#'+printId(project,page,id)+')').replace(/(<a\b[^>]*href=")#engdoc=([^"]+)(")/g,(_all,before,encoded,after)=>{const target=destination(JSON.parse(decodeURIComponent(encoded)));return target?before+'#'+target+after:before.replace(/href="$/,'data-print-reference="')+'HTML'+after;});
  const toc=(nodes:ReturnType<typeof bookNavigation>,depth=0):string=>nodes.map(n=>`<div class="print-toc-entry" style="padding-left:${depth*18}px">${n.page?`<a href="#${printId(n.project,n.page,n.anchor??'')}">${esc(n.label)}</a>`:`<span>${esc(n.label)}</span>`}</div>`+toc(n.children,depth+1)).join('');
- const chapters=Object.values(data.pages).map(p=>`<section class="print-project" id="${printId(p.project,p.id)}"><h1>${esc(data.projects[p.project].title)} / ${esc(p.title)}</h1>${rewrite(p.html,p.project,p.id)}</section>`).join('');
+ const printPage=(p:ReaderPage,depth:number)=>{
+  emitted.add(targetKey(p.project,p.id));
+  const level=Math.min(6,depth+1),title=p.outline[0]?.label===p.title?'':`<h${level}>${esc(p.title)}</h${level}>`;
+  return `<section class="print-project" id="${printId(p.project,p.id)}">${title}${rewrite(p.html,p.project,p.id)}</section>`;
+ };
+ const printNavigation=(nodes:typeof navigation,depth=0):string=>nodes.map(node=>{
+  const key=targetKey(node.project,node.page),page=data.pages[key];let content='';
+  const container=!node.anchor&&node.children.some(child=>child.project===node.project&&child.page===node.page);
+  if(!node.page||container){const level=Math.min(6,depth+1);content=`<h${level}>${esc(node.label)}</h${level}>`;}
+  else if(page&&!emitted.has(key))content=printPage(page,depth);
+  return content+printNavigation(node.children,depth+1);
+ }).join('');
+ const chapters=printNavigation(navigation)+Object.values(data.pages).filter(p=>!emitted.has(targetKey(p.project,p.id))).map(p=>printPage(p,0)).join('');
  const referenced=new Map<string,Set<string>>();
  for(const page of Object.values(data.pages))for(const match of page.html.matchAll(/<a\b[^>]*href="#engdoc=([^"]+)"/g)){
   const route=JSON.parse(decodeURIComponent(match[1]));
@@ -91,5 +108,5 @@ export async function bookPrintHTML(book:Book):Promise<string>{
    :`<details class="fact" id="${printId(p.id,'objects',id)}"><summary>${esc(e.label??id)}</summary><pre>${esc(JSON.stringify(e))}</pre></details>`).join('')+'</section>';
  }).join('');
  const css=readFileSync(resolve(directory,'../doc-theme/style.css'),'utf8')+readFileSync(resolve(directory,'../doc-theme/reader.css'),'utf8');
- return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><style>${fontCSS()}${css}</style></head><body><main><header class="cover"><h1>${esc(data.title)}</h1></header><div class="print-toc"><p class="print-toc-title">目录</p>${toc(data.navigation)}</div>${chapters}${facts}</main><script>window.EngDocReady=true</script></body></html>`;
+ return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><style>${fontCSS()}${css}</style></head><body><main><header class="cover"><h1>${esc(data.title)}</h1></header><div class="print-toc"><p class="print-toc-title">目录</p>${toc(navigation)}</div>${chapters}${facts}</main><script>window.EngDocReady=true</script></body></html>`;
 }
