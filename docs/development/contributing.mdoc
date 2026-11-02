@@ -1,0 +1,65 @@
+{% section id="dev:contributing" title="开发与验证" %}
+
+从仓库 README 和 AGENTS.md 开始，按受影响模块读取当前契约与需求基线。修改前确认事实来源、影响范围和可观察的验证方式。
+
+{% section id="dev:run" title="本地手册与命令" %}
+
+```sh
+npm ci
+npm run docs:build
+npm run docs:dev
+```
+
+docs:build 使用根配置生成 output/index.html，可直接离线打开。docs:dev 先构建再在 127.0.0.1:5175 预览，当前不监听源变化；修改后重建并刷新。ENGDOC_DOCS_PORT 可调整端口。图示数据转换需要已有 Python 3，优先 uv；不会自动安装 Python 或浏览器。
+
+源码 CLI 为 node packages/cli/engdoc.ts，安装后的用户直接使用 engdoc。需要静态整本文档时运行 npm run docs:pdf，并用 ENGDOC_CHROMIUM 指定已有 Chromium。
+
+{% /section %}
+
+{% section id="dev:checks" title="按影响范围验证" %}
+
+```sh
+npm run typecheck
+npm run test:read
+npm run test:outline
+npm run test:manual
+npm run test:query
+npm run test:document
+npm run test:reader
+npm run test:package
+```
+
+Schema、图形布局或接口变化另跑对应 test:schema、test:graph、test:layout、test:interface。网页行为和图形用已有 Chromium 验证相关页面，使用 playwright-cli 实际操作与截图观察；自动测试使用 ENGDOC_CHROMIUM。
+
+检查阅读页切换、稳定链接、查询来源和字符截断，不能只检查生成文件存在。图形逐线核对端点/分支、框边、标签和典型阅读尺寸；SVG/PDF 静态输出分别验收。PDF 检查中文、书签、Tabs/折叠与有代表性的版面。
+
+报告实际检查范围、失败与未验证项。测试数量和“没有报错”不能证明所有真实工程图都可读。
+
+{% /section %}
+
+{% section id="dev:demo-migration" title="Demo 如何进入文档" %}
+
+| 原展示内容 | 当前位置 |
+| --- | --- |
+| 层级架构与类别筛选 | 画结构与接线 |
+| Ball/Pin、多端点 Net、线上标题 | 画结构与接线 |
+| 多接口聚合与独立展开 | 接口教程；逐信号细节进查询参考 |
+| 状态与迁移条件、WaveJSON | 状态与时序 |
+| 相对位置、对齐、反馈通道、显示主干 | 布局教程；字段进图形参考 |
+| 引脚/RTL 表、规范/覆盖关系 | 样例查询参考，仍引用原事实 |
+| 四方向穷举、固定障碍与历史缺陷脚本 | 原 Gallery 开发回归资料 |
+
+原 Gallery 的完整图集和操作/历史说明已接入[开发回归](regression/index.mdoc)，数据和脚本保留在 examples，共用同一事实。npm run demo:build 仍生成底层回归产物，使用入口由正式手册承担；历史 --ir 命令不再作为当前 CLI 用法。
+
+{% /section %}
+
+{% section id="dev:documentation-rules" title="新增和合并文档" %}
+
+README 只承担首次入口，普通正文在 docs 下使用 .mdoc，按使用/参考或开发/设计/评审/验收分组。AGENTS.md 保留工具约定文件名，完整规则同源接入开发文档。独立样例 README 保留入口，样例正文、模板等必须通过页面、include、code 或显式子工程接入。
+
+字段契约集中在使用参考，教程只保留当前任务需要的说明与示例；历史验收保存日期、环境、原数量和未验证项，不能把“当时未实现”改写为当前缺口。原始方案快照保持原文；去重不能删除独有决策或降低已批准要求。
+
+真实配置与模板用 code.file 引用，不复制手抄。修改后运行 test:manual 检查作者文档覆盖及实际链接，test:read/test:outline 检查按需读取；浏览器另检查真正的阅读与跳转流程。测试夹具是回归输入，不作为正式文档迁移。
+
+{% /section %}
+{% /section %}

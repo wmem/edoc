@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {writeFileSync,mkdirSync} from 'node:fs';
+import {writeFileSync,mkdirSync,readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fixture,expectCode,repository} from './helpers.ts';
@@ -70,10 +70,34 @@ test('outline 暴露源 sectionId，代码围栏不加载资源或创建假章�
 });
 test('read CLI 可选择组合内项目，弱链接不执行外部配置，text 明示截断',t=>{
  const f=sample(t);mkdirSync(join(f.root,'component'));writeFileSync(join(f.root,'component/engdoc.config.js'),"export default {projectId:'component',documents:'index.mdoc'};");writeFileSync(join(f.root,'component/index.mdoc'),'{% section id="same" title="独立章节" %}CHILD_CONTENT {% reference project="missing" id="unknown" /%}{% /section %}');
- writeFileSync(join(f.root,'engdoc.config.js'),"export default {projectId:'parent',documents:'parent.mdoc',children:{part:'component/engdoc.config.js'}};");writeFileSync(join(f.root,'parent.mdoc'),'{% section id="same" title="父章节" %}\nPARENT_CONTENT\n\n{% include project="part" /%}\n{% /section %}');
+ writeFileSync(join(f.root,'docs/engdoc.config.js'),"export default {projectId:'parent',documents:'parent.mdoc',children:{part:'component/engdoc.config.js'}};");writeFileSync(join(f.root,'parent.mdoc'),'{% section id="same" title="父章节" %}\nPARENT_CONTENT\n\n{% include project="part" /%}\n{% /section %}');
  const run=(args:string[])=>spawnSync(process.execPath,[join(repository,'packages/cli/engdoc.ts'),...args],{cwd:f.root,encoding:'utf8',timeout:15000});
  const child=run(['read','--project','component','--id','same']);assert.equal(child.status,0,child.stderr);assert.match(JSON.parse(child.stdout).content,/CHILD_CONTENT/);assert.ok(!child.stdout.includes('PARENT_CONTENT'));
  const parent=run(['read','--id','same','--format','text','--max-chars','4']);assert.equal(parent.status,0,parent.stderr);assert.match(parent.stdout,/正文已截断/);assert.match(parent.stdout,/--offset 4/);
  for(const args of [['read'],['read','--id','same','--scope','all'],['read','--id','same','--max-chars','0']])assert.equal(run(args).status,2);
  assert.equal(run(['read','--id','unknown']).status,3);
+});
+
+test('源码引用显示真实模板，不执行其中标签，read 保留文件来源并同步修改',async t=>{
+ const f=fixture(t),file=join(f.root,'docs/example.mdoc');
+ const content='# 模板\n{% section id="not-a-fact" %}\n{% include file="missing.mdoc" /%}\n<script>example()</script>\n{% /section %}\n';
+ writeFileSync(file,content);writeFileSync(join(f.root,'docs/book.mdoc'),'{% section id="source:example" title="真实源码" %}\n{% code file="docs/example.mdoc" language="markdoc" /%}\n{% /section %}');
+ f.edit('manifest',d=>d.entryDocuments=['docs/book.mdoc']);
+ const graph=(await loadBook(await resolveProjectConfig(join(f.root,'engdoc.config.js')))).root.graph,result=readDocument(graph,'source:example');assert.ok(!graph.index.has('not-a-fact'));assert.ok(graph.documentPlan?.files.includes('docs/example.mdoc'));
+ assert.match(result.content,/include file="missing.mdoc"/);assert.ok(result.sources.some(s=>s.file==='docs/example.mdoc'&&s.line===1));
+ const rendered=await renderDocument(graph,'源码');assert.match(rendered.chapters,/&lt;script&gt;example\(\)&lt;\/script&gt;/);assert.match(rendered.chapters,/data-language="markdoc"/);
+ writeFileSync(file,content.replace('模板','修改后的模板'));assert.match(readDocument(f.load(),'source:example').content,/修改后的模板/);
+});
+test('源码引用拒绝越界、缺失、二进制、无效 UTF-8 和超限文本',t=>{
+ const f=fixture(t);f.edit('manifest',d=>d.entryDocuments=['docs/code.mdoc']);
+ const check=(source:string,code:string)=>{writeFileSync(join(f.root,'docs/code.mdoc'),'{% code file="'+source+'" /%}');expectCode(f.load,code);};
+ check('../outside.js','PATH_SCOPE');check('missing.js','FILE_MISSING');
+ writeFileSync(join(f.root,'nul.bin'),Buffer.from([65,0,66]));check('nul.bin','DOCUMENT_CODE_TEXT');
+ writeFileSync(join(f.root,'invalid.bin'),Buffer.from([255,254,253]));check('invalid.bin','DOCUMENT_CODE_TEXT');
+ writeFileSync(join(f.root,'large.txt'),'a'.repeat(128*1024+1));check('large.txt','DOCUMENT_CODE_SIZE');
+});
+test('源码引用参与输出保护，不覆盖作者展示的原文件',t=>{
+ const f=fixture(t),file=join(f.root,'original.html'),content='<p>作者原文件</p>';writeFileSync(file,content);
+ writeFileSync(join(f.root,'docs/engdoc.config.js'),"export default {documents:'docs/code.mdoc',output:{html:'original.html'}};");writeFileSync(join(f.root,'docs/code.mdoc'),'{% code file="original.html" language="html" /%}');
+ const result=spawnSync(process.execPath,[join(repository,'packages/cli/engdoc.ts')],{cwd:f.root,encoding:'utf8',timeout:10000});assert.equal(result.status,1);assert.match(result.stderr,/OUTPUT_SOURCE/);assert.equal(readFileSync(file,'utf8'),content);
 });

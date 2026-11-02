@@ -1,0 +1,153 @@
+{% section id="gallery:start" title="图形开发回归集" %}
+
+# 看图，也可以查图
+
+这是开发回归用的完整图形集合；渐进用法以使用文档为入口。全部芯片、Ball/Pin 和模块关系均为**虚构示例**，不能用于真实硬件设计；MAC RTL 只提供接口声明。
+
+先看结构，再看真实端口与独立连接，最后对照不同布局。点击节点、端口圆点或连线，右侧可查看身份、属性与来源；点击对象跳转可继续查证。
+
+| 想看什么 | 进入哪里 | 可以试什么 |
+| --- | --- | --- |
+| 模块、层级和多类关系 | 架构与层级 | 选中、邻接高亮、分类筛选、集合总览 |
+| 逐信号接口与参数位宽 | 接口与位宽 | 切换 TX / RX / APB4，对照图与接口表 |
+| Ball / Pin 和多端点 Net | 物理接线 | 关闭 clock、折叠/展开 QSPI、查看三个端点 |
+| 条件与反向迁移 | 状态与条件 | 选择状态或迁移，比较 ready / !ready |
+| 自动布局与固定位置 | 布局与避障 | 切换四个方向，看同一数据的不同排布 |
+| 时序与单文件导出 | 时序与导出 | 规范波形、SVG 下载、离线 HTML 与 PDF |
+
+“适配画布”显示完整总览；“大图查看”扩大当前画布，Esc 退出；“清晰阅读”恢复 1:1 比例，再拖动画布查看。按住 Ctrl/Command 滚轮可以缩放。
+
+{% /section %}
+
+{% section id="gallery:architecture" title="架构与层级" %}
+
+Data plane 包含 TX、RX 与 FIFO，Control / APB 位于外部。data、control、event 关系来自示例补充知识，没有从 RTL 推断内部实现。
+
+{% diagram id="mac:overview" /%}
+
+试着点击 RX FIFO，再关闭 event；“总览 Datapath group”将集合显示为摘要，展开后恢复独立模块。
+{% /section %}
+
+{% section id="gallery:interfaces" title="接口与位宽" %}
+
+端口显示名称、方向、位宽和时钟域。位宽由已有示例 Adapter 从 RTL 参数解析；下方详情表投影同一批对象。
+
+{% tabs %}
+{% tab name="TX 发送" %}
+{% diagram id="mac:tx-view" /%}
+{% interface id="mac:tx-axis" mode="detailed" /%}
+{% /tab %}
+{% tab name="RX 接收" %}
+{% diagram id="mac:rx-view" /%}
+{% interface id="mac:rx-axis" mode="detailed" /%}
+{% /tab %}
+{% tab name="APB4 控制" %}
+{% diagram id="mac:apb-view" /%}
+{% interface id="mac:apb" mode="detailed" /%}
+{% /tab %}
+{% /tabs %}
+{% /section %}
+
+{% section id="gallery:interfaces-section" title="接口分组与逐信号展开" %}
+
+这个虚构样例的处理模块有两组独立接口：S_AXI_CTRL 与 M_AXI_DMA。接口信号为演示摘录，不代表完整 AXI 实现，也没有执行 RTL 仿真。
+
+点击模块内接口名称旁的三角形，仅展开这一端；另一组接口可以保持折叠。点击聚合线查看其包含的原始连接，再选择“展开两端接口”。“接口总览”和“全部展开”切换整图；部分信号在本视图未显示连接，不据此断言实际未使用。
+
+{% diagram id="gallery:interface-buses" /%}
+
+当前视图 SVG 跟随接口展开状态；逐信号 SVG 和 PDF 保留完整连接。全量图用于理解连接全貌；打印查阅可使用下面按接口拆分的详图和信号表。
+
+{% section id="gallery:interface-details" title="按接口查阅信号与连接" collapsed=true %}
+
+{% diagram id="gallery:interface-ctrl-signals" /%}
+{% interface id="ifdemo:engine.s_ctrl" mode="detailed" /%}
+
+{% diagram id="gallery:interface-dma-signals" /%}
+{% interface id="ifdemo:engine.m_dma" mode="detailed" /%}
+
+{% /section %}
+
+{% /section %}
+
+{% section id="gallery:wiring" title="物理接线与多端点 Net" %}
+
+FPGA–Flash 展示 Ball、Pin、功能名和 clock / control / data 分类。FLASH_SCK 同时接到 FPGA、Flash 和测试连接器，始终是一条拥有三个端点的 Net。图中小圆点表示共同分叉；独立信号不会被合并。
+
+勾选“端口属性”显示 Ball/Pin 等附注，取消“连线标题”只隐藏文字。选择 FLASH_SCK 查看三个 endpoints；关闭 clock 后整条 Net 一起隐藏。
+
+{% diagram id="board:flash-wiring" /%}
+{% reference id="board:net.FLASH_SCK" /%}
+{% /section %}
+
+{% section id="gallery:states" title="状态与条件" %}
+
+状态图表达显式迁移与条件标签，反向迁移保持独立路径。这是规范示意，不是运行中的仿真，也没有自动解析 HDL 状态机。
+
+{% diagram id="mac:tx-state" /%}
+{% /section %}
+
+{% section id="gallery:layout" title="布局与避障" %}
+
+四个方向消费相同模块与关系，只改变展示。跨层的“处理结果”与分发关系保持独立，连线从框边出入，标签参与布局。
+
+{% tabs %}
+{% tab name="从左到右 LR" %}
+{% diagram id="gallery:layout-LR" /%}
+{% /tab %}
+{% tab name="从右到左 RL" %}
+{% diagram id="gallery:layout-RL" /%}
+{% /tab %}
+{% tab name="从上到下 TB" %}
+{% diagram id="gallery:layout-TB" /%}
+{% /tab %}
+{% tab name="从下到上 BT" %}
+{% diagram id="gallery:layout-BT" /%}
+{% /tab %}
+{% /tabs %}
+
+## 固定位置与障碍绕行
+
+三个节点固定位置，中间节点没有连接关系。请求与响应之间的连线需要绕开它；位置提示属于视图，不写回工程事实。
+
+{% diagram id="gallery:fixed" /%}
+{% /section %}
+
+{% section id="gallery:layout-intent" title="按需声明布局意图" %}
+
+上面的图使用默认布局或既有固定位置。这一节引用相同工程对象和原始关系，通过少量属性指定阅读意图，不填写逐节点坐标和折点。
+
+## 相对位置、对齐与反馈通道
+
+Control 在 Data plane 左侧，TX/RX 上下排列，RX 与 FIFO 同行。received frame 优先布线，occupancy event 优先使用下方通道。顺序与对齐是必须满足的约束；通道和优先级是布局偏好，无法满足会明确提示。
+
+{% diagram id="gallery:architecture-intent" /%}
+
+## 多端点主干与分支
+
+FPGA 与 Flash 对齐，测试连接器在上方；FLASH_SCK 的显示主干选择 FPGA 与 Flash，第三端点仍接入同一 Net。主干仅表达本图的阅读意图，不表示 PCB 实际走线拓扑。
+
+{% diagram id="gallery:wiring-intent" /%}
+
+这些设置保存在 examples/gallery/constraints.json。它们只调整视图；点击连线仍能查到同一原始关系、完整端点和来源。
+
+{% /section %}
+
+{% section id="gallery:wave" title="时序与导出" %}
+
+WaveJSON 描述握手与反压。它作为独立的时序视图渲染，标为规范示意，不能当作已经执行的仿真结果。
+
+{% waveform id="mac:tx-handshake" /%}
+
+交互关系图的 SVG 按钮导出完整矢量图，包含字体与来源。离线 HTML 保留交互；PDF 完整展开 Tabs 和折叠内容，使用同一批图形数据生成静态页面。
+
+{% /section %}
+
+{% section id="gallery:reference" title="查询参考与来源" collapsed=true %}
+
+图、表、来源和对象查询共用 IR。需要精确字段时按稳定 ID 查询，不读取整份生成网页。下面保留示例接口与引脚投影，以及规范/覆盖映射；覆盖映射不代表执行了 RTL 功能验证。
+
+{% table id="board:pins" /%}
+{% table id="mac:port-table" /%}
+规范与覆盖条款在手册的“样例查询与来源”中同源接入；独立旧 Gallery 构建将两份原片段作为独立入口。
+{% /section %}

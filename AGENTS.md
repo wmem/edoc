@@ -1,23 +1,5 @@
 # EngDoc 的 Agent 入口
 
-正式文档由根 engdoc.config.js 自身渲染，运行 `npm run docs:build`，入口为 output/index.html。使用路线在 [docs/manual/usage/index.mdoc](docs/manual/usage/index.mdoc)，字段/命令参考在 [docs/manual/usage/reference/index.mdoc](docs/manual/usage/reference/index.mdoc)，工具维护路线在 [docs/manual/development/index.mdoc](docs/manual/development/index.mdoc)。先按任务选入口，不整本读取生成 HTML；`outline --format json` 提供源 sectionId，再用 `read --id ...` 读取章节，事实使用 query。read 默认 self，不附带子 section 正文，留意 range 截断与 nextOffset。
+先读 README.md，然后读取[完整维护规则](docs/development/agent-rules.mdoc)，并按其中要求阅读需求基线和推荐指南。完整规则只在该文档维护，本文件保留 Agent 约定的入口名称。
 
-先读 README.md 和 [需求与设计基线](docs/需求与设计基线.md)，再读 [推荐指南](docs/推荐指南.md)。原始需求快照及来源见 [docs/design/](docs/design/README.md)，初次图形问题见 [图形渲染审查](docs/图形渲染审查.md)，修复及当前验证范围见 [图形渲染修复验收](docs/图形渲染修复验收.md)。创建或重组工程文档前，也可运行 `node packages/cli/engdoc.ts guide`；已安装的项目直接运行 `engdoc guide` 读取同一份指南。项目接入默认使用 `engdoc.config.js`，字段直接写在配置中；正文先扫描、数据自动发现，不再要求手写 manifest/command/inputs。完整入口契约见 [项目配置与自动依赖](docs/渐进式项目配置设计.md)。
-
-推荐指南描述默认的写作与组织方法，不改变项目规范、数据权威来源或已经批准的工程语义。项目有明确约定时遵循项目约定；建议中的取舍不能自行提升为强制要求。
-
-工作原则：
-
-1. 先确定读者需要理解的问题与需要精确查询的问题，再决定章节和图表。
-2. 区分阅读页、页内章节和子工程组合；普通文档链接切换文章，file include 复用片段，project include 保留子工程上下文。使用稳定 section ID 表达需长期引用的章节，不靠视觉缩进模拟结构。
-3. 默认先解释整体、关系和边界，再逐层展开模块、接口、字段与证据。全量精确数据保留在 IR/query，长表和证据放查询参考，通过链接可达。
-4. 项目源、项目知识与显示组织分别维护；不要在正文、图和表重复手抄 pin、位宽、VALUE 等精确字段。
-5. 通用目录、排版、引用、查询与安全边界在工具实现；不要把项目特定规则写入通用工具。
-6. 修改后除校验与测试，还须检查 `outline`、浏览器目录父子关系、折叠与跳转，以及 PDF 书签；构建成功不等于阅读体验完成。
-7. 从实际项目发现的通用问题，修复工具并补回归；将通用经验更新到推荐指南与模板，再在项目中验证。
-8. 按原设计的图形可行性门槛，优先验证端口、路径、分支和标签的准确与可读性。图能初始化、XML 合法、根边界不越界均不能替代连线与文字检查；浏览器和 SVG/PDF 分别验收，真实规模下不可读时先修订绘图策略。
-9. 展示采用合理默认、按需声明、局部覆盖、明确校验的原则。先使用默认行为，必要时在视图/编排层声明少量意图；不为展示复制工程事实，不把普通渲染缺陷转嫁为必须手调。当前图形字段及尚未实现的跨组件范围见[布局约束使用与验收](docs/布局约束使用与验收.md)。
-
-实现入口为 packages/core（模型、正文与查询）、packages/doc-theme（正文/目录/交互）、packages/pack-html 与 packages/render-pdf。JSON Schema 位于 packages/schema。历史验收记录只代表对应版本，不当成本轮结果。组合/阅读/PDF 的实现记录见 [组合工程与 PDF 附件](docs/组合工程与PDF附件使用.md)：父子工程同构，file include 复用页内片段，project include 接入子配置；跨工程链接只查当前产物，不读取外部配置或数据。
-
-本工具的使用文档必须按任务渐进组织，主体解释用途、步骤和边界，精确细节有稳定章节供人和 Agent 查询；新增图形能力优先在对应教程中展示实际渲染，不再新增长期独立 Demo。原 Gallery 和极端布局样例保留为开发回归资料，样例数据保持同源。代码围栏中的标签是字面样例，不应执行 include、创建索引或产生依赖。
+在仓库根可执行 `node packages/cli/engdoc.ts read --id dev:agent-rules --scope subtree --format text`；事实使用 query，使用教程与开发文档按任务分别进入，不读取生成 HTML 作为源码。

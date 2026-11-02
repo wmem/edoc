@@ -1,0 +1,73 @@
+{% section id="ref:markdoc" title="正文语法" %}
+
+普通正文可使用 .md，数据引用和受控布局使用 .mdoc。标签不执行作者提供的 JavaScript、CSS 或任意原生 HTML。
+
+代码围栏始终按字面展示；其中的标签、链接和 ID 不会执行 include、加载资源或创建工程索引，因此可以直接展示工具自身语法。
+
+{% section id="ref:markdoc-structure" title="章节、布局与 Tabs" %}
+
+| 标签 | 属性 | 行为 |
+| --- | --- | --- |
+| section | id 必需；title、collapsed 可选 | 稳定身份与章节包含关系 |
+| columns | ratio：1:1、2:1、1:2、1:1:1 | 预设列比例，窄屏堆叠 |
+| panel | title 可选 | 布局标题，不加入正文目录 |
+| tabs | 无 | 包含名称唯一的 tab |
+| tab | name 必需 | HTML 切换，文档 PDF 展开全部 |
+
+每个文件应有完整闭合结构；不能跨文件拼半个 section。默认 read 排除嵌套 section 的正文，因此可用稳定小节把查询细节与主说明分开。
+
+下面实际使用 columns 与 panel，将主说明和补充入口放在同一行；窄屏时会纵向排列：
+
+{% columns ratio="2:1" %}
+{% panel title="主要任务" %}
+解释当前任务的步骤与边界，不把全部参数塞进主体。
+{% /panel %}
+{% panel title="按需细节" %}
+{% reference id="ref:config" label="查看配置参考" /%}
+{% /panel %}
+{% /columns %}
+
+```text
+{% columns ratio="2:1" %}
+{% panel title="说明" %}
+普通 Markdown。
+{% /panel %}
+{% panel title="补充" %}
+按需查阅的内容。
+{% /panel %}
+{% /columns %}
+```
+
+{% /section %}
+
+{% section id="ref:markdoc-data" title="图、接口、表与时序" %}
+
+| 标签 | 引用目标 |
+| --- | --- |
+| diagram id | view |
+| interface id mode | node/group/interface/view；mode=detailed 或 overview |
+| table id | 结构化 table |
+| waveform id | WaveJSON waveform |
+| code file language | 以字面文本展示本工程真实源文件，language 可选 |
+
+它们均为自闭合标签。图、接口、表和时序的 id 必需，只从当前工程取数据；code 改用 file。未知、缺失或类型不符时报错，折叠与 Tabs 内也会校验。
+
+code 使用 file 而非 id，路径相对工程根：`{% code file="docs/engdoc.config.js" language="javascript" /%}`。它内联不含 NUL 的 UTF-8 文本，最大 128 KiB，保留来源并参与输入保护；不执行程序或模板标签，不加载其中的链接。适合展示真实配置和正文模板，避免复制后忘记同步。原文件中的 HTML/脚本按文本转义。与 file include 展开正文的用途不同。
+
+{% /section %}
+
+{% section id="ref:markdoc-links" title="链接与 include" %}
+
+| 标签 | 属性与用途 |
+| --- | --- |
+| reference | id 必需，project/label 可选；跳转对象、行或显式 section |
+| page | id 必需，project/label/anchor 可选；跳转逻辑阅读页 |
+| attachment | id 必需，target/project/label 可选；跳转 PDF |
+| include | file 或 project 二选一；页内复用或子工程接入 |
+
+file include 相对本工程根；普通 Markdown 文件链接相对实际源文件。本地文件链接检查文件与锚点。跨工程跳转使用 projectId，仅查当前 HTML，未包含提示，不产生外部源依赖。
+
+图片支持项目范围内 PNG/JPEG/WebP，并内联。普通外链限 http/https/mailto；不允许外链运行资源或任意 HTML/SVG 执行入口。
+
+{% /section %}
+{% /section %}

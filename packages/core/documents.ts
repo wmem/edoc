@@ -17,6 +17,7 @@ export const tags:Record<string,any>={
  page:{render:'a',selfClosing:true,attributes:{id:{type:String,required:true},project:{type:String},label:{type:String},anchor:{type:String}}},
  attachment:{render:'a',selfClosing:true,attributes:{id:{type:String,required:true},target:{type:String},project:{type:String},label:{type:String}}},
  include:{selfClosing:true,attributes:{file:{type:String},project:{type:String}}},
+ code:{selfClosing:true,attributes:{file:{type:String,required:true},language:{type:String}}},
 };
 export type DocumentReference={id:string;tag:string;file:string;line:number;project?:string;target?:string};
 export type DocumentPlan={documents:{file:string;ast:any;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[]};
@@ -42,6 +43,13 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
   for(const node of ast.walk()){locations.set(node,{file,line:(node.location?.start.line??0)+1});if(node.type==='link')node.attributes.__engdocSourceFile=file;}
   const expand=(node:any)=>{
    node.children=node.children.flatMap((child:any)=>{
+    if(child.type==='tag'&&child.tag==='code'){
+     const target=child.attributes.file,absolute=projectPath(projectRoot,projectRoot,target);requireFile(absolute);
+     if(statSync(absolute).size>128*1024)failure('DOCUMENT_CODE_SIZE',file,`#L${locations.get(child)!.line}`,'源码示例最多 128 KiB；请引用较小的独立源文件');
+     let content:string;try{content=new TextDecoder('utf-8',{fatal:true}).decode(readFileSync(absolute));if(content.includes('\0'))throw new Error('包含 NUL');}catch{failure('DOCUMENT_CODE_TEXT',file,`#L${locations.get(child)!.line}`,'源码示例必须为不含 NUL 的 UTF-8 文本');}
+     const fence=new Markdoc.Ast.Node('fence',{content,language:child.attributes.language??extname(target).slice(1),process:false});
+     locations.set(fence,{file:target,line:1});files.add(target);return [fence];
+    }
     if(child.type==='tag'&&child.tag==='include'){
      const {file:target,project}=child.attributes;
      if((typeof target==='string')===(typeof project==='string')||target===''||project==='')failure('DOCUMENT_INCLUDE',file,`#L${locations.get(child)!.line}`,'include 必须且只能指定 file 或 project');

@@ -16,16 +16,17 @@ import {pdf} from '../render-pdf/index.ts';
 
 const help=`EngDoc / IR ${SUPPORTED_IR_VERSION}
 用法：
- engdoc                                      读取当前目录 engdoc.config.js 并构建
+ engdoc                                      读取当前项目 docs/engdoc.config.js 并构建
  engdoc --config path/to/custom.js            使用指定配置构建
  engdoc build [--format html|pdf] [--output FILE]
  engdoc validate [--format json|text]         扫描文档、发现数据并校验依赖
- engdoc outline [--format json|text]
+ engdoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
  engdoc query [--project PROJECT_ID] --id ID [--depth 0..10] [--max-items 1..10000] [--format json|text]
  engdoc read [--project PROJECT_ID] --id SECTION_ID [--scope self|subtree] [--offset 0] [--max-chars 12000] [--format json|text]
  engdoc export [--project PROJECT_ID] --view ID --format svg --output FILE
  engdoc guide [--format text|json]
-项目命令均可使用 --config；省略时只查找当前目录 engdoc.config.js。
+项目命令均可使用 --config；省略时只查找当前目录下的 docs/engdoc.config.js。
+标准 docs/engdoc.config.js 的工程根为 docs 上一级；其他显式配置以配置目录为工程根。
 配置内容直接写在 JS 中；不要求 manifest、command 或 inputs 清单。
 正文与 IR 数据自动发现和校验，每篇正文独立阅读；图形仅生成正文引用的视图。
 显式 children/include 接入子工程；跨工程链接不加载外部工程。
@@ -44,15 +45,17 @@ export async function main(argv:string[]):Promise<number>{
   if(argv.length===1&&argv[0]==='--version'){process.stdout.write(`EngDoc 1.0.0 / IR ${SUPPORTED_IR_VERSION}\n`);return 0;}
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 engdoc --help 查看用法');
-  const allowed=new Set(command==='guide'?['--format']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars']:[]),...(['query','read','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);
+  const allowed=new Set(command==='guide'?['--format']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;i+=2){const key=tokens[i];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(tokens[i+1]===undefined||tokens[i+1].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i+1];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
   if(command==='build'&&args['--format']==='text')throw new UsageError('build 的 --format 只接受 html/pdf');
   if(!({build:['text','html','pdf'],validate:['json','text'],outline:['json','text'],query:['json','text'],read:['json','text'],export:['svg'],guide:['json','text']}[command]!).includes(format))throw new UsageError('命令输出格式不正确');
-  if(command==='guide'){const content=readFileSync(new URL('../../docs/推荐指南.md',import.meta.url),'utf8');process.stdout.write(format==='json'?JSON.stringify({guideVersion:'3.0',source:'docs/推荐指南.md',content},null,2)+'\n':content);return 0;}
+  if(command==='guide'){const content=readFileSync(new URL('../../docs/usage/guide.mdoc',import.meta.url),'utf8');process.stdout.write(format==='json'?JSON.stringify({guideVersion:'3.0',source:'docs/usage/guide.mdoc',content},null,2)+'\n':content);return 0;}
   if(command==='query'&&!args['--id'])throw new UsageError('query 需要 --id');
   if(command==='read'&&!args['--id'])throw new UsageError('read 需要 --id');
+  if(command==='outline'&&args['--id']!==undefined&&!args['--id'].trim())throw new UsageError('outline 的 --id 必须是非空章节 ID');
+  if(args['--project']!==undefined&&!args['--project'].trim())throw new UsageError('--project 必须是非空工程 ID');
   if(command==='read'&&args['--scope']!==undefined&&!['self','subtree'].includes(args['--scope']))throw new UsageError('--scope 只接受 self/subtree');
   if(command==='export'&&(!args['--view']||!args['--output']||!args['--output'].endsWith('.svg')))throw new UsageError('export 需要 --view、--format svg 和 .svg 的 --output');
   const number=(key:string,fallback:number,min:number,max:number)=>{const value=args[key];if(value===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(value)||+value<min||+value>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +value;};
@@ -72,7 +75,7 @@ export async function main(argv:string[]):Promise<number>{
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':`# ${result.title}\n来源：${result.source.file}:${result.source.line}\n范围：${result.scope}；字符 ${result.range.offset}–${result.range.offset+result.range.returnedChars}/${result.range.totalChars}\n\n${result.content}\n`+(result.children.length?'\n子章节：'+result.children.map(c=>`${c.id}（${c.title}）`).join('、')+'\n':'')+(result.range.truncated?`\n正文已截断；继续：--offset ${result.range.nextOffset}\n`:''));return 0;
   }
   if(command==='outline'){
-   const result=projectOutline(book),lines=(nodes:typeof result.chapters,depth=0):string[]=>nodes.flatMap(n=>['  '.repeat(depth)+n.label,...lines(n.children,depth+1)]);
+   const result=projectOutline(book,{project:args['--project'],id:args['--id'],depth:args['--depth']===undefined?undefined:depth}),lines=(nodes:typeof result.chapters,depth=0):string[]=>nodes.flatMap(n=>['  '.repeat(depth)+n.label+(n.childrenOmitted?`（另有 ${n.childrenOmitted} 个子项）`:''),...lines(n.children,depth+1)]);
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':lines(result.chapters).join('\n')+'\n');return 0;
   }
   if(command==='validate'){

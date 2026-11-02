@@ -26,6 +26,9 @@ test('outline 返回章节树与源位置，不要求生成 HTML',t=>{
  assert.equal(tree.chapters[0].children[0].children[0].source.file,'docs/book.mdoc');
  const plain=run(['outline','--config',join(f.root,'engdoc.config.js'),'--format','text']);
  assert.equal(plain.stdout,'父章节\n  子章节\n    详情\n');
+ const short=run(['outline','--config',join(f.root,'engdoc.config.js'),'--id','parent','--depth','0']);assert.equal(short.status,0,short.stderr);assert.equal(JSON.parse(short.stdout).chapters[0].childrenOmitted,1);
+ const branch=run(['outline','--config',join(f.root,'engdoc.config.js'),'--id','child','--depth','0','--format','text']);assert.equal(branch.status,0,branch.stderr);assert.match(branch.stdout,/子章节（另有 1 个子项）/);
+ assert.equal(run(['outline','--config',join(f.root,'engdoc.config.js'),'--id','unknown']).status,3);assert.equal(run(['outline','--depth','11']).status,2);
 });
 
 test('CLI validate 输出纯 JSON 与正确退出码', t => {

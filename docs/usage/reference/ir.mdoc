@@ -1,0 +1,69 @@
+{% section id="ref:ir" title="数据契约" %}
+
+当前支持 IR 1.2。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+
+| 外层字段 | 内容 | 本页条目 |
+| --- | --- | --- |
+| objects | Node 与 Group | ref:objects |
+| relations | 真实连接 | ref:connections |
+| views | 引用范围和展示 | 图形参考 |
+| tables | 投影或权威表格行 | ref:tables |
+| waveforms | WaveJSON 与语义来源 | ref:waveforms |
+| references | 有身份的语义关联 | ref:references |
+
+{% section id="ref:objects" title="Node、Port 与 Group" %}
+
+Node 必需 id、kind='node'、label；可含 parentId、ports、interfaces、attributes、source。parentId 表示图形层级。Group 的 kind='group'，必需 members；它表达逻辑选集，不是 Node 的物理或语义父子关系。
+
+Port 嵌套在唯一 Node 中，必需 id、label、direction。direction 为 in/out/inout/passive/unknown；width 为已解析正整数，未解析可保留 widthExpr、parameterContext。可选 groupId、clockDomainId、attributes、source。未知方向不能补成确定方向，时钟域不靠名字推断。
+
+Node、Port、接口、关系、视图、表、行、波形、关联和显式 section 均占用所属工程的同一 ID 空间。attributes 保存领域扩展，顶层契约字段严格校验。
+
+parentId 只能指向 Node，禁止自循环与层级循环。Group.members 引用 Node/Port/Group，允许共享子组的 DAG，但禁止分组循环；端口 groupId 和 clockDomainId 继续严格校验目标存在与类型，不通过布局或名字推断语义。正式引用不能藏在 attributes 中代替结构关系。
+
+正式结构位于仓库 packages/schema/object.schema.json 和 common.schema.json；接口成员见 {% reference id="ref:interfaces" /%}。
+
+{% /section %}
+
+{% section id="ref:connections" title="Connection" %}
+
+必需 id、kind='connection'、class、endpoints，label、direction、attributes、source 可选。endpoints 至少两个不同的已存在节点或端口；一条多端点 Net 保留一个 ID 和全部端点。
+
+class 是开放字符串，用于类别与展示，不推断电气含义。direction.sources/targets 显式声明方向且引用真实端点；不从颜色、label 或端口显示边推断。
+
+sources/targets 若声明则各自非空、不重复、互不相交，且均属于原 endpoints；不要求覆盖所有被动端点。双向或未知方向可省略 direction，不能根据端口方向偷偷补出源/目标。
+
+折叠接口、过滤和显示主干只是投影，不能改变原 endpoints。完整结构见 packages/schema/relation.schema.json。
+
+{% /section %}
+
+{% section id="ref:tables" title="Table 与投影行" %}
+
+Table 必需 id、kind='table'、label、columns、rows。列必需 field、label、type，type 支持 string/number/boolean/json，可选 unit。field 可用 attributes.ball 这样的点路径。
+
+行二选一：{id, objectId} 从原对象投影，或 {id, values} 表达项目自身的权威表格事实。投影行不能同时复制 values。不存在的字段显示 unknown，存在值须符合列类型。
+
+[样例查询](examples.mdoc)中的引脚表与 RTL 表直接投影原对象。完整结构见 packages/schema/table.schema.json。
+
+{% /section %}
+
+{% section id="ref:waveforms" title="Waveform" %}
+
+必需 id、kind='waveform'、label、format='wavejson'、semantic、data、source。semantic 只能为 specification 或 simulation，分别表示规范示意与有来源的仿真结果；不能为了图形效果混用。
+
+data 保存 WaveJSON 对象，交由时序渲染器处理。原输入在 examples/fpga-mac/project/handshake.json；[时序教程](../06-state-wave.mdoc)实际展示该输入。完整结构见 packages/schema/waveform.schema.json。
+
+{% /section %}
+
+{% section id="ref:references" title="Reference 与来源" %}
+
+Reference 必需 id、kind='reference'、fromId、targetId、class，label、source 可选。它表达对象/条款之间的 describes、covers、contains 等显式关联，与真实连接分开；query 可查正向和反向引用。
+
+source.file 必需，selector 和 line 可选。file 以工程根定位，selector 是稳定定位，line 只辅助。source.attachment 可补充 PDF 核对入口，不替代原数据来源。
+
+来源路径必须在工程范围内，符号链接不能绕过边界；source.file 可仅保留未随工程携带的追溯路径，这不表示已核验该文件内容。实际加载的数据、正文、图片、代码示例和 PDF 则必须存在并通过相应检查。
+
+数据可声明 irVersion 和 requiredFeatures。当前已知能力为 graph、documents、tables、wavejson、references、interface-groups、layout-intent、pdf-attachments；未知必需能力明确失败。工具会识别已知结构需要的能力，普通配置无需手填版本清单。
+
+{% /section %}
+{% /section %}

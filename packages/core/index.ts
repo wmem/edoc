@@ -12,5 +12,5 @@ export type {OutlineEntry} from './outline.ts';
 export type * from './types.ts';
 
 export {loadBook,projectOutline,bookNavigation} from './book.ts';
-export type {Book,ProjectNode} from './book.ts';
+export type {Book,ProjectNode,OutlineOptions} from './book.ts';
 export type {AttachmentInput,PdfTargetInput} from './attachments.ts';

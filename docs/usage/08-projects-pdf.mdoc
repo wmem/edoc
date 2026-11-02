@@ -1,0 +1,76 @@
+{% section id="use:projects-pdf" title="工程组合与 PDF 原文" %}
+
+多目录工程可以各自维护文档，再显式组合发布。文档解释结论，原始 PDF 用于核对证据；两者在同一离线 HTML 中切换。
+
+{% section id="use:composition" title="父子都是完整工程" %}
+
+父配置声明子配置，父正文的 section 决定接入位置：
+
+```js
+export default {
+  projectId: 'system', documents: 'docs',
+  children: {component: 'component/docs/engdoc.config.js'}
+};
+```
+
+```text
+{% include project="component" /%}
+```
+
+下面是真正接入本手册的子工程入口，可以点击进入，再通过它的链接回来：
+
+{% include project="component" /%}
+
+每个工程保留自己的配置根、正文和 docs/ir。子工程可以独立生成；父配置不会变成只有目录的容器。
+
+{% /section %}
+
+{% section id="use:weak-links" title="跨工程只做弱跳转" %}
+
+```text
+{% reference project="board" id="device:controller" label="核对控制器" /%}
+```
+
+project 使用稳定 projectId，不是父子别名或磁盘路径。只查当前产物中已有的目标，不读取外部配置、正文或 IR。目标未包含时提示“当前生成的页面中没有此内容”，保留当前文章。
+
+例如点击 {% reference project="not-in-this-manual" id="device:controller" label="未包含目标的示例" /%}。这不会令独立构建失败。本地数据和渲染引用仍然严格校验。
+
+{% /section %}
+
+{% section id="use:pdf" title="携带 PDF 并定位" %}
+
+本手册内嵌一份两页的虚构 PDF，用来说明定位行为，不包含真实电路。
+
+{% attachment id="location" target="detail" label="打开第 2 页的示例区域" /%}
+
+{% attachment id="location" target="named" label="通过命名目标 DETAIL 打开" /%}
+
+进入后可以分页、缩放、下载原文件，并使用浏览器后退回到这里。
+
+也可打开 {% reference id="manual:pdf-source" label="示例文件对象" /%}，从对象详情的“查看原始 PDF”进入同一区域，体验 source.attachment 的核对入口。
+
+```js
+attachments: {
+  schematic: {
+    type: 'pdf', file: 'hardware/schematic.pdf',
+    targets: {
+      power: {page: 3, rect: [0.10, 0.20, 0.40, 0.35]}
+    }
+  }
+}
+```
+
+正文用 attachment id="schematic" target="power" 引用。附件 ID 和位置 ID 分开，PDF 换版时更新映射，正文身份可以保持。
+
+rect 是旋转及裁切后显示区域的归一化角点 [x0,y0,x1,y1]，左上为原点。细节、命名目标、source.attachment 和限制见 {% reference id="ref:pdf" label="PDF 参考" /%}。
+
+{% /section %}
+
+{% section id="use:publish" title="离线 HTML 与文档 PDF" %}
+
+HTML 携带正文、数据、字体、脚本和附件，按篇阅读；文件大小仍随内容和附件增长。复制 HTML 后无需源目录或服务端即可查看。
+
+文档导出 PDF 是另一项能力：engdoc build --format pdf，需要已有 Chromium。它将正文与图表展开为静态文档，不自动合并源 PDF。浏览器打印只输出当前阅读文章。
+
+{% /section %}
+{% /section %}

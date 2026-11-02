@@ -22,11 +22,13 @@ const resourceTypes:ResourceType[]=['objects','relations','views','tables','wave
 const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments'];
 const pointer=(key:string)=>key.replace(/~/g,'~0').replace(/\//g,'~1');
 const plain=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.prototype.toString.call(v)==='[object Object]';
+// 标准 docs 配置属于上一级工程；其他显式配置保留配置目录作为工程根。
+const configProjectRoot=(file:string)=>{const physical=existsSync(file)?realpathSync(file):resolve(file),directory=dirname(physical);return basename(directory)==='docs'&&/^engdoc\.config\.(js|mjs|cjs)$/.test(basename(physical))?dirname(directory):directory;};
 
 export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):Promise<ResolvedConfig>{
- const selected=resolve(cwd,requested??'engdoc.config.js');
- if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前目录没有 engdoc.config.js；可创建 export default {}，或使用 --config 指定配置');
- requireFile(selected);const file=realpathSync(selected),root=dirname(file);
+ const selected=resolve(cwd,requested??'docs/engdoc.config.js');
+ if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前项目没有 docs/engdoc.config.js；可在该文件写 export default {}，或使用 --config 指定其他配置');
+ requireFile(selected);const file=realpathSync(selected),root=configProjectRoot(file);
  if(!['.js','.mjs','.cjs'].includes(extname(file)))failure('CONFIG_FORMAT',file,'','配置使用 .js/.mjs/.cjs，直接导出配置内容');
  let loaded:Awaited<ReturnType<typeof loadConfigFromFile>>;
  try{loaded=await loadConfigFromFile({command:'build',mode:'production'},file,root,'silent');}catch(error){failure('CONFIG_LOAD',file,'',String(error));}
@@ -55,7 +57,7 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
 
 // 配置、文档扫描先完成，再执行数据提供函数/扫描数据目录。无需用户手写资源清单。
 export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inputs:string[])=>void}={}):Promise<LoadedProject>{
- const documents=scanDocuments(config.root,config.documents,{projectRoots:Object.values(config.children).map(file=>dirname(resolve(config.root,file)))});if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
+ const documents=scanDocuments(config.root,config.documents,{projectRoots:Object.values(config.children).map(file=>configProjectRoot(resolve(config.root,file)))});if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
  const dataFiles:string[]=[],parts:ResourcePart[]=[],required=new Set<string>(),versions=[SUPPORTED_IR_VERSION],seenFiles=new Set<string>(),seenDirectories=new Set<string>();
  const attachmentDefinitions:Record<string,AttachmentInput>=Object.assign(Object.create(null),config.attachments);
  const addDataset=(raw:unknown,file:string,prefix='',explicit=true)=>{

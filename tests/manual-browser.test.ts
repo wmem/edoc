@@ -8,7 +8,7 @@ import {repository} from './helpers.ts';
 
 test('正式手册离线按任务阅读：代码样例、接口、波形、PDF、子工程及窄屏',{timeout:120000},async t=>{
  const build=spawnSync(process.execPath,['packages/cli/engdoc.ts'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
- const child=spawnSync(process.execPath,['packages/cli/engdoc.ts','--config','docs/manual/component/engdoc.config.js'],{cwd:repository,encoding:'utf8',timeout:30000});assert.equal(child.status,0,child.stderr);
+ const child=spawnSync(process.execPath,['packages/cli/engdoc.ts','--config','docs/component/docs/engdoc.config.js'],{cwd:repository,encoding:'utf8',timeout:30000});assert.equal(child.status,0,child.stderr);
  const browser=await chromium.launch({executablePath:process.env.ENGDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
  const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[],external:string[]=[];
  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url()))external.push(request.url());});
@@ -30,6 +30,18 @@ test('正式手册离线按任务阅读：代码样例、接口、波形、PDF�
  await page.getByRole('link',{name:'返回父手册的组合用法',exact:true}).click();await ready();assert.match(await page.locator('#reader').innerText(),/父子都是完整工程/);
  await page.getByRole('link',{name:'未包含目标的示例',exact:true}).click();assert.match(await page.locator('#notice').innerText(),/当前生成的页面中没有此内容/);await page.locator('#notice button').click();
  await go('配置参考');assert.match(await page.locator('#reader').innerText(),/context.references/);await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
- await page.goto(pathToFileURL(join(repository,'docs/manual/component/output/index.html')).href);await ready();await page.getByRole('link',{name:'返回父手册的组合用法',exact:true}).click();assert.match(await page.locator('#notice').innerText(),/当前生成的页面中没有此内容/);assert.match(await page.locator('#reader').innerText(),/独立子产物/);
+ await page.goto(pathToFileURL(join(repository,'docs/component/output/index.html')).href);await ready();await page.getByRole('link',{name:'返回父手册的组合用法',exact:true}).click();assert.match(await page.locator('#notice').innerText(),/当前生成的页面中没有此内容/);assert.match(await page.locator('#reader').innerText(),/独立子产物/);
  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+});
+
+test('开发分支完整接入设计原文、历史证据、回归图集和真实源码，离线链接可追溯',{timeout:120000},async t=>{
+ const build=spawnSync(process.execPath,['packages/cli/engdoc.ts'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
+ const browser=await chromium.launch({executablePath:process.env.ENGDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
+ const context=await browser.newContext({offline:true,viewport:{width:1500,height:1000}}),page=await context.newPage(),errors:string[]=[],external:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url()))external.push(request.url());});
+ const ready=()=>page.waitForFunction(()=>window.EngDocReady),article=async(name:string)=>{await page.locator('#reader').getByRole('link',{name,exact:true}).click();await ready();},development=async()=>{await page.locator('#toc').getByRole('link',{name:'开发文档',exact:true}).first().click();await ready();};
+ await page.goto(pathToFileURL(join(repository,'output/index.html')).href);await ready();await article('开发文档');await article('需求与设计');await article('原始 V1 方案');assert.match(await page.locator('#reader').innerText(),/目标与边界/);assert.equal(await page.locator('#reader [data-diagram]').count(),0,'原文的围栏只是代码，不引用不存在的项目视图');
+ await development();await article('样例回归');await article('完整图形回归集');assert.equal(await page.locator('#reader [data-diagram]').count(),16);await page.getByRole('button',{name:'从下到上 BT',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-diagram="gallery:layout-BT"]')?.getAttribute('data-initialized')==='true');
+ await page.goBack();await ready();await article('正文模板与配置源码');assert.equal(await page.locator('#reader [data-diagram]').count(),0);assert.match(await page.locator('#reader pre').allTextContents().then(parts=>parts.join('\n')),/book:overview/);assert.match(await page.locator('#reader pre').allTextContents().then(parts=>parts.join('\n')),/demo:unused/);
+ await development();await article('验收记录');await article('布局约束');assert.match(await page.locator('#reader').innerText(),/历史记录/);await article('布局参考');assert.match(await page.locator('#reader').innerText(),/relationHints/);assert.equal(await page.locator('#toc [aria-current]').count(),1);
+ await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
 });

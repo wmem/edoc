@@ -1,1 +1,3 @@
 *.pdf binary
+# 原始快照保留双空格硬换行、末尾空行和换行字节，不对原文做格式修剪。
+docs/development/design/_partials/original-v1.mdoc -text whitespace=-blank-at-eol,-blank-at-eof

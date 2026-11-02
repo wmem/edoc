@@ -1,0 +1,11 @@
+{% section id="component:home" title="独立子工程" %}
+
+你正在阅读由父手册显式接入的子工程。这里的配置、正文和 ID 都属于子工程。
+
+在子工程根目录 docs/component 运行 engdoc，工具读取它自己的 docs/engdoc.config.js，并生成该子工程 output/index.html；默认不存在 docs/ir 也能生成纯正文。独立输出不加载父手册。
+
+{% reference project="engdoc-manual" id="use:composition" label="返回父手册的组合用法" /%}
+
+在父产物中，上面的链接可以返回对应章节；在独立子产物中，它提示“当前生成的页面中没有此内容”，并保留当前页面。
+
+{% /section %}

@@ -1,0 +1,24 @@
+{% section id="regression:sources" title="正文模板与配置源码" %}
+
+展示真实文件，不另抄一套模板或配置。code 标签只按 UTF-8 文本显示，不执行其中的图表、include 或程序；read 同样取得这份源内容。
+
+{% section id="regression:template" title="正文模板" %}
+
+{% code file="templates/project-doc.mdoc" language="markdoc" /%}
+
+{% /section %}
+
+{% section id="regression:minimal-config" title="最小配置" %}
+
+{% code file="examples/quickstart/docs/engdoc.config.js" language="javascript" /%}
+
+{% /section %}
+
+{% section id="regression:document-config" title="文档先行配置" %}
+
+配置引用已有端点，保留未发布视图草稿；只为正文用到的视图布局，不能将 validate 成功等同于所有草稿布局都成功。
+
+{% code file="examples/document-first/docs/engdoc.config.js" language="javascript" /%}
+
+{% /section %}
+{% /section %}

@@ -9,7 +9,7 @@ import {anchor} from './identity.ts';
 
 export type ProjectNode=LoadedProject&{children:Map<string,ProjectNode>};
 export type Book={root:ProjectNode;projects:Map<string,ProjectNode>;inputs:string[]};
-export type Navigation={label:string;project:string;page:string;anchor?:string;children:Navigation[];source?:{file:string;line:number};id?:string;sectionId?:string;level?:number;depth?:number;parentId?:string};
+export type Navigation={label:string;project:string;page:string;anchor?:string;children:Navigation[];source?:{file:string;line:number};id?:string;sectionId?:string;level?:number;depth?:number;parentId?:string;childrenOmitted?:number};
 export {routeHash} from './routes.ts';
 export type {Route} from './routes.ts';
 export const pageId=(file:string)=>file.slice(0,-extname(file).length);
@@ -55,4 +55,14 @@ export function pageTitle(document:LoadedProject['documents']['documents'][numbe
  const nodes=[...document.ast.walk()],heading=nodes.find(n=>n.type==='heading'),section=nodes.find(n=>n.type==='tag'&&n.tag==='section');
  const first=nodes.find(n=>n.type==='heading'||n.type==='tag'&&n.tag==='section'&&n.attributes.title);return first?.type==='heading'?text(first):first?.attributes.title??(heading?text(heading):undefined)??section?.attributes.title??document.file;
 }
-export function projectOutline(book:Book){const chapters=bookNavigation(book);return {projectId:book.root.config.projectId,projects:[...book.projects.keys()],chapters};}
+export type OutlineOptions={project?:string;id?:string;depth?:number};
+export function projectOutline(book:Book,options:OutlineOptions={}){
+ if(options.depth!==undefined&&(!Number.isInteger(options.depth)||options.depth<0||options.depth>10))failure('OUTLINE_DEPTH','<outline>','/depth','目录深度必须为 0–10 的整数');
+ if(options.project!==undefined&&!book.projects.has(options.project))failure('QUERY_NOT_FOUND','<outline>','/project','当前组合中没有此工程：'+options.project);
+ const navigation=bookNavigation(book),collect=(nodes:Navigation[],match:(node:Navigation)=>boolean):Navigation[]=>nodes.flatMap(node=>[...(match(node)?[node]:[]),...collect(node.children,match)]);
+ const inProject=(nodes:Navigation[]):Navigation[]=>nodes.flatMap(node=>node.project===options.project?[{...node,children:inProject(node.children)}]:inProject(node.children));
+ let chapters=options.project?inProject(navigation):navigation;
+ if(options.id){chapters=collect(chapters,node=>node.sectionId===options.id);if(!chapters.length)failure('QUERY_NOT_FOUND','<outline>','/id','当前目录中没有此章节：'+options.id);if(chapters.length>1)failure('OUTLINE_AMBIGUOUS','<outline>','/id','多个工程存在同名章节，请用 --project 指定：'+options.id);}
+ const trim=(nodes:Navigation[],depth=0):Navigation[]=>nodes.map(node=>({...node,children:options.depth!==undefined&&depth>=options.depth?[]:trim(node.children,depth+1),...(options.depth!==undefined&&depth>=options.depth&&node.children.length?{childrenOmitted:node.children.length}:{})}));
+ return {projectId:options.project??book.root.config.projectId,projects:options.project?[options.project]:[...book.projects.keys()],chapters:trim(chapters),...(options.depth!==undefined?{maxDepth:options.depth}:{})};
+}

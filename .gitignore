@@ -8,4 +8,4 @@ coverage/
 dist/
 examples/*/output/
 output/
-docs/manual/component/output/
+docs/component/output/

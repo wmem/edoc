@@ -1,0 +1,81 @@
+{% section id="acceptance:interfaces" title="接口分组验收" %}
+
+> 历史记录：以下“当前”“本轮”仅指原文对应阶段，测试数量、环境和未验证项不作为现版本结论。现行用法见使用文档与查询参考。
+
+
+2026-11-01，按用户批准的[设计](../design/interfaces.mdoc)实现第一版。可在 `npm run demo` 的“接口分组与逐信号展开”章节操作。新增的是通用接口显示能力；AXI 名称与信号来自虚构数据，不代表已验证 RTL 或完整协议实现。
+
+{% section id="acceptance:interfaces:part-01" title="当前支持" %}
+
+
+当前接口输入、投影和边界统一维护在[接口参考](../../usage/reference/graph.mdoc#ref:interfaces)及[接口教程](../../usage/05-interfaces.mdoc)，本记录保留实现与当时验收。
+
+{% /section %}
+
+{% section id="acceptance:interfaces:part-02" title="通用实现" %}
+
+
+| 内容 | 入口 |
+| --- | --- |
+| Node.interfaces、接口索引与成员校验 | packages/core/types.ts、load.ts、relations.ts |
+| 成员/关系查询及正文引用 | packages/core/query.ts、documents.ts；packages/doc-theme/render.ts |
+| 范围选择、成员投影、聚合、槽位、来源映射 | packages/render-graph/interfaces.ts |
+| 共享布局及路由 | packages/render-graph/scene.ts、routing.ts、geometry.ts |
+| 共享静态 SVG | packages/render-graph/svg.ts；index.ts 只在构建端补字体 |
+| 离线图内操作与异步状态提交 | packages/doc-theme/interface-client.ts |
+| 分离普通/接口浏览器入口 | packages/doc-theme/client-entry.ts、client-interface-entry.ts；packages/pack-html/index.ts |
+
+接口视图、显式设置 interfaceMode/interfaceOverrides 的视图或直接包含接口 ID 的视图启用接口投影。普通架构图不会仅因工程增加接口元数据自动替换布局。旧 Group/groupId 和原始 Connection 语义保留。
+
+新接口场景与旧场景共用布局/路由，不在客户端另画一套粗略连线。ELK 使用已有 bundled 依赖随单 HTML 内嵌，不依赖网络、外部 Worker 或旁路文件。普通无接口文档仍使用原客户端入口，不携带新增布局引擎代码。不预生成全部状态组合，不使用文件内容 hash。
+
+状态更新只提交最新且成功的投影/布局；失败保留上一个成功场景并显示诊断。同步刷新 X6 图元，避免相同 Cell ID 在异步移除/新增期间残留旧图元。显示 Cell ID 与工程 ID 分开，聚合和槽位保留原关系/端点映射。
+
+{% /section %}
+
+{% section id="acceptance:interfaces:part-03" title="Demo 与实测" %}
+
+
+Demo 主图：控制模块 → 双接口处理模块 → 存储控制模块，4 个接口，17 条真实定义的演示关系；处理模块的两个接口分别是 S_AXI_CTRL 和 M_AXI_DMA，包含双向信号方向和一个本视图没有连线的参数宽度未知成员。
+
+- 两端都合并：2 条显示聚合。
+- 仅展开处理模块的 S_AXI_CTRL：10 条显示关系，17 条原关系仍完整，DMA 继续聚合。
+- 全部展开：17 条逐信号关系。
+- 另提供控制/DMA 两张独立详图及接口信号表，便于打印阅读。全量图表达全貌，不用它在缩小后的字号替代详图。
+
+本轮工具测试分组运行：原有 148 项非浏览器、1 项完整离线浏览器、3 项 PDF、3 项波形，以及新增 23 项接口测试，合计 178 项通过；TypeScript 严格检查通过。接口测试覆盖四接口 16 种状态组合、同模块对多接口、单端槽位、多端点、内部关系、部分视图、类别过滤、未知参数、四布局方向和默认选边、固定空间不足、首次搜索未初始化折叠图的定位，以及同一视图双实例状态隔离。
+
+实际 Demo 使用 playwright-cli 与已有 Chromium 检查：14 个视图、11 张带连线图的初始化、路径/标签几何、字体、选择、筛选、分组、Tabs、SVG、大图与窄屏；另检查新接口的三种状态、图元无残留、屏幕锚点、图内双端操作、原数据不变与当前/完整 SVG。file:// 断网与波形检查使用独立脚本。输出 Demo PDF 为 22 页；逐信号全量页、控制/DMA 详图与表格进行视觉抽检，未逐页人工审阅所有版面。
+
+当前 Demo HTML 约 6.10 MiB。同一工具的普通入口客户端约 0.56 MiB，含接口布局的客户端约 1.99 MiB，新增约 1.44 MiB；HTML 总大小还包括字体、事实、图和正文，不能仅由两个不同样例的总大小差推导引擎成本。Chromium 实际 Demo 三次操作记录约 55–166 ms；这是指定规模/环境的样例测量，不是任意工程的性能保证。脚本会返回各次 layoutMs，可重复测量。
+
+验证入口：
+
+```bash
+npm run typecheck
+npm run test:interface
+npm run test:graph
+npm run test:browser
+npm run test:pdf
+npm run demo:build
+playwright-cli -s=engdoc-demo run-code --filename examples/gallery/interfaces.playwright.js
+playwright-cli -s=engdoc-demo run-code --filename examples/gallery/check.playwright.js
+```
+
+浏览器测试需要 ENGDOC_CHROMIUM 指向已有 Chromium。脚本、源数据与出处见 [Demo 说明](../regression/gallery-guide.mdoc)。
+
+{% /section %}
+
+{% section id="acceptance:interfaces:part-04" title="第一版边界" %}
+
+
+- 只有“接口/信号”两级，不含 AXI 通道层级、协议合法性推断、自动前缀识别、跨接口同一 Port 的显示别名。
+- 共享时钟等保留独立端口和 clockDomainId，不复制为多份真实端口。
+- 新接口视图中 Group 用作选集，不叠加旧的模块粗线总览；旧无接口视图的总览仍保留。
+- 固定坐标优先遵守；空间不足时明确失败。HTML 同时生成完整打印图，因此固定视图必须能容纳完整展开，或由作者调整位置/拆分视图；不会静默挪动固定节点。
+- 不持久化网页展开状态；刷新恢复视图设置。不承诺任意密度及带自身接口的复杂父子层级都能自动排出可读图。本轮接口视觉验收主要是平级模块。
+- 原理图工程没有被自动识别或虚构为 AXI 工程。它可以使用同一工具版本，但接口归属仍须由项目源或知识明确提供。
+
+{% /section %}
+
+{% /section %}

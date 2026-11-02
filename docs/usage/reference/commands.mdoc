@@ -1,0 +1,80 @@
+{% section id="ref:commands" title="命令参考" %}
+
+除 guide、--help、--version 外，项目命令默认读取当前项目 docs/engdoc.config.js，也可用 --config 指定。validate、outline、read、query 不生成图形布局或发布页面；当前仍会重新加载和校验参与工程。
+
+{% section id="ref:command-build" title="构建与校验" %}
+
+```sh
+engdoc
+engdoc build --format html --output output/manual.html
+engdoc build --format pdf --output output/manual.pdf
+engdoc validate --format json
+```
+
+无参数按配置输出；指定 html/pdf 时选择对应输出。PDF 需要已有 Chromium。validate 检查正文、数据、引用和附件，返回当前参与工程；只有 build/export 才能发现的尺寸或布局问题仍可能在后续报错。
+
+{% /section %}
+
+{% section id="ref:command-outline" title="outline" %}
+
+```sh
+engdoc outline --format json
+engdoc outline --depth 0 --format json
+engdoc outline --id design:home --depth 1 --format json
+engdoc outline --format text
+```
+
+返回组合后的阅读树、页和章节来源。显式 section 的导航锚点是 HTML 编码身份，read/query 使用源 section ID；本轮 outline 同时提供 sectionId 便于直接读取。
+
+缺省返回完整目录。--depth 为 0–10，限制本次返回的相对深度：0 只看当前根项，1 再看一级。--id 使用源 sectionId 选择分支，--project 选择本次显式组合已有的工程；同名 section 跨工程有歧义时必须指定 project。被裁剪节点的 children 为空，并用 childrenOmitted 标记省略的直接子项数，不能把它解释成没有子章节。筛选返回内容，不加载弱跳转目标，也不修改真实文档层级。
+
+{% /section %}
+
+{% section id="ref:command-read" title="read" %}
+
+```sh
+engdoc read --id ref:config-data
+engdoc read --id ref:config --scope subtree --max-chars 4000 --offset 0
+engdoc read --project manual-component --id component:home --format text
+```
+
+id 必须是显式 section 的源 ID，普通标题或工程对象使用其他导航/query。scope 默认 self，只返回本节正文，不包括子 section；subtree 显式包括后代。两种模式均保留子章节的身份与来源，project include 仍只是引用，不展开外部工程。
+
+正文是已解析 AST 格式化的 Markdown，包含代码、表格和图表引用；不是原始字节切片或生成 HTML。JSON 默认返回 projectId、id、title、source、scope、format、content、children、sources、range。sources 按文件汇总首次参与内容的位置，include 片段保留自身来源，不重复列出每个段落。
+
+max-chars 默认 12000，范围 1–100000；offset 默认 0，按 Unicode 字符计数。range 给出 returnedChars、totalChars、truncated 和 nextOffset。超出总长度的 offset 报错，不静默返回空内容；等于长度时允许空页。截断可能发生在代码或表格中，需按 nextOffset 接续。
+
+text 模式也明确输出来源、范围、子章节及截断提醒。希望直接解析或拼接正文时使用 JSON。未知 ID 返回退出码 3，非文档对象报 READ_TYPE。
+
+{% /section %}
+
+{% section id="ref:command-query" title="query" %}
+
+```sh
+engdoc query --id board:net.FLASH_SCK --depth 1 --max-items 20
+engdoc query --project manual-component --id component:home
+```
+
+depth 默认 0，范围 0–10。max-items 默认 1000，范围 1–10000，只限制递归展开，直接关系与每条 Net 的真实端点完整保留。结果包含 target、directRelations、references 和 expansion，truncated 明确表示展开限额。
+
+target 保留原 entity、type、location、anchor 与可选 ownerId；source 指向权威数据来源。query 不返回章节正文，正文使用 read。
+
+--project 只选择本次显式组合包含的 projectId，不搜索父/兄弟工程。当前 query 的 text/json 选项均输出结构化 JSON，适合机器读取。
+
+{% /section %}
+
+{% section id="ref:command-export" title="export、guide 与退出码" %}
+
+```sh
+engdoc export --view gallery:wiring-intent --format svg --output output/wiring.svg
+engdoc guide
+engdoc --help
+engdoc --version
+```
+
+export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，读取同一份推荐指南，可使用 --format json。
+
+退出码：0 成功，1 配置/数据/构建失败，2 命令用法错误，3 目标 ID 或指定项目不存在。JSON 失败写入 stderr，stdout 不冒充成功结果。
+
+{% /section %}
+{% /section %}

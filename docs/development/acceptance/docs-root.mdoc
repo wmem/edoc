@@ -1,0 +1,38 @@
+{% section id="acceptance:docs-root" title="docs 目录与默认配置入口" %}
+
+2026-11-02，用户明确要求取消 docs/manual 层，正式文档直接放 docs，并在项目目录执行工具时自动使用 docs/engdoc.config.js。具体行为和最终验证范围记录于本页。
+
+{% section id="acceptance:docs-root:contract" title="路径规则" %}
+
+- 默认只查执行目录下的 docs/engdoc.config.js；不向父级搜索、不自动回退根 engdoc.config.js。
+- 标准 docs/engdoc.config.js 的工程根为 docs 上一级；同位置的 engdoc.config.mjs/.cjs 可显式选择，根规则相同。
+- 其他显式 --config 路径继续以配置目录作为工程根。JS 相对 import 始终相对配置文件。
+- documents、data、file include、code、source、children、附件和配置输出相对工程根，CLI --output 相对执行目录。
+- README 优先、docs/ir 和 output 的缺省路径保持，标准配置位置移动不会变成 docs/docs/ir 或 docs/output。
+
+这是对原“配置目录即工程根”的标准位置例外，已在实施前向用户说明；不把同一标准配置通过默认与显式入口解析成不同工程。
+
+{% /section %}
+
+{% section id="acceptance:docs-root:migration" title="迁移范围" %}
+
+正式文档与资源直接位于 docs/index.mdoc、docs/usage、docs/development、docs/support 和 docs/assets，不再保留 manual 目录。根配置、快速起步、document-first 与组合子工程配置均迁到所属工程的 docs/engdoc.config.js。
+
+读取指南、文档构建/预览、源码展示、模板、子工程声明和当前链接已同步。历史记录可以保留当时路径，但运行引用指向新位置；原始 V1 快照保持原字节，Git 的换行保护路径同步迁移。
+
+子工程边界按配置推导出的整个工程根确定，不能只把其 docs 目录作为边界。未接入子配置不执行，独立子工程不因弱链接读取父/兄弟配置或数据。
+
+{% /section %}
+
+{% section id="acceptance:docs-root:verification" title="验证范围" %}
+
+本轮共通过 249 项测试：核心、文档、查询、CLI、布局和工程等测试 234 项，浏览器、接口、时序与 PDF 测试 14 项，实际 npm 打包安装测试 1 项；均无失败、跳过或取消。TypeScript 检查通过。
+
+配置回归覆盖标准位置的默认与显式入口一致、同名 .mjs/.cjs、其他显式路径、相对 JS import 与数据函数工程根、不向上搜索或回退根配置，以及整个子工程的文档隔离。实际安装包从项目根执行命令，验证只使用 docs/engdoc.config.js，根目录的同名配置不会执行。
+
+正式文档的 HTML、PDF 和 npm 分发目录已重新构建。当前机器的 Playwright 默认浏览器路径不存在，PDF 构建通过 ENGDOC_CHROMIUM 指定已有 Chromium 完成，未安装浏览器或修改全局配置。通过 playwright-cli 与现有 Chromium，在离线 file 页面检查配置参考、父子工程跳转、PDF 第 2 页定位与浏览器返回；独立子工程的未接入父章节链接按预期提示当前页面没有此内容。页面无脚本错误和外部网络请求，390px 视口无横向溢出，截图已人工目视核对。
+
+当前文件系统没有 docs/manual 目录和根 engdoc.config.js，正文来源均使用新路径。原始 V1 快照与迁移前 Git 原文件逐字节比较一致。完整 PDF 已生成，PDF 自动回归通过；未逐页人工检查整本文档 PDF 的排版。
+
+{% /section %}
+{% /section %}

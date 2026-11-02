@@ -1,0 +1,163 @@
+{% section id="design:pdf" title="PDF 附件设计" %}
+
+
+状态：2026-11-01，本轮功能已实现。当前配置契约见[使用说明](../../usage/08-projects-pdf.mdoc)，实际范围见[验收记录](../acceptance/composition-pdf.mdoc)。本文与[可组合工程文档设计](projects.mdoc)使用同一文档路由、项目身份和当前产物目标索引，不改变跨工程无渲染依赖的决定。
+
+{% section id="design:pdf:part-01" title="用户要完成的阅读动作" %}
+
+
+项目把原理图 PDF 原文件携带在生成的 HTML 中。读者从正文、图表或对象详情点击一个稳定引用，进入本 HTML 的 PDF 阅读界面，定位到对应页或局部电路位置，放大核对，再用浏览器后退返回原文位置。
+
+第一批只支持 PDF 附件。此能力是“查看被携带的原始 PDF”，与“将工程文档导出为 PDF”是两项独立功能；将来即使不再导出合订 PDF，也应保留源 PDF 的查看与定位。
+
+{% /section %}
+
+{% section id="design:pdf:part-02" title="三种身份分开" %}
+
+
+- 工程身份：稳定 projectId，沿用组合设计。
+- 附件身份：本工程内稳定 attachmentId，例如 schematic，与文件名分开。
+- 位置身份：附件内稳定 targetId，例如 power-input，与当前页码/坐标分开。
+
+引用目标按 (projectId, attachmentId, targetId) 定位，类型为 PDF 位置；不与同名工程对象或页面混用索引。未指定 targetId 时打开附件首页，不能在指定位置失效时偷偷退回首页并声称已经定位。
+
+文件可换名、正文可重组，稳定身份无需变化。PDF 换版后若页码、位置或命名目标发生变化，需要更新位置映射。仅提供稳定字符串，不会自动获得跨版本语义定位能力。
+
+{% /section %}
+
+{% section id="design:pdf:part-03" title="配置和正文示例" %}
+
+
+以下为虚构示例，字段已实现，页码/矩形不代表真实原理图：
+
+```js
+export default {
+  projectId: 'board',
+  documents: 'docs/index.mdoc',
+  attachments: {
+    schematic: {
+      type: 'pdf',
+      title: '原理图',
+      file: 'hardware/schematic.pdf',
+      targets: {
+        'power-input': {
+          page: 3,
+          rect: [0.10, 0.20, 0.40, 0.35]
+        },
+        'fpga-core': {
+          destination: 'M00_FPGA'
+        }
+      }
+    }
+  }
+};
+```
+
+正文只写稳定引用，生成普通可点击入口：
+
+```text
+输入保护见原理图：
+{% attachment id="schematic" target="power-input" /%}
+```
+
+attachments 直接编写在 engdoc.config.js 中，不要求再导入一份配置 JSON。工程规模大时，附件/位置元数据也可由项目转换函数或标准 IR 生成，汇入相同模型；同一位置只定义一次，重复定义报错。PDF 二进制由工具打包，不由 Agent 手写 base64，也不混进日常查询的 IR 正文。
+
+file 相对附件所属工程配置根。父工程接入子工程时保持子配置根，不能按父根重解释文件位置。附件声明属于本工程的明确构建输入，需要检查存在性和读取范围；跨工程跳转不会触发这类文件读取。
+
+{% /section %}
+
+{% section id="design:pdf:part-04" title="两种定位方式" %}
+
+
+### PDF 自带命名目标
+
+若 PDF 中有命名 destination，使用它解析页号和视图参数。配置中的 targetId 再映射到该名称，让正文引用不必跟随导出器的内部命名变化。
+
+PDF.js 的 PDFDocumentProxy.getDestination 可查询指定命名目标；不存在时返回 null。是否有这些目标、名称是否跨版本稳定，取决于该原理图 PDF 的导出方式，工具不能预先保证。[官方 API](https://mozilla.github.io/pdf.js/api/draft/api.js.html)
+
+### 页码与区域
+
+没有合适命名目标时，以物理页码和区域定位：
+
+- page 从 1 开始，表示 PDF 物理页号，不把可打印的页标签当作页号。
+- rect 是 [x0, y0, x1, y1]，相对于页面 CropBox 及其内置旋转后的显示区域归一化到 0–1，左上为 (0,0)，右下为 (1,1)。不是 [x,y,width,height]，也不是 CSS 像素。
+- 点击后显示该页，区域居中并适配到可读大小，可加临时高亮框；没有 rect 时适配整页。
+- 阅读器缩放或 PDF 自带旋转时同步变换标记，不把浏览器缩放后的像素坐标写回源数据。
+
+PDF.js 的 viewport 处理页面缩放和旋转，以及 PDF 与 Canvas 坐标系的差异，可作为转换基础。[官方示例](https://mozilla.github.io/pdf.js/examples/)
+
+精确位置从 PDF 导出信息、原工程映射或明确的人工选择获得，不靠关键字搜索命中第一个同名元件来猜。若 PDF 更新仍能通过范围校验，也不能据此声称该区域的工程语义已经核验。
+
+{% /section %}
+
+{% section id="design:pdf:part-05" title="单 HTML 内的资源打包" %}
+
+
+附件原始字节随 HTML 携带，工具可做 base64 编码作为内嵌载荷，保留原 PDF 内容并提供原文件下载。每个明确附件/实际文件只存一份载荷，不因多处引用重复复制；构建内复用按显式 ID 和实际路径处理，不引入内容 hash 状态跟踪。
+
+打开附件时才解码和初始化阅读器，按需渲染页面；退出或切换附件时释放画布、任务及不再使用的资源。单 HTML 大小仍会随附件大小增加，编码和 PDF 渲染也有内存成本，需要用真实规模原理图验证，不宣称无限规模可用。
+
+PDF.js 可以直接读取 TypedArray/Uint8Array 的 PDF 二进制数据，无需向外部 URL 请求附件。采用它的显示层构建受控阅读界面，复用其 PDF 解析/渲染能力。[官方 API](https://mozilla.github.io/pdf.js/api/draft/api.js.html)、[分层说明](https://mozilla.github.io/pdf.js/getting_started/)
+
+不把仅可下载的 data URL 作为完成标准，也不将浏览器原生 PDF 插件行为作为区域定位和路由恢复的唯一保证。原始字节仍保留，不把源 PDF 永久转换成截图后丢掉原文件。
+
+{% /section %}
+
+{% section id="design:pdf:part-06" title="页面路由与浏览器返回" %}
+
+
+PDF 阅读作为工程文档阅读器中的一种页面类型，使用稳定附件/位置身份进入，同一标签页内完成：
+
+1. 点击前保存当前文档 ID、章节锚点、滚动位置和恢复阅读所需状态。
+2. 创建一个 PDF 路由历史记录，打开附件并定位；URL 不保存临时 blob 地址。
+3. 浏览器后退恢复原文档和阅读位置；前进重新进入同一 PDF 位置。查看器也提供可见的返回文档入口。
+4. PDF 内连续缩放/滚动不为每一步堆积历史记录；点击另一个明确目标才建立新的导航记录。
+5. 页面刷新或复制带目标身份的链接，能够在同一 HTML 内重新定位；直接打开 PDF 路由时没有历史来源，仍可回文档首页。
+
+由统一路由器管理文档与 PDF 历史，避免文档路由和 PDF.js 通用 viewer 各维护一套互相干扰的历史栈。需要恢复正文中的折叠祖先和图形状态时，在目标页面初始化后再恢复位置。
+
+{% /section %}
+
+{% section id="design:pdf:part-07" title="与跨工程无依赖规则的关系" %}
+
+
+本工程附件是明确输入，本地引用时必须存在且定位有效。不同工程通过稳定 projectId、附件 ID 和位置 ID 生成跳转，但链接本身不加载对方配置、PDF 或位置映射。
+
+- 当前组合产物已经包含目标附件：使用本 HTML 的资源与目标索引打开，不再访问源目录。
+- 仅生成子工程，父/兄弟附件不在当前产物：点击提示“当前生成的页面中没有此内容”，保留当前阅读页。
+- 不因外部链接去扫描磁盘、补下载 PDF、读取兄弟配置或打包依赖闭包。
+- 父工程显式接入子配置，子配置明确携带的附件才随子内容加入；这仍是作者要求的组合输入。
+
+本地附件文件缺失、声明的页码越界、命名目标不存在、区域无效应在构建时诊断。允许未知的跨工程导航，不等于允许本工程声明一个坏附件再假装已经携带。附带原 PDF 也不等于证明原理图工程本身已经通过验证。
+
+{% /section %}
+
+{% section id="design:pdf:part-08" title="当前实现与技术验证" %}
+
+
+- core/attachments.ts 校验附件和定位，core/documents.ts 支持 attachment 标签；Source 新增可选 attachment 核对入口，保留原 file/selector。
+- pack-html/book.ts 打包原字节、目标索引、PDF.js worker、CMap、字体及解码支持资源；同一实际文件只携带一份字节。
+- doc-theme/reader.ts 与 pdf-reader.ts 统一管理文档/PDF 路由和历史，离线从内嵌字节加载。
+- 阅读式 HTML 的 CSP 明确允许 blob worker、blob 字体和必要 WASM，继续禁止外部网络连接及任意 object 插件；普通正文仍为受控 Markdoc。
+- pdfjs-dist 6.4.299 是项目依赖，未改全局环境；相应 Apache-2.0、CMap、字体和解码组件许可随 HTML 携带。[官方许可证](https://github.com/mozilla/pdf.js/blob/master/LICENSE)
+
+单 HTML 的 file:// 断网阅读已用已有 Chromium 验证，不是从支持 Uint8Array 推导集成成功。测试夹具用标准字体及可控坐标/命名目标；真实 KY3134 PDF 补充检查原理图和中文内容的实际画面。没有声称所有 PDF 特性、所有页面或所有浏览器均已验收。
+
+{% /section %}
+
+{% section id="design:pdf:part-09" title="首批实施与验收范围" %}
+
+
+1. 先用标准字体的最小 PDF 及真实含中文的原理图 PDF 验证单 HTML + file:// + 断网阅读，确认 worker 和支持资源完整；没有外部网络或旁路文件。
+2. 加入附件声明/Schema、原字节打包与下载、稳定位置索引，支持页号、区域和命名目标；项目转换映射与手写配置复用一个模型。
+3. 接入统一文档/PDF 路由，验证正文 → 指定电路位置 → 浏览器后退/前进，恢复原文位置；测试刷新和直接深链接。
+4. 检查不同大小、横竖页、非零裁切框和旋转页的区域变换；实际检查原理图标记指向正确位置、放大后文字/线条清晰。
+5. 本地缺文件/损坏 PDF/页码越界/无命名目标/无效矩形报错，不自动退回首页。不同引用重复使用一个附件，下载字节与原文件相同。
+6. 父组合包含附件时命中；子工程独立输出未包含外部附件时提示，不读取外部配置/PDF。相同附件 ID 在不同 projectId 中不混淆。
+7. 用 playwright-cli 与已有 Chromium 验证以上浏览器行为、下载、无外网请求、窄屏与大原理图；报告真实文件规模与未验证浏览器范围。
+
+本轮实现了二进制携带、稳定位置、对象 source.attachment 入口、离线阅读与浏览器历史恢复。命名目标和区域精确定位用可重建夹具验收；另对 KY3134 的 TOP 15 页、BOTTOM 22 页原 PDF 做了离线阅读检查，没有声称完成真实电路锚点映射。文档导出 PDF 保留并通过原有回归，与附件阅读独立。
+
+{% /section %}
+
+{% /section %}

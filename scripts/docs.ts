@@ -6,7 +6,7 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {main} from '../packages/cli/project.ts';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),target=resolve(root,'output/index.html');
-const result=await main(['build','--config',resolve(root,'engdoc.config.js'),'--format','html','--output',target]);
+const result=await main(['build','--config',resolve(root,'docs/engdoc.config.js'),'--format','html','--output',target]);
 if(result)process.exit(result);
 const port=Number(process.env.ENGDOC_DOCS_PORT??5175);
 if(!Number.isInteger(port)||port<1||port>65535)throw new Error('ENGDOC_DOCS_PORT 范围 1–65535');

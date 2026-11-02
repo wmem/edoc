@@ -10,7 +10,7 @@
 npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
 ```
 
-在你的工程准备 `README.md`，创建 `engdoc.config.js`：
+在你的工程准备 `README.md`，创建 `docs/engdoc.config.js`：
 
 ```js
 export default {};
@@ -37,11 +37,11 @@ npm ci
 npm run docs:build
 ```
 
-打开 [正式文档 output/index.html](output/index.html)，或运行 `npm run docs:dev`，访问 http://127.0.0.1:5175/ 。这是构建后的静态预览，修改后需重建并刷新。本仓库图示复用原样例 Adapter，需要已有 Python 3，优先通过 uv 调用；不会自动安装 Python 或浏览器。
+打开 正式文档 output/index.html（`output/index.html`），或运行 `npm run docs:dev`，访问 http://127.0.0.1:5175/ 。这是构建后的静态预览，修改后需重建并刷新。本仓库图示复用原样例 Adapter，需要已有 Python 3，优先通过 uv 调用；不会自动安装 Python 或浏览器。
 
-- [使用文档源入口](docs/manual/usage/index.mdoc)：第一次生成 → 文档组织 → 数据 → 图表 → 工程组合与 PDF。
-- [查询参考源入口](docs/manual/usage/reference/index.mdoc)：配置、命令、标签、数据、布局和限制，按需读取。
-- [开发文档源入口](docs/manual/development/index.mdoc)：架构、修改与验证、需求及历史资料索引。
+- [使用文档源入口](docs/usage/index.mdoc)：第一次生成 → 文档组织 → 数据 → 图表 → 工程组合与 PDF。
+- [查询参考源入口](docs/usage/reference/index.mdoc)：配置、命令、标签、数据、布局和限制，按需读取。
+- [开发文档源入口](docs/development/index.mdoc)：架构、修改与验证、需求及历史资料索引。
 
 教程直接展示架构、物理接线、多接口展开、状态、时序和布局对照；详细信号表和覆盖关系放在查询参考。硬件样例均为虚构，不能用于真实设计；波形和覆盖关联不代表执行了 RTL 仿真。
 
@@ -50,11 +50,11 @@ npm run docs:build
 在具有配置和源文件的工程目录运行：
 
 ```sh
-engdoc outline --format json
+engdoc outline --depth 0 --format json
 engdoc read --id ref:config-data --format text
 engdoc query --id board:net.FLASH_SCK --depth 1
 ```
 
 后两条 ID 属于本手册，用于其他工程时替换成该工程的稳定 ID。`read` 默认只取当前章节，明确返回来源、子章节和截断范围；`query` 取工程事实。修改源数据与知识后重建，不手改 HTML/SVG。源码开发可用 `node packages/cli/engdoc.ts` 代替已安装的 `engdoc`。
 
-创建工程文档前可运行 `engdoc guide` 读取[推荐指南](docs/推荐指南.md)；维护本工具遵循 [AGENTS.md](AGENTS.md)。需求基线和历史验收的源码定位见[开发文档索引](docs/manual/development/history.mdoc)，当时的测试通过不能代替当前图形与阅读体验验收。
+创建工程文档前可运行 `engdoc guide` 读取[推荐指南](docs/usage/guide.mdoc)；维护本工具遵循 [AGENTS.md](AGENTS.md)。需求基线和历史验收的源码定位见[开发文档索引](docs/development/history.mdoc)，当时的测试通过不能代替当前图形与阅读体验验收。

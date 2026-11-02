@@ -1,0 +1,73 @@
+{% section id="acceptance:p0" title="P0 阶段验收" %}
+
+> 历史记录：以下“当前”“本轮”仅指原文对应阶段，测试数量、环境和未验证项不作为现版本结论。现行用法见使用文档与查询参考。
+
+> 历史 P0 阶段记录。当前功能和契约请读 V1-开发与使用.md、V1-验收.md；P0 的无依赖和资源范围限制已被后续实现替代。
+
+
+{% section id="acceptance:p0:part-01" title="实际交付" %}
+
+
+- TypeScript 通用核心，manifest/object/relation/view 及 common/config JSON Schema，支持同类资源分片。
+- node/port/group/connection/view 全局稳定 ID 索引、端口归属、开放 attributes/class。
+- 结构校验、跨文件引用存在性/类型检查、层级与分组循环检查、方向端点一致性和路径范围保护。
+- validate/query CLI、结构化 JSON 诊断、明确退出码、显式深度与结果限额。
+- FPGA–Flash 虚构样例：3 个节点、13 个端口、6 条独立 Net、1 个逻辑组、1 个 wiring 视图。FLASH_SCK 单条关系保留三个端点。
+- 独立工程与方案仓库、可重建 bundle/checkpoint 脚本、任务状态和恢复说明。
+
+未变更已批准架构。P0 手工 IR 是基线要求的协议样例，不替代实际项目原始数据和 Adapter。
+
+{% /section %}
+
+{% section id="acceptance:p0:part-02" title="自动测试" %}
+
+
+在 Linux / Node.js 24.22.1 下按组执行；没有使用无差别全量测试命令。
+
+| 测试组 | 命令 | 结果 |
+| --- | --- | --- |
+| Schema 正反例 | npm run test:schema | 23/23 通过 |
+| 加载、关系、路径范围 | npm run test:core | 41/41 通过 |
+| 查询、稳定身份、事实更新 | npm run test:query | 10/10 通过 |
+| CLI 子进程集成 | npm run test:cli | 23/23 通过 |
+| 合计 | 分组运行 | 97/97 通过 |
+
+关键证据包括：跨分片正向引用、跨类型重复 ID、悬空第三端点、重复端点、方向子集、父节点/分组循环、共享分组 DAG、错误文件/对象/JSON Pointer、资源和来源路径越界、符号链接及悬空链接、UTF-8/JSON 错误、分片大小上限、源文件不被修改。
+
+查询验证：同一 Net 三端点不失真；从测试端口反向查到原 Net；改变 label 不改变身份；单处 Ball 更新后查询同步更新且视图/连线不需改写；隐藏对象仍可查询；展开去重并明确截断；失败后不返回上次成功结果。
+
+首次 CLI 直接执行测试发现入口 executable 位缺失，修复权限后 23 项全部通过。该权限由 Git 记录；恢复后再次验证直接入口。最后边界检查补充了悬空符号链接保护并增加回归测试。
+
+{% /section %}
+
+{% section id="acceptance:p0:part-03" title="P0 放行结论" %}
+
+
+协议原型的校验—索引—查询最小闭环通过，满足 P0 多端点关系不失真的放行条件。工程 bundle 和方案 bundle 可独立 clone，checkpoint 恢复后再次运行样例 validate/query，核对提交号和端点数量。
+
+本阶段只验收协议事实与查询正确性，不把它等同于真实硬件、图形可读性或最终文档的正确性。
+
+{% /section %}
+
+{% section id="acceptance:p0:part-04" title="未完成与未验证" %}
+
+
+- 未执行 tsc 静态类型检查；受控 Schema 校验器没有验证任意第三方 Schema 或通过官方全量一致性套件。
+- table/waveform/reference 资源 Schema、Spec/Verify/Case 覆盖及文档锚点索引尚未实现。
+- 尚未实现图形渲染、自动布线、X6/ELK 集成、SVG 导出或交互验收。
+- 尚未实现 Markdown/Markdoc、单文件 HTML、浏览器离线验收或 PDF。
+- P0 不运行 Adapter；样例没有真实芯片/EDA/RTL 源，未进行真实硬件一致性验证。
+- 当前仅 IR 1.0；同 major 的前向兼容性、超大工程性能及跨平台测试留待后续阶段。
+
+以上属于阶段范围或明确验证限制，没有需要用户决策的架构变更。
+
+{% /section %}
+
+{% section id="acceptance:p0:part-05" title="下一阶段 P1" %}
+
+
+沿用此 IR，先实现 FPGA–Flash 端口连接图与可读 SVG：芯片边缘端口、Ball/Pin/功能标签、clock/control/data 分类、QSPI 总览与逐根展开、三端点分叉、布局提示回退。对连线端点和标签做实际图形检查；图形不可读时继续修正 P1，不提前堆叠文档功能。
+
+{% /section %}
+
+{% /section %}
