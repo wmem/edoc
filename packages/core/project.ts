@@ -100,7 +100,9 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
  else addDataset(source,config.file,'/data');
  const inline:Dataset={};for(const key of ['views','tables','waveforms','references'] as const)if(config[key].length)inline[key]=config[key] as any;
  if(Object.keys(inline).length)addDataset(inline,config.file);
- for(const part of parts){const visit=(value:any)=>{if(!value||typeof value!=='object')return;if(plain(value.source)&&typeof value.source.file==='string')inputs.add(projectPath(config.root,config.root,value.source.file,false));for(const [key,child]of Object.entries(value))if(key!=='source')if(Array.isArray(child))child.forEach(visit);else if(plain(child))visit(child);};visit(part.data);}
+ // 仅在本次加载中复用已定位来源；下一次加载仍重新检查文件与符号链接边界。
+ const inputSources=new Set<string>();
+ for(const part of parts){const visit=(value:any)=>{if(!value||typeof value!=='object')return;if(plain(value.source)&&typeof value.source.file==='string'&&!inputSources.has(value.source.file)){inputs.add(projectPath(config.root,config.root,value.source.file,false));inputSources.add(value.source.file);}for(const [key,child]of Object.entries(value))if(key!=='source')if(Array.isArray(child))child.forEach(visit);else if(plain(child))visit(child);};visit(part.data);}
  const attachments=await loadAttachments(config.root,attachmentDefinitions,config.file,file=>inputs.add(file));
  if(Object.keys(attachments).length)required.add('pdf-attachments');
  const allInputs=[...inputs];options.onInputs?.(allInputs);

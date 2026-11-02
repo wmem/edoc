@@ -4,6 +4,8 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync,readd
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
+import fs from 'node:fs';
+import {syncBuiltinESMExports} from 'node:module';
 import {resolveProjectConfig,loadProject,protectOutputs} from '../packages/core/project.ts';
 import {renderDocument} from '../packages/doc-theme/render.ts';
 import {scene} from '../packages/render-graph/index.ts';
@@ -90,6 +92,17 @@ test('自动数据扫描拒绝路径/符号链接逃逸，图表 schema 仍严�
 });
 test('读取不改变输入，重复加载使用当前文件内容，不用内容 hash',async t=>{
  const p=project(t);p.write('docs/ir/design.json',facts);const file=join(p.root,'docs/ir/design.json'),before=statSync(file).mtimeMs;await p.load();assert.equal(statSync(file).mtimeMs,before);p.write('docs/ir/design.json',{...facts,objects:[{...facts.objects[0],label:'更新名称'},facts.objects[1]]});assert.equal((await p.load()).graph.index.get('a')!.entity.label,'更新名称');
+});
+test('批量端口的重复来源每轮只定位一次，新一轮仍拒绝符号链接逃逸',async t=>{
+ const p=project(t);p.write('source.dat','原始输入');
+ p.write('docs/ir/design.json',{objects:[{id:'n',kind:'node',label:'N',source:{file:'source.dat'},ports:Array.from({length:2000},(_,i)=>({id:'n.p'+i,label:'P'+i,direction:'unknown',source:{file:'source.dat'}}))}]});
+ const original=fs.realpathSync;let calls=0;
+ fs.realpathSync=((...args:any[])=>{if(String(args[0])===join(p.root,'source.dat'))calls++;return Reflect.apply(original,fs,args);})as typeof fs.realpathSync;syncBuiltinESMExports();
+ try{
+  const result=await p.load();assert.equal(result.graph.index.size,2001);assert.equal(result.inputs.filter(file=>file===join(p.root,'source.dat')).length,1);assert.equal(calls,2,'输入收集与语义校验各定位一次，不按端口重复文件系统检查');
+  const outside=mkdtempSync(join(tmpdir(),'engdoc-source-outside-'));t.after(()=>rmSync(outside,{recursive:true,force:true}));writeFileSync(join(outside,'data'),'外部文件');
+  rmSync(join(p.root,'source.dat'));symlinkSync(join(outside,'data'),join(p.root,'source.dat'));await assert.rejects(p.load,/PATH_SCOPE/);
+ }finally{fs.realpathSync=original;syncBuiltinESMExports();}
 });
 test('输出不能覆盖配置或任何已定位源文件',async t=>{
  const p=project(t);assert.throws(()=>protectOutputs([{file:join(p.root,'README.md')}],[join(p.root,'README.md')]),/OUTPUT_SOURCE/);assert.throws(()=>protectOutputs([{file:'same'},{file:'same'}],[]),/OUTPUT_DUPLICATE/);
