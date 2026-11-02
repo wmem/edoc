@@ -45,13 +45,43 @@ Table 必需 id、kind='table'、label、columns、rows。列必需 field、labe
 
 [样例查询](examples.mdoc)中的引脚表与 RTL 表直接投影原对象。完整结构见 packages/schema/table.schema.json。
 
+{% section id="ref:table-example" title="最小对象投影表" %}
+
+前置：已有[数据教程中的两个对象](../03-data.mdoc#use:standard-data)。将以下完整数据保存为自己工程的 docs/ir/authoring/tables.json，保留自动扫描 docs/ir 的配置；正文用 table 标签引用 system:modules。
+
+{% code file="docs/ir/authoring/tables.json" language="json" /%}
+
+```text
+{% table id="system:modules" /%}
+```
+
+运行 engdoc 后得到[教程中的两行表格](../03-data.mdoc#use:table)。columns 的 field 从 objectId 指向的对象取值，rows 只维护行身份和对象引用。添加其他列时沿用同一对象，不把其值抄进 values。
+
+{% /section %}
+
 {% /section %}
 
 {% section id="ref:waveforms" title="Waveform" %}
 
 必需 id、kind='waveform'、label、format='wavejson'、semantic、data、source。semantic 只能为 specification 或 simulation，分别表示规范示意与有来源的仿真结果；不能为了图形效果混用。
 
-data 保存 WaveJSON 对象，交由时序渲染器处理。原输入在 examples/fpga-mac/project/handshake.json；[时序教程](../06-state-wave.mdoc)实际展示该输入。完整结构见 packages/schema/waveform.schema.json。
+data 保存 WaveJSON 对象，交由时序渲染器处理。[时序教程](../06-state-wave.mdoc)展示样例握手；下面的最小定义可独立创建一张规范波形。完整外层结构见 packages/schema/waveform.schema.json。
+
+{% section id="ref:waveform-example" title="最小规范波形" %}
+
+将以下完整数据保存为自己工程的 docs/ir/authoring/waveforms.json。使用 documents: 'docs'、保留默认数据目录，在 docs/index.mdoc 写入下方 waveform 标签后执行 engdoc。这份数据不依赖其他对象。
+
+{% code file="docs/ir/authoring/waveforms.json" language="json" /%}
+
+```text
+{% waveform id="system:handshake" /%}
+```
+
+{% waveform id="system:handshake" /%}
+
+signal 按行定义名称与波形。此例中 p 是时钟，0/1 是电平，点号延续上一状态，x 是未知区间，3 是带 data 文字的总线区间。这里只展示创建这张图所需的子集；source 指向自己保存的规范文件，不能据此宣称已经执行仿真。
+
+{% /section %}
 
 {% /section %}
 

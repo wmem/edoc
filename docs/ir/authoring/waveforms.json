@@ -1,0 +1,14 @@
+{
+  "waveforms": [{
+    "id": "system:handshake", "kind": "waveform", "label": "最小握手示意",
+    "format": "wavejson", "semantic": "specification",
+    "data": {
+      "signal": [
+        {"name": "clk", "wave": "p..."},
+        {"name": "valid", "wave": "01.0"},
+        {"name": "data", "wave": "x3.x", "data": ["payload"]}
+      ]
+    },
+    "source": {"file": "docs/ir/authoring/waveforms.json", "selector": "system:handshake"}
+  }]
+}

@@ -4,25 +4,27 @@
 
 {% section id="use:standard-data" title="已有标准数据" %}
 
-将资源文件放到 docs/ir/，可以分成多个文件和子目录。工具扫描标准资源数组，不要求文件清单：
+将下面内容保存为自己的 docs/ir/authoring/objects.json。标准资源可以分成多个文件和子目录，工具自动扫描，不要求文件清单：
 
-```json
-{
-  "objects": [
-    {"id": "system:producer", "kind": "node", "label": "生产者"},
-    {"id": "system:consumer", "kind": "node", "label": "消费者"}
-  ],
-  "relations": [
-    {
-      "id": "system:data", "kind": "connection", "class": "data",
-      "label": "数据", "endpoints": ["system:producer", "system:consumer"],
-      "direction": {"sources": ["system:producer"], "targets": ["system:consumer"]}
-    }
-  ]
-}
-```
+{% code file="docs/ir/authoring/objects.json" language="json" /%}
 
 资源 ID 在工程内跨文件唯一。label 可以调整，引用继续使用 ID。未提供数据的事实不能由渲染器补成确定值。
+
+{% /section %}
+
+{% section id="use:table" title="把已有对象投影成表格" %}
+
+沿用上面的两个对象，将 {% reference id="ref:table-example" label="最小投影表定义" /%} 保存为 docs/ir/authoring/tables.json。在参与发布的 docs/index.mdoc 加入：
+
+```text
+{% table id="system:modules" /%}
+```
+
+执行 engdoc，表格直接从原对象读取名称，结果如下：
+
+{% table id="system:modules" /%}
+
+修改原对象 label 后重建，图与表会一起变化；表格行不用再抄一份名称。完整字段只在 {% reference id="ref:tables" label="表格参考" /%} 维护。
 
 {% /section %}
 

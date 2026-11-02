@@ -39,6 +39,8 @@ CLI 的 validate/read/query 复用加载与校验，但不调用图形布局。�
 
 docs/engdoc.config.js 直接编排正文、图形、子工程和附件。docs/support/data.mjs 复用原 board-flash、fpga-mac 的 Adapter，以及 Gallery 手写数据，不另抄引脚或 RTL 位宽。
 
+最小创建配方保存在 docs/ir/authoring 和 docs/support/recipes。教程与参考通过 code 展示原文件，手册的数据函数加载同一份定义生成实际图表；验证再将这些文件复制到临时用户工程执行，检查正文入口与渲染结果。
+
 使用正文解释如何用，查询参考保留稳定小节和完整样例细节。声明式引用由正式渲染链路生成实际图表；新增能力应同步到合适的使用任务与参考入口，不再增加一套独立长期 Demo 文案。
 
 工具 docs/engdoc.config.js 的图示转换需要本地 Python 3，优先通过已有 uv 调用，禁用自动 Python 下载；普通用户的纯正文/标准 IR 项目仍只需 Node.js。临时转换结果在系统临时目录清理，不修改样例源。

@@ -1,0 +1,22 @@
+{
+  "views": [{
+    "id": "system:routing", "kind": "architecture", "label": "主干与反馈通道",
+    "include": {
+      "objects": ["system:producer", "system:consumer", "system:probe"],
+      "relations": ["system:data", "system:feedback", "system:clock"]
+    },
+    "layout": {
+      "direction": "LR", "routing": "orthogonal",
+      "constraints": [
+        {"type": "order", "axis": "x", "nodes": ["system:producer", "system:consumer"], "gap": 160},
+        {"type": "align", "axis": "y", "nodes": ["system:producer", "system:consumer"]},
+        {"type": "order", "axis": "y", "nodes": ["system:producer", "system:probe"], "gap": 160}
+      ],
+      "relationHints": {
+        "system:data": {"endpointSides": {"system:producer": "right", "system:consumer": "left"}, "priority": "main"},
+        "system:feedback": {"channel": "bottom", "priority": "normal"},
+        "system:clock": {"backbone": ["system:producer", "system:consumer"]}
+      }
+    }
+  }]
+}

@@ -1,0 +1,14 @@
+{
+  "objects": [{"id": "system:probe", "kind": "node", "label": "观察点"}],
+  "relations": [
+    {
+      "id": "system:feedback", "kind": "connection", "class": "control", "label": "反馈",
+      "endpoints": ["system:consumer", "system:producer"],
+      "direction": {"sources": ["system:consumer"], "targets": ["system:producer"]}
+    },
+    {
+      "id": "system:clock", "kind": "connection", "class": "clock", "label": "共享时钟",
+      "endpoints": ["system:producer", "system:consumer", "system:probe"]
+    }
+  ]
+}

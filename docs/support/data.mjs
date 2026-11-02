@@ -3,6 +3,7 @@ import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
+import authoringConfig from './recipes/engdoc.config.js';
 
 export function tutorialData({root}){
  const result={objects:[],relations:[],views:[],tables:[],waveforms:[],references:[]};
@@ -39,5 +40,10 @@ export function tutorialData({root}){
  const pipeline=json('docs/support/pipeline.json');
  for(const type of ['objects','relations'])result[type].push(...pipeline[type].map(entity=>({...entity,source:{file:'docs/support/pipeline.json',selector:entity.id}})));
  result.objects.push({id:'manual:pdf-source',kind:'node',label:'PDF 定位示例文件',source:{file:'docs/assets/location.pdf',selector:'DETAIL',attachment:{id:'location',target:'detail'}}});
+ for(const file of ['objects','tables','waveforms','topology','layout']){
+  const path=`docs/ir/authoring/${file}.json`,data=json(path);
+  for(const type of Object.keys(result))result[type].push(...(data[type]??[]).map(entity=>({...entity,source:entity.source??{file:path,selector:entity.id}})));
+ }
+ result.views.push(...authoringConfig.views.map(view=>({...view,source:{file:'docs/support/recipes/engdoc.config.js',selector:view.id}})));
  return result;
 }

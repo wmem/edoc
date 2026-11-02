@@ -7,6 +7,8 @@
 
 {% section id="design:layout:part-01" title="核心选择" %}
 
+历史设计：2026-11-01 的布局方案，第一批已实施；本节保留设计时的范围。现行字段与限制见[布局参考](../../usage/reference/graph.mdoc#ref:graph-layout)。
+
 
 推荐“工具提供可靠默认规则，作者声明少量布局意图”。几何避让能处理框、线和文字的空间冲突，但不能仅从连通关系得知作者希望哪条是主干、哪个是回授、阅读顺序怎样安排。
 
@@ -26,6 +28,8 @@
 
 {% section id="design:layout:part-02" title="优先支持的输入" %}
 
+历史设计：2026-11-01 的布局方案，第一批已实施；本节保留设计时的范围。现行字段与限制见[布局参考](../../usage/reference/graph.mdoc#ref:graph-layout)。
+
 
 | 属性能力 | 表达的意图 | 当前状态 |
 | --- | --- | --- |
@@ -42,6 +46,8 @@
 {% /section %}
 
 {% section id="design:layout:part-03" title="两张图如何使用" %}
+
+历史设计：2026-11-01 的布局方案，第一批已实施；本节保留设计时的范围。现行字段与限制见[布局参考](../../usage/reference/graph.mdoc#ref:graph-layout)。
 
 
 MAC 图只需描述：Control 在 Data plane 左侧；TX/RX 在容器内上下排列；RX 与 FIFO 对齐；received frame 是希望优先阅读的通路；occupancy event 使用独立反馈通道。工具仍必须自行分配不同出线点、合理线距与边界穿越位置。
@@ -66,6 +72,8 @@ FPGA–Flash 图只需补充：时钟显示主干选 FPGA 与 Flash，测试连�
 {% /section %}
 
 {% section id="design:layout:part-04" title="约束与冲突处理" %}
+
+历史设计：2026-11-01 的布局方案，第一批已实施；本节保留设计时的范围。现行字段与限制见[布局参考](../../usage/reference/graph.mdoc#ref:graph-layout)。
 
 
 - 事实与基本正确性必须满足：真实端点、方向和多端点身份不变，分叉标记对应真实连接；没有提示时同样要做到。这些不是可关闭的美观选项。

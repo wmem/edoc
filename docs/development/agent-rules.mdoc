@@ -1,6 +1,6 @@
 {% section id="dev:agent-rules" title="Agent 维护规则" %}
 
-正式文档由 docs/engdoc.config.js 自身渲染，运行 `npm run docs:build`，入口为 output/index.html。使用路线在 [docs/usage/index.mdoc](../usage/index.mdoc)，字段/命令参考在 [docs/usage/reference/index.mdoc](../usage/reference/index.mdoc)，工具维护路线在 [docs/development/index.mdoc](index.mdoc)。先按任务选入口，不整本读取生成 HTML；`outline --format json` 提供源 sectionId，再用 `read --id ...` 读取章节，事实使用 query。read 默认 self，不附带子 section 正文，留意 range 截断与 nextOffset。
+正式文档由 docs/engdoc.config.js 自身渲染，运行 `npm run docs:build`，入口为 output/index.html。使用路线在 [docs/usage/index.mdoc](../usage/index.mdoc)，字段/命令参考在 [docs/usage/reference/index.mdoc](../usage/reference/index.mdoc)，工具维护路线在 [docs/development/index.mdoc](index.mdoc)。先按任务选入口，不整本读取生成 HTML；`outline --depth 0 --format json` 提供入口 sectionId，再按分支查目录、用 `read --id ...` 读取章节，事实使用 query。read 默认 self，不附带子 section 正文，留意 range 截断与 nextOffset。
 
 先读 README.md 和 [需求与设计基线](design/requirements.mdoc)，再读 [推荐指南](../usage/guide.mdoc)。原始需求快照及来源见[原始方案来源](design/original-source.mdoc)，初次图形问题见 [图形渲染审查](reviews/graphics.mdoc)，修复及当前验证范围见 [图形渲染修复验收](acceptance/graphics.mdoc)。创建或重组工程文档前，也可运行 `node packages/cli/engdoc.ts guide`；已安装的项目直接运行 `engdoc guide` 读取同一份指南。项目接入默认使用 `docs/engdoc.config.js`，字段直接写在配置中；正文先扫描、数据自动发现，不再要求手写 manifest/command/inputs。完整入口契约见 [项目配置与自动依赖](../usage/reference/config.mdoc)。
 

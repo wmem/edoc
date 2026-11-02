@@ -4,17 +4,19 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 
 {% section id="ref:graph-display" title="display" %}
 
-| 字段 | 用途与默认 |
+| 字段 | 类型与用途 |
 | --- | --- |
-| showPortAttributes | 整行端口附注，默认 false |
-| showRelationLabels | 线上关系标题，默认 true |
-| portAttributes | 选择 attributes 中的 Ball/Pin/功能等字段，不控制整行显隐 |
-| classes | HTML 初始类别选中状态，不截断完整静态输出 |
-| collapsedGroups | 当前视图中初始折叠的旧逻辑集合 |
+| showPortAttributes | boolean，整行端口附注，默认 false |
+| showRelationLabels | boolean，线上关系标题，默认 true |
+| portAttributes | 不重复的非空字符串数组，选择 attributes 中的 Ball/Pin/功能等字段，不控制整行显隐 |
+| classes | 不重复的非空字符串数组，HTML 初始类别选中状态，不截断完整静态输出 |
+| collapsedGroups | 不重复的 Group ID 数组，当前视图中初始折叠的旧逻辑集合 |
 | interfaceMode | collapsed/expanded；接口投影默认逐信号 expanded |
-| interfaceOverrides | 按接口 ID 覆盖初始折叠状态 |
+| interfaceOverrides | 接口 ID 到 collapsed/expanded 的对象，按接口覆盖初始折叠状态 |
 
 端口名称与真实位置保留；属性包含方向、位宽、时钟域和选定扩展。工具栏开关逐图独立，当前 SVG/浏览器打印沿用当前文字状态，预先生成的 PDF 使用构建设置。
+
+关系标题直接放在所属线段上，以背景留白保持可读并避开其他关系；不集中排成脱离路径的文字列。隐藏标题只隐藏文字，端点和路径仍保留，完整属性可通过选择对象查询。
 
 普通架构图不会只因对象新增 interfaces 就自动改用接口投影。接口视图、显式接口显示设置或直接引用接口时才启用相应流程。
 
@@ -25,6 +27,8 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 接口必需 id、label、非空 members，protocol、role、attributes、source 可选。members 只引用本 Node 的真实 Port，第一版同一 Port 不能属于多个接口。协议和角色是项目描述，不生成缺失信号。
 
 接口本身可被 view.include.objects、interface 标签或 query 引用。连接端点仍为原 Node/Port，不能换成接口 ID。网页可独立展开一端、两端或全部接口，投影后保留原关系身份和多端点分支。
+
+共享时钟等保留独立 Port 与显式 clockDomainId，不为多个接口复制真实信号。默认 SVG 和文档 PDF 保留视图定义内的逐信号内容；网页另有显式当前视图 SVG，沿用当前接口展开状态，不冒充完整逐信号输出。
 
 第一版没有嵌套协议通道、跨接口端口别名或“接口视图内旧 Group 粗线总览”。布局失败保留上一个成功画面；生成完整静态图失败仍须修正，不以折叠图替代。
 
@@ -45,9 +49,50 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 
 order/align 使用 axis=x/y，nodes 至少两个不重复、同父容器的 Node。order.gap 缺省 80，最小 16，表示最小间距；align.axis 是中心坐标对齐轴。它们与已有固定位置冲突时明确报错。
 
-relationHints 的 backbone 选择原关系的两个真实端点，作为多端点显示主干；endpointSides 用 left/right/top/bottom 声明 Node 端点的出入边，不能覆盖真实 Port 的固定边。channel 指向外侧偏好通道，priority 为 main/normal。顺序、对齐和显式端点边必须满足；通道与优先级为偏好，无法满足会说明原因，无合法路径时仍失败。
+relationHints 以当前视图中的原 Connection ID 为键。backbone 为多端点选择显示主干；channel 仅接受两端点关系，不能用于三端点 Net。字段和组合限制见 {% reference id="ref:relation-hints" label="relationHints 字段" /%}，可运行的数据见 {% reference id="ref:layout-example" label="主干与通道完整示例" /%}。
 
-无任意折点字段，也没有已完成的全组件项目默认/引用覆盖链。静态引用与循环在 validate 检查，尺寸与实际路径问题在 build/export 检查。完整范例数据在 examples/gallery/constraints.json，[布局教程](../07-layout.mdoc)直接引用它。
+无任意折点字段，也没有已完成的全组件项目默认/引用覆盖链。静态引用与循环在 validate 检查，尺寸与实际路径问题在 build/export 检查。
+
+{% section id="ref:relation-hints" title="relationHints 字段与限制" %}
+
+relationHints 是对象，键必须是本视图 include.relations 中已有的 Connection ID。每个值可包含下列字段，未知字段报错：
+
+| 字段 | 类型、适用范围和效果 |
+| --- | --- |
+| backbone | 两个不同的原关系端点 ID 数组，两个 ID 都必须属于该关系；选择显示主干，不改变全部端点 |
+| endpointSides | 端点 ID 到 left/right/top/bottom 的对象；键只能是本关系真实的 Node 端点，不能是 Port、接口或未参与端点的所属 Node |
+| channel | left/right/top/bottom；只适用于 endpoints 恰好两个的关系；多端点设置此字段即报 LAYOUT_CHANNEL，即使同时有 backbone 也不例外 |
+| priority | main/normal，表示布线优先级偏好 |
+
+显式 endpointSides 必须满足，不能覆盖真实 Port 的固定边；通道和优先级为偏好，无法满足会说明原因，无合法路径时仍失败。仅有真实 Port 端点时用端口/接口布局控制边，不把所属模块 ID 当作 Node 端点填入 endpointSides。
+
+接口折叠时，提示继续引用原 Connection ID；具有专属 relationHints 的关系保留独立显示线，不与其他信号聚合后丢掉原提示。
+
+顺序与对齐的 constraints 适用于同一父容器内的 Node；relationHints 引用原关系。两者只声明展示意图，不定义新的工程连接。完整可复制例子见 {% reference id="ref:layout-example" /%}。
+
+{% /section %}
+
+{% section id="ref:layout-example" title="主干与通道完整示例" %}
+
+前置：已有[数据教程的 objects.json](../03-data.mdoc#use:standard-data)和[绘图教程的配置](../04-diagrams.mdoc#use:architecture)。先把下面内容保存为 docs/ir/authoring/topology.json，增加一个观察点、一条两端点反馈和一条三端点时钟关系：
+
+{% code file="docs/ir/authoring/topology.json" language="json" /%}
+
+再将下面完整视图定义保存为 docs/ir/authoring/layout.json。视图也可作为标准数据被扫描，不需要改动已有配置或再抄对象：
+
+{% code file="docs/ir/authoring/layout.json" language="json" /%}
+
+在自己的 docs/index.mdoc 写入并运行 engdoc：
+
+```text
+{% diagram id="system:routing" /%}
+```
+
+{% diagram id="system:routing" /%}
+
+数据主线从生产者右侧进入消费者左侧；两端点反馈偏好下方通道；三端点时钟使用 backbone，观察点仍保留为第三端点。显示主干不表示电气走线拓扑。执行 engdoc query --id system:clock 可核对三个完整端点。
+
+{% /section %}
 
 {% /section %}
 {% /section %}

@@ -1,0 +1,32 @@
+{% section id="acceptance:documentation-review" title="文档审核修复" %}
+
+2026-11-02，对提交 fc88736 的独立文档审核发现四项 P2 与两项 P3。用户批准按建议修复，本页记录这次修改与验证范围；前轮 249 项结果不作为本轮全量重跑结果。
+
+{% section id="acceptance:documentation-review:changes" title="六项问题与处理" %}
+
+| 问题 | 本次处理与现行入口 |
+| --- | --- |
+| 完整绘图配置覆盖正文入口 | [绘图教程](../../usage/04-diagrams.mdoc#use:architecture) 保留 documents，并说明完整配置与追加字段的区别、正文位置和预期结果 |
+| 布局参考遗漏适用限制 | [relationHints](../../usage/reference/graph.mdoc#ref:relation-hints) 明确类型、枚举、端点身份和两端点 channel 限制 |
+| 有图但缺完整创建方法 | [投影表](../../usage/reference/ir.mdoc#ref:table-example)、[规范波形](../../usage/reference/ir.mdoc#ref:waveform-example)、[主干与通道](../../usage/reference/graph.mdoc#ref:layout-example) 同时提供完整定义、保存位置、正文标签和实际结果 |
+| 独立读取历史小节丢掉阶段背景 | 接口、布局、PDF、组合和统一展示五份设计的子 section 均携带阶段标记和现行入口，原设计条款与原始 V1 快照保留 |
+| 指南重复维护精确规则 | [推荐指南](../../usage/guide.mdoc) 保留组织原则和选择依据，具体字段链接到现行参考，历史验收作为验证证据 |
+| 开发导航与推荐顺序不一致 | docs/engdoc.config.js 使用有序 documents，先架构、开发验证，再 API、环境、维护及设计/问题/验收/回归/历史 |
+
+新增定义保存在 docs/ir/authoring，最小配置在 docs/support/recipes。它们是虚构的文档创建配方，不代表真实工程或协议完整实现。code 从原文件展示文本，手册数据函数从同一文件加载事实并补充来源；不维护第二份图表数据或独立 Demo 文案。
+
+{% /section %}
+
+{% section id="acceptance:documentation-review:verification" title="验证范围" %}
+
+- TypeScript 检查通过。
+- 本轮相关自动用例共 22 项通过：正式文档与创建配方 2 项、outline 8 项、read 9 项、手册浏览器 2 项、实际 npm 打包安装 1 项，无失败或跳过。
+- 创建配方回归从 read 返回的真实正文提取代码，在含 README 的临时用户工程连续构建架构、投影表、波形与布局，确认 docs/index.mdoc 参与发布，并核对三端点完整性和非法 channel 报错。
+- 定向读取验证五份设计的所有子 section 都含阶段背景和现行入口；目录断言核对架构、开发验证与后续分支顺序，来源查询指向实际样例文件。
+- playwright-cli 使用已有 Chromium，从 file 页面离线检查正文到参考跳转、完整配置与数据代码、最小架构/主干反馈/规范波形、开发导航和 390px 窄屏，无页面脚本错误、外部请求或整页横向溢出。截图已目视核对。
+- HTML 与 PDF 重新构建。PDF 书签和对应文本核对新增表格、波形、布局、架构、开发验证和历史设计小节；代表性表格、布局与波形页面已栅格化目视抽查。PDF 构建通过 ENGDOC_CHROMIUM 指定本机已有浏览器。
+
+本次没有重跑全部工具测试，没有逐页视觉验收整本 PDF 或重新逐条检查真实板卡；没有验证远程 SSH 安装、原生 Windows 和其他浏览器。当前修改未提交或推送。
+
+{% /section %}
+{% /section %}

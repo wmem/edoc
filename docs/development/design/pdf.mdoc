@@ -5,6 +5,8 @@
 
 {% section id="design:pdf:part-01" title="用户要完成的阅读动作" %}
 
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
+
 
 项目把原理图 PDF 原文件携带在生成的 HTML 中。读者从正文、图表或对象详情点击一个稳定引用，进入本 HTML 的 PDF 阅读界面，定位到对应页或局部电路位置，放大核对，再用浏览器后退返回原文位置。
 
@@ -13,6 +15,8 @@
 {% /section %}
 
 {% section id="design:pdf:part-02" title="三种身份分开" %}
+
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
 
 
 - 工程身份：稳定 projectId，沿用组合设计。
@@ -26,6 +30,8 @@
 {% /section %}
 
 {% section id="design:pdf:part-03" title="配置和正文示例" %}
+
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
 
 
 以下为虚构示例，字段已实现，页码/矩形不代表真实原理图：
@@ -68,6 +74,8 @@ file 相对附件所属工程配置根。父工程接入子工程时保持子配
 
 {% section id="design:pdf:part-04" title="两种定位方式" %}
 
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
+
 
 ### PDF 自带命名目标
 
@@ -92,6 +100,8 @@ PDF.js 的 viewport 处理页面缩放和旋转，以及 PDF 与 Canvas 坐标�
 
 {% section id="design:pdf:part-05" title="单 HTML 内的资源打包" %}
 
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
+
 
 附件原始字节随 HTML 携带，工具可做 base64 编码作为内嵌载荷，保留原 PDF 内容并提供原文件下载。每个明确附件/实际文件只存一份载荷，不因多处引用重复复制；构建内复用按显式 ID 和实际路径处理，不引入内容 hash 状态跟踪。
 
@@ -104,6 +114,8 @@ PDF.js 可以直接读取 TypedArray/Uint8Array 的 PDF 二进制数据，无需
 {% /section %}
 
 {% section id="design:pdf:part-06" title="页面路由与浏览器返回" %}
+
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
 
 
 PDF 阅读作为工程文档阅读器中的一种页面类型，使用稳定附件/位置身份进入，同一标签页内完成：
@@ -120,6 +132,8 @@ PDF 阅读作为工程文档阅读器中的一种页面类型，使用稳定附�
 
 {% section id="design:pdf:part-07" title="与跨工程无依赖规则的关系" %}
 
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
+
 
 本工程附件是明确输入，本地引用时必须存在且定位有效。不同工程通过稳定 projectId、附件 ID 和位置 ID 生成跳转，但链接本身不加载对方配置、PDF 或位置映射。
 
@@ -134,6 +148,8 @@ PDF 阅读作为工程文档阅读器中的一种页面类型，使用稳定附�
 
 {% section id="design:pdf:part-08" title="当前实现与技术验证" %}
 
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
+
 
 - core/attachments.ts 校验附件和定位，core/documents.ts 支持 attachment 标签；Source 新增可选 attachment 核对入口，保留原 file/selector。
 - pack-html/book.ts 打包原字节、目标索引、PDF.js worker、CMap、字体及解码支持资源；同一实际文件只携带一份字节。
@@ -146,6 +162,8 @@ PDF 阅读作为工程文档阅读器中的一种页面类型，使用稳定附�
 {% /section %}
 
 {% section id="design:pdf:part-09" title="首批实施与验收范围" %}
+
+历史设计：2026-11-01 的 PDF 附件方案；本节保留设计时的说明。现行契约见[PDF 参考](../../usage/reference/pdf.mdoc)，验证范围见[组合阅读验收](../acceptance/composition-pdf.mdoc)。
 
 
 1. 先用标准字体的最小 PDF 及真实含中文的原理图 PDF 验证单 HTML + file:// + 断网阅读，确认 worker 和支持资源完整；没有外部网络或旁路文件。

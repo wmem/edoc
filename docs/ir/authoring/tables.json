@@ -1,0 +1,10 @@
+{
+  "tables": [{
+    "id": "system:modules", "kind": "table", "label": "模块名称查询",
+    "columns": [{"field": "label", "label": "模块名称", "type": "string"}],
+    "rows": [
+      {"id": "system:producer-row", "objectId": "system:producer"},
+      {"id": "system:consumer-row", "objectId": "system:consumer"}
+    ]
+  }]
+}

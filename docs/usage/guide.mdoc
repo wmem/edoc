@@ -97,13 +97,13 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 
 各类展示采用“合理默认、按需声明、局部覆盖、明确校验”的原则。作者先确定数据、知识、阅读范围和必要的组织，不必为普通内容填写大量排版参数；有特殊需求时，再选择契约明确支持的属性。默认渲染质量仍由工具负责。
 
-关系图需要调整时，优先在 View.layout 声明相对顺序、中心对齐、显示主干或反馈通道，再考虑固定位置。order.gap 是最小间距，工具会为标题等增加空间；order/align 和显式出入边必须满足，通道/优先级是可解释的偏好。不要把无效引用、冲突或不支持字段当作可静默忽略的配置。
+关系图需要调整时，优先声明相对顺序、中心对齐、显示主干或反馈通道，再考虑固定位置。先理解需要保证的关系，再选择工具支持的提示；不要把无效引用、冲突或不支持字段当作可静默忽略的配置。字段、默认值和适用限制统一查[布局参考](reference/graph.mdoc#ref:graph-layout)，实际操作见[布局教程](07-layout.mdoc)。
 
-展示设置只引用原对象，不手抄 pin、位宽或端点。接口折叠时原关系提示仍使用稳定 ID；有专属提示的关系保留独立显示线。网页临时筛选和展开不写回事实，也不使完整 PDF 遗漏内容。字段、例子和限制见[布局约束使用与验收](../development/acceptance/layout.mdoc)。
+展示设置只引用原对象，不手抄 pin、位宽或端点。网页临时筛选和展开不写回事实，也不使完整输出遗漏其定义范围。接口投影和导出规则统一查[接口参考](reference/graph.mdoc#ref:interfaces)与[显示参考](reference/graph.mdoc#ref:graph-display)；需要核对历史验证证据时，再查[布局验收](../development/acceptance/layout.mdoc)。
 
 这是已批准的全工具设计方向。当前第一批实现图形布局属性；表格、时序、主题和发布设置，以及项目默认/引用处覆盖链仍待逐项实现，不能按规划中的字段生成当前配置。完整范围见[声明式展示与约束设计](../development/design/presentation.mdoc)。
 
-组合后的跨工程跳转只使用稳定 projectId 和目标 ID，未包含则提示，不能为了跳转自动读取父/兄弟配置或数据。原理图 PDF 可随 HTML 携带，通过稳定附件/位置 ID 核对来源；source.attachment 可附加入口，但不能替换原始 file/selector。PDF 换版时核对定位映射，不把格式校验当作工程位置已验收。
+跨工程跳转不建立外部源依赖，具体身份和未包含目标的行为见[组合教程](08-projects-pdf.mdoc)。原理图 PDF 可作为核对证据，附件入口不替代原事实来源；换版时核对定位映射，不把格式校验当作工程位置已验收。定义和定位规则见[PDF 参考](reference/pdf.mdoc)。
 
 {% /section %}
 
@@ -115,7 +115,7 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 示例查询流程：
 
 ```sh
-engdoc outline --config docs/engdoc.config.js --depth 1 --format json
+engdoc outline --config docs/engdoc.config.js --depth 0 --format json
 engdoc query --config docs/engdoc.config.js --id project:object --depth 1 --format json
 engdoc read --config docs/engdoc.config.js --id stable:section --format json
 ```
@@ -123,6 +123,8 @@ engdoc read --config docs/engdoc.config.js --id stable:section --format json
 outline 给出父子关系、级别、源 sectionId 与正文来源，不需要读取生成网页。query 用于工程事实与引用；read 按稳定 section ID 返回规范化 Markdown，默认 self 不附带子章节正文，显式 subtree 才展开。返回来源、子章节和字符截断/nextOffset，按需继续读取。不要为查一个 pin 或一项配置读取整份 HTML。
 
 网页折叠只改善阅读密度，不会自动减少 Agent 读取源文件的 token。需要精确读取的内容应有清楚的稳定小节，细节多时拆成参考页。读取代码围栏中的标签是查看语法样例，不能触发 include 或图形依赖。
+
+可独立读取的历史或规划小节应带阶段标记和现行参考入口。不能只在父章节说明“这是旧状态”，否则定向读取子节会把旧结论误当作当前事实。精确规则在当前参考维护，历史保留当时的事实和验证范围。
 
 {% /section %}
 
@@ -157,11 +159,11 @@ KY3134 的真实案例及检查范围见[图形渲染审查](../development/revi
 
 图名已明确范围时，可以使用简短显示名，完整身份仍由稳定 ID、属性与来源保留；省略内容不能造成跨板或跨模块歧义。关系类别可以通过图例、线型与筛选表达，避免每条短连线都重复一长串类别文字。这些是显示建议，不改变工程字段与关系。
 
-理解性图优先保留端口名称，方向、位宽、Ball/Pin 等属性按需显示，点击端口仍可查看完整事实；详细接口图需要直接展示这些值时，在 view.display 中设置 showPortAttributes: true。连线标题直接放在所属线段上，用背景留白保持可读，并避免遮断其他关系；不将标题集中排成难以追踪归属的独立文字列。工具栏可逐图切换端口属性、连线标题，线上标题隐藏后仍保留端点和路径。不要通过删除源属性或 Net 来减少画面信息，详见[图形文字显示](../development/acceptance/display.mdoc)。
+理解性图优先呈现身份与关键关系，精确属性按需查询；详细接口图再展示必要的信号信息。连线标题应能直接辨认所属路径，隐藏标题后也能追踪真实端点。不要通过删除源属性或 Net 来减少画面信息。配置与操作统一查[显示参考](reference/graph.mdoc#ref:graph-display)和[绘图教程](04-diagrams.mdoc)，历史检查范围见[文字显示验收](../development/acceptance/display.mdoc)。
 
-一个模块有多组总线时，使用 Node.interfaces 分别声明接口身份和真实成员引用，归属由模块明确给出；不要仅按名字前缀猜接口，或把跨模块逻辑 Group 当成一个模块的接口。理解性接口视图可以设置 display.interfaceMode: collapsed，按需独立展开一端或两端，方向、位宽仍取自原 Port。完整 Connection 不写回聚合端点，第三端点和分支必须保留。
+一个模块有多组总线时，分别说明接口身份与真实成员归属，不按名字前缀猜协议或把跨模块逻辑集合当成一个模块的接口。总览帮助理解分组，详情再追踪逐信号连接；聚合不能改写真实方向、成员或多端点身份。
 
-展开后区分实际定义的成员与“当前视图没有显示连接”的成员，不根据缺线断言实际未使用。共享时钟等保留独立端口及显式时钟域引用。默认 SVG/PDF 保留逐信号内容，网页另有显式当前视图 SVG；宽而密的完整图同时提供按接口拆分的详图和真实信号表，方便打印阅读。字段与实测范围见[接口分组实现与验收](../development/acceptance/interfaces.mdoc)。
+展开后区分实际定义的成员与“当前视图没有显示连接”的成员，不根据缺线断言实际未使用。宽而密的完整图同时提供按接口拆分的详图和真实信号表，方便打印阅读。声明、共享信号处理、展开和导出规则见[接口教程](05-interfaces.mdoc)与[接口参考](reference/graph.mdoc#ref:interfaces)，历史实测范围见[接口验收](../development/acceptance/interfaces.mdoc)。
 
 {% /section %}
 

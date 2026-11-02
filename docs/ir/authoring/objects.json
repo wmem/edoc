@@ -1,0 +1,11 @@
+{
+  "objects": [
+    {"id": "system:producer", "kind": "node", "label": "生产者"},
+    {"id": "system:consumer", "kind": "node", "label": "消费者"}
+  ],
+  "relations": [{
+    "id": "system:data", "kind": "connection", "class": "data", "label": "数据",
+    "endpoints": ["system:producer", "system:consumer"],
+    "direction": {"sources": ["system:producer"], "targets": ["system:consumer"]}
+  }]
+}

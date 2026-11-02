@@ -10,23 +10,23 @@
 
 试着选中 RX FIFO，查看对象与来源，再关闭 event 分类。筛选只改变当前显示，完整关系仍可查询。
 
-自己的视图直接写在配置里：
+在自己的工程，先按[数据教程](03-data.mdoc#use:standard-data)保存生产者、消费者和数据连接。下面是可直接保存为 docs/engdoc.config.js 的完整配置，保留 documents: 'docs'，确保本次修改的正文参与发布：
 
-```js
-export default {
-  views: [{
-    id: 'system:overview', kind: 'architecture', label: '生产与消费',
-    include: {objects: ['system:producer', 'system:consumer'], relations: ['system:data']},
-    layout: {direction: 'LR'}
-  }]
-};
-```
+{% code file="docs/support/recipes/engdoc.config.js" language="javascript" /%}
 
-正文通过稳定视图 ID 引用：
+已有其他配置时只增加 views 项，保留原来的 documents、data 等字段。配置对象整体替换会重置未写出的字段；validate 成功并不表示你期望的每篇文章都在发布入口中。
+
+在自己的 docs/index.mdoc 中写入：
 
 ```text
 {% diagram id="system:overview" /%}
 ```
+
+在项目根执行 engdoc，打开 output/index.html，应该看到下面这张两节点图：
+
+{% diagram id="system:overview" /%}
+
+想确认正文入口时，先运行 engdoc outline --depth 1 --format text。
 
 {% /section %}
 

@@ -4,7 +4,14 @@ import {tutorialData} from './support/data.mjs';
 export default {
   projectId: 'engdoc-manual',
   title: 'EngDoc 使用与开发文档',
-  documents: ['docs/index.mdoc', 'docs/usage', 'docs/development'],
+  documents: [
+    'docs/index.mdoc', 'docs/usage',
+    'docs/development/index.mdoc',
+    'docs/development/architecture.mdoc', 'docs/development/contributing.mdoc',
+    'docs/development/api.mdoc', 'docs/development/environment.mdoc', 'docs/development/agent-rules.mdoc',
+    'docs/development/history.mdoc', 'docs/development/design', 'docs/development/reviews',
+    'docs/development/acceptance', 'docs/development/regression', 'docs/development/history'
+  ],
   data: tutorialData,
   children: {component: 'docs/component/docs/engdoc.config.js', documentFirst: 'examples/document-first/docs/engdoc.config.js'},
   attachments: {
