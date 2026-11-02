@@ -4,3 +4,8 @@ coverage/
 *.tgz
 
 .playwright-cli/
+.agent/task-*.md
+dist/
+examples/*/output/
+output/
+docs/manual/component/output/

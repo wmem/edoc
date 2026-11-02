@@ -1,0 +1,47 @@
+{% section id="use:interfaces" title="接口合并与展开" %}
+
+一个模块有多组总线时，先展示接口身份，再按需展开信号。下面的虚构处理模块有 S_AXI_CTRL 和 M_AXI_DMA，两组接口可独立操作。这些信号只是演示摘录，不代表完整 AXI 实现。
+
+{% section id="use:interface-overview" title="从总览进入逐信号" %}
+
+{% diagram id="gallery:interface-buses" /%}
+
+点击接口名称旁的三角，只展开这一端；另一组接口保持原状态。点击聚合线查看组成关系，再选择“展开两端接口”。也可用工具栏切换接口总览和全部展开。
+
+聚合线是显示投影。Connection 仍保存逐信号的真实端点，不会写回接口 ID。某个成员在当前视图没有显示连接，不代表真实工程没有使用它。
+
+{% /section %}
+
+{% section id="use:interface-declare" title="声明接口身份与成员" %}
+
+在已有 Node 内增加接口，members 引用它自己的真实 Port：
+
+```json
+{
+  "interfaces": [{
+    "id": "ip:s_axi", "label": "S_AXI", "protocol": "AXI4-Lite", "role": "slave",
+    "members": ["ip:awvalid", "ip:awready"]
+  }]
+}
+```
+
+以上是 Node 的局部字段。Port 自身仍提供方向、位宽和来源；工具不会根据 AXI 名称自动补齐信号。视图设置 display.interfaceMode: 'collapsed' 可默认合并。
+
+接口属于一个模块；逻辑 Group 表示选集，不能代替模块接口归属。共享时钟保留独立端口与显式时钟域。
+
+{% /section %}
+
+{% section id="use:interface-reference" title="详图与精确查询" %}
+
+理解整体后，需要哪个接口再查哪个：
+
+```sh
+engdoc query --id ifdemo:engine.s_ctrl --depth 1
+```
+
+[样例查询参考](reference/examples.mdoc)保留按接口拆分的详图、信号表和来源。正文无需把它们全部展开，静态文档输出仍保留参与文档的完整内容。
+
+字段与边界见 {% reference id="ref:interfaces" label="接口参考" /%}。
+
+{% /section %}
+{% /section %}

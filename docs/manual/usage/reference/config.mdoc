@@ -1,0 +1,79 @@
+{% section id="ref:config" title="配置参考" %}
+
+engdoc.config.js 直接导出配置对象。未指定 --config 时只读取当前目录的该文件；显式配置支持 .js/.mjs/.cjs，不向父目录自动搜索。未知字段报错。
+
+| 字段 | 用途 | 稳定章节 ID |
+| --- | --- | --- |
+| title、projectId | 标题与工程身份 | ref:config-identity |
+| documents | 正文入口与顺序 | ref:config-documents |
+| data | 标准数据路径、对象或函数 | ref:config-data |
+| views、tables、waveforms、references | 配置内联资源 | ref:config-resources |
+| children | 显式组合子工程 | ref:config-children |
+| attachments | PDF 原始附件 | ref:pdf |
+| output、chromiumExecutable、compactIndex | 输出与打印 | ref:config-output |
+
+{% section id="ref:config-identity" title="title 与 projectId" %}
+
+二者均为非空字符串，默认配置目录名。title 用于显示，projectId 用于产物中的工程身份。需要长期跳转时显式指定 projectId。组合内 projectId 不可重复；不同工程内的实体 ID 可以同名。
+
+{% /section %}
+
+{% section id="ref:config-documents" title="documents" %}
+
+接受正文文件、目录或有序路径数组，均相对配置目录。默认优先 README.md，没有则使用 docs/；两者都不存在时报错。
+
+目录递归发现 .md/.mdoc，index 优先，其余按相对路径排序；跳过 ir、_partials、node_modules、output 和隐藏项。普通文件链接会发现本工程其他文章，循环链接不会重复加入。文件 include 复用页内内容；project include 接入子工程。
+
+被 children 声明的子目录是正文自动扫描边界。目录层级成为阅读分组，普通文件成为独立页；section 和标题表达页内结构。普通 Markdown 链接相对所在源文件，file include 相对工程根。
+
+页面 ID 是相对根的路径去掉扩展名，例如 docs/interfaces。当前没有 frontmatter 自定义页面 ID。
+
+{% /section %}
+
+{% section id="ref:config-data" title="data" %}
+
+接受数据文件或目录路径、路径数组、标准数据对象，或同步/异步函数。缺省扫描本工程 docs/ir，缺省目录不存在时允许纯正文；显式要求的路径不存在时报错。
+
+目录递归发现包含标准资源数组的 JSON，允许同类多分片；不要求 manifest 或文件清单。显式 JSON 文件必须含可识别资源。单分片最多 16 MiB，UTF-8，未知数据字段报错。
+
+```js
+export default {
+  async data(context) {
+    // 项目转换逻辑，返回标准资源；也可返回路径或路径数组。
+    return {objects: [], relations: []};
+  }
+};
+```
+
+context.root 是配置目录；context.documents 是已扫描的正文及片段路径；context.references 是正文中的数据引用，包含 id、tag、file、line 及可选 project/target。调用顺序是配置 → 正文扫描 → data → 数据和引用校验。通用工具不猜测 CSV/网表/RTL 语义。
+
+数据可以携带 irVersion、requiredFeatures 和 attachments；当前支持的资源类型见[数据契约](ir.mdoc)。数据中的 projectId 若提供，必须与配置一致。版本和必需能力属于数据契约，不要求使用者在普通配置填写。
+
+{% /section %}
+
+{% section id="ref:config-resources" title="views、tables、waveforms 与 references" %}
+
+四个字段均为数组，默认空。直接在配置编写显示与编排资源，结构与对应 IR 资源一致。它们与 data 结果进入同一工程索引，ID 不得重复。
+
+views 仅引用已有对象和关系；tables 可从对象投影；waveforms 保留语义与来源；references 声明有身份的对象/文档关联。不要通过这些设置再复制已有精确值。
+
+{% /section %}
+
+{% section id="ref:config-children" title="children" %}
+
+局部组合别名到子配置路径的对象，默认空。只有正文 include project="别名" 真正接入后，工具才加载对应配置。父子使用同一工程模型，各自保留正文、数据和相对路径。
+
+禁止组合循环、重复真实配置、重复工程身份和重复接入同一子工程。弱跳转中的 project 是目标 projectId，不是此处别名；它不能触发配置读取。跨工程渲染取数与关系端点拼接不支持。
+
+{% /section %}
+
+{% section id="ref:config-output" title="output、Chromium 与 compactIndex" %}
+
+output 默认 {html: 'output/index.html', pdf: false}。html/pdf 可写相对根的输出路径或 false，至少启用一种。CLI --output 相对当前执行目录。输出不得覆盖已知输入或其他输出；生成失败会记录失败状态，不能将旧产物解释为新成功。
+
+chromiumExecutable 指定已有 Chromium，或使用 ENGDOC_CHROMIUM。只有导出文档 PDF 需要；内嵌 PDF 阅读不需要。工具不会自动下载浏览器。
+
+compactIndex 默认 false，控制旧单文档打印链路的对象附录；新的按页阅读器在对象详情中按需显示，不把全部对象作为正文附录。
+
+{% /section %}
+{% /section %}

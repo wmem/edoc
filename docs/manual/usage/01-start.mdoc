@@ -1,0 +1,55 @@
+{% section id="use:start" title="第一次生成" %}
+
+目标是先得到能离线打开的正文文档。这一步不需要 IR、转换脚本或 Chromium。
+
+{% section id="use:install" title="安装与运行环境" %}
+
+需要 Node.js 24 或更新版本。仓库版本推送到远程后，可通过 Git SSH 安装：
+
+```sh
+npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+engdoc --version
+```
+
+需要访问该 Git 仓库的 SSH 权限。该命令描述安装方式，不表示当前工作树已推送或已验证你的网络环境。也可在项目中安装为依赖，通过 npx engdoc 或 npm script 运行。
+
+{% /section %}
+
+{% section id="use:first-build" title="最小配置" %}
+
+在你的工程创建 README.md，写下工程用途；再创建 engdoc.config.js：
+
+```js
+export default {};
+```
+
+在这个目录运行：
+
+```sh
+engdoc
+```
+
+打开生成的 output/index.html。工具默认读取当前目录的 engdoc.config.js，正文优先 README.md；没有 README.md 时读取 docs/。没有 docs/ir/ 时可以生成纯正文。
+
+配置直接写在 JS 文件中，不要求 manifest、command、inputs 或另一份配置 JSON。
+
+{% /section %}
+
+{% section id="use:first-change" title="只在需要时增加配置" %}
+
+正文变多以后再指定文档目录：
+
+```js
+export default {
+  projectId: 'my-project',
+  title: '工程手册',
+  documents: 'docs'
+};
+```
+
+projectId 用作稳定工程身份。title 改变显示名称，documents 改变正文入口。其余设置继续使用默认值。要使用其他配置文件，运行 engdoc --config path/to/custom.js；相对资源路径以该配置所在目录为根。
+
+接下来阅读[组织多篇文档](02-organize.mdoc)。只想查默认值，直接查看 {% reference id="ref:config" label="配置参考" /%}。
+
+{% /section %}
+{% /section %}

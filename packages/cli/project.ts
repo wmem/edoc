@@ -1,0 +1,107 @@
+import {resolve,dirname,join} from 'node:path';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync,readFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {resolveProjectConfig,loadProject,protectOutputs} from '../core/project.ts';
+import type {ResolvedConfig} from '../core/project.ts';
+import {query,summary} from '../core/query.ts';
+import {readDocument} from '../core/read.ts';
+import {outline} from '../core/outline.ts';
+import {EngDocError} from '../core/errors.ts';
+import {SUPPORTED_IR_VERSION} from '../core/load.ts';
+import type {Diagnostic} from '../core/types.ts';
+import {scene,svg} from '../render-graph/index.ts';
+import {bookHTML,bookPrintHTML} from '../pack-html/book.ts';
+import {loadBook,projectOutline} from '../core/book.ts';
+import {pdf} from '../render-pdf/index.ts';
+
+const help=`EngDoc / IR ${SUPPORTED_IR_VERSION}
+用法：
+ engdoc                                      读取当前目录 engdoc.config.js 并构建
+ engdoc --config path/to/custom.js            使用指定配置构建
+ engdoc build [--format html|pdf] [--output FILE]
+ engdoc validate [--format json|text]         扫描文档、发现数据并校验依赖
+ engdoc outline [--format json|text]
+ engdoc query [--project PROJECT_ID] --id ID [--depth 0..10] [--max-items 1..10000] [--format json|text]
+ engdoc read [--project PROJECT_ID] --id SECTION_ID [--scope self|subtree] [--offset 0] [--max-chars 12000] [--format json|text]
+ engdoc export [--project PROJECT_ID] --view ID --format svg --output FILE
+ engdoc guide [--format text|json]
+项目命令均可使用 --config；省略时只查找当前目录 engdoc.config.js。
+配置内容直接写在 JS 中；不要求 manifest、command 或 inputs 清单。
+正文与 IR 数据自动发现和校验，每篇正文独立阅读；图形仅生成正文引用的视图。
+显式 children/include 接入子工程；跨工程链接不加载外部工程。
+PDF 附件内嵌于 HTML，支持位置引用及浏览器返回。
+文档导出 PDF 需要构建环境已有 Chromium，可用 chromiumExecutable 或 ENGDOC_CHROMIUM 指定。
+HTML 内嵌 PDF 阅读不需要此构建配置。
+退出码：0 成功；1 配置/数据/构建失败；2 用法错误；3 ID 不存在。
+`;
+class UsageError extends Error{}
+type Target={format:'html'|'pdf'|'svg';file:string};
+
+export async function main(argv:string[]):Promise<number>{
+ let format='text',targets:Target[]=[],canClean=false,config:ResolvedConfig|undefined;
+ try{
+  if(argv.length===1&&['--help','-h'].includes(argv[0])){process.stdout.write(help);return 0;}
+  if(argv.length===1&&argv[0]==='--version'){process.stdout.write(`EngDoc 1.0.0 / IR ${SUPPORTED_IR_VERSION}\n`);return 0;}
+  const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
+  if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 engdoc --help 查看用法');
+  const allowed=new Set(command==='guide'?['--format']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars']:[]),...(['query','read','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);
+  const args:Record<string,string>=Object.create(null);
+  for(let i=0;i<tokens.length;i+=2){const key=tokens[i];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(tokens[i+1]===undefined||tokens[i+1].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i+1];}
+  format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
+  if(command==='build'&&args['--format']==='text')throw new UsageError('build 的 --format 只接受 html/pdf');
+  if(!({build:['text','html','pdf'],validate:['json','text'],outline:['json','text'],query:['json','text'],read:['json','text'],export:['svg'],guide:['json','text']}[command]!).includes(format))throw new UsageError('命令输出格式不正确');
+  if(command==='guide'){const content=readFileSync(new URL('../../docs/推荐指南.md',import.meta.url),'utf8');process.stdout.write(format==='json'?JSON.stringify({guideVersion:'3.0',source:'docs/推荐指南.md',content},null,2)+'\n':content);return 0;}
+  if(command==='query'&&!args['--id'])throw new UsageError('query 需要 --id');
+  if(command==='read'&&!args['--id'])throw new UsageError('read 需要 --id');
+  if(command==='read'&&args['--scope']!==undefined&&!['self','subtree'].includes(args['--scope']))throw new UsageError('--scope 只接受 self/subtree');
+  if(command==='export'&&(!args['--view']||!args['--output']||!args['--output'].endsWith('.svg')))throw new UsageError('export 需要 --view、--format svg 和 .svg 的 --output');
+  const number=(key:string,fallback:number,min:number,max:number)=>{const value=args[key];if(value===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(value)||+value<min||+value>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +value;};
+  const depth=number('--depth',0,0,10),maxItems=number('--max-items',1000,1,10000);
+  const readOffset=number('--offset',0,0,Number.MAX_SAFE_INTEGER),readLimit=number('--max-chars',12000,1,100000);
+  if(command==='build'&&args['--output']){const inferred=format==='text'?(args['--output'].endsWith('.pdf')?'pdf':args['--output'].endsWith('.html')?'html':undefined):format;if(!inferred||!args['--output'].endsWith('.'+inferred))throw new UsageError('--output 需要与 html/pdf 格式一致');format=inferred;}
+  config=await resolveProjectConfig(args['--config']);
+  if(command==='build'){
+   if(format==='html'||format==='pdf')targets=[{format,file:args['--output']?resolve(args['--output']):config.outputs.find(t=>t.format===format)?.file??resolve(config.root,'output/index.'+format)}];
+   else targets=config.outputs.slice();
+  }else if(command==='export')targets=[{format:'svg',file:resolve(args['--output'])}];
+  protectOutputs(targets,config.configInputs);
+  const book=await loadBook(config,{onInputs(inputs){protectOutputs(targets,inputs);if(!Object.keys(config!.children).length)canClean=true;}});protectOutputs(targets,book.inputs);canClean=true;const project=book.root,selected=args['--project']?book.projects.get(args['--project']):project;if(!selected)throw new EngDocError([{code:'QUERY_NOT_FOUND',file:config.file,path:'/project',message:'当前组合中没有此工程：'+args['--project']}]);const graph=selected.graph;
+  if(command==='query'){process.stdout.write(JSON.stringify(query(graph,args['--id'],{depth,maxItems}),null,2)+'\n');return 0;}
+  if(command==='read'){
+   const result=readDocument(graph,args['--id'],{scope:args['--scope'] as 'self'|'subtree'|undefined,offset:readOffset,maxChars:readLimit});
+   process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':`# ${result.title}\n来源：${result.source.file}:${result.source.line}\n范围：${result.scope}；字符 ${result.range.offset}–${result.range.offset+result.range.returnedChars}/${result.range.totalChars}\n\n${result.content}\n`+(result.children.length?'\n子章节：'+result.children.map(c=>`${c.id}（${c.title}）`).join('、')+'\n':'')+(result.range.truncated?`\n正文已截断；继续：--offset ${result.range.nextOffset}\n`:''));return 0;
+  }
+  if(command==='outline'){
+   const result=projectOutline(book),lines=(nodes:typeof result.chapters,depth=0):string[]=>nodes.flatMap(n=>['  '.repeat(depth)+n.label,...lines(n.children,depth+1)]);
+   process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':lines(result.chapters).join('\n')+'\n');return 0;
+  }
+  if(command==='validate'){
+   const result={...summary(graph),documentFiles:project.documents.files,dataFiles:project.dataFiles,references:project.documents.references,projects:[...book.projects.values()].map(p=>({config:p.config.file,...summary(p.graph),documentFiles:p.documents.files,dataFiles:p.dataFiles,attachments:Object.keys(p.graph.attachments??{})}))};
+   process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':`校验通过：${config.projectId} / ${project.documents.files.length} 个文档依赖 / ${project.dataFiles.length} 个数据文件 / ${graph.index.size} 个实体\n`);return 0;
+  }
+  const status=resolve(config.root,'.engdoc-build/build-status.json');mkdirSync(dirname(status),{recursive:true});writeFileSync(status,JSON.stringify({success:false,outputs:targets.map(t=>t.file)}));
+  // 所有目标先生成到临时文件，再发布；不把部分成功当作整次成功。
+  const generated:{pending:string;target:Target}[]=[],staged:{directory:string;file:string;target:Target}[]=[],temporary=mkdtempSync(join(tmpdir(),'engdoc-build-'));
+  try{
+   const content=command==='build'&&targets.some(t=>t.format==='html')?await bookHTML(book):undefined;let printed:string|undefined;
+   for(const [i,target]of targets.entries()){
+    mkdirSync(dirname(target.file),{recursive:true});const pending=join(temporary,`document-${i}.`+target.format);
+    if(target.format==='svg')writeFileSync(pending,svg(await scene(graph,args['--view'],{interfaces:'expanded'})));
+    else if(target.format==='html')writeFileSync(pending,content!);
+    else{const source=join(temporary,'document.html');printed??=await bookPrintHTML(book);writeFileSync(source,printed);await pdf(source,pending,config.chromiumExecutable);}
+    generated.push({pending,target});
+   }
+   // 临时目录可能位于另一文件系统，先复制到目标旁，再用 rename 发布。
+   for(const {pending,target}of generated){const directory=mkdtempSync(join(dirname(target.file),'.engdoc-output-')),file=join(directory,'document');staged.push({directory,file,target});writeFileSync(file,readFileSync(pending));}
+   for(const {file,target}of staged)renameSync(file,target.file);
+   writeFileSync(status,JSON.stringify({success:true,outputs:targets.map(t=>t.file)}));
+   targets.forEach(t=>process.stdout.write(`已生成 ${t.file}\n`));return 0;
+  }finally{rmSync(temporary,{recursive:true,force:true});staged.forEach(t=>rmSync(t.directory,{recursive:true,force:true}));}
+ }catch(error){
+  if(canClean)targets.forEach(t=>rmSync(t.file,{force:true}));
+  if(config&&targets.length){const status=resolve(config.root,'.engdoc-build/build-status.json');mkdirSync(dirname(status),{recursive:true});writeFileSync(status,JSON.stringify({success:false,outputs:targets.map(t=>t.file)}));}
+  const diagnostics:Diagnostic[]=error instanceof EngDocError?error.diagnostics:[{code:error instanceof UsageError?'USAGE':'BUILD_ERROR',file:'<cli>',path:'',message:error instanceof Error?error.message:String(error)}];
+  process.stderr.write(format==='json'?JSON.stringify({valid:false,diagnostics},null,2)+'\n':diagnostics.map(d=>`${d.code} ${d.file}${d.path} ${d.id??''}: ${d.message}`).join('\n')+'\n');
+  return error instanceof UsageError?2:diagnostics.some(d=>d.code==='QUERY_NOT_FOUND')?3:1;
+ }
+}

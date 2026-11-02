@@ -1,0 +1,18 @@
+{% section id="ref:home" title="查询参考" %}
+
+按当前问题选择条目；无需顺序通读。各条目的稳定 section ID 可由 engdoc read 直接读取。
+
+| 要查什么 | 参考 |
+| --- | --- |
+| 入口、默认值、数据函数、输出 | [配置](config.mdoc) |
+| 构建、校验、目录、正文与对象查询 | [命令](commands.mdoc) |
+| section、布局、图表和跳转标签 | [正文语法](markdoc.mdoc) |
+| 对象、端口、关系、表和时序 | [数据契约](ir.mdoc) |
+| 图形字段、接口与布局约束 | [图形参考](graph.mdoc) |
+| PDF 附件、稳定位置与返回 | [PDF 参考](pdf.mdoc) |
+| 真实渲染的详图、表格与覆盖关联 | [样例查询](examples.mdoc) |
+| 校验失败与能力边界 | [错误与限制](errors.mdoc) |
+
+例如查数据配置：engdoc read --id ref:config-data。查询准确字段时，不读取整份生成 HTML。
+
+{% /section %}

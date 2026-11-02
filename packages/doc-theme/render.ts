@@ -7,6 +7,7 @@ import {scene,svg,esc,anchor} from '../render-graph/index.ts';
 import type {Scene} from '../render-graph/index.ts';
 import {waveform} from '../render-wave/index.ts';
 import {projectPath} from '../core/paths.ts';
+import {routeHash} from '../core/routes.ts';
 import {prepareOutline} from '../core/outline.ts';
 export function field(data:any,path:string):unknown {return path.split('.').reduce((v,k)=>v&&Object.hasOwn(v,k)?v[k]:undefined,data);}
 export function tableHTML(graph:Graph,table:Table):string{
@@ -28,9 +29,10 @@ function interfaceHTML(graph:Graph,id:string,mode:string):string{
 
  return `<table><caption>${esc(entry.entity.label??id)} · ${esc(mode)}</caption><thead><tr><th>信号</th><th>方向</th><th>位宽</th><th>时钟域</th><th>属性 / 来源</th></tr></thead><tbody>${ports.map(e=>{const p=e.entity as Port;return `<tr><td><a href="#${anchor(e.id)}">${esc(p.label)}</a></td><td>${esc(p.direction)}</td><td>${esc(p.width??p.widthExpr??'unknown')}</td><td>${esc(p.clockDomainId??'unknown')}</td><td>${esc(JSON.stringify(p.attributes??{}))}<br>${esc(p.source?.file??'')}</td></tr>`}).join('')}</tbody></table>`;
 }
-export async function renderDocument(graph:Graph,title:string,options:{compactIndex?:boolean}={}){
+export async function renderDocument(graph:Graph,title:string,options:{compactIndex?:boolean;projectLink?:(alias:string)=>{project:string;page:string;title:string};documentLink?:(href:string,source:string)=>string}={}){
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
- for(const e of graph.index.values())if(e.type==='view'){scenes[e.id]=await scene(graph,e.id);printScenes[e.id]=scenes[e.id].interfaceModel?await scene(graph,e.id,{interfaces:'expanded'}):scenes[e.id];}
+ const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['diagram','interface'].includes(node.tag??'')&&graph.index.get(node.attributes.id)?.type==='view')usedViews.add(node.attributes.id);
+ for(const id of usedViews){scenes[id]=await scene(graph,id);printScenes[id]=scenes[id].interfaceModel?await scene(graph,id,{interfaces:'expanded'}):scenes[id];}
  const plan=prepareOutline(graph),headings=new Map(plan.flat.map(e=>[e.id,e]));let counter=0,wave=0;
  const heading=(level:number,body:string,section=false)=>{const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${body}</${tag}>`;};
  function render(tree:any):string{
@@ -46,7 +48,10 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
    if(type==='panel')return `<div class="panel">${a.title?`<p class="panel-title">${esc(a.title)}</p>`:''}${children()}</div>`;
    if(type==='tabs')return `<div class="tabs">${children()}</div>`;
    if(type==='tab')return `<div class="tab" data-name="${esc(a.name)}">${children()}</div>`;
-   if(type==='reference')return `<a href="#${anchor(id)}">${esc(graph.index.get(id)!.entity.label??id)}</a>`;
+   if(type==='reference')return `<a href="${esc(a.project?routeHash({kind:'entity',project:a.project,id}):'#'+anchor(id))}">${esc(a.label??(!a.project||a.project===graph.manifest.projectId?graph.index.get(id)?.entity.label:undefined)??id)}</a>`;
+   if(type==='page')return `<a href="${esc(routeHash({kind:'page',project:a.project??graph.manifest.projectId,id,...(a.anchor?{anchor:a.anchor}:{})}))}">${esc(a.label??id)}</a>`;
+   if(type==='attachment')return `<a class="attachment-link" href="${esc(routeHash({kind:'pdf',project:a.project??graph.manifest.projectId,id,...(a.target?{target:a.target}:{})}))}">${esc(a.label??(!a.project||a.project===graph.manifest.projectId?graph.attachments?.[id]?.title:undefined)??id)}</a>`;
+   if(type==='include'&&a.project){const link=options.projectLink?.(a.project);return link?`<a class="project-entry" href="${esc(routeHash({kind:'page',project:link.project,id:link.page}))}">进入 ${esc(link.title)}</a>`:'';}
    if(type==='table')return tableHTML(graph,graph.index.get(id)!.entity as Table);
    if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
    if(type==='diagram'||(type==='interface'&&graph.index.get(id)!.type==='view'))return `<figure class="graph-box" data-diagram="${esc(id)}" data-kind="${esc(scenes[id].kind)}"><figcaption>${esc(scenes[id].label)}</figcaption>${scenes[id].nets.flatMap(n=>n.layoutWarnings??[]).map(w=>`<p class="layout-note">${esc(w.message)}</p>`).join('')}<div class="toolbar"><button data-action="fit">适配画布</button><button data-action="read" title="按原始比例显示，拖动画布查看">清晰阅读</button><button data-action="expand" aria-pressed="false">大图查看</button><button data-action="plus">＋</button><button data-action="minus">－</button><button data-action="reset">清除高亮</button><button data-action="svg">${scenes[id].interfaceModel?'SVG（逐信号）':'SVG'}</button>${scenes[id].interfaceModel?'<button data-action="svg-current">当前视图 SVG</button><button data-action="interfaces-collapse">接口总览</button><button data-action="interfaces-expand">全部展开</button>':''}${scenes[id].nodes.some(n=>n.ports.length)?`<label class="display-control"><input type="checkbox" data-display="port-attributes"${scenes[id].display.showPortAttributes?' checked':''}>端口属性</label>`:''}${scenes[id].nets.length?`<label class="display-control"><input type="checkbox" data-display="relation-labels"${scenes[id].display.showRelationLabels?' checked':''}>连线标题</label>`:''}</div><div class="filters"></div><div class="groups"></div>${scenes[id].interfaceModel?'<div class="interface-status" role="status" aria-live="polite"></div>':''}<div class="canvas"></div><div class="static-svg">${svg(printScenes[id],false,id+'-instance-'+(++counter))}</div></figure>`;
@@ -55,14 +60,14 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   if(n==='img'){const file=projectPath(graph.projectRoot,graph.projectRoot,a.src);const mime:Record<string,string>={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'};if(!mime[extname(file)])throw new Error('文档图片只支持 PNG/JPEG/WebP');return `<img class="doc-image" alt="${esc(a.alt??'')}" src="data:${mime[extname(file)]};base64,${readFileSync(file).toString('base64')}"/>`;}
   const allowed=new Set(['p','a','ul','ol','li','pre','code','blockquote','table','thead','tbody','tr','th','td','strong','em','s','hr','br','del']);
   if(!allowed.has(n))return children();
-  let attrs='';if(n==='a')attrs=` href="${esc(a.href)}"`;if(n==='code'&&a['data-language'])attrs=` data-language="${esc(a['data-language'])}"`;
+  let attrs='';if(n==='a')attrs=` href="${esc(options.documentLink?.(a.href,a.sourceFile??'')??a.href)}"`;if(n==='code'&&a['data-language'])attrs=` data-language="${esc(a['data-language'])}"`;
   return `<${n}${attrs}>${children()}</${n}>`;
  }
  const config={
   tags:Object.fromEntries(Object.entries(tags).map(([k,v])=>[k,k==='section'?{...v,transform(node:any,config:any){
    return new Markdoc.Tag('ed-section',{...node.transformAttributes(config),outlineLevel:headings.get(node.attributes.__engdocOutlineId)!.level},node.transformChildren(config));
   }}:{...v,render:'ed-'+k}])),
-  nodes:{heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
+  nodes:{fence:{...Markdoc.nodes.fence,transform(node:any){return new Markdoc.Tag('pre',{},[new Markdoc.Tag('code',{'data-language':node.attributes.language},[node.attributes.content])]);}},link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__engdocSourceFile:{type:String}},transform(node:any,config:any){const source=plan.documents.map(d=>d.locations.get(node)).find(Boolean);return new Markdoc.Tag('a',{...node.transformAttributes(config),sourceFile:node.attributes.__engdocSourceFile??source?.file},node.transformChildren(config));}},heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
    const entry=headings.get(node.attributes.__engdocOutlineId)!;
    return new Markdoc.Tag('ed-heading',{id:entry.id,outlineLevel:entry.level},node.transformChildren(config));
   }}}

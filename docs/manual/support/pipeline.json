@@ -1,0 +1,17 @@
+{
+  "objects": [
+    {"id":"tool:sources","kind":"node","label":"项目源与知识"},
+    {"id":"tool:config","kind":"node","label":"配置与正文"},
+    {"id":"tool:core","kind":"node","label":"扫描、数据、校验与索引"},
+    {"id":"tool:query","kind":"node","label":"outline / read / query"},
+    {"id":"tool:render","kind":"node","label":"图表与文档渲染"},
+    {"id":"tool:html","kind":"node","label":"离线 HTML / 文档 PDF"}
+  ],
+  "relations": [
+    {"id":"tool:input-data","kind":"connection","class":"data","label":"data 转换为标准数据","endpoints":["tool:sources","tool:core"],"direction":{"sources":["tool:sources"],"targets":["tool:core"]}},
+    {"id":"tool:input-doc","kind":"connection","class":"control","label":"阅读组织与引用","endpoints":["tool:config","tool:core"],"direction":{"sources":["tool:config"],"targets":["tool:core"]}},
+    {"id":"tool:lookup","kind":"connection","class":"data","label":"按 ID 读取","endpoints":["tool:core","tool:query"],"direction":{"sources":["tool:core"],"targets":["tool:query"]}},
+    {"id":"tool:layout","kind":"connection","class":"data","label":"同源事实与正文","endpoints":["tool:core","tool:render"],"direction":{"sources":["tool:core"],"targets":["tool:render"]}},
+    {"id":"tool:output","kind":"connection","class":"data","label":"通用呈现","endpoints":["tool:render","tool:html"],"direction":{"sources":["tool:render"],"targets":["tool:html"]}}
+  ]
+}

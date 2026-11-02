@@ -1,0 +1,43 @@
+{% section id="use:layout" title="需要时调整布局" %}
+
+先使用默认布局。位置或阅读顺序不够清楚时，再声明少量意图，保持工程事实与显示分离。
+
+{% section id="use:layout-comparison" title="同一数据的布局对照" %}
+
+{% tabs %}
+{% tab name="原样例固定位置" %}
+{% diagram id="mac:overview" /%}
+{% /tab %}
+{% tab name="相对顺序与反馈通道" %}
+{% diagram id="gallery:architecture-intent" /%}
+{% /tab %}
+{% /tabs %}
+
+两个视图使用相同对象和关系。第二张要求 Control 位于 Data plane 左侧、TX/RX 上下对齐、RX 与 FIFO 同行；主数据流和反馈关系采用不同布线意图。
+
+可选中对象或关系对照稳定 ID。修改 label、显示顺序或通道，不应复制或改写原关系。
+
+{% /section %}
+
+{% section id="use:layout-constraints" title="从方向到相对约束" %}
+
+最简单的 layout 只写 direction: 'LR'。需要相对位置时，再增加：
+
+```js
+layout: {
+  direction: 'LR',
+  constraints: [
+    {type: 'order', axis: 'x', nodes: ['producer', 'consumer'], gap: 120},
+    {type: 'align', axis: 'y', nodes: ['producer', 'consumer']}
+  ]
+}
+```
+
+其中 ID 应替换为本工程已有对象。order/align 是必须满足的约束；channel 和 priority 是可解释的偏好。gap 是最小间距，工具会为标题等增加空间。
+
+多端点 Net 可在 relationHints 中选择 backbone，保留短支路，仍保留所有真实端点。完整契约见 {% reference id="ref:graph-layout" label="布局参考" /%}。
+
+任意折点和完整的项目默认/引用处覆盖链尚未提供。无效 ID、冲突或无法布线会报错，不能把失败解释成已满足约束。普通图形的穿框、错接和标签问题应优先修工具，不要求每个作者手调所有线。
+
+{% /section %}
+{% /section %}

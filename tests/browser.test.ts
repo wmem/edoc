@@ -6,15 +6,18 @@ import {mkdtempSync,rmSync,readFileSync,writeFileSync,cpSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
-import {repository} from './helpers.ts';
+import {repository,prepareExample} from './helpers.ts';
 import {anchor} from '../packages/core/identity.ts';
+import {loadProject,resolveProjectConfig} from '../packages/core/project.ts';
+import {html} from '../packages/pack-html/index.ts';
 const executable=process.env.ENGDOC_CHROMIUM;
-test('两个项目单文件 file:// 断网、交互、引用、窄屏与打印完整性',{timeout:60000},async t=>{
+test('底层单文档打印组件的两个工程：离线图形、引用、窄屏与完整性',{timeout:60000},async t=>{
  const temp=mkdtempSync(join(tmpdir(),'engdoc-browser-'));t.after(()=>rmSync(temp,{recursive:true,force:true}));
  const browser=await chromium.launch({executablePath:executable,args:['--no-sandbox']});t.after(()=>browser.close());
  for(const name of ['board-flash','fpga-mac']){
   const project=join(temp,'project-'+name);cpSync(join(repository,'examples',name),project,{recursive:true,filter:p=>!p.includes('.engdoc-build')});if(name==='board-flash'){const devices=join(project,'board/devices.csv');writeFileSync(devices,readFileSync(devices,'utf8')+'hub:board:net.FLASH_SCK,Collision probe,pin\n');const file=join(project,'docs/views.json');const data=JSON.parse(readFileSync(file,'utf8'));data.views[0].include.objects.push('hub:board:net.FLASH_SCK');writeFileSync(file,JSON.stringify(data));}
-  const output=join(temp,name+'.html');const result=spawnSync(process.execPath,['packages/cli/engdoc.ts','build','--config',join(project,'engdoc.config.json'),'--format','html','--output',output],{cwd:repository,encoding:'utf8',timeout:20000});assert.equal(result.status,0,result.stderr);
+  prepareExample(project);
+  const output=join(temp,name+'.html'),loaded=await loadProject(await resolveProjectConfig(join(project,'engdoc.config.js')));writeFileSync(output,await html(loaded.graph,loaded.config.title));
   const context=await browser.newContext({offline:true,viewport:{width:1500,height:1000}});const page=await context.newPage();const errors:string[]=[],external:string[]=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^(https?|wss?):/.test(r.url()))external.push(r.url());});
   await page.goto(pathToFileURL(output).href);await page.waitForFunction(()=>window.EngDocReady,{timeout:15000});

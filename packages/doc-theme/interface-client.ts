@@ -8,7 +8,7 @@ import {styles} from '../render-graph/styles.ts';
 import {anchor} from '../core/identity.ts';
 import type {InterfaceRenderer} from './client.ts';
 declare global{interface Window{EngDocInterfaceViews:{holder:HTMLElement;scene:Scene;state:InterfaceState;lastDurationMs:number}[];}}
-export const initializeInterfaces:InterfaceRenderer=(holder,{data,select})=>{
+export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,cleanup})=>{
  holder.dataset.initialized='true';holder.dataset.busy='false';
  let current:Scene=data.scenes[holder.dataset.diagram!],state=initialInterfaceState(current.interfaceModel!),desired=structuredClone(state),revision=0,committed=0,running=false,desiredFocus:string|undefined;
  const selection=document.createElement('div');selection.className='interface-selection';selection.hidden=true;
@@ -17,7 +17,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select})=>{
  holder.insertBefore(selection,canvas);
  const graph=new X6({container:canvas,async:false,width:holder.clientWidth,height:Math.min(680,Math.max(420,current.height)),background:{color:'#f8fafc'},panning:true,mousewheel:{enabled:true,modifiers:['ctrl','meta'],minScale:.15,maxScale:4},interacting:false});
  window.EngDocGraphs.push(graph);window.EngDocInterfaceViews??=[];
- const entry={holder,scene:current,state,lastDurationMs:0};window.EngDocInterfaceViews.push(entry);
+ const entry={holder,scene:current,state,lastDurationMs:0,restore:(next:InterfaceState)=>request(next)};window.EngDocInterfaceViews.push(entry);
  const relationLabels=new Map<string,string>();
  const cellID=(base:string)=>{let id=base;while(graph.getCellById(id))id+='#';return id;};
  const fit=()=>graph.zoomToFit({padding:26,maxScale:1});
@@ -57,14 +57,14 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select})=>{
   if(running)return;
   running=true;holder.dataset.busy='true';holder.setAttribute('aria-busy','true');
   let error='';
-  while(committed!==revision){
+  while(committed!==revision&&!signal?.aborted){
    const version=revision,target=structuredClone(desired),focusId=desiredFocus,old=current.nodes.find(n=>n.id===focusId),zoom=graph.zoom(),translation=graph.translate(),point=old?{x:old.x*zoom+translation.tx,y:old.y*zoom+translation.ty}:undefined,started=performance.now();
    status.textContent='正在重新布局接口与连线…';
    try{
-    const result=await interfaceScene(model,target);if(version!==revision)continue;
+    const result=await interfaceScene(model,target);if(signal?.aborted)return;if(version!==revision)continue;
     error='';current=result;state=target;draw();const node=current.nodes.find(n=>n.id===focusId);if(point&&node)graph.translate(point.x-node.x*zoom,point.y-node.y*zoom);
     entry.lastDurationMs=performance.now()-started;holder.dataset.layoutMs=entry.lastDurationMs.toFixed(1);committed=version;
-   }catch(e){if(version!==revision)continue;error=e instanceof Error?e.message:String(e);desired=structuredClone(state);committed=version;}
+   }catch(e){if(signal?.aborted)return;if(version!==revision)continue;error=e instanceof Error?e.message:String(e);desired=structuredClone(state);committed=version;}
    await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
   }
   running=false;holder.dataset.busy='false';holder.setAttribute('aria-busy','false');
@@ -88,7 +88,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select})=>{
  }
  graph.on('node:click',({node,e})=>{const target=e.target as Element,toggleId=target.closest('[data-interface-toggle]')?.getAttribute('data-interface-toggle');if(toggleId){toggle(toggleId);return;}choose(target.closest('[data-source-port]')?.getAttribute('data-source-port')??target.closest('[port]')?.getAttribute('port')??node.getData()?.relationId??node.getData()?.entityId);});
  graph.on('edge:click',({edge})=>choose(edge.getData().relationId));
- document.addEventListener('engdoc-selection',event=>{const detail=(event as CustomEvent).detail,id=detail.id,iface=current.interfaces!.find(i=>i.members.includes(id));if(!iface)return;if(detail.locate){if(detail.holder===holder)expand([iface.id]);return;}if(actions.querySelector('[data-interface-locate]'))return;const b=button('图中定位信号',()=>{expand([iface.id]);holder.scrollIntoView({block:'center'});},actions);b.dataset.interfaceLocate=id;});
+ document.addEventListener('engdoc-selection',event=>{const detail=(event as CustomEvent).detail,id=detail.id,iface=current.interfaces!.find(i=>i.members.includes(id));if(!iface)return;if(detail.locate){if(detail.holder===holder)expand([iface.id]);return;}if(actions.querySelector('[data-interface-locate]'))return;const b=button('图中定位信号',()=>{expand([iface.id]);holder.scrollIntoView({block:'center'});},actions);b.dataset.interfaceLocate=id;},{signal});
  holder.addEventListener('keydown',e=>{const id=(e.target as Element).closest('[data-interface-toggle]')?.getAttribute('data-interface-toggle');if(id&&['Enter',' '].includes(e.key)){e.preventDefault();toggle(id);}});
  holder.querySelector('[data-action=interfaces-collapse]')!.addEventListener('click',()=>{const next=structuredClone(desired);current.interfaces!.forEach(i=>next.modes[i.id]='collapsed');void request(next,current.nodes[0]?.id);});
  holder.querySelector('[data-action=interfaces-expand]')!.addEventListener('click',()=>expand(current.interfaces!.map(i=>i.id)));
@@ -105,5 +105,5 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select})=>{
  holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));select('');fit();});
  const big=holder.querySelector<HTMLButtonElement>('[data-action=expand]')!;big.onclick=()=>{const active=holder.classList.toggle('diagram-expanded');big.setAttribute('aria-pressed',String(active));big.textContent=active?'关闭大图':'大图查看';if(active){holder.setAttribute('role','dialog');holder.setAttribute('aria-modal','true');holder.setAttribute('aria-label',current.label);}else{holder.removeAttribute('role');holder.removeAttribute('aria-modal');holder.removeAttribute('aria-label');big.focus();}requestAnimationFrame(()=>{graph.resize(holder.clientWidth,canvas.clientHeight);fit();});};
  holder.addEventListener('keydown',e=>{if(!holder.classList.contains('diagram-expanded'))return;if(e.key==='Escape'){e.preventDefault();big.click();}if(e.key==='Tab'){const controls=[...holder.querySelectorAll<HTMLElement>('button,input,[data-interface-toggle]')].filter(e=>!e.hidden),at=controls.indexOf(document.activeElement as HTMLElement);if((e.shiftKey&&at===0)||(!e.shiftKey&&at===controls.length-1)){e.preventDefault();controls[e.shiftKey?controls.length-1:0].focus();}}});
- draw();summary();fit();const resize=new ResizeObserver(()=>graph.resize(holder.clientWidth,canvas.clientHeight));resize.observe(holder);resize.observe(canvas);
+ draw();summary();fit();const resize=new ResizeObserver(()=>graph.resize(holder.clientWidth,canvas.clientHeight));resize.observe(holder);resize.observe(canvas);cleanup?.(()=>resize.disconnect());
 };

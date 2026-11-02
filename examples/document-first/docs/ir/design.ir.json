@@ -1,0 +1,17 @@
+{
+  "irVersion": "1.2",
+  "objects": [
+    {"id":"demo:engine","kind":"node","label":"处理模块（虚构）","ports":[
+      {"id":"demo:engine.data","label":"DATA","direction":"out","width":32},
+      {"id":"demo:engine.valid","label":"VALID","direction":"out","width":1}
+    ]},
+    {"id":"demo:memory","kind":"node","label":"存储模块（虚构）","ports":[
+      {"id":"demo:memory.data","label":"DATA_IN","direction":"in","width":32},
+      {"id":"demo:memory.valid","label":"VALID_IN","direction":"in","width":1}
+    ]}
+  ],
+  "relations": [
+    {"id":"demo:data","kind":"connection","class":"data","label":"数据传输","endpoints":["demo:engine.data","demo:memory.data"],"direction":{"sources":["demo:engine.data"],"targets":["demo:memory.data"]}},
+    {"id":"demo:valid","kind":"connection","class":"control","label":"数据有效","endpoints":["demo:engine.valid","demo:memory.valid"],"direction":{"sources":["demo:engine.valid"],"targets":["demo:memory.valid"]}}
+  ]
+}

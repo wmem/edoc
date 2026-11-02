@@ -1,0 +1,65 @@
+{% section id="use:organize" title="组织多篇文档" %}
+
+一篇文章回答一个相对完整的问题。总览介绍用途、组成和阅读路线，模块文章解释局部职责与边界，参考页保存精确字段和证据。读者先知道自己在看什么，再按需深入。
+
+{% section id="use:pages" title="阅读页与目录" %}
+
+```text
+docs/
+  index.mdoc
+  modules/
+    index.mdoc
+    acquisition.mdoc
+  reference/
+    parameters.mdoc
+  ir/
+    objects.json
+```
+
+配置 documents: 'docs' 后，目录递归发现正文；目录 index 先出现，并作为该目录首页。每个文件是一篇独立阅读页，同一 HTML 只显示当前文章。没有 index 的目录只负责分组，不生成空文章。
+
+普通链接切换文章，路径相对写下链接的文件：
+
+```md
+[采集模块](modules/acquisition.mdoc)
+```
+
+要控制顺序，可将 documents 写成文件或目录的有序数组。默认跳过 ir、_partials、node_modules、output 与隐藏项。
+
+{% /section %}
+
+{% section id="use:sections" title="稳定章节与片段" %}
+
+需要长期引用或精确读取的内容使用有 ID 的 section；临时小标题仍用 Markdown：
+
+```text
+{% section id="module:acquisition" title="采集模块" %}
+模块负责什么、输入输出与边界。
+
+## 处理流程
+普通 Markdown 正文。
+{% /section %}
+```
+
+section 的包含关系形成章节层级，ID 在当前工程内唯一。普通标题在页内定位，不要求所有文章的“概述”全局唯一。
+
+需要在同一页复用片段时，使用 file include；路径相对工程根：
+
+```text
+{% include file="docs/_partials/warnings.mdoc" /%}
+```
+
+片段本身不成为新阅读页。工程组合使用另一种 project include，见[工程组合](08-projects-pdf.mdoc)。
+
+{% /section %}
+
+{% section id="use:progressive" title="理解正文与查询参考" %}
+
+正文解释为什么这样划分、如何协作、有什么限制；参数、引脚、完整连接和格式细节放在命名清晰的参考页。正文用链接连接参考，参考保留上下文和来源。
+
+折叠可以让同一篇文章更易阅读，但一份很长的源文件不会因网页折叠而减少 Agent 的输入。需要按 ID 查询的细节应有独立稳定章节，必要时拆成独立文章。
+
+本手册的[接口教程](05-interfaces.mdoc)先展示总览，信号表与详图位于[样例查询参考](reference/examples.mdoc)。二者引用同一批对象。
+
+{% /section %}
+{% /section %}

@@ -31,6 +31,24 @@
         "line": {
           "type": "integer",
           "minimum": 1
+        },
+        "attachment": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "target": {
+              "$ref": "#/$defs/id"
+            },
+            "project": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

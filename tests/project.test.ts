@@ -1,0 +1,84 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync,readdirSync,statSync,symlinkSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join,resolve} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {resolveProjectConfig,loadProject,protectOutputs} from '../packages/core/project.ts';
+import {renderDocument} from '../packages/doc-theme/render.ts';
+import {scene} from '../packages/render-graph/index.ts';
+import {query} from '../packages/core/query.ts';
+import {repository} from './helpers.ts';
+
+function project(t:{after:(fn:()=>void)=>void},source='export default {};'){
+ const root=mkdtempSync(join(tmpdir(),'engdoc-project-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ const write=(file:string,value:string|unknown)=>{mkdirSync(resolve(root,file,'..'),{recursive:true});writeFileSync(join(root,file),typeof value==='string'?value:JSON.stringify(value,null,2));};
+ write('engdoc.config.js',source);write('README.md','# 项目说明\n正文。');
+ return {root,write,config:()=>resolveProjectConfig(undefined,root),load:async()=>loadProject(await resolveProjectConfig(undefined,root))};
+}
+const facts={objects:[{id:'a',kind:'node',label:'A'},{id:'b',kind:'node',label:'B'}],relations:[{id:'ab',kind:'connection',class:'data',label:'数据流',endpoints:['a','b']}]};
+const view={id:'v',kind:'architecture',include:{objects:['a','b'],relations:['ab']}};
+const cli=(root:string,args:string[]=[])=>spawnSync(process.execPath,[join(repository,'packages/cli/engdoc.ts'),...args],{cwd:root,encoding:'utf8',timeout:20000});
+test('空 JS 配置支持纯正文，无 docs/ir/manifest/额外清单，默认值可直接构建',async t=>{
+ const p=project(t),config=await p.config();assert.equal(config.data,'docs/ir');assert.equal(config.title,p.root.split('/').at(-1));assert.deepEqual(config.documents,['README.md']);assert.equal(config.outputs[0].file,join(p.root,'output/index.html'));assert.equal(config.outputs.length,1);
+ const loaded=await p.load();assert.equal(loaded.dataFiles.length,0);assert.equal(loaded.graph.connections.size,0);assert.equal(existsSync(join(p.root,'manifest.json')),false);
+ const r=cli(p.root);assert.equal(r.status,0,r.stderr);assert.match(readFileSync(join(p.root,'output/index.html'),'utf8'),/项目说明/);assert.equal(JSON.parse(readFileSync(join(p.root,'.engdoc-build/build-status.json'),'utf8')).success,true);
+});
+test('显式配置覆盖发现规则，相对输入与输出以该配置目录为准',async t=>{
+ const p=project(t);p.write('other/custom.js',`export default {title:'指定项目',documents:'book.mdoc',output:{html:'publish/book.html'}}`);p.write('other/book.mdoc','正文');
+ const config=await resolveProjectConfig('other/custom.js',p.root);assert.equal(config.root,join(p.root,'other'));assert.equal(config.outputs[0].file,join(p.root,'other/publish/book.html'));
+ const r=cli(p.root,['--config','other/custom.js']);assert.equal(r.status,0,r.stderr);assert.ok(existsSync(config.outputs[0].file));assert.ok(!existsSync(join(p.root,'output/index.html')));
+});
+test('配置不向父目录查找，也不回退另一份配置',async t=>{
+ const p=project(t);mkdirSync(join(p.root,'child'));await assert.rejects(()=>resolveProjectConfig(undefined,join(p.root,'child')),/CONFIG_MISSING/);await assert.rejects(()=>resolveProjectConfig('missing.js',p.root),/指定的配置文件不存在/);
+});
+test('先扫描全部正文，包括 include/折叠/Tabs，再调用数据提供函数',async t=>{
+ const p=project(t,`export default {documents:'docs/index.mdoc',data:({root,references})=>{if(references.length!==2)throw Error('引用不完整');return ${JSON.stringify(facts)};},views:[${JSON.stringify(view)}]};`);
+ p.write('docs/index.mdoc','{% include file="docs/nested.mdoc" /%}');p.write('docs/nested.mdoc','{% section id="hidden" title="折叠" collapsed=true %}{% tabs %}{% tab name="图" %}{% diagram id="v" /%}{% reference id="a" /%}{% /tab %}{% /tabs %}{% /section %}');
+ const loaded=await p.load();assert.equal(loaded.documents.references.length,2);assert.deepEqual(loaded.documents.files,['docs/index.mdoc','docs/nested.mdoc']);assert.equal(query(loaded.graph,'ab').target.entity.id,'ab');
+ p.write('docs/nested.mdoc','{% include file="docs/missing.mdoc" /%}');await assert.rejects(p.load,/FILE_MISSING/);
+});
+test('文档缺失或 include 循环在读取数据前失败',async t=>{
+ const p=project(t,`export default {data:()=>{throw Error('不应执行数据提供函数')}};`);p.write('README.md','{% include file="missing.mdoc" /%}');await assert.rejects(p.load,error=>String(error).includes('FILE_MISSING')&&!String(error).includes('不应执行'));
+ p.write('README.md','{% include file="README.md" /%}');await assert.rejects(p.load,/DOCUMENT_INCLUDE_CYCLE/);
+});
+test('自动发现 docs/ir 下多级 IR，无清单也能建立完整关系及来源索引',async t=>{
+ const p=project(t,`export default {views:[${JSON.stringify(view)}]};`);p.write('README.md','{% diagram id="v" /%}');p.write('docs/ir/nested/objects.json',{objects:facts.objects});p.write('docs/ir/relations.ir.json',{irVersion:'1.2',relations:facts.relations});p.write('docs/ir/source-not-ir.json',{notes:'不是配置清单或 IR'});
+ p.write('docs/ir/raw-array.json',[1,2]);p.write('data/unrelated.json','{不是本次数据目录');
+ const loaded=await p.load();assert.equal(loaded.dataFiles.length,2);assert.equal(loaded.graph.connections.get('ab')!.endpoints.length,2);assert.equal(loaded.documents.references[0].id,'v');assert.equal(loaded.graph.index.get('a')!.location.file,join(p.root,'docs/ir/nested/objects.json'));
+});
+test('缺失的正文数据引用报告实际文件、行号和 ID，不猜文件名',async t=>{
+ const p=project(t);p.write('README.md','第一行\n\n{% diagram id="missing:diagram" /%}');await assert.rejects(p.load,(error:any)=>error.diagnostics.some((d:any)=>d.code==='DOCUMENT_REFERENCE'&&d.file==='README.md'&&d.path==='#L3'&&d.id==='missing:diagram'));
+});
+test('配置直接定义图表，无第二份配置 JSON，只有被正文引用的视图生成 Scene',async t=>{
+ const bad={...view,id:'unused',layout:{positions:[{objectId:'a',x:0,y:0},{objectId:'b',x:900,y:0}],constraints:[{type:'align',axis:'x',nodes:['a','b']}]}};
+ const p=project(t,`export default {data:${JSON.stringify(facts)},views:[${JSON.stringify(view)},${JSON.stringify(bad)}]};`);p.write('README.md','{% diagram id="v" /%}');
+ const {graph}=await p.load(),before=JSON.stringify([...graph.index]);const rendered=await renderDocument(graph,'按需图');assert.deepEqual(Object.keys(rendered.scenes),['v']);assert.equal(JSON.stringify([...graph.index]),before);await assert.rejects(()=>scene(graph,'unused'),/LAYOUT_CONFLICT/);assert.ok(rendered.entities.unused,'未布局的对象仍可查询和搜索');
+});
+test('接口与布局约束能力自动按实际结构启用',async t=>{
+ const p=project(t,`export default {data:{objects:[{id:'n',kind:'node',label:'N',ports:[{id:'p',label:'P',direction:'unknown'}],interfaces:[{id:'if',label:'IF',members:['p']}]}]},views:[{id:'v',kind:'interface',include:{objects:['n'],relations:[]},layout:{constraints:[]}}]};`);
+ p.write('README.md','{% interface id="if" /%}');const {graph}=await p.load();assert.ok(graph.manifest.requiredFeatures!.includes('interface-groups'));assert.ok(graph.manifest.requiredFeatures!.includes('layout-intent'));
+});
+for(const [name,source,code]of [
+ ['拼错配置项',`export default {documnts:'README.md'};`,'CONFIG_FIELD'],
+ ['数据路径数组错误',`export default {data:[1]};`,'CONFIG_TYPE'],
+ ['未知输出格式',`export default {output:{htlm:'x.html'}};`,'CONFIG_FIELD'],
+ ['显式数据文件缺失',`export default {data:'missing.json'};`,'FILE_MISSING'],
+ ['不支持的数据能力',`export default {data:{objects:[],requiredFeatures:['future-only']}};`,'IR_FEATURE'],
+ ['对象引用不完整',`export default {data:{relations:[{id:'broken',kind:'connection',class:'data',endpoints:['a','b']}]}};`,'REFERENCE_MISSING']
+] as const)test(name+' 明确失败',async t=>{const p=project(t,source);await assert.rejects(p.load,new RegExp(code));});
+test('自动数据扫描拒绝路径/符号链接逃逸，图表 schema 仍严格',async t=>{
+ const p=project(t);const outside=mkdtempSync(join(tmpdir(),'engdoc-outside-'));t.after(()=>rmSync(outside,{recursive:true,force:true}));mkdirSync(join(p.root,'docs/ir'),{recursive:true});writeFileSync(join(outside,'facts.json'),JSON.stringify(facts));symlinkSync(outside,join(p.root,'docs/ir/link'));await assert.rejects(p.load,/PATH_SCOPE/);
+ rmSync(join(p.root,'docs/ir/link'));p.write('docs/ir/bad.json',{objects:[{id:'n',kind:'node',label:'N',typo:true}]});await assert.rejects(p.load,/SCHEMA/);
+});
+test('读取不改变输入，重复加载使用当前文件内容，不用内容 hash',async t=>{
+ const p=project(t);p.write('docs/ir/design.json',facts);const file=join(p.root,'docs/ir/design.json'),before=statSync(file).mtimeMs;await p.load();assert.equal(statSync(file).mtimeMs,before);p.write('docs/ir/design.json',{...facts,objects:[{...facts.objects[0],label:'更新名称'},facts.objects[1]]});assert.equal((await p.load()).graph.index.get('a')!.entity.label,'更新名称');
+});
+test('输出不能覆盖配置或任何已定位源文件',async t=>{
+ const p=project(t);assert.throws(()=>protectOutputs([{file:join(p.root,'README.md')}],[join(p.root,'README.md')]),/OUTPUT_SOURCE/);assert.throws(()=>protectOutputs([{file:'same'},{file:'same'}],[]),/OUTPUT_DUPLICATE/);
+ symlinkSync(join(p.root,'README.md'),join(p.root,'alias.html'));assert.throws(()=>protectOutputs([{file:join(p.root,'alias.html')}],[join(p.root,'README.md')]),/OUTPUT_SOURCE/);
+ const pending=join(p.root,'output/index.html.pending');p.write('output/index.html.pending','独立用户文件');const r=cli(p.root);assert.equal(r.status,0,r.stderr);assert.equal(readFileSync(pending,'utf8'),'独立用户文件');
+});
+test('CJS 工程中的 .js 配置也能直接 export default，无需项目安装辅助函数',async t=>{
+ const p=project(t);p.write('package.json',{type:'commonjs'});assert.equal((await p.config()).documents[0],'README.md');
+});

@@ -1,5 +1,7 @@
 # 图形能力 Demo
 
+使用入口已合并进[正式使用文档](../../docs/manual/usage/index.mdoc)，运行 `npm run docs:build` 或 `npm run docs:dev`。架构、接线、接口展开、状态、波形与布局对照已进入对应教程；本目录保留共享样例数据与历史开发回归，下文记录当时的运行/验收方式。当前 CLI 不支持旧 --ir/--project-root，精确读取共享样例应在仓库根配置下使用 `engdoc query --id ...`、`engdoc read --id ...` 或源码 CLI。
+
 在工具仓库根目录运行：
 
 ```sh

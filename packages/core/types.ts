@@ -1,4 +1,4 @@
-export type Source = { file: string; selector?: string; line?: number };
+export type Source = { file: string; selector?: string; line?: number;attachment?:{id:string;target?:string;project?:string} };
 export type Attributes = Record<string, unknown>;
 export type Port = {
   id: string; label: string; direction: 'in' | 'out' | 'inout' | 'passive' | 'unknown';
@@ -43,6 +43,8 @@ export type RecordEntry = {
   location: { file: string; path: string }; ownerId?: string;
 };
 export type Graph = {
+  attachments?:Record<string,import('./attachments.ts').PdfAttachment>;
+  documentPlan?:import('./documents.ts').DocumentPlan;
   manifest: Manifest; projectRoot: string; irDirectory: string;
   index: Map<string, RecordEntry>; connections: Map<string, Connection>;
   adjacency: Map<string, Set<string>>;

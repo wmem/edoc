@@ -1,0 +1,36 @@
+{% section id="ref:pdf" title="PDF 附件与稳定位置" %}
+
+配置 attachments 是附件 ID 到定义的对象，也可由标准数据对象提供。相同 ID 不得重复定义。附件阅读和文档导出 PDF 是独立能力。
+
+{% section id="ref:pdf-definition" title="附件与 targets" %}
+
+每个附件必需 type='pdf'、file，可选 title、targets。file 相对所属工程根，原字节内嵌，下载仍为原 PDF。同一实际文件多个别名共享字节载荷，不默认用内容 hash 去重。
+
+targets 将稳定位置 ID 映射为 {page,rect?} 或 {destination}：page 从 1 开始；rect 为裁切和内置旋转后的显示区域归一化角点 [x0,y0,x1,y1]，0–1，左上原点且面积为正；destination 使用 PDF 自带命名目标，与 page/rect 互斥。
+
+PDF 损坏、页号越界、无效区域或命名目标不存在，在构建时失败。当前单附件最多 128 MiB。换版需要项目核对映射，稳定字符串不能证明电路位置仍正确。
+
+{% /section %}
+
+{% section id="ref:pdf-links" title="正文引用与 source.attachment" %}
+
+```text
+{% attachment id="schematic" target="power" label="核对电源" /%}
+```
+
+省略 target 明确表示打开首页，空字符串不是省略。命名目标支持页、FitR、XYZ、FitH/FitV 等常见位置参数。
+
+对象来源可附加 {attachment: {id: 'schematic', target: 'power'}}，对象详情提供“查看原始 PDF”。原 source.file/selector 继续指向事实来源。可选 project 表示跨工程弱跳转，不能触发外部附件加载。
+
+{% /section %}
+
+{% section id="ref:pdf-reader" title="离线阅读与历史" %}
+
+阅读器提供分页、缩放、整页适配、位置标记、重新定位和原文下载。PDF.js、worker、字体、CMap 与所需解码资源内嵌，不使用 CDN。单 HTML 大小会随附件增长，打开仍有解码与画布内存成本。
+
+正文/对象/PDF 采用同一路由。后退恢复正文滚动、折叠/Tabs 和图形状态；前进恢复 PDF 位置，刷新与深链接可定位。连续缩放、滚动不产生每步历史。
+
+当前不提供 PDF 编辑、全文搜索或原生批注层交互。CLI 文档 PDF 不自动合并源附件；浏览器打印当前文章，而非整本手册。
+
+{% /section %}
+{% /section %}

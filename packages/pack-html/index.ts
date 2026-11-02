@@ -12,7 +12,8 @@ const directory=dirname(fileURLToPath(import.meta.url));
 const scripts=new Map<boolean,string>();
 async function client(interfaces:boolean){
  if(scripts.has(interfaces))return scripts.get(interfaces)!;
- const result:any=await build({configFile:false,logLevel:'error',build:{write:false,minify:true,target:'es2022',lib:{entry:resolve(directory,interfaces?'../doc-theme/client-interface-entry.ts':'../doc-theme/client-entry.ts'),formats:['iife'],name:'EngDoc'}}});
+ const extension=import.meta.url.endsWith('.ts')?'ts':'js';
+ const result:any=await build({configFile:false,logLevel:'error',build:{write:false,minify:true,target:'es2022',lib:{entry:resolve(directory,`../doc-theme/${interfaces?'client-interface-entry':'client-entry'}.${extension}`),formats:['iife'],name:'EngDoc'}}});
  const chunks=result.output??result[0]?.output;
  const script=chunks.filter((c:any)=>c.type==='chunk').map((c:any)=>c.code).join('\n');
  if(!script)throw new Error('浏览器资源打包失败');scripts.set(interfaces,script);return script;

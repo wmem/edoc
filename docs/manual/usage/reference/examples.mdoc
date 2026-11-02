@@ -1,0 +1,44 @@
+{% section id="ref:examples" title="样例查询与来源" %}
+
+这些内容是教程的细节入口。完整信号、投影表和行为关联与理解性正文共用原样例源，不另维护一份事实。
+
+{% section id="ref:example-control" title="控制接口逐信号" %}
+
+{% diagram id="gallery:interface-ctrl-signals" /%}
+{% interface id="ifdemo:engine.s_ctrl" mode="detailed" /%}
+
+对象来源为 examples/gallery/interfaces.json。图中的缺线只反映当前视图范围，不代表实际协议完整性或未使用信号。
+
+{% /section %}
+
+{% section id="ref:example-dma" title="DMA 接口逐信号" %}
+
+{% diagram id="gallery:interface-dma-signals" /%}
+{% interface id="ifdemo:engine.m_dma" mode="detailed" /%}
+
+{% /section %}
+
+{% section id="ref:example-tables" title="引脚与 RTL 投影" %}
+
+{% tabs %}
+{% tab name="引脚" %}
+{% table id="board:pins" /%}
+{% /tab %}
+{% tab name="RTL 接口" %}
+{% table id="mac:port-table" /%}
+{% /tab %}
+{% /tabs %}
+
+引脚值来自 examples/board-flash/board 中的原 CSV；RTL 端口来自 examples/fpga-mac/rtl/mac_example.sv。表格行使用 objectId，位宽、Ball/Pin 不在表里重抄。
+
+{% /section %}
+
+{% section id="ref:example-evidence" title="规范与覆盖关联" %}
+
+下方直接引用原规范与覆盖片段，不表示功能仿真已经执行。可用 query --id MAC-TX-001 查询其反向覆盖和说明关系；用 read --id MAC-TX-001 精确读取原条款。
+
+{% include file="examples/fpga-mac/docs/SPEC.mdoc" /%}
+{% include file="examples/fpga-mac/docs/VERIFY.mdoc" /%}
+
+{% /section %}
+{% /section %}

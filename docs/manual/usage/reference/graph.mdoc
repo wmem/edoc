@@ -1,0 +1,53 @@
+{% section id="ref:graph" title="图形参考" %}
+
+View 必需 id、kind、include；label、layout、display、source 可选。kind 为 architecture/interface/wiring/state。include.objects 与 include.relations 引用本工程稳定 ID，不复制数据。
+
+{% section id="ref:graph-display" title="display" %}
+
+| 字段 | 用途与默认 |
+| --- | --- |
+| showPortAttributes | 整行端口附注，默认 false |
+| showRelationLabels | 线上关系标题，默认 true |
+| portAttributes | 选择 attributes 中的 Ball/Pin/功能等字段，不控制整行显隐 |
+| classes | HTML 初始类别选中状态，不截断完整静态输出 |
+| collapsedGroups | 当前视图中初始折叠的旧逻辑集合 |
+| interfaceMode | collapsed/expanded；接口投影默认逐信号 expanded |
+| interfaceOverrides | 按接口 ID 覆盖初始折叠状态 |
+
+端口名称与真实位置保留；属性包含方向、位宽、时钟域和选定扩展。工具栏开关逐图独立，当前 SVG/浏览器打印沿用当前文字状态，预先生成的 PDF 使用构建设置。
+
+普通架构图不会只因对象新增 interfaces 就自动改用接口投影。接口视图、显式接口显示设置或直接引用接口时才启用相应流程。
+
+{% /section %}
+
+{% section id="ref:interfaces" title="Node.interfaces" %}
+
+接口必需 id、label、非空 members，protocol、role、attributes、source 可选。members 只引用本 Node 的真实 Port，第一版同一 Port 不能属于多个接口。协议和角色是项目描述，不生成缺失信号。
+
+接口本身可被 view.include.objects、interface 标签或 query 引用。连接端点仍为原 Node/Port，不能换成接口 ID。网页可独立展开一端、两端或全部接口，投影后保留原关系身份和多端点分支。
+
+第一版没有嵌套协议通道、跨接口端口别名或“接口视图内旧 Group 粗线总览”。布局失败保留上一个成功画面；生成完整静态图失败仍须修正，不以折叠图替代。
+
+{% /section %}
+
+{% section id="ref:graph-layout" title="layout" %}
+
+| 字段 | 契约 |
+| --- | --- |
+| direction | LR/RL/TB/BT |
+| routing | orthogonal/polyline |
+| portOrder | 真实端口 ID 顺序 |
+| interfaceOrder | 接口 ID 顺序 |
+| interfaceSides | 接口 ID 到 left/right 的映射 |
+| positions | {objectId,x,y} 节点位置数组 |
+| constraints | order/align 相对约束 |
+| relationHints | 原 Connection ID 到显示主干、边和通道提示 |
+
+order/align 使用 axis=x/y，nodes 至少两个不重复、同父容器的 Node。order.gap 缺省 80，最小 16，表示最小间距；align.axis 是中心坐标对齐轴。它们与已有固定位置冲突时明确报错。
+
+relationHints 的 backbone 选择原关系的两个真实端点，作为多端点显示主干；endpointSides 用 left/right/top/bottom 声明 Node 端点的出入边，不能覆盖真实 Port 的固定边。channel 指向外侧偏好通道，priority 为 main/normal。顺序、对齐和显式端点边必须满足；通道与优先级为偏好，无法满足会说明原因，无合法路径时仍失败。
+
+无任意折点字段，也没有已完成的全组件项目默认/引用覆盖链。静态引用与循环在 validate 检查，尺寸与实际路径问题在 build/export 检查。完整范例数据在 examples/gallery/constraints.json，[布局教程](../07-layout.mdoc)直接引用它。
+
+{% /section %}
+{% /section %}

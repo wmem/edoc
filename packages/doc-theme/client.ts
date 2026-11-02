@@ -5,8 +5,10 @@ import type {Scene} from '../render-graph/index.ts';
 import {styles} from '../render-graph/styles.ts';
 // 构建时注入纯数据，浏览器不读取旁路 JSON、不使用动态 import。
 declare global {interface Window {EngDocReady:boolean; EngDocGraphs:X6[];}}
-export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:string,detail?:unknown)=>void})=>void;
-export function start(interfaceRenderer?:InterfaceRenderer){
+export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:string,detail?:unknown)=>void;signal?:AbortSignal;cleanup?:(fn:()=>void)=>void})=>void;
+export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
+const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
+const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EngDocGraphs.forEach(g=>g.dispose());window.EngDocGraphs=[];if(window.EngDocInterfaceViews)window.EngDocInterfaceViews=[];};
 const data=JSON.parse(document.querySelector('#engdoc-data')!.textContent!);
 window.EngDocGraphs=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;
@@ -18,7 +20,7 @@ function select(id:string,detail?:unknown){
 }
 function initialize(holder:HTMLElement){
  if(holder.dataset.initialized)return;
- if(data.scenes[holder.dataset.diagram!].interfaceModel&&interfaceRenderer){interfaceRenderer(holder,{data,select});return;}
+ if(data.scenes[holder.dataset.diagram!].interfaceModel&&interfaceRenderer){interfaceRenderer(holder,{data,select,signal:abort.signal,cleanup:fn=>cleanups.push(fn)});return;}
  holder.dataset.initialized='true';
  const s:Scene=data.scenes[holder.dataset.diagram!];
  const canvas=holder.querySelector<HTMLElement>('.canvas')!;
@@ -93,16 +95,18 @@ function initialize(holder:HTMLElement){
   const busIds:string[]=[];const members=s.nodes.filter(n=>group.members.includes(n.id));
   button.onclick=()=>{if(collapsed.has(group.id)){collapsed.delete(group.id);busIds.splice(0).forEach(id=>graph.removeCell(id));members.forEach(n=>graph.getCellById(n.id).show());button.textContent='总览 '+group.label;}else{collapsed.add(group.id);button.textContent='展开 '+group.label;if(members.length){members.forEach(n=>graph.getCellById(n.id).hide());const aggregate=graph.addNode({id:cellID('aggregate:'+group.id),shape:'rect',zIndex:1,x:members[0].x,y:members[0].y,width:200,height:90,attrs:{body:{fill:'#eaf3f7',stroke:'#52788e',rx:10},label:{text:group.label+'\n'+related.length+' independent nets',fontFamily:'Noto Sans SC'}},data:{entityId:group.id}});busIds.push(aggregate.id);for(const net of related){for(const endpoint of net.endpoints){const owner=s.nodes.find(n=>n.id===endpoint||n.ports.some(p=>p.id===endpoint))!;if(members.some(n=>n.id===owner.id))continue;const edge=graph.addEdge({source:{cell:aggregate.id},target:{cell:owner.id,...(endpoint!==owner.id?{port:endpoint}:{})},router:{name:'orth'},attrs:{line:{stroke:(styles[net.class]??styles.other).color,targetMarker:null}},labels:[{attrs:{label:{text:net.label,display:showRelationLabels?'':'none'}}}],data:{entityId:net.id}});busIds.push(edge.id);}}}else owners.slice(1).forEach((id,i)=>{const bus=graph.addEdge({id:cellID('bus:'+group.id+':'+i),source:{cell:owners[0]},target:{cell:id},router:{name:'orth'},attrs:{line:{stroke:'#52687d',strokeWidth:5,targetMarker:null}},labels:[{attrs:{label:{text:`${group.label} · ${related.length} independent nets`,display:showRelationLabels?'':'none'}}}],data:{entityId:group.id}});busIds.push(bus.id);});select(group.id);}visibility();};if(s.collapsedGroups.includes(group.id))button.click();
  }
- visibility();fit();new ResizeObserver(()=>{graph.resize(holder.clientWidth,canvas.clientHeight);fit();}).observe(holder);
+ visibility();fit();const resize=new ResizeObserver(()=>{if(!stopped){graph.resize(holder.clientWidth,canvas.clientHeight);fit();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
 }
 const holders=[...document.querySelectorAll<HTMLElement>('[data-diagram]')];
 const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){initialize(entry.target as HTMLElement);observer.unobserve(entry.target);}},{rootMargin:'600px'});
-holders.forEach((holder,i)=>{if(i<2)initialize(holder);else observer.observe(holder);});
+cleanups.push(()=>observer.disconnect());
+holders.forEach((holder,i)=>{if(i<2||options.initialize?.includes(i))initialize(holder);else observer.observe(holder);});
 for(const tabs of document.querySelectorAll<HTMLElement>('.tabs')){
  const children=[...tabs.children].filter(e=>e.classList.contains('tab')) as HTMLElement[];
  const nav=document.createElement('div');nav.className='tab-nav';tabs.prepend(nav);
  children.forEach((tab,i)=>{tab.hidden=i!==0;const b=document.createElement('button');b.textContent=tab.dataset.name!;nav.append(b);b.onclick=()=>children.forEach(t=>t.hidden=t!==tab);});
 }
+if(options.managed)return dispose;
 const search=document.querySelector<HTMLInputElement>('#search')!;
 const toc=document.querySelector<HTMLElement>('#toc')!;
 const tocLinks=[...toc.querySelectorAll<HTMLAnchorElement>('a[data-outline-link]')];
@@ -144,9 +148,10 @@ function revealTarget(id:string){
  for(let p=target;p;p=p.parentElement){if(p instanceof HTMLDetailsElement)p.open=true;if(p.classList.contains('tab'))p.hidden=false;}
  revealTOC(id);
 }
-document.addEventListener('click',e=>{const a=(e.target as Element).closest('a[href^="#"]');if(a)revealTarget(a.getAttribute('href')!.slice(1));});
-window.addEventListener('hashchange',()=>revealTarget(location.hash.slice(1)));
+document.addEventListener('click',e=>{const a=(e.target as Element).closest('a[href^="#"]');if(a)revealTarget(a.getAttribute('href')!.slice(1));},{signal:abort.signal});
+window.addEventListener('hashchange',()=>revealTarget(location.hash.slice(1)),{signal:abort.signal});
 if(location.hash)revealTarget(location.hash.slice(1));
-document.fonts.ready.then(()=>{window.EngDocReady=true;});
+document.fonts.ready.then(()=>{if(!stopped)window.EngDocReady=true;});
+return dispose;
 
 }

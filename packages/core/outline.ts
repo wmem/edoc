@@ -4,7 +4,7 @@ import type {Graph} from './types.ts';
 
 export type OutlineEntry={
  id:string;label:string;kind:'section'|'heading';level:number;depth:number;parentId?:string;
- collapsed?:boolean;source:{file:string;line:number};children:OutlineEntry[];
+ collapsed?:boolean;sectionId?:string;source:{file:string;line:number};children:OutlineEntry[];
 };
 
 // section 表达显式包含关系；其内部 Markdown 的最浅标题从下一级开始。
@@ -12,7 +12,7 @@ export type OutlineEntry={
 export function prepareOutline(graph:Graph){
  const documents=documentAST(graph),roots:OutlineEntry[]=[],flat:OutlineEntry[]=[];
  const entries=new WeakMap<object,OutlineEntry>();
- let sequence=0;
+ const usedHeadings=new Map<string,number>();
  const text=(node:any):string=>node.type==='text'?node.attributes.content:
   node.type==='code'?node.attributes.content??node.children.map(text).join(''):
   node.children.map(text).join('');
@@ -33,6 +33,7 @@ export function prepareOutline(graph:Graph){
   const walk=(node:any,scope:Scope)=>{
    if(node.type==='tag'&&node.tag==='section'){
     const entry=add(node,node.attributes.title??node.attributes.id,anchor(node.attributes.id),'section',(scope.section?.level??0)+1,scope.section);
+    entry.sectionId=node.attributes.id;
     entry.collapsed=node.attributes.collapsed===true;
     const child:Scope={section:entry,rawBase:minimum(node),headings:[]};
     node.children.forEach((n:any)=>walk(n,child));return;
@@ -41,7 +42,7 @@ export function prepareOutline(graph:Graph){
     const level=scope.section?scope.section.level+1+node.attributes.level-scope.rawBase:node.attributes.level;
     while(scope.headings.length&&scope.headings.at(-1)!.level>=level)scope.headings.pop();
     const parent=scope.headings.at(-1)??scope.section;
-    scope.headings.push(add(node,text(node),`heading-${++sequence}`,'heading',level,parent));
+    scope.headings.push(add(node,text(node),(()=>{const base='heading-'+text(node).toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'');const n=(usedHeadings.get(base)??0)+1;usedHeadings.set(base,n);return base+(n>1?'-'+n:'');})(),'heading',level,parent));
    }
    node.children.forEach((n:any)=>walk(n,scope));
   };

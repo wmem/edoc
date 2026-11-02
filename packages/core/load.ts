@@ -1,13 +1,13 @@
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { validateSchema } from './schema.ts';
+import {graphFromResources} from './graph.ts';
+import type {ResourcePart} from './graph.ts';
 import type { SchemaName } from './schema.ts';
-import type { Connection, Diagnostic, Entity, Graph, Manifest, RecordEntry, ResourceType } from './types.ts';
+import type { Diagnostic, Graph, Manifest, ResourceType } from './types.ts';
 import { EngDocError, failure } from './errors.ts';
 import { projectPath, requireFile } from './paths.ts';
 import {runAdapter} from './adapter.ts';
-import { registerDocuments, validateDocuments } from './documents.ts';
-import { validateRelations } from './relations.ts';
 
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
 export const SUPPORTED_IR_VERSION = '1.2';
@@ -60,17 +60,8 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
       throw error;
     }
   }
-  const index = new Map<string, RecordEntry>();
-  const connections = new Map<string, Connection>();
-  const diagnostics: Diagnostic[] = [];
-  const add = (entity: Entity, type: RecordEntry['type'], file: string, path: string, ownerId?: string) => {
-    if (index.has(entity.id)) {
-      diagnostics.push({ code: 'DUPLICATE_ID', file, path: `${path}/id`, id: entity.id, message: `稳定 ID 已在 ${index.get(entity.id)!.location.file}${index.get(entity.id)!.location.path} 定义` });
-      return;
-    }
-    index.set(entity.id, { id: entity.id, entity, type, location: { file, path }, ...(ownerId ? { ownerId } : {}) });
-    if (type === 'connection') connections.set(entity.id, entity as Connection);
-  };
+  const parts:ResourcePart[]=[];
+  const diagnostics:Diagnostic[]=[];
   const schemas: Record<ResourceType, SchemaName> = { objects: 'object', relations: 'relation', views: 'view', tables:'table', waveforms:'waveform', references:'reference' };
   const loaded = new Set<string>();
   for (const [resourceIndex, resource] of manifest.resources.entries()) {
@@ -84,30 +75,9 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
       if (error instanceof EngDocError) { diagnostics.push(...error.diagnostics); continue; }
       throw error;
     }
-    for (const [i, entity] of data[resource.type].entries()) {
-      const path = `/${resource.type}/${i}`;
-      add(entity, resource.type === 'views' ? 'view' : entity.kind, file, path);
-      if (entity.kind === 'table') entity.rows.forEach((row: Entity, p:number)=>add(row,'row',file,`${path}/rows/${p}`,entity.id));
-      if (entity.kind === 'node') entity.ports?.forEach((port: Entity, p: number) => add(port, 'port', file, `${path}/ports/${p}`, entity.id));
-      if (entity.kind === 'node') entity.interfaces?.forEach((item:Entity,p:number)=>add(item,'interface',file,`${path}/interfaces/${p}`,entity.id));
-    }
+    parts.push({type:resource.type,data,file});
   }
   // 结构不合法时不运行语义遍历，避免把无效数据当成类型完整的 IR。
   if (diagnostics.length) throw new EngDocError(diagnostics);
-  const graph: Graph = { manifest, irDirectory: ir, projectRoot: root, index, connections, adjacency: new Map() };
-  registerDocuments(graph);
-  validateRelations(graph);
-  validateDocuments(graph);
-  graph.interfaceByPort=new Map();
-  for(const entry of index.values())if(entry.type==='interface')for(const id of (entry.entity as import('./types.ts').Interface).members)graph.interfaceByPort.set(id,entry.id);
-  for (const connection of connections.values()) {
-    for (const id of connection.endpoints) {
-      const ids = [id, index.get(id)!.ownerId,graph.interfaceByPort.get(id)].filter(Boolean) as string[];
-      for (const target of ids) {
-        if (!graph.adjacency.has(target)) graph.adjacency.set(target, new Set());
-        graph.adjacency.get(target)!.add(connection.id);
-      }
-    }
-  }
-  return graph;
+  return graphFromResources(parts,manifest,{root,directory:ir});
 }

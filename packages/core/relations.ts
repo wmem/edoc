@@ -21,6 +21,7 @@ export function validateRelations(graph: Graph): void {
         else throw error;
       }
     }
+    const attachment=entry.entity.source?.attachment;if(attachment&&(!attachment.project||attachment.project===graph.manifest.projectId)){const resource=graph.attachments?.[attachment.id];if(!resource||attachment.target&&!Object.hasOwn(resource.targets,attachment.target))report(entry,'ATTACHMENT_REFERENCE','/source/attachment','原始 PDF 附件或位置不存在：'+attachment.id);}
     if(entry.type==='row' && (entry.entity as any).objectId) reference(entry,(entry.entity as any).objectId,'/objectId',['node','port','connection','document','group','interface']);
     if(entry.type==='reference') { const e=entry.entity as any; const types=[...new Set([...graph.index.values()].map(e=>e.type))];reference(entry,e.fromId,'/fromId',types);reference(entry,e.targetId,'/targetId',types);}
     if(entry.type==='waveform') {

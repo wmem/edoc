@@ -1,0 +1,62 @@
+{% section id="use:data" title="接入工程数据" %}
+
+当你需要图、表或对象查询时，再提供结构化数据。精确事实只维护一次，正文解释含义，视图决定显示范围。
+
+{% section id="use:standard-data" title="已有标准数据" %}
+
+将资源文件放到 docs/ir/，可以分成多个文件和子目录。工具扫描标准资源数组，不要求文件清单：
+
+```json
+{
+  "objects": [
+    {"id": "system:producer", "kind": "node", "label": "生产者"},
+    {"id": "system:consumer", "kind": "node", "label": "消费者"}
+  ],
+  "relations": [
+    {
+      "id": "system:data", "kind": "connection", "class": "data",
+      "label": "数据", "endpoints": ["system:producer", "system:consumer"],
+      "direction": {"sources": ["system:producer"], "targets": ["system:consumer"]}
+    }
+  ]
+}
+```
+
+资源 ID 在工程内跨文件唯一。label 可以调整，引用继续使用 ID。未提供数据的事实不能由渲染器补成确定值。
+
+{% /section %}
+
+{% section id="use:adapter" title="已有网表、CSV 或 RTL" %}
+
+项目的 data 函数负责提取与映射，返回标准资源对象：
+
+```js
+import {extractProject} from './tools/extract-project.js';
+
+export default {
+  documents: 'docs',
+  data(context) {
+    return extractProject(context.root);
+  }
+};
+```
+
+这是项目数据转换模块，不是再次调用 engdoc 的启动包装器。工具先扫描正文，再调用 data；转换器也可根据 context.references 判断正文需要什么，但完整事实与查询范围由项目明确决定。
+
+提取源已有的 pin、位宽和端点，补充知识只写缺失语义。保留 source.file 和 source.selector，查询结果才能指回可修改的源。不要在转换器里另抄一份正常工程数值。
+
+{% /section %}
+
+{% section id="use:data-check" title="先校验，再显示" %}
+
+```sh
+engdoc validate --format json
+engdoc query --id system:data
+```
+
+validate 检查结构、ID、关系和正文引用；query 查看指定对象。二者不要求生成 HTML，也不计算页面图形布局。校验通过证明文档数据符合契约，不证明真实电路或 RTL 功能正确。
+
+数据格式见 {% reference id="ref:ir" label="IR 参考" /%}，接下来[画结构与接线](04-diagrams.mdoc)。
+
+{% /section %}
+{% /section %}
