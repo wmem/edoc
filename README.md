@@ -47,6 +47,8 @@ npm run docs:build
 
 ## 给 Agent 的查询入口
 
+组织或维护文档前，先读[给 Agent 的文档组织简略指南](docs/usage/agent-guide.mdoc)。它总结理解路线、渐进查询和事实同源，正式文档首页也有直接入口。
+
 在具有配置和源文件的工程目录运行：
 
 ```sh
