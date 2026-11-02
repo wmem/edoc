@@ -25,6 +25,11 @@ test('组合/独立 HTML 离线阅读、弱跳转、PDF区域和命名目标、�
  assert.equal(await page.locator('#toc').getByRole('link',{name:'握手',exact:true}).count(),0);assert.equal(await page.locator('#toc').getByRole('link',{name:'折叠参考',exact:true}).count(),0);
  assert.equal(await page.locator('#toc [aria-current="page"]').count(),1);assert.equal(await page.locator('#toc [aria-current="page"]').innerText(),'详细接口');
  await page.locator('#page-toc').getByRole('link',{name:'折叠参考',exact:true}).click();await ready();assert.ok(await page.locator('#reader details').evaluate(el=>(el as HTMLDetailsElement).open));assert.equal(await page.locator('#toc [aria-current="page"]').innerText(),'详细接口');
+ const state=await page.evaluate(()=>({hash:location.hash,body:[...document.querySelectorAll<HTMLDetailsElement>('#reader details')].map(d=>d.open),toc:[...document.querySelectorAll<HTMLDetailsElement>('#page-toc details')].map(d=>d.open)}));
+ await page.getByRole('button',{name:'全部展开',exact:true}).click();assert.ok(await page.locator('#toc details').evaluateAll(nodes=>nodes.length>0&&nodes.every(d=>(d as HTMLDetailsElement).open)));
+ await page.getByRole('button',{name:'全部折叠',exact:true}).focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#toc details[open]').count(),0);
+ assert.deepEqual(await page.evaluate(()=>({hash:location.hash,body:[...document.querySelectorAll<HTMLDetailsElement>('#reader details')].map(d=>d.open),toc:[...document.querySelectorAll<HTMLDetailsElement>('#page-toc details')].map(d=>d.open)})),state,'批量操作只改变左侧，正文折叠、右侧小节与路由保持');
+ assert.equal(await page.locator('#toc [aria-current="page"]').textContent(),'详细接口');await page.getByRole('button',{name:'全部展开',exact:true}).click();
  await page.goBack();await ready();assert.ok(decodeURIComponent(await page.evaluate(()=>location.hash)).includes('握手'));assert.equal(await page.locator('#toc [aria-current="page"]').innerText(),'详细接口');
  await page.goBack();await ready();await page.waitForFunction(()=>window.EngDocGraphs.length===1);const figure=page.locator('[data-diagram]');
  await figure.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');
@@ -50,9 +55,11 @@ test('组合/独立 HTML 离线阅读、弱跳转、PDF区域和命名目标、�
 
 test('同一进程依次生成普通 PDF 与接口 PDF 工程，客户端缓存不串用',{timeout:60000},async t=>{
  const p=readerFixture(t);p.write('plain.config.js',`export default {projectId:'plain',documents:'plain.mdoc',attachments:{pdf:{type:'pdf',file:'fpga/source/schematic.pdf'}}};`);p.write('plain.mdoc','# 只有 PDF\n{% attachment id="pdf" /%}');
- await bookHTML(await loadBook(await resolveProjectConfig(join(p.root,'plain.config.js'))));
+ const plainFile=join(p.root,'plain.html');writeFileSync(plainFile,await bookHTML(await loadBook(await resolveProjectConfig(join(p.root,'plain.config.js')))));
  const rich=await bookHTML(await loadBook(await resolveProjectConfig(join(p.root,'fpga/engdoc.config.js')))),file=join(p.root,'rich.html');writeFileSync(file,rich);
- const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true}),page=await context.newPage();await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EngDocReady);assert.ok(await page.evaluate(()=>window.EngDocInterfaceViews?.length>0));await page.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');assert.equal(await page.evaluate(()=>window.EngDocInterfaceViews[0].state.modes.bus),'expanded');
+ const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true}),page=await context.newPage();
+ await page.goto(pathToFileURL(plainFile).href);await page.waitForFunction(()=>window.EngDocReady);assert.ok(await page.getByRole('button',{name:'全部展开',exact:true}).isDisabled());assert.ok(await page.getByRole('button',{name:'全部折叠',exact:true}).isDisabled());
+ await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EngDocReady);assert.ok(await page.evaluate(()=>window.EngDocInterfaceViews?.length>0));await page.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');assert.equal(await page.evaluate(()=>window.EngDocInterfaceViews[0].state.modes.bus),'expanded');
 });
 
 test('PDF 返回时恢复第三张延迟初始化图的独立接口状态',{timeout:60000},async t=>{
