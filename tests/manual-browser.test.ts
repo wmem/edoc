@@ -14,7 +14,7 @@ test('正式手册离线按任务阅读：代码样例、接口、波形、PDF�
  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url()))external.push(request.url());});
  const ready=()=>page.waitForFunction(()=>window.EngDocReady),go=async(label:string)=>{const target=page.locator('#toc').getByRole('link',{name:label,exact:true}).first();if(!await target.isVisible()){await page.locator('#toc').getByRole('link',{name:'查询参考',exact:true}).click();await ready();}await target.click();await ready();};
  await page.goto(pathToFileURL(join(repository,'output/index.html')).href);await ready();assert.equal(await page.locator('#reader article').count(),1);
- assert.equal(await page.locator('#toc [aria-current]').count(),1);assert.ok(!await page.locator('#toc').getByRole('link',{name:'声明接口身份与成员',exact:true}).isVisible(),'未阅读文章的小节初始收起');
+ assert.equal(await page.locator('#toc [aria-current]').count(),1);assert.equal(await page.locator('#toc').getByRole('link',{name:'声明接口身份与成员',exact:true}).count(),0,'页内小节只出现在右侧');
  await page.locator('#reader').getByRole('link',{name:'使用文档',exact:true}).click();await ready();await page.locator('#reader').getByRole('link',{name:'第一次生成',exact:true}).click();await ready();
  assert.match(await page.locator('#reader').innerText(),/export default/);assert.equal(await page.locator('[data-diagram]').count(),0);assert.ok(!(await page.locator('#reader').innerText()).includes('控制接口逐信号'));
  await go('组织多篇文档');assert.match(await page.locator('#reader pre').allTextContents().then(text=>text.join('\n')),/include file="docs\/_partials\/warnings.mdoc"/);assert.equal(await page.locator('#reader article').count(),1);

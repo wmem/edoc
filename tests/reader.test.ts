@@ -8,6 +8,7 @@ import {compileBook,bookPrintHTML,bookHTML} from '../packages/pack-html/book.ts'
 import {targetKey,routeHash,parseRoute} from '../packages/core/routes.ts';
 import {query} from '../packages/core/query.ts';
 import {readerFixture,samplePdf} from './reader-fixture.ts';
+import {sidebarNavigation} from '../packages/doc-theme/navigation.ts';
 const load=async(root:string,config='engdoc.config.js')=>loadBook(await resolveProjectConfig(config,root));
 test('父、子、孙工程保留自身路径与同名 IR，配置只加载显式接入的工程',async t=>{
  const p=readerFixture(t),book=await load(p.root);assert.deepEqual([...book.projects.keys()],['system','fpga','core','board']);
@@ -77,6 +78,21 @@ test('本工程多级文档目录保留文件夹层级，目录 index 作为分�
  const p=readerFixture(t);p.write('fpga/docs/protocols/index.mdoc','# 协议参考\n');p.write('fpga/docs/protocols/axi.mdoc','# AXI 接口\n');
  const book=await load(p.root,'fpga/engdoc.config.js'),navigation=bookNavigation(book),group=navigation.find(n=>n.label==='协议参考')!;
  assert.equal(group.page,'docs/protocols/index');assert.ok(group.children.some(n=>n.label==='AXI 接口'&&n.page==='docs/protocols/axi'));
+});
+test('网页左侧仅保留文档与工程，页内包装中的子工程提升保留，完整章节与打印目录不删减',async t=>{
+ const p=readerFixture(t),book=await load(p.root),full=bookNavigation(book),original=JSON.stringify(full),sidebar=sidebarNavigation(full);
+ const flatten=(nodes:typeof full):typeof full=>nodes.flatMap(n=>[n,...flatten(n.children)]),entries=flatten(sidebar);
+ assert.equal(JSON.stringify(full),original,'网页目录投影不能修改 CLI 与打印共用的完整目录');
+ assert.ok(entries.every(n=>!n.anchor));assert.ok(!entries.some(n=>['工程组成','握手','折叠参考'].includes(n.label)));
+ assert.ok(flatten(full).some(n=>n.label==='折叠参考'));
+ const root=sidebar.find(n=>n.project==='system'&&n.page==='docs/index')!;
+ assert.deepEqual(root.children.map(n=>n.project),['fpga','board']);
+ const fpga=root.children.find(n=>n.project==='fpga')!;
+ assert.ok(fpga.children.some(n=>n.project==='core'),'移除页内小节不能丢失其中接入的孙工程');
+ const protocols=fpga.children.find(n=>n.page==='docs/protocols/index')!;
+ assert.ok(protocols.children.some(n=>n.page==='docs/protocols/axi'),'真实子文档仍在目录下');
+ const keys=entries.filter(n=>n.page).map(n=>targetKey(n.project,n.page));assert.equal(keys.length,new Set(keys).size,'工程首页不重复显示，跨工程同名页面保留独立身份');
+ const printed=await bookPrintHTML(book);assert.match(printed,/class="print-toc-entry"[^>]*>[^<]*<a[^>]*>折叠参考<\/a>/);
 });
 test('目录发现与 file include 不跨已声明子工程边界，显式 project include 才接入',async t=>{
  const p=readerFixture(t);p.write('engdoc.config.js',`export default {projectId:'system',documents:'.',children:{fpga:'fpga/engdoc.config.js',board:'board/engdoc.config.js'}};`);
