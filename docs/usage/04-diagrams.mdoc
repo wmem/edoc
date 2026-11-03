@@ -10,9 +10,9 @@
 
 试着选中 RX FIFO，查看对象与来源，再关闭 event 分类。筛选只改变当前显示，完整关系仍可查询。
 
-在自己的工程，先按[数据教程](03-data.mdoc#use:standard-data)保存生产者、消费者和数据连接。下面是可直接保存为 docs/engdoc.config.js 的完整配置，保留 documents: 'docs'，确保本次修改的正文参与发布：
+在自己的工程，先按[数据教程](03-data.mdoc#use:standard-data)保存生产者、消费者和数据连接。下面是可直接保存为 docs/edoc.config.js 的完整配置，保留 documents: 'docs'，确保本次修改的正文参与发布：
 
-{% code file="docs/support/recipes/engdoc.config.js" language="javascript" /%}
+{% code file="docs/support/recipes/edoc.config.js" language="javascript" /%}
 
 已有其他配置时只增加 views 项，保留原来的 documents、data 等字段。配置对象整体替换会重置未写出的字段；validate 成功并不表示你期望的每篇文章都在发布入口中。
 
@@ -22,11 +22,11 @@
 {% diagram id="system:overview" /%}
 ```
 
-在项目根执行 engdoc，打开 output/index.html，应该看到下面这张两节点图：
+在项目根执行 edoc，打开 output/index.html，应该看到下面这张两节点图：
 
 {% diagram id="system:overview" /%}
 
-想确认正文入口时，先运行 engdoc outline --depth 1 --format text。
+想确认正文入口时，先运行 edoc outline --depth 1 --format text。
 
 {% /section %}
 
@@ -39,7 +39,7 @@
 勾选“端口属性”查看 Ball/Pin；取消“连线标题”隐藏文字。点击 FLASH_SCK 核对完整 endpoints，再按需查询：
 
 ```sh
-engdoc query --id board:net.FLASH_SCK --depth 1
+edoc query --id board:net.FLASH_SCK --depth 1
 ```
 
 图宽时使用“大图查看”或“清晰阅读”，再拖动查看。不要靠删除第三端点或缩小到无法辨认来制造整洁。

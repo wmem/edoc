@@ -37,7 +37,7 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
   const item={...i,ownerId:n.id,expanded:modes[i.id]!=='collapsed',visibleMembers:members,connectedMembers:connected.size,relationCount:model.relations.filter(r=>r.endpoints.some(id=>members.includes(id))).length,visibleRelationCount:model.relations.filter(r=>(!state.classes||state.classes.includes(r.class))&&r.endpoints.some(id=>members.includes(id))).length,internalRelations:[] as string[]};interfaces.push(item);members.forEach(p=>byPort.set(p,item));
  }
  const reserved=new Set([...model.nodes.flatMap(n=>[n.id,...(n.ports??[]).map(p=>p.id),...(n.interfaces??[]).map(i=>i.id)]),...model.relations.map(r=>r.id),model.view.id]);
- const fresh=(parts:string[])=>{let id='__engdoc_display_'+JSON.stringify(parts);while(reserved.has(id))id+='_';reserved.add(id);return id;};
+ const fresh=(parts:string[])=>{let id='__edoc_display_'+JSON.stringify(parts);while(reserved.has(id))id+='_';reserved.add(id);return id;};
  const endpoint=(id:string)=>{const i=byPort.get(id);return i&&!i.expanded?i.id:id;};
  const signature=(r:Connection)=>JSON.stringify([...new Set(r.endpoints.map(endpoint))].sort());
  const totals=new Map<string,number>();for(const r of model.relations){const key=signature(r);totals.set(key,(totals.get(key)??0)+1);}

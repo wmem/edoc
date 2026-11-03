@@ -66,7 +66,7 @@ export default {
 {% attachment id="schematic" target="power-input" /%}
 ```
 
-attachments 直接编写在 engdoc.config.js 中，不要求再导入一份配置 JSON。工程规模大时，附件/位置元数据也可由项目转换函数或标准 IR 生成，汇入相同模型；同一位置只定义一次，重复定义报错。PDF 二进制由工具打包，不由 Agent 手写 base64，也不混进日常查询的 IR 正文。
+attachments 直接编写在 edoc.config.js 中，不要求再导入一份配置 JSON。工程规模大时，附件/位置元数据也可由项目转换函数或标准 IR 生成，汇入相同模型；同一位置只定义一次，重复定义报错。PDF 二进制由工具打包，不由 Agent 手写 base64，也不混进日常查询的 IR 正文。
 
 file 相对附件所属工程配置根。父工程接入子工程时保持子配置根，不能按父根重解释文件位置。附件声明属于本工程的明确构建输入，需要检查存在性和读取范围；跨工程跳转不会触发这类文件读取。
 

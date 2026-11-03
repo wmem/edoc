@@ -1,8 +1,8 @@
 {% section id="ref:config" title="配置参考" %}
 
-docs/engdoc.config.js 直接导出配置对象。在项目目录执行命令，未指定 --config 时只读取该目录下的 docs/engdoc.config.js，不向上搜索，也不自动回退根目录配置。显式配置支持 .js/.mjs/.cjs，未知字段报错。
+docs/edoc.config.js 直接导出配置对象。在项目目录执行命令，未指定 --config 时只读取该目录下的 docs/edoc.config.js，不向上搜索，也不自动回退根目录配置。显式配置支持 .js/.mjs/.cjs，未知字段报错。
 
-标准位置 docs/engdoc.config.js 的工程根为 docs 的上一级；显式指定同位置的 engdoc.config.mjs/.cjs 也采用此规则。其余显式配置以所在目录为工程根。documents、data、include、code、source、children、附件和配置输出均相对工程根；JS 的相对 import 始终相对配置文件本身。CLI --output 相对执行目录。
+标准位置 docs/edoc.config.js 的工程根为 docs 的上一级；显式指定同位置的 edoc.config.mjs/.cjs 也采用此规则。其余显式配置以所在目录为工程根。documents、data、include、code、source、children、附件和配置输出均相对工程根；JS 的相对 import 始终相对配置文件本身。CLI --output 相对执行目录。
 
 | 字段 | 用途 | 稳定章节 ID |
 | --- | --- | --- |
@@ -13,6 +13,26 @@ docs/engdoc.config.js 直接导出配置对象。在项目目录执行命令，�
 | children | 显式组合子工程 | ref:config-children |
 | attachments | PDF 原始附件 | ref:pdf |
 | output、chromiumExecutable、compactIndex | 输出与打印 | ref:config-output |
+
+{% section id="ref:edoc-migration" title="已有工程的名称迁移" %}
+
+2026-11-03，工具名称由 EngDoc 统一为 edoc。功能与默认正文选择不变，旧名称不保留运行别名；已有工程需要同步更新：
+
+| 原名称 | 新名称 |
+| --- | --- |
+| npm 包、命令和 npm script 的 engdoc | edoc |
+| docs/engdoc.config.js，显式配置的同名前缀 | docs/edoc.config.js，同步改名并更新 --config、children 和导入路径 |
+| ENGDOC_CHROMIUM、ENGDOC_DOCS_PORT | EDOC_CHROMIUM、EDOC_DOCS_PORT |
+| Adapter 环境变量 ENGDOC_IR_OUTPUT | EDOC_IR_OUTPUT |
+| .engdoc-build 构建目录 | .edoc-build；同步调整项目忽略规则，旧缓存可按项目需要清理 |
+| 源码 API EngDocError | EdocError |
+| HTML 路由前缀 #engdoc= | #edoc=；已有产物及外部深链接需重新生成或更新 |
+
+在原理图等接入工程中，还要更新 package.json 的依赖键、脚本及锁文件，使用包含这次更名的工具版本后重新构建。显式配置仍支持 .js/.mjs/.cjs；其他自定义文件名通过 --config 使用，不增加旧默认文件名的自动回退。
+
+本仓库手册的 projectId 同步变为 edoc-manual，普通项目自己定义的 projectId、对象 ID 与章节 ID 无需随工具改名。远程 Git 地址暂未重命名，不能把安装地址直接替换为不存在的仓库；原始方案快照和真实历史归档文件名保留原文。
+
+{% /section %}
 
 {% section id="ref:config-identity" title="title 与 projectId" %}
 
@@ -73,7 +93,7 @@ views 仅引用已有对象和关系；tables 可从对象投影；waveforms 保
 
 output 默认 {html: 'output/index.html', pdf: false}。html/pdf 可写相对根的输出路径或 false，至少启用一种。CLI --output 相对当前执行目录。输出不得覆盖已知输入或其他输出；生成失败会记录失败状态，不能将旧产物解释为新成功。
 
-chromiumExecutable 指定已有 Chromium，或使用 ENGDOC_CHROMIUM。只有导出文档 PDF 需要；内嵌 PDF 阅读不需要。工具不会自动下载浏览器。
+chromiumExecutable 指定已有 Chromium，或使用 EDOC_CHROMIUM。只有导出文档 PDF 需要；内嵌 PDF 阅读不需要。工具不会自动下载浏览器。
 
 compactIndex 默认 false，控制文档 PDF 的对象附录。单文档和多篇/组合打印均遵循各工程的设置：true 时不展开全量机器 JSON，多篇打印只为正文直接引用的对象保留简短身份与来源，内部链接仍可达；精确事实保留在正文投影表、HTML 对象详情和 query 中。HTML 按页阅读器始终按需显示详情。
 

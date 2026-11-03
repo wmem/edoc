@@ -12,7 +12,7 @@ function walk(node:any,visit:(node:any[])=>void){if(!Array.isArray(node))return;
 // WaveDrom skin 的简单类型/类选择器转为图元自身样式。
 // SVG use 的实例树不能依赖外层祖先选择器；内联可保留描边、彩色总线与箭头，同时不污染正文。
 function isolate(tree:any[],index:number){
- const rules:Rule[]=[],ids=new Map<string,string>(),prefix=`engdoc-wave-${index}-`;
+ const rules:Rule[]=[],ids=new Map<string,string>(),prefix=`edoc-wave-${index}-`;
  walk(tree,node=>{
   const attrs=attributes(node);if(attrs.id)ids.set(attrs.id,prefix+attrs.id);
   if(node[0]==='style'){

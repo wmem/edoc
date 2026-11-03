@@ -1,5 +1,5 @@
 import type { Diagnostic, Graph, Node, Group, Port, Connection, View, RecordEntry,Interface } from './types.ts';
-import { EngDocError } from './errors.ts';
+import { EdocError } from './errors.ts';
 import { projectPath } from './paths.ts';
 import {validateViewLayout} from './view-layout.ts';
 
@@ -17,7 +17,7 @@ export function validateRelations(graph: Graph): void {
     if (entry.entity.source && !checkedSources.has(entry.entity.source.file)) {
       try { projectPath(graph.projectRoot, graph.projectRoot, entry.entity.source.file, false); checkedSources.add(entry.entity.source.file); }
       catch (error) {
-        if (error instanceof EngDocError) for (const d of error.diagnostics) report(entry, d.code, '/source/file', d.message);
+        if (error instanceof EdocError) for (const d of error.diagnostics) report(entry, d.code, '/source/file', d.message);
         else throw error;
       }
     }
@@ -105,5 +105,5 @@ export function validateRelations(graph: Graph): void {
       }
     }
   }
-  if (errors.length) throw new EngDocError(errors);
+  if (errors.length) throw new EdocError(errors);
 }

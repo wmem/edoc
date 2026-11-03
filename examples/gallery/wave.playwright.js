@@ -1,5 +1,5 @@
 async page=>{
- await page.waitForFunction(()=>window.EngDocReady);
+ await page.waitForFunction(()=>window.EdocReady);
  await page.evaluate(()=>{document.documentElement.style.scrollBehavior='auto';document.querySelectorAll('main details').forEach(d=>d.open=true);});
  const result=await page.evaluate(async()=>{
   await document.fonts.ready;const samples=[];
@@ -21,8 +21,8 @@ async page=>{
   if(samples.length!==2)throw new Error('应覆盖演示正文和查询参考中的两张波形');
   return {instances:samples.length,samples};
  });
- const first=page.locator('.wave').first();await first.scrollIntoViewIfNeeded();await first.screenshot({path:'.engdoc-build/wave-fix/after.png'});
- await page.locator('.wave').nth(1).scrollIntoViewIfNeeded();await page.locator('.wave').nth(1).screenshot({path:'.engdoc-build/wave-fix/second-instance.png'});
- await page.emulateMedia({media:'print'});await first.screenshot({path:'.engdoc-build/wave-fix/print.png'});await page.emulateMedia({media:'screen'});
+ const first=page.locator('.wave').first();await first.scrollIntoViewIfNeeded();await first.screenshot({path:'.edoc-build/wave-fix/after.png'});
+ await page.locator('.wave').nth(1).scrollIntoViewIfNeeded();await page.locator('.wave').nth(1).screenshot({path:'.edoc-build/wave-fix/second-instance.png'});
+ await page.emulateMedia({media:'print'});await first.screenshot({path:'.edoc-build/wave-fix/print.png'});await page.emulateMedia({media:'screen'});
  return result;
 }

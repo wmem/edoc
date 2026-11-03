@@ -1,7 +1,7 @@
 {
   "projectId": "mac-demo",
   "title": "1G MAC Component 工程文档（接口样例）",
-  "irDirectory": ".engdoc-build/ir",
+  "irDirectory": ".edoc-build/ir",
   "adapter": {
     "command": [
       "python3",

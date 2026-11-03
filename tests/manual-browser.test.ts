@@ -7,19 +7,19 @@ import {chromium} from 'playwright';
 import {repository} from './helpers.ts';
 
 test('正式手册离线按任务阅读：代码样例、接口、波形、PDF、子工程及窄屏',{timeout:120000},async t=>{
- const build=spawnSync(process.execPath,['packages/cli/engdoc.ts'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
- const child=spawnSync(process.execPath,['packages/cli/engdoc.ts','--config','docs/component/docs/engdoc.config.js'],{cwd:repository,encoding:'utf8',timeout:30000});assert.equal(child.status,0,child.stderr);
- const browser=await chromium.launch({executablePath:process.env.ENGDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
+ const build=spawnSync(process.execPath,['packages/cli/edoc.ts'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
+ const child=spawnSync(process.execPath,['packages/cli/edoc.ts','--config','docs/component/docs/edoc.config.js'],{cwd:repository,encoding:'utf8',timeout:30000});assert.equal(child.status,0,child.stderr);
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
  const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[],external:string[]=[];
  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url()))external.push(request.url());});
- const ready=()=>page.waitForFunction(()=>window.EngDocReady),go=async(label:string)=>{const target=page.locator('#toc').getByRole('link',{name:label,exact:true}).first();if(!await target.isVisible()){await page.locator('#toc').getByRole('link',{name:'查询参考',exact:true}).click();await ready();}await target.click();await ready();};
+ const ready=()=>page.waitForFunction(()=>window.EdocReady),go=async(label:string)=>{const target=page.locator('#toc').getByRole('link',{name:label,exact:true}).first();if(!await target.isVisible()){await page.locator('#toc').getByRole('link',{name:'查询参考',exact:true}).click();await ready();}await target.click();await ready();};
  await page.goto(pathToFileURL(join(repository,'output/index.html')).href);await ready();assert.equal(await page.locator('#reader article').count(),1);
  assert.equal(await page.locator('#toc [aria-current]').count(),1);assert.equal(await page.locator('#toc').getByRole('link',{name:'声明接口身份与成员',exact:true}).count(),0,'页内小节只出现在右侧');
  await page.locator('#reader').getByRole('link',{name:'使用文档',exact:true}).click();await ready();await page.locator('#reader').getByRole('link',{name:'第一次生成',exact:true}).click();await ready();
  assert.match(await page.locator('#reader').innerText(),/export default/);assert.equal(await page.locator('[data-diagram]').count(),0);assert.ok(!(await page.locator('#reader').innerText()).includes('控制接口逐信号'));
  await go('组织多篇文档');assert.match(await page.locator('#reader pre').allTextContents().then(text=>text.join('\n')),/include file="docs\/_partials\/warnings.mdoc"/);assert.equal(await page.locator('#reader article').count(),1);
- await go('接口合并与展开');await page.waitForFunction(()=>window.EngDocInterfaceViews?.length===1);assert.equal(await page.locator('[data-diagram]').count(),1);
- await page.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');assert.ok(await page.evaluate(()=>Object.values(window.EngDocInterfaceViews[0].state.modes).every(mode=>mode==='expanded')));
+ await go('接口合并与展开');await page.waitForFunction(()=>window.EdocInterfaceViews?.length===1);assert.equal(await page.locator('[data-diagram]').count(),1);
+ await page.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');assert.ok(await page.evaluate(()=>Object.values(window.EdocInterfaceViews[0].state.modes).every(mode=>mode==='expanded')));
  await go('状态与时序');assert.ok(await page.locator('.wave svg').isVisible());assert.match(await page.locator('.wave figcaption').innerText(),/规范示意/);
  await go('需要时调整布局');await page.getByRole('button',{name:'相对顺序与反馈通道',exact:true}).click();assert.ok(await page.locator('.tab:not([hidden]) [data-diagram]').isVisible());
  await go('工程组合与 PDF 原文');await page.getByRole('link',{name:'打开第 2 页的示例区域',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');assert.equal(await page.locator('#pdf-reader').getAttribute('data-pdf-page'),'2');assert.ok(await page.locator('.pdf-region').isVisible());
@@ -35,10 +35,10 @@ test('正式手册离线按任务阅读：代码样例、接口、波形、PDF�
 });
 
 test('开发分支完整接入设计原文、历史证据、回归图集和真实源码，离线链接可追溯',{timeout:120000},async t=>{
- const build=spawnSync(process.execPath,['packages/cli/engdoc.ts'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
- const browser=await chromium.launch({executablePath:process.env.ENGDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
+ const build=spawnSync(process.execPath,['packages/cli/edoc.ts'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
  const context=await browser.newContext({offline:true,viewport:{width:1500,height:1000}}),page=await context.newPage(),errors:string[]=[],external:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/^https?:/.test(request.url()))external.push(request.url());});
- const ready=()=>page.waitForFunction(()=>window.EngDocReady),article=async(name:string)=>{await page.locator('#reader').getByRole('link',{name,exact:true}).click();await ready();},development=async()=>{await page.locator('#toc').getByRole('link',{name:'开发文档',exact:true}).first().click();await ready();};
+ const ready=()=>page.waitForFunction(()=>window.EdocReady),article=async(name:string)=>{await page.locator('#reader').getByRole('link',{name,exact:true}).click();await ready();},development=async()=>{await page.locator('#toc').getByRole('link',{name:'开发文档',exact:true}).first().click();await ready();};
  await page.goto(pathToFileURL(join(repository,'output/index.html')).href);await ready();await article('开发文档');await article('需求与设计');await article('原始 V1 方案');assert.match(await page.locator('#reader').innerText(),/目标与边界/);assert.equal(await page.locator('#reader [data-diagram]').count(),0,'原文的围栏只是代码，不引用不存在的项目视图');
  await development();await article('样例回归');await article('完整图形回归集');assert.equal(await page.locator('#reader [data-diagram]').count(),16);await page.getByRole('button',{name:'从下到上 BT',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-diagram="gallery:layout-BT"]')?.getAttribute('data-initialized')==='true');
  await page.goBack();await ready();await article('正文模板与配置源码');assert.equal(await page.locator('#reader [data-diagram]').count(),0);assert.match(await page.locator('#reader pre').allTextContents().then(parts=>parts.join('\n')),/book:overview/);assert.match(await page.locator('#reader pre').allTextContents().then(parts=>parts.join('\n')),/demo:unused/);

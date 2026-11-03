@@ -1,6 +1,6 @@
 import {readFileSync,statSync} from 'node:fs';
 import {projectPath,requireFile} from './paths.ts';
-import {failure,EngDocError} from './errors.ts';
+import {failure,EdocError} from './errors.ts';
 
 export type PdfTargetInput={page?:number;rect?:[number,number,number,number];destination?:string};
 export type AttachmentInput={type:'pdf';file:string;title?:string;targets?:Record<string,PdfTargetInput>};
@@ -36,7 +36,7 @@ export async function loadAttachments(root:string,definitions:Record<string,Atta
     }
    }
    output[id]={id,type:'pdf',file:value.file,title:value.title??id,data:bytes.toString('base64'),numPages:pdf.numPages,targets};
-  }catch(error){if(error instanceof EngDocError)throw error;failure('ATTACHMENT_PDF',file,'',String(error));}finally{await task?.destroy();}
+  }catch(error){if(error instanceof EdocError)throw error;failure('ATTACHMENT_PDF',file,'',String(error));}finally{await task?.destroy();}
  }
  return output;
 }

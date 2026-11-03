@@ -3,13 +3,13 @@
 > 历史记录：以下“当前”“本轮”仅指原文对应阶段，测试数量、环境和未验证项不作为现版本结论。现行用法见使用文档与查询参考。
 
 
-2026-11-02。用户批准将 README、渐进式使用文档和开发文档分开，正式手册由 EngDoc 自身渲染，并将适合教学的 Demo 并入用法；精确细节可供人和 Agent 按需查询。
+2026-11-02。用户批准将 README、渐进式使用文档和开发文档分开，正式手册由 edoc 自身渲染，并将适合教学的 Demo 并入用法；精确细节可供人和 Agent 按需查询。
 
 {% section id="acceptance:self-documentation:part-01" title="当前入口与来源" %}
 
 
 - README.md：工具用途、安装、最小配置、正式文档的构建/预览和 Agent 查询入口。
-- engdoc.config.js：根手册的正文、数据函数、视图、子工程和 PDF 附件配置；没有另一份配置 JSON。
+- edoc.config.js：根手册的正文、数据函数、视图、子工程和 PDF 附件配置；没有另一份配置 JSON。
 - docs/manual/usage/：按任务逐步介绍正文、数据、图形和组合。
 - docs/manual/usage/reference/：使用文档中的精确参考，稳定小节可独立读取。
 - docs/manual/development/：工具架构、修改与验证、历史依据定位，不作为普通使用的入门前置条件。
@@ -41,13 +41,13 @@
 {% section id="acceptance:self-documentation:part-03" title="正文精确读取" %}
 
 
-新增 engdoc read 与核心 readDocument API，保留原 query 的工程事实契约：
+新增 edoc read 与核心 readDocument API，保留原 query 的工程事实契约：
 
 ```sh
-engdoc outline --format json
-engdoc read --id ref:config-data --format json
-engdoc read --id ref:config --scope subtree --max-chars 4000 --offset 0
-engdoc query --id board:net.FLASH_SCK --depth 1
+edoc outline --format json
+edoc read --id ref:config-data --format json
+edoc read --id ref:config --scope subtree --max-chars 4000 --offset 0
+edoc query --id board:net.FLASH_SCK --depth 1
 ```
 
 outline 增加源 sectionId，HTML 编码锚点继续保留。read 默认 self 排除子 section 正文，显式 subtree 才包含；返回规范化 Markdown、来源、子章节与字符范围。默认正文上限 12000 Unicode 字符，明确 truncated/nextOffset，不在返回中展开 HTML、图形、字体或 PDF。include 保留自身来源，sources 按文件汇总首次位置，不重复列出每个段落。
@@ -79,7 +79,7 @@ Markdoc 默认处理代码围栏内标签，导致教程里的 include 样例触
 
 共 241 项不同自动用例通过。最后针对 read/manual 和页面交互的重跑不重复计数。安装验证使用临时前缀，未修改全局工具，没有推送或验证远程 Git SSH 安装。
 
-playwright-cli 使用已有 Chromium，从 file:// 打开并将上下文设为离线，实测目录、代码样例、架构/接线、接口展开、波形、PDF 定位与返回、子工程往返和 390px 窄屏。结果无页面脚本异常、无外部 HTTP 请求、无整体横向溢出。截图位于本地忽略目录 .engdoc-build/manual-*.png，已观察架构、接线、接口总览/展开、波形、PDF 区域、首页和窄屏代表页面。
+playwright-cli 使用已有 Chromium，从 file:// 打开并将上下文设为离线，实测目录、代码样例、架构/接线、接口展开、波形、PDF 定位与返回、子工程往返和 390px 窄屏。结果无页面脚本异常、无外部 HTTP 请求、无整体横向溢出。截图位于本地忽略目录 .edoc-build/manual-*.png，已观察架构、接线、接口总览/展开、波形、PDF 区域、首页和窄屏代表页面。
 
 手册集成回归还检查 PDF 区域内真实深色文字像素，而非只检查 canvas 存在；独立子产物的父链接提示未包含，组合产物则正确返回。
 

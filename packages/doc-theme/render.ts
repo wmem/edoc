@@ -65,10 +65,10 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
  }
  const config={
   tags:Object.fromEntries(Object.entries(tags).map(([k,v])=>[k,k==='section'?{...v,transform(node:any,config:any){
-   return new Markdoc.Tag('ed-section',{...node.transformAttributes(config),outlineLevel:headings.get(node.attributes.__engdocOutlineId)!.level},node.transformChildren(config));
+   return new Markdoc.Tag('ed-section',{...node.transformAttributes(config),outlineLevel:headings.get(node.attributes.__edocOutlineId)!.level},node.transformChildren(config));
   }}:{...v,render:'ed-'+k}])),
-  nodes:{fence:{...Markdoc.nodes.fence,transform(node:any){return new Markdoc.Tag('pre',{},[new Markdoc.Tag('code',{'data-language':node.attributes.language},[node.attributes.content])]);}},link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__engdocSourceFile:{type:String}},transform(node:any,config:any){const source=plan.documents.map(d=>d.locations.get(node)).find(Boolean);return new Markdoc.Tag('a',{...node.transformAttributes(config),sourceFile:node.attributes.__engdocSourceFile??source?.file},node.transformChildren(config));}},heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
-   const entry=headings.get(node.attributes.__engdocOutlineId)!;
+  nodes:{fence:{...Markdoc.nodes.fence,transform(node:any){return new Markdoc.Tag('pre',{},[new Markdoc.Tag('code',{'data-language':node.attributes.language},[node.attributes.content])]);}},link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__edocSourceFile:{type:String}},transform(node:any,config:any){const source=plan.documents.map(d=>d.locations.get(node)).find(Boolean);return new Markdoc.Tag('a',{...node.transformAttributes(config),sourceFile:node.attributes.__edocSourceFile??source?.file},node.transformChildren(config));}},heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
+   const entry=headings.get(node.attributes.__edocOutlineId)!;
    return new Markdoc.Tag('ed-heading',{id:entry.id,outlineLevel:entry.level},node.transformChildren(config));
   }}}
  };

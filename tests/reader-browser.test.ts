@@ -10,14 +10,14 @@ import {repository} from './helpers.ts';
 import {loadBook} from '../packages/core/book.ts';
 import {resolveProjectConfig} from '../packages/core/project.ts';
 import {bookHTML} from '../packages/pack-html/book.ts';
-const executablePath=process.env.ENGDOC_CHROMIUM;
-function build(config:string){const r=spawnSync(process.execPath,['packages/cli/engdoc.ts','build','--config',config,'--format','html'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(r.status,0,r.stderr);}
+const executablePath=process.env.EDOC_CHROMIUM;
+function build(config:string){const r=spawnSync(process.execPath,['packages/cli/edoc.ts','build','--config',config,'--format','html'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(r.status,0,r.stderr);}
 test('组合/独立 HTML 离线阅读、弱跳转、PDF区域和命名目标、下载及历史恢复',{timeout:120000},async t=>{
- const p=readerFixture(t);build(join(p.root,'engdoc.config.js'));
- p.write('engdoc.config.js',`throw Error('禁止执行父配置')`);p.write('board/engdoc.config.js',`throw Error('禁止执行兄弟配置')`);build(join(p.root,'fpga/engdoc.config.js'));
+ const p=readerFixture(t);build(join(p.root,'edoc.config.js'));
+ p.write('edoc.config.js',`throw Error('禁止执行父配置')`);p.write('board/edoc.config.js',`throw Error('禁止执行兄弟配置')`);build(join(p.root,'fpga/edoc.config.js'));
  const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000}}),page=await context.newPage();
  const errors:string[]=[],external:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url()))external.push(r.url());});
- const ready=()=>page.waitForFunction(()=>window.EngDocReady);
+ const ready=()=>page.waitForFunction(()=>window.EdocReady);
  await page.goto(pathToFileURL(join(p.root,'output/index.html')).href);await ready();assert.match(await page.locator('#reader').innerText(),/父工程自己的正文/);assert.ok(!(await page.locator('#reader').innerText()).includes('CHILD_LOCAL_ONLY'));
  await page.getByRole('link',{name:'进入 fpga 工程',exact:true}).click();await ready();assert.match(await page.locator('#reader').innerText(),/CHILD_LOCAL_ONLY/);assert.ok(!(await page.locator('#reader').innerText()).includes('BOARD_ONLY'));
  await page.locator('#toc').getByRole('link',{name:'协议目录',exact:true}).click();await ready();await page.locator('#toc').getByRole('link',{name:'AXI 规范',exact:true}).click();await ready();assert.match(await page.locator('#reader').innerText(),/PROTOCOL_ONLY/);await page.goBack();await ready();await page.goBack();await ready();
@@ -31,16 +31,16 @@ test('组合/独立 HTML 离线阅读、弱跳转、PDF区域和命名目标、�
  assert.deepEqual(await page.evaluate(()=>({hash:location.hash,body:[...document.querySelectorAll<HTMLDetailsElement>('#reader details')].map(d=>d.open),toc:[...document.querySelectorAll<HTMLDetailsElement>('#page-toc details')].map(d=>d.open)})),state,'批量操作只改变左侧，正文折叠、右侧小节与路由保持');
  assert.equal(await page.locator('#toc [aria-current="page"]').textContent(),'详细接口');await page.getByRole('button',{name:'全部展开',exact:true}).click();
  await page.goBack();await ready();assert.ok(decodeURIComponent(await page.evaluate(()=>location.hash)).includes('握手'));assert.equal(await page.locator('#toc [aria-current="page"]').innerText(),'详细接口');
- await page.goBack();await ready();await page.waitForFunction(()=>window.EngDocGraphs.length===1);const figure=page.locator('[data-diagram]');
+ await page.goBack();await ready();await page.waitForFunction(()=>window.EdocGraphs.length===1);const figure=page.locator('[data-diagram]');
  await figure.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');
- await figure.locator('[data-display=port-attributes]').check();await figure.locator('[data-action=plus]').click();const zoom=await page.evaluate(()=>window.EngDocGraphs[0].zoom());
+ await figure.locator('[data-display=port-attributes]').check();await figure.locator('[data-action=plus]').click();const zoom=await page.evaluate(()=>window.EdocGraphs[0].zoom());
  await figure.locator('.x6-node[data-cell-id="device"]').click({position:{x:30,y:20}});assert.ok(await page.locator('#selection-actions .source-attachment').isVisible(),'对象来源可定位原始PDF');
  const documentHash=await page.evaluate(()=>location.hash);await page.getByText('核对电源原理图',{exact:true}).scrollIntoViewIfNeeded();const scroll=await page.evaluate(()=>scrollY);
  await page.getByText('核对电源原理图',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true',{},{timeout:20000});
  assert.equal(await page.locator('#pdf-reader').getAttribute('data-pdf-page'),'3');assert.ok(await page.locator('.pdf-region').isVisible());
  const geometry=await page.evaluate(()=>{const r=document.querySelector<HTMLElement>('.pdf-region')!,c=document.querySelector('canvas')!;return {x:parseFloat(r.style.left)/parseFloat(c.style.width),width:parseFloat(r.style.width)/parseFloat(c.style.width),pixels:[...c.getContext('2d')!.getImageData(0,0,c.width,c.height).data].filter((n,i)=>i%4!==3&&n<100).length};});assert.ok(Math.abs(geometry.x-.15)<.001);assert.ok(Math.abs(geometry.width-.45)<.001);assert.ok(geometry.pixels>1000,'实际绘制了PDF而非空白画布');
  const pending=page.waitForEvent('download');await page.getByText('下载原 PDF',{exact:true}).click();const download=await pending,path=join(p.root,'download.pdf');await download.saveAs(path);assert.deepEqual(readFileSync(path),samplePdf());
- await page.goBack();await ready();assert.equal(await page.evaluate(()=>location.hash),documentHash);assert.ok(await page.locator('[data-display=port-attributes]').isChecked());assert.ok(Math.abs(await page.evaluate(()=>window.EngDocGraphs[0].zoom())-zoom)<.01,'恢复缩放');assert.ok(Math.abs(await page.evaluate(()=>scrollY)-scroll)<30,'恢复阅读位置');assert.ok(await page.evaluate(()=>(window.EngDocInterfaceViews[0].state as any).modes.bus==='expanded'),'恢复接口展开状态');
+ await page.goBack();await ready();assert.equal(await page.evaluate(()=>location.hash),documentHash);assert.ok(await page.locator('[data-display=port-attributes]').isChecked());assert.ok(Math.abs(await page.evaluate(()=>window.EdocGraphs[0].zoom())-zoom)<.01,'恢复缩放');assert.ok(Math.abs(await page.evaluate(()=>scrollY)-scroll)<30,'恢复阅读位置');assert.ok(await page.evaluate(()=>(window.EdocInterfaceViews[0].state as any).modes.bus==='expanded'),'恢复接口展开状态');
  await page.goForward();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');assert.equal(await page.locator('#pdf-reader').getAttribute('data-pdf-page'),'3');await page.reload();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');
  await page.goBack();await ready();await page.getByText('命名位置',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true'||document.querySelector('#pdf-reader')?.getAttribute('data-pdf-error')==='true');assert.equal(await page.locator('#pdf-reader').getAttribute('data-pdf-error'),null,await page.locator('.pdf-status').innerText());assert.equal(await page.locator('#pdf-reader').getAttribute('data-pdf-page'),'3');assert.ok(await page.locator('.pdf-region').isVisible());
  await page.goBack();await ready();await page.getByText('旋转页定位',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');assert.equal(await page.locator('#pdf-reader').getAttribute('data-pdf-page'),'2');assert.ok(await page.locator('canvas').evaluate(c=>parseFloat(c.style.width)>parseFloat(c.style.height)),'旋转裁切页方向');
@@ -56,18 +56,18 @@ test('组合/独立 HTML 离线阅读、弱跳转、PDF区域和命名目标、�
 test('同一进程依次生成普通 PDF 与接口 PDF 工程，客户端缓存不串用',{timeout:60000},async t=>{
  const p=readerFixture(t);p.write('plain.config.js',`export default {projectId:'plain',documents:'plain.mdoc',attachments:{pdf:{type:'pdf',file:'fpga/source/schematic.pdf'}}};`);p.write('plain.mdoc','# 只有 PDF\n{% attachment id="pdf" /%}');
  const plainFile=join(p.root,'plain.html');writeFileSync(plainFile,await bookHTML(await loadBook(await resolveProjectConfig(join(p.root,'plain.config.js')))));
- const rich=await bookHTML(await loadBook(await resolveProjectConfig(join(p.root,'fpga/engdoc.config.js')))),file=join(p.root,'rich.html');writeFileSync(file,rich);
+ const rich=await bookHTML(await loadBook(await resolveProjectConfig(join(p.root,'fpga/edoc.config.js')))),file=join(p.root,'rich.html');writeFileSync(file,rich);
  const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true}),page=await context.newPage();
- await page.goto(pathToFileURL(plainFile).href);await page.waitForFunction(()=>window.EngDocReady);assert.ok(await page.getByRole('button',{name:'全部展开',exact:true}).isDisabled());assert.ok(await page.getByRole('button',{name:'全部折叠',exact:true}).isDisabled());
- await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EngDocReady);assert.ok(await page.evaluate(()=>window.EngDocInterfaceViews?.length>0));await page.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');assert.equal(await page.evaluate(()=>window.EngDocInterfaceViews[0].state.modes.bus),'expanded');
+ await page.goto(pathToFileURL(plainFile).href);await page.waitForFunction(()=>window.EdocReady);assert.ok(await page.getByRole('button',{name:'全部展开',exact:true}).isDisabled());assert.ok(await page.getByRole('button',{name:'全部折叠',exact:true}).isDisabled());
+ await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);assert.ok(await page.evaluate(()=>window.EdocInterfaceViews?.length>0));await page.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelector('[data-diagram]')?.getAttribute('data-busy')==='false');assert.equal(await page.evaluate(()=>window.EdocInterfaceViews[0].state.modes.bus),'expanded');
 });
 
 test('PDF 返回时恢复第三张延迟初始化图的独立接口状态',{timeout:60000},async t=>{
- const p=readerFixture(t),config=join(p.root,'fpga/engdoc.config.js');writeFileSync(config,readFileSync(config,'utf8').replace("documents:'docs'","documents:'docs/return.mdoc'"));
+ const p=readerFixture(t),config=join(p.root,'fpga/edoc.config.js');writeFileSync(config,readFileSync(config,'utf8').replace("documents:'docs'","documents:'docs/return.mdoc'"));
  p.write('fpga/docs/return.mdoc','# 多图恢复\n{% diagram id="overview" /%}\n{% diagram id="overview" /%}\n'+('占位说明，用于验证长文档中的延迟图形。\n\n'.repeat(70))+'{% diagram id="overview" /%}\n{% attachment id="schematic" target="power" label="打开源图" /%}');
  const file=join(p.root,'return.html');writeFileSync(file,await bookHTML(await loadBook(await resolveProjectConfig(config))));
- const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1400,height:900}}),page=await context.newPage();await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EngDocReady);
+ const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1400,height:900}}),page=await context.newPage();await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);
  const third=page.locator('[data-diagram]').nth(2);await third.scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelectorAll<HTMLElement>('[data-diagram]')[2].dataset.initialized==='true');await third.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelectorAll<HTMLElement>('[data-diagram]')[2].dataset.busy==='false');
- await page.getByText('打开源图',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');await page.goBack();await page.waitForFunction(()=>window.EngDocReady);
- const states=await page.evaluate(()=>window.EngDocInterfaceViews.map(v=>({figure:[...document.querySelectorAll('[data-diagram]')].indexOf(v.holder),mode:v.state.modes.bus})));assert.equal(states.find(v=>v.figure===2)?.mode,'expanded');assert.equal(states.find(v=>v.figure===0)?.mode,'collapsed');
+ await page.getByText('打开源图',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');await page.goBack();await page.waitForFunction(()=>window.EdocReady);
+ const states=await page.evaluate(()=>window.EdocInterfaceViews.map(v=>({figure:[...document.querySelectorAll('[data-diagram]')].indexOf(v.holder),mode:v.state.modes.bus})));assert.equal(states.find(v=>v.figure===2)?.mode,'expanded');assert.equal(states.find(v=>v.figure===0)?.mode,'collapsed');
 });

@@ -10,7 +10,7 @@
 {% section id="history:ir-p0:part-01" title="数据边界" %}
 
 
-配置文件 `engdoc.config.json` 具有 `projectId`、`irDirectory` 两个字段。配置文件实际所在目录是允许的工程范围；所有 IR、入口文档和来源路径不得越界。P0 不执行 Adapter。使用 `--ir` 时可用 `--project-root` 指定祖先工程目录，否则范围为 IR 目录。
+配置文件 `edoc.config.json` 具有 `projectId`、`irDirectory` 两个字段。配置文件实际所在目录是允许的工程范围；所有 IR、入口文档和来源路径不得越界。P0 不执行 Adapter。使用 `--ir` 时可用 `--project-root` 指定祖先工程目录，否则范围为 IR 目录。
 
 manifest 必需字段：
 
@@ -119,9 +119,9 @@ CLI 成功数据写 stdout；错误诊断写 stderr。query 默认 JSON，valida
 
 
 ```typescript
-import { loadConfig, loadIR, query, EngDocError } from './packages/core/index.ts';
+import { loadConfig, loadIR, query, EdocError } from './packages/core/index.ts';
 
-const config = loadConfig('examples/board-flash/engdoc.config.json');
+const config = loadConfig('examples/board-flash/edoc.config.json');
 const graph = loadIR(config.irDirectory, config);
 const result = query(graph, 'board:net.FLASH_SCK', { depth: 1 });
 ```

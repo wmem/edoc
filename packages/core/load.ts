@@ -5,7 +5,7 @@ import {graphFromResources} from './graph.ts';
 import type {ResourcePart} from './graph.ts';
 import type { SchemaName } from './schema.ts';
 import type { Diagnostic, Graph, Manifest, ResourceType } from './types.ts';
-import { EngDocError, failure } from './errors.ts';
+import { EdocError, failure } from './errors.ts';
 import { projectPath, requireFile } from './paths.ts';
 import {runAdapter} from './adapter.ts';
 
@@ -28,7 +28,7 @@ export function readJson(file: string, schema: SchemaName,compatible=false): any
   if (!finiteJson(data)) failure('JSON_NUMBER', file, '', '数值超出有限 JSON 数值范围');
   const minor= schema==='manifest'&&typeof (data as any)?.irVersion==='string'?Number((data as any).irVersion.split('.')[1]):0;
   const errors = validateSchema(schema, data, file,compatible||minor>0);
-  if (errors.length) throw new EngDocError(errors);
+  if (errors.length) throw new EdocError(errors);
   return data;
 }
 
@@ -56,7 +56,7 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
   for (const [i, doc] of manifest.entryDocuments.entries()) {
     try { requireFile(projectPath(root, root, doc)); }
     catch (error) {
-      if (error instanceof EngDocError) throw new EngDocError(error.diagnostics.map(d => ({ ...d, file: manifestFile, path: `/entryDocuments/${i}` })));
+      if (error instanceof EdocError) throw new EdocError(error.diagnostics.map(d => ({ ...d, file: manifestFile, path: `/entryDocuments/${i}` })));
       throw error;
     }
   }
@@ -72,12 +72,12 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
     let data: any;
     try { data = readJson(file, schemas[resource.type],Number(manifest.irVersion.split('.')[1])>0); }
     catch (error) {
-      if (error instanceof EngDocError) { diagnostics.push(...error.diagnostics); continue; }
+      if (error instanceof EdocError) { diagnostics.push(...error.diagnostics); continue; }
       throw error;
     }
     parts.push({type:resource.type,data,file});
   }
   // 结构不合法时不运行语义遍历，避免把无效数据当成类型完整的 IR。
-  if (diagnostics.length) throw new EngDocError(diagnostics);
+  if (diagnostics.length) throw new EdocError(diagnostics);
   return graphFromResources(parts,manifest,{root,directory:ir});
 }

@@ -14,7 +14,7 @@
 | 真实图形问题、二次审查 | 开发 → 问题审查，保留缺陷和验证盲区 |
 | P0/V1 及后续各轮验证 | 开发 → 验收记录，标注当时环境、数量及未验证项 |
 | P0 协议和旧入口 | 开发 → 历史协议，明确不能用于当前 CLI |
-| 推荐指南 | 使用分支中的 guide.mdoc；engdoc guide 从同一源读取 |
+| 推荐指南 | 使用分支中的 guide.mdoc；edoc guide 从同一源读取 |
 | 环境、低层 API 与恢复 | 开发文档补齐当前要求、历史环境和检查点边界 |
 | Gallery、板级和 MAC 原正文 | 开发 → 样例与回归，同源接入原片段和实际图表 |
 | 模板、真实配置和 Agent 入口 | 源码引用，不另复制内容；完整规则在开发文档维护 |
@@ -38,10 +38,10 @@
 {% section id="acceptance:documentation:query" title="按需查询与同源代码" %}
 
 ```sh
-engdoc outline --depth 0 --format json
-engdoc outline --id design:home --depth 1 --format json
-engdoc read --id design:requirements:part-03 --format text
-engdoc read --id regression:template --format json
+edoc outline --depth 0 --format json
+edoc outline --id design:home --depth 1 --format json
+edoc read --id design:requirements:part-03 --format text
+edoc read --id regression:template --format json
 ```
 
 outline 缺省完整行为保持；新增按源章节 ID、显式工程和相对深度筛选，childrenOmitted 明确表示省略的直接子项。跨工程同名 ID 需用 --project 消歧，不加载弱跳转目标。实测完整目录的格式化 JSON 为 250,601 字节，根级 1,387 字节，设计分支一级 5,006 字节；这说明无需先读取整棵树，不是固定 token 或运行时间保证。
@@ -63,7 +63,7 @@ outline 缺省完整行为保持；新增按源章节 ID、显式工程和相对
 
 共 247 个不同自动用例通过，针对性重跑不重复计数。原图形、接口、波形与 PDF 回归保留。源码引用新增三项测试覆盖字面内容/来源更新、文本/大小/路径失败和输出保护；目录新增两项核心测试及 CLI/安装包断言，覆盖裁剪、原树不变、作用域和歧义。
 
-playwright-cli 使用已有 Chromium，从 file:// 离线打开。开发入口、原始 V1 方案、历史布局验收到当前参考、真实模板/配置、16 图回归集中的 BT 布局和 390px 窄屏均实测；无脚本异常、无外部 HTTP 请求、无整体横向溢出。代表截图保留在本地忽略目录 .engdoc-build/all-docs-*.png，已实际观察正文、源码和图形。
+playwright-cli 使用已有 Chromium，从 file:// 离线打开。开发入口、原始 V1 方案、历史布局验收到当前参考、真实模板/配置、16 图回归集中的 BT 布局和 390px 窄屏均实测；无脚本异常、无外部 HTTP 请求、无整体横向溢出。代表截图保留在本地忽略目录 .edoc-build/all-docs-*.png，已实际观察正文、源码和图形。
 
 完整手册 PDF 已重新生成；结构与文本抽取确认原始方案、P0 验收、源码模板、Agent 规则和渐进目录说明都包含。原始快照仅在其路径保留合法的 Markdown 行尾/末尾空白，不修剪原文；其余已跟踪与新增文件的差异检查通过。
 

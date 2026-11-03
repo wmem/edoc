@@ -113,13 +113,13 @@ test('尚不可用的来源文件允许追溯，但不能通过目录 symlink �
   expectCode(f.load, 'PATH_SCOPE');
 });
 test('配置与 manifest 项目 ID 一致', t => {
-  const f = fixture(t); const config = loadConfig(join(f.root, 'engdoc.config.json'));
+  const f = fixture(t); const config = loadConfig(join(f.root, 'edoc.config.json'));
   assert.equal(loadIR(config.irDirectory, config).manifest.projectId, 'demo-board');
   expectCode(() => loadIR(f.ir, { projectRoot: f.root, projectId: 'different' }), 'PROJECT_ID');
 });
 test('配置 IR 路径不能跳出工程', t => {
-  const f = fixture(t); save(join(f.root, 'engdoc.config.json'), { projectId: 'p', irDirectory: '../elsewhere' });
-  expectCode(() => loadConfig(join(f.root, 'engdoc.config.json')), 'PATH_SCOPE');
+  const f = fixture(t); save(join(f.root, 'edoc.config.json'), { projectId: 'p', irDirectory: '../elsewhere' });
+  expectCode(() => loadConfig(join(f.root, 'edoc.config.json')), 'PATH_SCOPE');
 });
 test('未随附来源也不能通过悬空符号链接逃逸', t => {
   const f = fixture(t);

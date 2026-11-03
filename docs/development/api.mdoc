@@ -5,16 +5,16 @@ CLI 和手册使用同一核心；需要在其他 Node.js 工具中读取工程�
 {% section id="dev:api-current" title="当前工程 API" %}
 
 ```js
-import {resolveProjectConfig, loadBook, projectOutline, readDocument, query} from 'engdoc';
+import {resolveProjectConfig, loadBook, projectOutline, readDocument, query} from 'edoc';
 
-const config = await resolveProjectConfig('docs/engdoc.config.js');
+const config = await resolveProjectConfig('docs/edoc.config.js');
 const book = await loadBook(config);
 const tree = projectOutline(book, {id: 'stable:section', depth: 1});
 const explanation = readDocument(book.root.graph, 'stable:section');
 const facts = query(book.root.graph, 'stable:object', {depth: 1, maxItems: 20});
 ```
 
-示例 ID 应替换为实际工程 ID。loadBook 只加载显式组合的工程；read/query 的范围见命令参考，返回原始身份、来源及显式截断。EngDocError.diagnostics 提供可定位诊断。
+示例 ID 应替换为实际工程 ID。loadBook 只加载显式组合的工程；read/query 的范围见命令参考，返回原始身份、来源及显式截断。EdocError.diagnostics 提供可定位诊断。
 
 源码开发可从 packages/core/index.ts 导入。loadIR/loadConfig 等低层旧 API 保留给历史 Adapter 和回归夹具；它们不是恢复 JSON 配置作为新 CLI 入口的承诺。原 P0 API 的当时语义在[历史协议](history/ir-p0.mdoc)。
 
@@ -24,7 +24,7 @@ const facts = query(book.root.graph, 'stable:object', {depth: 1, maxItems: 20});
 
 Node.js 24+，用 npm ci 和锁文件恢复依赖，npm run build:package 生成普通 JS 模块。安装后的命令不需要项目另写 node xxx.mjs；源码入口用于工具开发。
 
-scripts/checkpoint.py 保留早期双仓库检查点流程：工程和方案分别 Git 管理，要求两仓库干净，打包对应提交的 EngDoc-latest.git.bundle、EngDoc-solution.git.bundle 和 EngDoc-task.md。恢复时核对两个提交号，再恢复依赖和已有 Chromium。方案快照的来源见[原始方案来源](design/original-source.mdoc)。
+scripts/checkpoint.py 保留早期双仓库检查点流程：工程和方案分别 Git 管理，要求两仓库干净，打包对应提交的 edoc-latest.git.bundle、edoc-solution.git.bundle 和 edoc-task.md。恢复时核对两个提交号，再恢复依赖和已有 Chromium。方案快照的来源见[原始方案来源](design/original-source.mdoc)。
 
 该脚本需要真实存在的方案仓库和指定目标目录，不表示当前普通项目构建依赖外部方案仓库。生成产物、node_modules 和 Chromium 工具包不是日常 Agent 修改入口；不默认使用文件内容 hash 缓存。
 

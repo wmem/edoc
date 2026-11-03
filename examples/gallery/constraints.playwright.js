@@ -1,14 +1,14 @@
 async page => {
  const assert=(ok,message)=>{if(!ok)throw new Error(message);};
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.context().setOffline(false);await page.reload();await page.setViewportSize({width:1800,height:1100});await page.waitForFunction(()=>window.EngDocReady);
+ await page.context().setOffline(false);await page.reload();await page.setViewportSize({width:1800,height:1100});await page.waitForFunction(()=>window.EdocReady);
  await page.evaluate(()=>document.documentElement.style.scrollBehavior='auto');
  const ids=['mac:overview','board:flash-wiring','gallery:architecture-intent','gallery:wiring-intent'];
  for(const id of ids){const h=page.locator(`[data-diagram="${id}"]`);await h.scrollIntoViewIfNeeded();await page.waitForFunction(id=>document.querySelector(`[data-diagram="${id}"]`).dataset.initialized==='true',id);}
  const quality=await page.evaluate(ids=>{
-  const issues=[],data=JSON.parse(document.querySelector('#engdoc-data').textContent),scenes=data.scenes;
+  const issues=[],data=JSON.parse(document.querySelector('#edoc-data').textContent),scenes=data.scenes;
   for(const id of ids){
-   const s=scenes[id],holder=document.querySelector(`[data-diagram="${id}"]`),g=window.EngDocGraphs.find(g=>g.container.closest('[data-diagram]')===holder),svg=holder.querySelector('.static-svg svg');
+   const s=scenes[id],holder=document.querySelector(`[data-diagram="${id}"]`),g=window.EdocGraphs.find(g=>g.container.closest('[data-diagram]')===holder),svg=holder.querySelector('.static-svg svg');
    for(const net of s.nets){
     const paths=net.paths??net.branches,group=[...svg.querySelectorAll('[data-relation]')].find(e=>e.dataset.relation===net.id),drawn=group.querySelectorAll(':scope > path');
     if(drawn.length!==paths.length)issues.push(id+' 矢量路径数不一致');
@@ -34,13 +34,13 @@ async page => {
  },ids);
  assert(!quality.issues.length,JSON.stringify(quality));
  const arch=page.locator('[data-diagram="gallery:architecture-intent"]'),wiring=page.locator('[data-diagram="gallery:wiring-intent"]');
- await arch.scrollIntoViewIfNeeded();await arch.screenshot({path:'.engdoc-build/gallery/layout-intent-architecture.png'});
- await wiring.scrollIntoViewIfNeeded();await wiring.screenshot({path:'.engdoc-build/gallery/layout-intent-wiring.png'});
+ await arch.scrollIntoViewIfNeeded();await arch.screenshot({path:'.edoc-build/gallery/layout-intent-architecture.png'});
+ await wiring.scrollIntoViewIfNeeded();await wiring.screenshot({path:'.edoc-build/gallery/layout-intent-wiring.png'});
  await wiring.locator('.x6-node[data-cell-id="label:board:net.FLASH_SCK"]').click();const selected=JSON.parse(await page.locator('#properties').innerText());assert(selected.endpoints.length===3&&selected.endpoints.includes('board:J1.SCK'),'选择原 Net 应保留第三端点');
- await wiring.locator('[data-display=relation-labels]').uncheck();assert(await page.evaluate(()=>window.EngDocGraphs.find(g=>g.container.closest('[data-diagram]').dataset.diagram==='gallery:wiring-intent').getEdges().every(e=>e.isVisible())),'隐藏标题不能隐藏路径');await wiring.locator('[data-display=relation-labels]').check();
- const pending=page.waitForEvent('download');await wiring.locator('[data-action=svg]').click();const download=await pending;await download.saveAs('.engdoc-build/gallery/layout-intent-export.svg');
+ await wiring.locator('[data-display=relation-labels]').uncheck();assert(await page.evaluate(()=>window.EdocGraphs.find(g=>g.container.closest('[data-diagram]').dataset.diagram==='gallery:wiring-intent').getEdges().every(e=>e.isVisible())),'隐藏标题不能隐藏路径');await wiring.locator('[data-display=relation-labels]').check();
+ const pending=page.waitForEvent('download');await wiring.locator('[data-action=svg]').click();const download=await pending;await download.saveAs('.edoc-build/gallery/layout-intent-export.svg');
  await page.emulateMedia({media:'print'});assert(await arch.locator('.static-svg').isVisible()&&await wiring.locator('.static-svg').isVisible(),'打印图必须完整可见');
- await wiring.locator('.static-svg').screenshot({path:'.engdoc-build/gallery/layout-intent-print.png'});await page.emulateMedia({media:'screen'});
+ await wiring.locator('.static-svg').screenshot({path:'.edoc-build/gallery/layout-intent-print.png'});await page.emulateMedia({media:'screen'});
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'布局提示不能导致整页窄屏溢出');
  assert(!errors.length,errors.join(';'));return {...quality,download:true,print:true,mobile:true,errors};
 }

@@ -1,7 +1,7 @@
-"""虚构板级工程 CSV → EngDoc；数值只来自项目源，不硬编码引脚或 Net。"""
+"""虚构板级工程 CSV → edoc；数值只来自项目源，不硬编码引脚或 Net。"""
 import csv,json,os
 from pathlib import Path
-root=Path.cwd();out=Path(os.environ['ENGDOC_IR_OUTPUT']);out.mkdir(parents=True,exist_ok=True)
+root=Path.cwd();out=Path(os.environ['EDOC_IR_OUTPUT']);out.mkdir(parents=True,exist_ok=True)
 def csvrows(name):
  with(root/'board'/name).open(encoding='utf-8',newline='')as f:return list(csv.DictReader(f))
 def src(name,selector):return {'file':'board/'+name,'selector':selector}

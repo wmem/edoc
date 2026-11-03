@@ -14,18 +14,18 @@ import {query} from '../packages/core/query.ts';
 import {repository} from './helpers.ts';
 
 function project(t:{after:(fn:()=>void)=>void},source='export default {};'){
- const root=mkdtempSync(join(tmpdir(),'engdoc-project-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ const root=mkdtempSync(join(tmpdir(),'edoc-project-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
  const write=(file:string,value:string|unknown)=>{mkdirSync(resolve(root,file,'..'),{recursive:true});writeFileSync(join(root,file),typeof value==='string'?value:JSON.stringify(value,null,2));};
- write('docs/engdoc.config.js',source);write('README.md','# 项目说明\n正文。');
+ write('docs/edoc.config.js',source);write('README.md','# 项目说明\n正文。');
  return {root,write,config:()=>resolveProjectConfig(undefined,root),load:async()=>loadProject(await resolveProjectConfig(undefined,root))};
 }
 const facts={objects:[{id:'a',kind:'node',label:'A'},{id:'b',kind:'node',label:'B'}],relations:[{id:'ab',kind:'connection',class:'data',label:'数据流',endpoints:['a','b']}]};
 const view={id:'v',kind:'architecture',include:{objects:['a','b'],relations:['ab']}};
-const cli=(root:string,args:string[]=[])=>spawnSync(process.execPath,[join(repository,'packages/cli/engdoc.ts'),...args],{cwd:root,encoding:'utf8',timeout:20000});
+const cli=(root:string,args:string[]=[])=>spawnSync(process.execPath,[join(repository,'packages/cli/edoc.ts'),...args],{cwd:root,encoding:'utf8',timeout:20000});
 test('空 JS 配置支持纯正文，无 docs/ir/manifest/额外清单，默认值可直接构建',async t=>{
- const p=project(t),config=await p.config();assert.equal(config.file,join(p.root,'docs/engdoc.config.js'));assert.equal(config.root,p.root);assert.equal(config.data,'docs/ir');assert.equal(config.title,p.root.split('/').at(-1));assert.deepEqual(config.documents,['README.md']);assert.equal(config.outputs[0].file,join(p.root,'output/index.html'));assert.equal(config.outputs.length,1);
+ const p=project(t),config=await p.config();assert.equal(config.file,join(p.root,'docs/edoc.config.js'));assert.equal(config.root,p.root);assert.equal(config.data,'docs/ir');assert.equal(config.title,p.root.split('/').at(-1));assert.deepEqual(config.documents,['README.md']);assert.equal(config.outputs[0].file,join(p.root,'output/index.html'));assert.equal(config.outputs.length,1);
  const loaded=await p.load();assert.equal(loaded.dataFiles.length,0);assert.equal(loaded.graph.connections.size,0);assert.equal(existsSync(join(p.root,'manifest.json')),false);
- const r=cli(p.root);assert.equal(r.status,0,r.stderr);assert.match(readFileSync(join(p.root,'output/index.html'),'utf8'),/项目说明/);assert.equal(JSON.parse(readFileSync(join(p.root,'.engdoc-build/build-status.json'),'utf8')).success,true);
+ const r=cli(p.root);assert.equal(r.status,0,r.stderr);assert.match(readFileSync(join(p.root,'output/index.html'),'utf8'),/项目说明/);assert.equal(JSON.parse(readFileSync(join(p.root,'.edoc-build/build-status.json'),'utf8')).success,true);
 });
 test('显式配置覆盖发现规则，相对输入与输出以该配置目录为准',async t=>{
  const p=project(t);p.write('other/custom.js',`export default {title:'指定项目',documents:'book.mdoc',output:{html:'publish/book.html'}}`);p.write('other/book.mdoc','正文');
@@ -34,20 +34,20 @@ test('显式配置覆盖发现规则，相对输入与输出以该配置目录�
 });
 test('配置不向父目录查找，也不回退另一份配置',async t=>{
  const p=project(t);mkdirSync(join(p.root,'child'));await assert.rejects(()=>resolveProjectConfig(undefined,join(p.root,'child')),/CONFIG_MISSING/);await assert.rejects(()=>resolveProjectConfig('missing.js',p.root),/指定的配置文件不存在/);
- p.write('engdoc.config.js',"throw Error('禁止默认回退根配置')");assert.equal((await p.config()).root,p.root);rmSync(join(p.root,'docs/engdoc.config.js'));await assert.rejects(p.config,/docs\/engdoc.config.js/);
+ p.write('edoc.config.js',"throw Error('禁止默认回退根配置')");assert.equal((await p.config()).root,p.root);rmSync(join(p.root,'docs/edoc.config.js'));await assert.rejects(p.config,/docs\/edoc.config.js/);
 });
 test('标准 docs 配置的默认与显式入口一致，相对 import 仍以配置自身为准',async t=>{
- const p=project(t);p.write('docs/local-data.mjs',`export const values=${JSON.stringify(facts)};`);p.write('docs/engdoc.config.js',"import {values} from './local-data.mjs'; export default {data:context=>{if(!context.root.endsWith('"+p.root.split('/').at(-1)+"'))throw Error('错误工程根');return values;}};");
- const implicit=await p.config(),explicit=await resolveProjectConfig('docs/engdoc.config.js',p.root);assert.equal(implicit.root,explicit.root);assert.deepEqual(implicit.outputs,explicit.outputs);assert.ok(implicit.configInputs.includes(join(p.root,'docs/local-data.mjs')));assert.equal((await p.load()).graph.index.get('a')!.entity.label,'A');
- p.write('docs/engdoc.config.mjs','export default {};');assert.equal((await resolveProjectConfig('docs/engdoc.config.mjs',p.root)).root,p.root);
- p.write('docs/engdoc.config.cjs','module.exports = {};');assert.equal((await resolveProjectConfig('docs/engdoc.config.cjs',p.root)).root,p.root);
+ const p=project(t);p.write('docs/local-data.mjs',`export const values=${JSON.stringify(facts)};`);p.write('docs/edoc.config.js',"import {values} from './local-data.mjs'; export default {data:context=>{if(!context.root.endsWith('"+p.root.split('/').at(-1)+"'))throw Error('错误工程根');return values;}};");
+ const implicit=await p.config(),explicit=await resolveProjectConfig('docs/edoc.config.js',p.root);assert.equal(implicit.root,explicit.root);assert.deepEqual(implicit.outputs,explicit.outputs);assert.ok(implicit.configInputs.includes(join(p.root,'docs/local-data.mjs')));assert.equal((await p.load()).graph.index.get('a')!.entity.label,'A');
+ p.write('docs/edoc.config.mjs','export default {};');assert.equal((await resolveProjectConfig('docs/edoc.config.mjs',p.root)).root,p.root);
+ p.write('docs/edoc.config.cjs','module.exports = {};');assert.equal((await resolveProjectConfig('docs/edoc.config.cjs',p.root)).root,p.root);
  p.write('docs/custom.js',"export default {documents:'local.mdoc'};");p.write('docs/local.mdoc','自定义配置目录正文');assert.equal((await resolveProjectConfig('docs/custom.js',p.root)).root,join(p.root,'docs'));
 });
 test('子工程标准配置位于 docs 时，自动扫描边界覆盖其整个工程且仍可独立构建',async t=>{
- const p=project(t,`export default {projectId:'parent',documents:'.',children:{child:'child/docs/engdoc.config.js'}};`);
- p.write('child/docs/engdoc.config.js',"throw Error('未接入不能执行子配置')");p.write('child/overview.mdoc','# 子工程根部说明');p.write('child/docs/index.mdoc','# 子工程正文\n\n[根部说明](../overview.mdoc)');p.write('child/docs/ir/facts.json',{objects:[{id:'child-only',kind:'node',label:'子工程事实'}]});
+ const p=project(t,`export default {projectId:'parent',documents:'.',children:{child:'child/docs/edoc.config.js'}};`);
+ p.write('child/docs/edoc.config.js',"throw Error('未接入不能执行子配置')");p.write('child/overview.mdoc','# 子工程根部说明');p.write('child/docs/index.mdoc','# 子工程正文\n\n[根部说明](../overview.mdoc)');p.write('child/docs/ir/facts.json',{objects:[{id:'child-only',kind:'node',label:'子工程事实'}]});
  assert.ok((await p.load()).documents.files.every(file=>!file.startsWith('child/')));
- p.write('child/docs/engdoc.config.js',"export default {projectId:'child'};");p.write('README.md','{% section id="parent" title="父工程" %}\n\n{% include project="child" /%}\n\n{% /section %}');
+ p.write('child/docs/edoc.config.js',"export default {projectId:'child'};");p.write('README.md','{% section id="parent" title="父工程" %}\n\n{% include project="child" /%}\n\n{% /section %}');
  const combined=await loadBook(await p.config());assert.equal(combined.projects.get('child')!.config.root,join(p.root,'child'));assert.ok(!combined.root.graph.index.has('child-only'));assert.ok(combined.projects.get('child')!.graph.index.has('child-only'));assert.ok(combined.projects.get('child')!.documents.files.includes('overview.mdoc'));
  const independent=await loadBook(await resolveProjectConfig(undefined,join(p.root,'child')));assert.deepEqual([...independent.projects.keys()],['child']);assert.ok(independent.root.graph.index.has('child-only'));
 });
@@ -87,7 +87,7 @@ for(const [name,source,code]of [
  ['对象引用不完整',`export default {data:{relations:[{id:'broken',kind:'connection',class:'data',endpoints:['a','b']}]}};`,'REFERENCE_MISSING']
 ] as const)test(name+' 明确失败',async t=>{const p=project(t,source);await assert.rejects(p.load,new RegExp(code));});
 test('自动数据扫描拒绝路径/符号链接逃逸，图表 schema 仍严格',async t=>{
- const p=project(t);const outside=mkdtempSync(join(tmpdir(),'engdoc-outside-'));t.after(()=>rmSync(outside,{recursive:true,force:true}));mkdirSync(join(p.root,'docs/ir'),{recursive:true});writeFileSync(join(outside,'facts.json'),JSON.stringify(facts));symlinkSync(outside,join(p.root,'docs/ir/link'));await assert.rejects(p.load,/PATH_SCOPE/);
+ const p=project(t);const outside=mkdtempSync(join(tmpdir(),'edoc-outside-'));t.after(()=>rmSync(outside,{recursive:true,force:true}));mkdirSync(join(p.root,'docs/ir'),{recursive:true});writeFileSync(join(outside,'facts.json'),JSON.stringify(facts));symlinkSync(outside,join(p.root,'docs/ir/link'));await assert.rejects(p.load,/PATH_SCOPE/);
  rmSync(join(p.root,'docs/ir/link'));p.write('docs/ir/bad.json',{objects:[{id:'n',kind:'node',label:'N',typo:true}]});await assert.rejects(p.load,/SCHEMA/);
 });
 test('读取不改变输入，重复加载使用当前文件内容，不用内容 hash',async t=>{
@@ -100,7 +100,7 @@ test('批量端口的重复来源每轮只定位一次，新一轮仍拒绝符�
  fs.realpathSync=((...args:any[])=>{if(String(args[0])===join(p.root,'source.dat'))calls++;return Reflect.apply(original,fs,args);})as typeof fs.realpathSync;syncBuiltinESMExports();
  try{
   const result=await p.load();assert.equal(result.graph.index.size,2001);assert.equal(result.inputs.filter(file=>file===join(p.root,'source.dat')).length,1);assert.equal(calls,2,'输入收集与语义校验各定位一次，不按端口重复文件系统检查');
-  const outside=mkdtempSync(join(tmpdir(),'engdoc-source-outside-'));t.after(()=>rmSync(outside,{recursive:true,force:true}));writeFileSync(join(outside,'data'),'外部文件');
+  const outside=mkdtempSync(join(tmpdir(),'edoc-source-outside-'));t.after(()=>rmSync(outside,{recursive:true,force:true}));writeFileSync(join(outside,'data'),'外部文件');
   rmSync(join(p.root,'source.dat'));symlinkSync(join(outside,'data'),join(p.root,'source.dat'));await assert.rejects(p.load,/PATH_SCOPE/);
  }finally{fs.realpathSync=original;syncBuiltinESMExports();}
 });

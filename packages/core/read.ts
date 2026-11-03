@@ -23,8 +23,8 @@ export function readDocument(graph:Graph,id:string,options:ReadOptions={}){
   const copy=(node:any):any=>{
    if(scope==='self'&&node.type==='tag'&&node.tag==='section')return;
    remember(node);
-   const result=new Markdoc.Ast.Node(node.type,Object.fromEntries(Object.entries(node.attributes).filter(([key])=>!key.startsWith('__engdoc'))),(node.children??[]).map(copy).filter(Boolean),node.tag);
-   result.inline=node.inline;result.annotations=node.annotations.filter((a:any)=>!a.name?.startsWith('__engdoc'));
+   const result=new Markdoc.Ast.Node(node.type,Object.fromEntries(Object.entries(node.attributes).filter(([key])=>!key.startsWith('__edoc'))),(node.children??[]).map(copy).filter(Boolean),node.tag);
+   result.inline=node.inline;result.annotations=node.annotations.filter((a:any)=>!a.name?.startsWith('__edoc'));
    return result;
   };
   const content=Markdoc.format(section.children.map(copy).filter(Boolean)).trim(),characters=Array.from(content),end=Math.min(characters.length,offset+maxChars);

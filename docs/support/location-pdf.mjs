@@ -8,7 +8,7 @@ const objects=[
  '<< /Type /Catalog /Pages 2 0 R /Names << /Dests << /Names [(DETAIL) [5 0 R /FitR 92 277 459 594]] >> >> >>',
  '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
  '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 7 0 R >> >> /Contents 4 0 R >>',
- stream('BT /F1 24 Tf 60 700 Td (EngDoc PDF location example) Tj 0 -50 Td /F1 14 Tf (Fictional reference file - not a circuit design.) Tj 0 -30 Td (The target DETAIL is on physical page 2.) Tj ET'),
+ stream('BT /F1 24 Tf 60 700 Td (edoc PDF location example) Tj 0 -50 Td /F1 14 Tf (Fictional reference file - not a circuit design.) Tj 0 -30 Td (The target DETAIL is on physical page 2.) Tj ET'),
  '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>',
  stream('BT /F1 24 Tf 60 700 Td (Page 2 - DETAIL) Tj ET\n0.95 0.98 1 rg 92 277 367 317 re f\n0.1 0.4 0.6 RG 2 w 92 277 367 317 re S\n0.1 0.2 0.3 rg BT /F1 18 Tf 120 450 Td (Stable target: detail) Tj 0 -35 Td /F1 12 Tf (Normalized rectangle: 0.15 0.25 0.75 0.65) Tj 0 -35 Td (Use browser Back to return to the article.) Tj ET'),
  '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'

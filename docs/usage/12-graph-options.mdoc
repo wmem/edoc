@@ -1,0 +1,78 @@
+{% section id="use:graph-options" title="图形分组与接口显示" %}
+
+父子框图、逻辑选集和模块接口回答不同问题。先按[结构与接线](04-diagrams.mdoc)选好显示范围，再按本页设置分组、顺序和初始状态；不要把这些设置写回真实连接。
+
+{% section id="use:graph-groups" title="父子框与逻辑集合不是同一种分组" %}
+
+下面的处理模块用 parentId 包含接收、发送单元；两路单元另组成 Group，便于临时查看集合总览。试着点击“总览 两路处理单元”，然后展开：
+
+{% diagram id="author:hierarchy" /%}
+
+同一批事实也可以初始显示集合总览：
+
+{% diagram id="author:group-overview" /%}
+
+parentId 定义框内外层级；Group.members 只定义选集，不能替代物理或语义父子关系。Group 总览是旧逻辑集合的临时投影，不改变原关系；完整 SVG 与文档 PDF 保留视图定义内的原节点和连接。模块协议接口使用 Node.interfaces，见下节。
+
+{% /section %}
+
+{% section id="use:graph-interface-options" title="排列接口并只展开需要的一端" %}
+
+两个视图复用同一组虚构接口和三条连接。先看接口默认总览，再切换到局部展开：
+
+{% tabs %}
+{% tab name="默认总览" %}
+{% diagram id="author:interface-default" /%}
+{% /tab %}
+{% tab name="排序与局部展开" %}
+{% diagram id="author:interface-override" /%}
+{% /tab %}
+{% /tabs %}
+
+第二张将 STREAM 排在 CTRL 前面，主控接口位于右边，外设接口位于左边；只有主控 CTRL 初始展开，READY 排在 COMMAND 前。点击任一接口名称旁的三角可独立改变它，不影响其他接口。
+
+interfaceOrder 排接口，portOrder 排成员，interfaceSides 决定接口及其成员的左右边，interfaceOverrides 覆盖单个接口的初始模式。它们都引用原接口/端口 ID，不改变来源或端点。完整约束见 {% reference id="ref:graph-layout" /%} 和 {% reference id="ref:graph-display" /%}。
+
+{% /section %}
+
+{% section id="use:interface-tables" title="接口汇总表与逐信号表" %}
+
+interface 标签引用 Node、Interface 或直接含端口的 Group 时生成表。overview 汇总成员数量、方向和位宽集合；detailed 展开真实信号：
+
+```text
+{% interface id="author:host" mode="overview" /%}
+{% interface id="author:host.ctrl" mode="detailed" /%}
+```
+
+{% interface id="author:host" mode="overview" /%}
+{% interface id="author:host.ctrl" mode="detailed" /%}
+
+若 id 指向 View，标签渲染图形，折叠由视图 display 控制；mode 不替代 interfaceMode，也不把图变成表。图内点击展开后的真实信号，可查看属性和“图中定位信号”操作；准确事实仍可用 query 获取。
+
+{% /section %}
+
+{% section id="use:graph-options-create" title="在自己的工程创建这些视图" %}
+
+先保存完整事实到 docs/ir/authoring/graph-options.json。这里的接口是虚构摘录，不代表任何完整标准协议：
+
+{% code file="docs/ir/authoring/graph-options.json" language="json" /%}
+
+再将下面配置保存为 docs/edoc.config.js。已有配置时只合并 views 项，保留自己的其他字段：
+
+{% code file="docs/support/recipes/graph-options.config.js" language="javascript" /%}
+
+在 docs/index.mdoc 中引用要使用的视图或接口表，执行 edoc：
+
+```text
+{% diagram id="author:hierarchy" /%}
+{% diagram id="author:group-overview" /%}
+{% diagram id="author:interface-default" /%}
+{% diagram id="author:interface-override" /%}
+{% interface id="author:host" mode="overview" /%}
+{% interface id="author:host.ctrl" mode="detailed" /%}
+```
+
+这是完整创建配方。实际项目只选择回答当前问题的视图，不必在主体一次展开全部图表。颜色、线型、快捷操作与静态输出范围见 {% reference id="ref:graph-operations" label="图形阅读与导出" /%}。
+
+{% /section %}
+{% /section %}

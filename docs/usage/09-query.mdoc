@@ -5,8 +5,8 @@
 {% section id="use:read" title="查一段说明" %}
 
 ```sh
-engdoc outline --depth 0 --format json
-engdoc read --id ref:config-data --format text
+edoc outline --depth 0 --format json
+edoc read --id ref:config-data --format text
 ```
 
 outline 给出目录和来源，read 按显式 section ID 返回规范化 Markdown。默认 scope=self，不附带子 section 正文；返回子章节身份供继续选择，不包含 HTML、字体或图形载荷。
@@ -20,8 +20,8 @@ read 保留图表引用标签，不把关系数据或 PDF 展开为正文。需�
 {% section id="use:query-object" title="查一个事实" %}
 
 ```sh
-engdoc query --id board:U1.QSPI_CLK
-engdoc query --id board:net.FLASH_SCK --depth 1
+edoc query --id board:U1.QSPI_CLK
+edoc query --id board:net.FLASH_SCK --depth 1
 ```
 
 默认 depth=0，不递归展开工程。关系的真实端点与直接关系保持完整，max-items 只限制额外展开，不能用它截短 Net。

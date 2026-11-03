@@ -39,7 +39,7 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 | 字段 | 契约 |
 | --- | --- |
 | direction | LR/RL/TB/BT |
-| routing | orthogonal/polyline |
+| routing | orthogonal/polyline，当前组合差异见下方已知缺口 |
 | portOrder | 真实端口 ID 顺序 |
 | interfaceOrder | 接口 ID 顺序 |
 | interfaceSides | 接口 ID 到 left/right 的映射 |
@@ -47,11 +47,23 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 | constraints | order/align 相对约束 |
 | relationHints | 原 Connection ID 到显示主干、边和通道提示 |
 
-order/align 使用 axis=x/y，nodes 至少两个不重复、同父容器的 Node。order.gap 缺省 80，最小 16，表示最小间距；align.axis 是中心坐标对齐轴。它们与已有固定位置冲突时明确报错。
+约束对象的 type 为 order/align，axis 使用 x/y，nodes 至少两个不重复、同父容器的 Node。order.gap 缺省 80，最小 16，表示最小间距；align.axis 是中心坐标对齐轴。它们与已有固定位置冲突时明确报错。
+
+direction 缺省 LR，routing 缺省 orthogonal。未写入 portOrder/interfaceOrder 的成员保留声明中的相对顺序。interfaceSides 只控制对应接口及其成员的 left/right；普通 Node 端点的边通过 relationHints.endpointSides 声明，不把 Node ID 填入接口映射。
+
+positions 的 objectId、x、y 是视图内布局提示，不是浏览器屏幕坐标；工具会整体平移以保留边界、标题和父框留白。完整的接口排序、侧边和局部展开对照见[图形进阶配方](../12-graph-options.mdoc#use:graph-options-create)。
 
 relationHints 以当前视图中的原 Connection ID 为键。backbone 为多端点选择显示主干；channel 仅接受两端点关系，不能用于三端点 Net。字段和组合限制见 {% reference id="ref:relation-hints" label="relationHints 字段" /%}，可运行的数据见 {% reference id="ref:layout-example" label="主干与通道完整示例" /%}。
 
 无任意折点字段，也没有已完成的全组件项目默认/引用覆盖链。静态引用与循环在 validate 检查，尺寸与实际路径问题在 build/export 检查。
+
+{% section id="ref:graph-routing" title="routing 的已知实现差异" %}
+
+orthogonal 与 polyline 都是当前接受的值。自动路由分支会将 polyline 传给 ELK；固定位置、相对约束、层级、自环及多端点等图会进入专用路由分支，当前该分支未统一处理 polyline。
+
+因此不能仅凭填写 polyline 就宣称这些组合已得到相同的折线路由能力。这是待修复的实现/契约差异，不是本次补文档主动缩小原能力要求，也不是要求后续继续忽略该字段。此次组合探针和实际范围见 {% reference id="acceptance:routing-audit" label="路由组合核验" /%}；自动布局可按需使用 polyline，需要这些复杂组合时仍需检查实际结果。
+
+{% /section %}
 
 {% section id="ref:relation-hints" title="relationHints 字段与限制" %}
 
@@ -82,7 +94,7 @@ relationHints 是对象，键必须是本视图 include.relations 中已有的 C
 
 {% code file="docs/ir/authoring/layout.json" language="json" /%}
 
-在自己的 docs/index.mdoc 写入并运行 engdoc：
+在自己的 docs/index.mdoc 写入并运行 edoc：
 
 ```text
 {% diagram id="system:routing" /%}
@@ -90,9 +102,43 @@ relationHints 是对象，键必须是本视图 include.relations 中已有的 C
 
 {% diagram id="system:routing" /%}
 
-数据主线从生产者右侧进入消费者左侧；两端点反馈偏好下方通道；三端点时钟使用 backbone，观察点仍保留为第三端点。显示主干不表示电气走线拓扑。执行 engdoc query --id system:clock 可核对三个完整端点。
+数据主线从生产者右侧进入消费者左侧；两端点反馈偏好下方通道；三端点时钟使用 backbone，观察点仍保留为第三端点。显示主干不表示电气走线拓扑。执行 edoc query --id system:clock 可核对三个完整端点。
 
 {% /section %}
 
+{% /section %}
+
+{% section id="ref:graph-operations" title="图形阅读、分组与导出" %}
+
+| 操作 | 当前行为 |
+| --- | --- |
+| 适配画布 / 清晰阅读 | 分别查看完整范围或恢复 1:1 比例；大图可拖动平移 |
+| ＋ / －、Ctrl/Command 加滚轮 | 调整缩放，不改变工程数据 |
+| 大图查看 | 扩大当前图，Esc 退出；键盘焦点保留在大图操作区域 |
+| 选择 / 清除高亮 | 选择节点、端口、接口或关系查看来源及邻接关系；清除高亮恢复显示 |
+| 类别筛选 | 只改变当前网页显示，不删除原关系或完整静态输出 |
+| Group 总览 | 临时查看逻辑集合；模块协议使用 Node.interfaces，不用 Group 代替归属 |
+| 接口总览 / 全部展开 | 作用于当前图；单个接口也可独立合并/展开，选中聚合线可展开两端并查组成连接 |
+| 图中定位信号 | 图内选中真实信号后，在操作区展开所属接口并滚到该图 |
+| SVG / 当前视图 SVG | 完整逐信号导出与当前接口展开投影分开；文字开关按显示参考的规则处理 |
+
+Node.parentId、Group 和 Node.interfaces 的同源创建与实际操作见[图形分组与接口显示](../12-graph-options.mdoc)。Group 初始状态用 collapsedGroups，接口初始状态用 interfaceMode/Overrides；两者不能混用。临时选择和缩放不会写回源文件。
+
+{% section id="ref:graph-classes" title="关系类别与预设线型" %}
+
+| class | 当前预设 |
+| --- | --- |
+| data | 蓝色实线 |
+| control | 紫色虚线 |
+| clock | 橙色短虚线 |
+| reset | 红紫色点划组合 |
+| event | 绿色点线 |
+| power | 红色长虚线 |
+| configuration | 橄榄色点划组合 |
+| other 或未知 class | 灰色虚线 |
+
+class 是开放字符串，未知类仍有自己的分类名称，样式回落到 other。粗的接口聚合线由显示投影生成，不是新的电气连接。当前没有每个视图任意指定颜色/线型的公开字段；portAttributes 也不是样式容器。
+
+{% /section %}
 {% /section %}
 {% /section %}

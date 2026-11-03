@@ -7,7 +7,7 @@ import {renderSVG} from '../render-graph/svg.ts';
 import {styles} from '../render-graph/styles.ts';
 import {anchor} from '../core/identity.ts';
 import type {InterfaceRenderer} from './client.ts';
-declare global{interface Window{EngDocInterfaceViews:{holder:HTMLElement;scene:Scene;state:InterfaceState;lastDurationMs:number}[];}}
+declare global{interface Window{EdocInterfaceViews:{holder:HTMLElement;scene:Scene;state:InterfaceState;lastDurationMs:number}[];}}
 export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,cleanup})=>{
  holder.dataset.initialized='true';holder.dataset.busy='false';
  let current:Scene=data.scenes[holder.dataset.diagram!],state=initialInterfaceState(current.interfaceModel!),desired=structuredClone(state),revision=0,committed=0,running=false,desiredFocus:string|undefined;
@@ -16,8 +16,8 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
  const attributes=holder.querySelector<HTMLInputElement>('[data-display="port-attributes"]')!,labels=holder.querySelector<HTMLInputElement>('[data-display="relation-labels"]')!;
  holder.insertBefore(selection,canvas);
  const graph=new X6({container:canvas,async:false,width:holder.clientWidth,height:Math.min(680,Math.max(420,current.height)),background:{color:'#f8fafc'},panning:true,mousewheel:{enabled:true,modifiers:['ctrl','meta'],minScale:.15,maxScale:4},interacting:false});
- window.EngDocGraphs.push(graph);window.EngDocInterfaceViews??=[];
- const entry={holder,scene:current,state,lastDurationMs:0,restore:(next:InterfaceState)=>request(next)};window.EngDocInterfaceViews.push(entry);
+ window.EdocGraphs.push(graph);window.EdocInterfaceViews??=[];
+ const entry={holder,scene:current,state,lastDurationMs:0,restore:(next:InterfaceState)=>request(next)};window.EdocInterfaceViews.push(entry);
  const relationLabels=new Map<string,string>();
  const cellID=(base:string)=>{let id=base;while(graph.getCellById(id))id+='#';return id;};
  const fit=()=>graph.zoomToFit({padding:26,maxScale:1});
@@ -88,7 +88,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
  }
  graph.on('node:click',({node,e})=>{const target=e.target as Element,toggleId=target.closest('[data-interface-toggle]')?.getAttribute('data-interface-toggle');if(toggleId){toggle(toggleId);return;}choose(target.closest('[data-source-port]')?.getAttribute('data-source-port')??target.closest('[port]')?.getAttribute('port')??node.getData()?.relationId??node.getData()?.entityId);});
  graph.on('edge:click',({edge})=>choose(edge.getData().relationId));
- document.addEventListener('engdoc-selection',event=>{const detail=(event as CustomEvent).detail,id=detail.id,iface=current.interfaces!.find(i=>i.members.includes(id));if(!iface)return;if(detail.locate){if(detail.holder===holder)expand([iface.id]);return;}if(actions.querySelector('[data-interface-locate]'))return;const b=button('图中定位信号',()=>{expand([iface.id]);holder.scrollIntoView({block:'center'});},actions);b.dataset.interfaceLocate=id;},{signal});
+ document.addEventListener('edoc-selection',event=>{const detail=(event as CustomEvent).detail,id=detail.id,iface=current.interfaces!.find(i=>i.members.includes(id));if(!iface||detail.holder&&detail.holder!==holder)return;if(detail.locate){if(detail.holder===holder)expand([iface.id]);return;}if(actions.querySelector('[data-interface-locate]'))return;const b=button('图中定位信号',()=>{for(let p:HTMLElement|null=holder;p;p=p.parentElement){if(p instanceof HTMLDetailsElement)p.open=true;if(p.classList.contains('tab'))p.hidden=false;}expand([iface.id]);holder.scrollIntoView({block:'center'});},actions);b.dataset.interfaceLocate=id;},{signal});
  holder.addEventListener('keydown',e=>{const id=(e.target as Element).closest('[data-interface-toggle]')?.getAttribute('data-interface-toggle');if(id&&['Enter',' '].includes(e.key)){e.preventDefault();toggle(id);}});
  holder.querySelector('[data-action=interfaces-collapse]')!.addEventListener('click',()=>{const next=structuredClone(desired);current.interfaces!.forEach(i=>next.modes[i.id]='collapsed');void request(next,current.nodes[0]?.id);});
  holder.querySelector('[data-action=interfaces-expand]')!.addEventListener('click',()=>expand(current.interfaces!.map(i=>i.id)));

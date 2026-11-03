@@ -10,9 +10,9 @@ npm run docs:build
 npm run docs:dev
 ```
 
-docs:build 使用根配置生成 output/index.html，可直接离线打开。docs:dev 先构建再在 127.0.0.1:5175 预览，当前不监听源变化；修改后重建并刷新。ENGDOC_DOCS_PORT 可调整端口。图示数据转换需要已有 Python 3，优先 uv；不会自动安装 Python 或浏览器。
+docs:build 使用根配置生成 output/index.html，可直接离线打开。docs:dev 先构建再在 127.0.0.1:5175 预览，当前不监听源变化；修改后重建并刷新。EDOC_DOCS_PORT 可调整端口。图示数据转换需要已有 Python 3，优先 uv；不会自动安装 Python 或浏览器。
 
-源码 CLI 为 node packages/cli/engdoc.ts，安装后的用户直接使用 engdoc。需要静态整本文档时运行 npm run docs:pdf，并用 ENGDOC_CHROMIUM 指定已有 Chromium。
+源码 CLI 为 node packages/cli/edoc.ts，安装后的用户直接使用 edoc。需要静态整本文档时运行 npm run docs:pdf，并用 EDOC_CHROMIUM 指定已有 Chromium。
 
 {% /section %}
 
@@ -29,7 +29,7 @@ npm run test:reader
 npm run test:package
 ```
 
-Schema、图形布局或接口变化另跑对应 test:schema、test:graph、test:layout、test:interface。网页行为和图形用已有 Chromium 验证相关页面，使用 playwright-cli 实际操作与截图观察；自动测试使用 ENGDOC_CHROMIUM。
+Schema、图形布局或接口变化另跑对应 test:schema、test:graph、test:layout、test:interface。网页行为和图形用已有 Chromium 验证相关页面，使用 playwright-cli 实际操作与截图观察；自动测试使用 EDOC_CHROMIUM。
 
 检查阅读页切换、稳定链接、查询来源和字符截断，不能只检查生成文件存在。图形逐线核对端点/分支、框边、标签和典型阅读尺寸；SVG/PDF 静态输出分别验收。PDF 检查中文、书签、Tabs/折叠与有代表性的版面。
 

@@ -29,10 +29,10 @@
 mkdir -p /path/to/chromium
 # --no-same-owner 避免托管文件系统无法还原归档 UID/GID 的报错。
 tar --no-same-owner --zstd -xf chromium-headless-shell-1243.tar.zst -C /path/to/chromium
-export ENGDOC_CHROMIUM=/path/to/chromium/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+export EDOC_CHROMIUM=/path/to/chromium/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
 ```
 
-也可安装 Playwright 对应 Chromium 后省略 ENGDOC_CHROMIUM。HTML 构建本身不需要浏览器；PDF 和浏览器测试需要。没有启动 Web Server。
+也可安装 Playwright 对应 Chromium 后省略 EDOC_CHROMIUM。HTML 构建本身不需要浏览器；PDF 和浏览器测试需要。没有启动 Web Server。
 
 {% /section %}
 

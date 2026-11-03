@@ -16,7 +16,7 @@ export async function routeScene(elk:LayoutEngine,nodes:SceneNode[],relations:Co
  const automatic=!(view.layout?.positions?.length)&&!view.layout?.constraints?.length&&!Object.keys(view.layout?.relationHints??{}).length&&!nodes.some(n=>n.parentId)&&!relations.some(r=>new Set(r.endpoints.map(id=>graph.index.get(id)?.ownerId??id)).size===1);
  // 多端点沿用节点层次布局，再求一棵实际连接树；虚拟 hub 不再增加额外布局层。
  if(!automatic||relations.some(r=>r.endpoints.length>2))return fixedRoutes(nodes,relations,graph,view);
- const ids=new Set([...graph.index.keys()]),fresh=()=>{let id='__engdoc_layout_'+ids.size;while(ids.has(id))id+='_';ids.add(id);return id;};
+ const ids=new Set([...graph.index.keys()]),fresh=()=>{let id='__edoc_layout_'+ids.size;while(ids.has(id))id+='_';ids.add(id);return id;};
  const labels=new Map(relations.map(r=>[r.id,labelBox(r.label??r.id)]));
  const edgeRecords:{edge:ElkExtendedEdge;relation:Connection}[]=[];
  for(const r of relations){const box=labels.get(r.id)!;

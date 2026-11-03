@@ -12,7 +12,7 @@
 {% section id="guide:home:part-01" title="接入时先用最小配置" %}
 
 
-在项目创建 `docs/engdoc.config.js`，最小内容为 `export default {};`。在项目根运行 `engdoc`，正文默认工程根 `README.md`，标准工程数据扫描工程根 `docs/ir/`，输出工程根 `output/index.html`。标准 docs 配置属于上一级工程，其他显式自定义配置仍以配置目录为根；JS 相对 import 按配置文件本身解析。需要时直接增加 `documents`、`output`、`views`、`tables` 等字段，不再要求另建 manifest 或导入 JSON 配置。
+在项目创建 `docs/edoc.config.js`，最小内容为 `export default {};`。在项目根运行 `edoc`，正文默认工程根 `README.md`，标准工程数据扫描工程根 `docs/ir/`，输出工程根 `output/index.html`。标准 docs 配置属于上一级工程，其他显式自定义配置仍以配置目录为根；JS 相对 import 按配置文件本身解析。需要时直接增加 `documents`、`output`、`views`、`tables` 等字段，不再要求另建 manifest 或导入 JSON 配置。
 
 先组织入口正文及 include，再用稳定 ID 引用图表与事实。工具负责扫描参与发布的全部正文，发现标准数据、检查引用和来源路径；折叠和 Tabs 中的内容也会检查。不要让 Agent 维护第二份依赖清单。仅正文引用的视图会布局；全工程索引仍保留查询能力。
 
@@ -123,9 +123,9 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 示例查询流程：
 
 ```sh
-engdoc outline --config docs/engdoc.config.js --depth 0 --format json
-engdoc query --config docs/engdoc.config.js --id project:object --depth 1 --format json
-engdoc read --config docs/engdoc.config.js --id stable:section --format json
+edoc outline --config docs/edoc.config.js --depth 0 --format json
+edoc query --config docs/edoc.config.js --id project:object --depth 1 --format json
+edoc read --config docs/edoc.config.js --id stable:section --format json
 ```
 
 outline 给出父子关系、级别、源 sectionId 与正文来源，不需要读取生成网页。query 用于工程事实与引用；read 按稳定 section ID 返回规范化 Markdown，默认 self 不附带子章节正文，显式 subtree 才展开。返回来源、子章节和字符截断/nextOffset，按需继续读取。不要为查一个 pin 或一项配置读取整份 HTML。

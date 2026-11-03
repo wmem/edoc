@@ -1,0 +1,33 @@
+{% section id="layout:home" title="页面编排示例" %}
+
+同一页先解释用途，再按需查看参考。这里的内容只用于演示编排。
+
+{% columns ratio="2:1" %}
+{% panel title="主要阅读" %}
+主要步骤放在较宽的一栏，按顺序解释读者要做什么。
+{% /panel %}
+{% panel title="按需查证" %}
+{% reference id="layout:details" label="打开详细参考" /%}
+{% /panel %}
+{% /columns %}
+
+{% tabs %}
+{% tab name="使用步骤" %}
+先确认输入，再查看结果。
+{% /tab %}
+{% tab name="查询入口" %}
+已知问题时，直接查看 {% reference id="layout:details" label="详细参考" /%}。
+{% /tab %}
+{% /tabs %}
+
+{% section id="layout:details" title="详细参考" collapsed=true %}
+
+这里保存按需读取的字段说明。网页初始折叠，文档 PDF 完整展开。
+
+| 字段 | 用途 |
+| --- | --- |
+| 输入 | 需要用户准备的内容 |
+| 结果 | 完成后应观察到的内容 |
+
+{% /section %}
+{% /section %}

@@ -4,29 +4,30 @@ import {Graph as X6} from '@antv/x6';
 import type {Scene} from '../render-graph/index.ts';
 import {styles} from '../render-graph/styles.ts';
 // 构建时注入纯数据，浏览器不读取旁路 JSON、不使用动态 import。
-declare global {interface Window {EngDocReady:boolean; EngDocGraphs:X6[];}}
+declare global {interface Window {EdocReady:boolean; EdocGraphs:X6[];}}
 export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:string,detail?:unknown)=>void;signal?:AbortSignal;cleanup?:(fn:()=>void)=>void})=>void;
 export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
 const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
-const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EngDocGraphs.forEach(g=>g.dispose());window.EngDocGraphs=[];if(window.EngDocInterfaceViews)window.EngDocInterfaceViews=[];};
-const data=JSON.parse(document.querySelector('#engdoc-data')!.textContent!);
-window.EngDocGraphs=[];
+const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
+const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
+window.EdocGraphs=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;
-function select(id:string,detail?:unknown){
+function select(id:string,detail?:unknown,origin?:HTMLElement){
  const actions=document.querySelector('#selection-actions')!;actions.replaceChildren();panel.textContent=JSON.stringify(detail??data.entities[id]??{id},null,2);const detailNode=document.querySelector('#entity-detail');if(detailNode)detailNode.textContent=panel.textContent;const a=document.querySelector<HTMLAnchorElement>('#object-link')!;a.href='#'+anchor(id);a.hidden=!data.entities[id];
- const candidate=[...document.querySelectorAll<HTMLElement>('[data-diagram]')].find(h=>{const m=data.scenes[h.dataset.diagram!]?.interfaceModel;return m?.visiblePorts.includes(id)&&m.nodes.some((n:any)=>n.interfaces?.some((i:any)=>i.members.includes(id)));});
- if(candidate&&!candidate.dataset.initialized){const button=document.createElement('button');button.textContent='图中定位信号';button.dataset.interfaceLocate=id;button.onclick=()=>{for(let p:HTMLElement|null=candidate;p;p=p.parentElement){if(p instanceof HTMLDetailsElement)p.open=true;if(p.classList.contains('tab'))p.hidden=false;}initialize(candidate);candidate.scrollIntoView({block:'center'});document.dispatchEvent(new CustomEvent('engdoc-selection',{detail:{id,locate:true,holder:candidate}}));};actions.append(button);}
- document.dispatchEvent(new CustomEvent('engdoc-selection',{detail:{id}}));
+ const candidates=[...document.querySelectorAll<HTMLElement>('[data-diagram]')].filter(h=>{const m=data.scenes[h.dataset.diagram!]?.interfaceModel;return m?.visiblePorts.includes(id)&&m.nodes.some((n:any)=>n.interfaces?.some((i:any)=>i.members.includes(id)));});
+ const candidate=origin&&candidates.includes(origin)?origin:candidates.find(h=>h.getClientRects().length>0)??candidates[0];
+ if(candidate&&!candidate.dataset.initialized){const button=document.createElement('button');button.textContent='图中定位信号';button.dataset.interfaceLocate=id;button.onclick=()=>{for(let p:HTMLElement|null=candidate;p;p=p.parentElement){if(p instanceof HTMLDetailsElement)p.open=true;if(p.classList.contains('tab'))p.hidden=false;}initialize(candidate);candidate.scrollIntoView({block:'center'});document.dispatchEvent(new CustomEvent('edoc-selection',{detail:{id,locate:true,holder:candidate}}));};actions.append(button);}
+ document.dispatchEvent(new CustomEvent('edoc-selection',{detail:{id,holder:candidate}}));
 }
 function initialize(holder:HTMLElement){
  if(holder.dataset.initialized)return;
- if(data.scenes[holder.dataset.diagram!].interfaceModel&&interfaceRenderer){interfaceRenderer(holder,{data,select,signal:abort.signal,cleanup:fn=>cleanups.push(fn)});return;}
+ if(data.scenes[holder.dataset.diagram!].interfaceModel&&interfaceRenderer){interfaceRenderer(holder,{data,select:(id,detail)=>select(id,detail,holder),signal:abort.signal,cleanup:fn=>cleanups.push(fn)});return;}
  holder.dataset.initialized='true';
  const s:Scene=data.scenes[holder.dataset.diagram!];
  const canvas=holder.querySelector<HTMLElement>('.canvas')!;
  const height=Math.min(680,Math.max(420,s.height));canvas.style.height=height+'px';
  const graph=new X6({container:canvas,width:canvas.clientWidth,height,background:{color:'#f8fafc'},panning:true,mousewheel:{enabled:true,modifiers:['ctrl','meta'],minScale:.15,maxScale:4},interacting:false});
- window.EngDocGraphs.push(graph);
+ window.EdocGraphs.push(graph);
  const cellID=(base:string)=>{let id=base;while(graph.getCellById(id))id+='#';return id;};
  for(const n of s.nodes){
   const markup:any[]=[{tagName:'rect',selector:'body'},{tagName:'text',selector:'title'}];
@@ -151,7 +152,7 @@ function revealTarget(id:string){
 document.addEventListener('click',e=>{const a=(e.target as Element).closest('a[href^="#"]');if(a)revealTarget(a.getAttribute('href')!.slice(1));},{signal:abort.signal});
 window.addEventListener('hashchange',()=>revealTarget(location.hash.slice(1)),{signal:abort.signal});
 if(location.hash)revealTarget(location.hash.slice(1));
-document.fonts.ready.then(()=>{if(!stopped)window.EngDocReady=true;});
+document.fonts.ready.then(()=>{if(!stopped)window.EdocReady=true;});
 return dispose;
 
 }

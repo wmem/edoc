@@ -3,7 +3,7 @@ export { query, summary } from './query.ts';
 export {readDocument} from './read.ts';
 export type {ReadOptions} from './read.ts';
 export { validateSchema, checkSchemaDefinition } from './schema.ts';
-export { EngDocError } from './errors.ts';
+export { EdocError } from './errors.ts';
 export { outline } from './outline.ts';
 export {resolveProjectConfig,loadProject} from './project.ts';
 export {scanDocuments} from './documents.ts';

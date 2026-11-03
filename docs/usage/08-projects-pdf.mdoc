@@ -9,7 +9,7 @@
 ```js
 export default {
   projectId: 'system', documents: 'docs',
-  children: {component: 'component/docs/engdoc.config.js'}
+  children: {component: 'component/docs/edoc.config.js'}
 };
 ```
 
@@ -70,7 +70,7 @@ rect 是旋转及裁切后显示区域的归一化角点 [x0,y0,x1,y1]，左上�
 
 HTML 携带正文、数据、字体、脚本和附件，按篇阅读；文件大小仍随内容和附件增长。复制 HTML 后无需源目录或服务端即可查看。
 
-文档导出 PDF 是另一项能力：engdoc build --format pdf，需要已有 Chromium。它将正文与图表展开为静态文档，不自动合并源 PDF。浏览器打印只输出当前阅读文章。
+文档导出 PDF 是另一项能力：edoc build --format pdf，需要已有 Chromium。它将正文与图表展开为静态文档，不自动合并源 PDF。浏览器打印只输出当前阅读文章。
 
 {% /section %}
 {% /section %}

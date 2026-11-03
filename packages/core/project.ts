@@ -7,7 +7,7 @@ import type {ResourcePart} from './graph.ts';
 import {scanDocuments} from './documents.ts';
 import type {DocumentPlan,DocumentReference} from './documents.ts';
 import {projectPath,requireFile} from './paths.ts';
-import {EngDocError,failure} from './errors.ts';
+import {EdocError,failure} from './errors.ts';
 import {loadAttachments,record} from './attachments.ts';
 import type {AttachmentInput} from './attachments.ts';
 import {SUPPORTED_IR_VERSION} from './load.ts';
@@ -23,11 +23,11 @@ const features=['graph','documents','tables','wavejson','references','interface-
 const pointer=(key:string)=>key.replace(/~/g,'~0').replace(/\//g,'~1');
 const plain=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.prototype.toString.call(v)==='[object Object]';
 // 标准 docs 配置属于上一级工程；其他显式配置保留配置目录作为工程根。
-const configProjectRoot=(file:string)=>{const physical=existsSync(file)?realpathSync(file):resolve(file),directory=dirname(physical);return basename(directory)==='docs'&&/^engdoc\.config\.(js|mjs|cjs)$/.test(basename(physical))?dirname(directory):directory;};
+const configProjectRoot=(file:string)=>{const physical=existsSync(file)?realpathSync(file):resolve(file),directory=dirname(physical);return basename(directory)==='docs'&&/^edoc\.config\.(js|mjs|cjs)$/.test(basename(physical))?dirname(directory):directory;};
 
 export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):Promise<ResolvedConfig>{
- const selected=resolve(cwd,requested??'docs/engdoc.config.js');
- if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前项目没有 docs/engdoc.config.js；可在该文件写 export default {}，或使用 --config 指定其他配置');
+ const selected=resolve(cwd,requested??'docs/edoc.config.js');
+ if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前项目没有 docs/edoc.config.js；可在该文件写 export default {}，或使用 --config 指定其他配置');
  requireFile(selected);const file=realpathSync(selected),root=configProjectRoot(file);
  if(!['.js','.mjs','.cjs'].includes(extname(file)))failure('CONFIG_FORMAT',file,'','配置使用 .js/.mjs/.cjs，直接导出配置内容');
  let loaded:Awaited<ReturnType<typeof loadConfigFromFile>>;
@@ -94,7 +94,7 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
   }else if(stat.isFile())readFile(path,explicit);else failure('FILE_TYPE',path,'','数据来源需要文件或目录');
  }
  let source:unknown=config.data;
- if(typeof source==='function')try{source=await source({root:config.root,documents:documents.files.slice(),references:documents.references.map(r=>({...r}))});}catch(error){if(error instanceof EngDocError)throw error;failure('DATA_PROVIDER',config.file,'/data',String(error));}
+ if(typeof source==='function')try{source=await source({root:config.root,documents:documents.files.slice(),references:documents.references.map(r=>({...r}))});}catch(error){if(error instanceof EdocError)throw error;failure('DATA_PROVIDER',config.file,'/data',String(error));}
  if(typeof source==='string')scan(source,!config.defaultData);
  else if(Array.isArray(source)){if(source.some(v=>typeof v!=='string'))failure('CONFIG_TYPE',config.file,'/data','路径数组只能包含字符串');source.forEach(p=>scan(p,true));}
  else addDataset(source,config.file,'/data');

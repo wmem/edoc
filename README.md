@@ -1,4 +1,4 @@
-# EngDoc
+# edoc
 
 把 Markdown 正文、工程数据和阅读组织转换为对人友好的离线文档。Agent 维护低噪声的源数据与知识，工具负责图、表、接口、目录和交互；查询时按 ID 读取正文或事实，不必读取生成的 HTML。
 
@@ -10,13 +10,15 @@
 npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
 ```
 
-在你的工程准备 `README.md`，创建 `docs/engdoc.config.js`：
+工具名称已统一为 `edoc`，远程仓库地址暂沿用历史路径。已有工程按[名称迁移](docs/usage/reference/config.mdoc#ref:edoc-migration)更新命令、配置和环境变量。
+
+在你的工程准备 `README.md`，创建 `docs/edoc.config.js`：
 
 ```js
 export default {};
 ```
 
-运行 `engdoc`，打开 `output/index.html`。纯正文不需要 IR、转换脚本或 Chromium。配置直接写在 JS 文件中；需要更多能力时逐项增加：
+运行 `edoc`，打开 `output/index.html`。纯正文不需要 IR、转换脚本或 Chromium。配置直接写在 JS 文件中；需要更多能力时逐项增加：
 
 ```js
 export default {
@@ -30,7 +32,7 @@ export default {
 
 ## 正式文档
 
-正式文档使用 EngDoc 自身渲染，图表和示例就是使用说明的一部分。当前仓库没有公开托管地址，在源码仓库运行：
+正式文档使用 edoc 自身渲染，图表和示例就是使用说明的一部分。当前仓库没有公开托管地址，在源码仓库运行：
 
 ```sh
 npm ci
@@ -41,6 +43,7 @@ npm run docs:build
 
 - [使用文档源入口](docs/usage/index.mdoc)：第一次生成 → 文档组织 → 数据 → 图表 → 工程组合与 PDF。
 - [查询参考源入口](docs/usage/reference/index.mdoc)：配置、命令、标签、数据、布局和限制，按需读取。
+- [能力索引](docs/usage/capabilities.mdoc)：按图形、表格、页面控制和接入发布，直达教程、字段与实际例子。
 - [开发文档源入口](docs/development/index.mdoc)：架构、修改与验证、需求及历史资料索引。
 
 教程直接展示架构、物理接线、多接口展开、状态、时序和布局对照；详细信号表和覆盖关系放在查询参考。硬件样例均为虚构，不能用于真实设计；波形和覆盖关联不代表执行了 RTL 仿真。
@@ -52,11 +55,11 @@ npm run docs:build
 在具有配置和源文件的工程目录运行：
 
 ```sh
-engdoc outline --depth 0 --format json
-engdoc read --id ref:config-data --format text
-engdoc query --id board:net.FLASH_SCK --depth 1
+edoc outline --depth 0 --format json
+edoc read --id ref:config-data --format text
+edoc query --id board:net.FLASH_SCK --depth 1
 ```
 
-后两条 ID 属于本手册，用于其他工程时替换成该工程的稳定 ID。`read` 默认只取当前章节，明确返回来源、子章节和截断范围；`query` 取工程事实。修改源数据与知识后重建，不手改 HTML/SVG。源码开发可用 `node packages/cli/engdoc.ts` 代替已安装的 `engdoc`。
+后两条 ID 属于本手册，用于其他工程时替换成该工程的稳定 ID。`read` 默认只取当前章节，明确返回来源、子章节和截断范围；`query` 取工程事实。修改源数据与知识后重建，不手改 HTML/SVG。源码开发可用 `node packages/cli/edoc.ts` 代替已安装的 `edoc`。
 
-创建工程文档前可运行 `engdoc guide` 读取[推荐指南](docs/usage/guide.mdoc)；维护本工具遵循 [AGENTS.md](AGENTS.md)。需求基线和历史验收的源码定位见[开发文档索引](docs/development/history.mdoc)，当时的测试通过不能代替当前图形与阅读体验验收。
+创建工程文档前可运行 `edoc guide` 读取[推荐指南](docs/usage/guide.mdoc)；维护本工具遵循 [AGENTS.md](AGENTS.md)。需求基线和历史验收的源码定位见[开发文档索引](docs/development/history.mdoc)，当时的测试通过不能代替当前图形与阅读体验验收。

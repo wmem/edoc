@@ -20,11 +20,13 @@
 {% table id="system:modules" /%}
 ```
 
-执行 engdoc，表格直接从原对象读取名称，结果如下：
+执行 edoc，表格直接从原对象读取名称，结果如下：
 
 {% table id="system:modules" /%}
 
 修改原对象 label 后重建，图与表会一起变化；表格行不用再抄一份名称。完整字段只在 {% reference id="ref:tables" label="表格参考" /%} 维护。
+
+需要维护参数、布尔值或 JSON、引用某一行时，继续读[组织与查询表格](10-tables.mdoc)，不要把这些值先伪装成器件对象。
 
 {% /section %}
 
@@ -43,7 +45,7 @@ export default {
 };
 ```
 
-这是项目数据转换模块，不是再次调用 engdoc 的启动包装器。工具先扫描正文，再调用 data；转换器也可根据 context.references 判断正文需要什么，但完整事实与查询范围由项目明确决定。
+这是项目数据转换模块，不是再次调用 edoc 的启动包装器。工具先扫描正文，再调用 data；转换器也可根据 context.references 判断正文需要什么，但完整事实与查询范围由项目明确决定。
 
 提取源已有的 pin、位宽和端点，补充知识只写缺失语义。保留 source.file 和 source.selector，查询结果才能指回可修改的源。不要在转换器里另抄一份正常工程数值。
 
@@ -52,8 +54,8 @@ export default {
 {% section id="use:data-check" title="先校验，再显示" %}
 
 ```sh
-engdoc validate --format json
-engdoc query --id system:data
+edoc validate --format json
+edoc query --id system:data
 ```
 
 validate 检查结构、ID、关系和正文引用；query 查看指定对象。二者不要求生成 HTML，也不计算页面图形布局。校验通过证明文档数据符合契约，不证明真实电路或 RTL 功能正确。

@@ -1,0 +1,41 @@
+{
+  "objects": [
+    {"id": "author:control", "kind": "node", "label": "外部主控"},
+    {"id": "author:subsystem", "kind": "node", "label": "处理模块"},
+    {"id": "author:rx", "kind": "node", "label": "接收单元", "parentId": "author:subsystem"},
+    {"id": "author:tx", "kind": "node", "label": "发送单元", "parentId": "author:subsystem"},
+    {"id": "author:workers", "kind": "group", "label": "两路处理单元", "members": ["author:rx", "author:tx"]},
+    {
+      "id": "author:host", "kind": "node", "label": "虚构主控",
+      "ports": [
+        {"id": "author:host.command", "label": "COMMAND", "direction": "out", "width": 32, "attributes": {"purpose": "控制字"}},
+        {"id": "author:host.ready", "label": "READY", "direction": "in", "width": 1},
+        {"id": "author:host.payload", "label": "PAYLOAD", "direction": "out", "width": 16}
+      ],
+      "interfaces": [
+        {"id": "author:host.ctrl", "label": "CTRL", "protocol": "示例控制接口", "role": "master", "members": ["author:host.command", "author:host.ready"]},
+        {"id": "author:host.stream", "label": "STREAM", "members": ["author:host.payload"]}
+      ]
+    },
+    {
+      "id": "author:device", "kind": "node", "label": "虚构外设",
+      "ports": [
+        {"id": "author:device.command", "label": "COMMAND", "direction": "in", "width": 32},
+        {"id": "author:device.ready", "label": "READY", "direction": "out", "width": 1},
+        {"id": "author:device.payload", "label": "PAYLOAD", "direction": "in", "width": 16}
+      ],
+      "interfaces": [
+        {"id": "author:device.ctrl", "label": "CTRL", "role": "slave", "members": ["author:device.command", "author:device.ready"]},
+        {"id": "author:device.stream", "label": "STREAM", "members": ["author:device.payload"]}
+      ]
+    }
+  ],
+  "relations": [
+    {"id": "author:configure", "kind": "connection", "class": "control", "label": "配置", "endpoints": ["author:control", "author:rx"]},
+    {"id": "author:transmit", "kind": "connection", "class": "data", "label": "发送请求", "endpoints": ["author:control", "author:tx"]},
+    {"id": "author:notify", "kind": "connection", "class": "event", "label": "内部状态", "endpoints": ["author:rx", "author:tx"]},
+    {"id": "author:command", "kind": "connection", "class": "data", "label": "控制字", "endpoints": ["author:host.command", "author:device.command"], "direction": {"sources": ["author:host.command"], "targets": ["author:device.command"]}},
+    {"id": "author:ready", "kind": "connection", "class": "control", "label": "就绪", "endpoints": ["author:device.ready", "author:host.ready"], "direction": {"sources": ["author:device.ready"], "targets": ["author:host.ready"]}},
+    {"id": "author:payload", "kind": "connection", "class": "data", "label": "数据", "endpoints": ["author:host.payload", "author:device.payload"], "direction": {"sources": ["author:host.payload"], "targets": ["author:device.payload"]}}
+  ]
+}

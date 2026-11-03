@@ -11,7 +11,7 @@ import {compileBook} from '../packages/pack-html/book.ts';
 import {repository} from './helpers.ts';
 
 test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读取可用',{timeout:60000},async()=>{
- const book=await loadBook(await resolveProjectConfig(join(repository,'docs/engdoc.config.js'))),graph=book.root.graph;
+ const book=await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js'))),graph=book.root.graph;
  assert.equal(book.projects.size,3);assert.equal(book.projects.get('manual-component')?.documents.documents.length,1);assert.ok(book.projects.has('document-first-demo'));
  const navigation=projectOutline(book),flatten=(entries:any[]):any[]=>entries.flatMap(e=>[e,...flatten(e.children)]),all=flatten(navigation.chapters);
  for(const label of ['使用文档','查询参考','开发文档','第一次生成','接口合并与展开'])assert.ok(all.some(n=>n.label===label),label);
@@ -42,13 +42,13 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
 });
 
 test('从正式正文提取的创建配方可在含 README 的用户工程连续构建，三端点 channel 明确失败',{timeout:60000},async t=>{
- const manual=await loadBook(await resolveProjectConfig(join(repository,'docs/engdoc.config.js'))),graph=manual.root.graph;
+ const manual=await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js'))),graph=manual.root.graph;
  const blocks=(id:string,language:string)=>[...readDocument(graph,id).content.matchAll(new RegExp('```'+language+'\\n([\\s\\S]*?)```','g'))].map(match=>match[1]);
  const one=(id:string,language:string)=>{const values=blocks(id,language);assert.equal(values.length,1,id);return values[0];};
- const root=mkdtempSync(join(tmpdir(),'engdoc-authoring-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ const root=mkdtempSync(join(tmpdir(),'edoc-authoring-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
  const write=(file:string,content:string)=>{mkdirSync(join(root,file,'..'),{recursive:true});writeFileSync(join(root,file),content);};
  write('README.md','# 仓库首页\n不应取代配置指定的正文。');
- write('docs/engdoc.config.js',one('use:architecture','javascript'));
+ write('docs/edoc.config.js',one('use:architecture','javascript'));
  write('docs/ir/authoring/objects.json',one('use:standard-data','json'));
  const overview=one('use:architecture','text');write('docs/index.mdoc','# 创建结果\n'+overview);
  const initial=await loadBook(await resolveProjectConfig(undefined,root));assert.deepEqual(initial.root.documents.documents.map(d=>d.file),['docs/index.mdoc']);
@@ -61,7 +61,7 @@ test('从正式正文提取的创建配方可在含 README 的用户工程连续
  const book=await loadBook(await resolveProjectConfig(undefined,root));
  assert.deepEqual((query(book.root.graph,'system:clock').target.entity as any).endpoints,['system:producer','system:consumer','system:probe']);
  const data=await compileBook(book),page=Object.values(data.pages)[0];assert.match(page.html,/<caption>模块名称查询<\/caption>/);assert.match(page.html,/生产者/);assert.match(page.html,/最小握手示意/);assert.ok(page.scenes['system:routing']);
- const build=spawnSync(process.execPath,[join(repository,'packages/cli/engdoc.ts')],{cwd:root,encoding:'utf8',timeout:30000});assert.equal(build.status,0,build.stderr);assert.ok(existsSync(join(root,'output/index.html')));
+ const build=spawnSync(process.execPath,[join(repository,'packages/cli/edoc.ts')],{cwd:root,encoding:'utf8',timeout:30000});assert.equal(build.status,0,build.stderr);assert.ok(existsSync(join(root,'output/index.html')));
  const invalid=JSON.parse(layout[1]);invalid.views[0].layout.relationHints['system:clock'].channel='bottom';write('docs/ir/authoring/layout.json',JSON.stringify(invalid));
  await assert.rejects(()=>loadBook(book.root.config),(error:any)=>error.diagnostics?.some((d:any)=>d.code==='LAYOUT_CHANNEL'));
 });

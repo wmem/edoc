@@ -41,39 +41,39 @@ def main():
 
 - 工程提交：`{project_commit}`
 - 方案提交：`{solution_commit}`
-- checkpoint：`EngDoc-checkpoint.tar.gz`
+- checkpoint：`edoc-checkpoint.tar.gz`
 - 包内只包含同一检查点的两个完整 Git bundle 和本 task。
 
 恢复命令（在解压后的目录执行）：
 
 ```bash
-git clone EngDoc-latest.git.bundle engdoc
-git clone EngDoc-solution.git.bundle engdoc-solution
-cd engdoc
+git clone edoc-latest.git.bundle edoc
+git clone edoc-solution.git.bundle edoc-solution
+cd edoc
 npm ci
-node packages/cli/engdoc.ts validate --config examples/board-flash/engdoc.config.json --format json
+node packages/cli/edoc.ts validate --config examples/board-flash/edoc.config.json --format json
 ```
 
 完整测试按 README 分组运行。先核对两个仓库 HEAD 与本文件提交号一致，再继续下一阶段。
 '''
     output.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='engdoc-checkpoint-', dir=output) as temporary:
+    with tempfile.TemporaryDirectory(prefix='edoc-checkpoint-', dir=output) as temporary:
         stage = Path(temporary)
-        for repo, name in [(project, 'EngDoc-latest.git.bundle'),
-                           (solution, 'EngDoc-solution.git.bundle')]:
+        for repo, name in [(project, 'edoc-latest.git.bundle'),
+                           (solution, 'edoc-solution.git.bundle')]:
             git(repo, 'bundle', 'create', str(stage / name), '--all')
             git(repo, 'bundle', 'verify', str(stage / name))
-        (stage / 'EngDoc-task.md').write_text(content, encoding='utf-8')
-        names = ['EngDoc-latest.git.bundle', 'EngDoc-solution.git.bundle', 'EngDoc-task.md']
-        archive = stage / 'EngDoc-checkpoint.tar.gz'
+        (stage / 'edoc-task.md').write_text(content, encoding='utf-8')
+        names = ['edoc-latest.git.bundle', 'edoc-solution.git.bundle', 'edoc-task.md']
+        archive = stage / 'edoc-checkpoint.tar.gz'
         with tarfile.open(archive, 'w:gz') as tar:
             for name in names:
                 tar.add(stage / name, arcname=name)
         for name in names:
             shutil.copyfile(stage / name, output / name)
-        shutil.copyfile(stage / 'EngDoc-task.md', task)
+        shutil.copyfile(stage / 'edoc-task.md', task)
         archive.replace(output / archive.name)
-    print(f'检查点已生成：{output / "EngDoc-checkpoint.tar.gz"}')
+    print(f'检查点已生成：{output / "edoc-checkpoint.tar.gz"}')
     print(f'工程 {project_commit}；方案 {solution_commit}')
 
 

@@ -7,7 +7,7 @@ import { json, sample, expectCode } from './helpers.ts';
 for (const [schema, resource] of [['manifest', 'manifest'], ['object', 'objects'], ['relation', 'relations'], ['view', 'views']] as const) {
   test(`${schema} Schema 接受完整演示正例`, () => assert.deepEqual(validateSchema(schema, json(join(sample, 'ir', resource + '.json'))), []));
 }
-test('config Schema 正例', () => assert.deepEqual(validateSchema('config', json(join(sample, 'engdoc.config.json'))), []));
+test('config Schema 正例', () => assert.deepEqual(validateSchema('config', json(join(sample, 'edoc.config.json'))), []));
 
 const cases: [string, Parameters<typeof validateSchema>[0], any, string][] = [
   ['manifest 缺少 projectId', 'manifest', { irVersion: '1.0', resources: [], entryDocuments: [] }, '/projectId'],

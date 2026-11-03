@@ -1,7 +1,7 @@
 {
   "projectId": "demo-board",
   "title": "FPGA–Flash 工程连接文档（虚构样例）",
-  "irDirectory": ".engdoc-build/ir",
+  "irDirectory": ".edoc-build/ir",
   "adapter": {
     "command": [
       "python3",

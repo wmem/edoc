@@ -36,7 +36,7 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
   }});
   page.html=rendered.chapters;page.scenes=rendered.scenes;page.outline=rendered.outline;
   page.html=page.html.replace(/(<a\b[^>]*\bhref=")#([^"\s]*)(")/g,(whole,before,fragment,after)=>{
-   if(fragment.startsWith('engdoc='))return whole;
+   if(fragment.startsWith('edoc='))return whole;
    const section=Object.entries(data.projects[project].sections).find(([,s])=>s.anchor===fragment||s.anchor===anchor(fragment));
    if(section)return before+esc(routeHash({kind:'page',project,id:section[1].page,anchor:section[1].anchor}))+after;
    const entity=[...node.graph.index.keys()].find(key=>anchor(key)===fragment);if(entity)return before+esc(routeHash({kind:'entity',project,id:entity}))+after;
@@ -45,8 +45,8 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
  }
  // 所有目标页生成后，再校验本地页与锚点。跨工程导航不扩大加载集合，也不阻止构建。
  for(const page of Object.values(data.pages)){
-  const parser=/<a\b[^>]*href="(#engdoc=[^"]+)"/g;for(const match of page.html.matchAll(parser)){
-   const route=JSON.parse(decodeURIComponent(match[1].slice(8).replace(/&amp;/g,'&')));if(route.project!==page.project)continue;
+  const parser=/<a\b[^>]*href="(#edoc=[^"]+)"/g;for(const match of page.html.matchAll(parser)){
+   const route=JSON.parse(decodeURIComponent(match[1].slice('#edoc='.length).replace(/&amp;/g,'&')));if(route.project!==page.project)continue;
    if(route.kind==='page'){
     const target=data.pages[targetKey(route.project,route.id)];if(!target)failure('DOCUMENT_PAGE',page.file,'','本地文档不存在：'+route.id);
     if(route.anchor){const resolved=resolvePageAnchor(target.html,route.anchor);if(!resolved)failure('DOCUMENT_ANCHOR',page.file,'','本地锚点不存在：'+route.anchor);}
@@ -60,9 +60,9 @@ export async function bookHTML(book:Book):Promise<string>{
  const data=await compileBook(book),hasPdf=Object.values(data.projects).some(p=>Object.keys(p.attachments).length),hasInterfaces=Object.values(data.pages).some(p=>Object.values(p.scenes).some(s=>s.interfaceModel)),extension=import.meta.url.endsWith('.ts')?'ts':'js';
  if(hasPdf){const root=dirname(require.resolve('pdfjs-dist/package.json'));data.pdfWorker=readFileSync(resolve(root,'build/pdf.worker.min.mjs'),'utf8');data.pdfSupport=Object.create(null);for(const name of ['cmaps','standard_fonts','wasm','iccs'])for(const file of readdirSync(resolve(root,name)))if(!file.startsWith('LICENSE')&&!file.startsWith('quickjs'))data.pdfSupport![name+'/'+file]=readFileSync(resolve(root,name,file)).toString('base64');}
  const key=String(hasPdf)+':'+String(hasInterfaces);let script=clients.get(key);
- if(!script){const result:any=await build({configFile:false,logLevel:'error',define:{__ENGDOC_PDF__:String(hasPdf),__ENGDOC_INTERFACES__:String(hasInterfaces)},build:{write:false,minify:true,target:'es2024',lib:{entry:resolve(directory,`../doc-theme/reader-entry.${extension}`),formats:['iife'],name:'EngDocReader'}}});script=(result.output??result[0].output).filter((c:any)=>c.type==='chunk').map((c:any)=>c.code).join('\n');clients.set(key,script!);}
+ if(!script){const result:any=await build({configFile:false,logLevel:'error',define:{__EDOC_PDF__:String(hasPdf),__EDOC_INTERFACES__:String(hasInterfaces)},build:{write:false,minify:true,target:'es2024',lib:{entry:resolve(directory,`../doc-theme/reader-entry.${extension}`),formats:['iife'],name:'EdocReader'}}});script=(result.output??result[0].output).filter((c:any)=>c.type==='chunk').map((c:any)=>c.code).join('\n');clients.set(key,script!);}
  const css=readFileSync(resolve(directory,'../doc-theme/style.css'),'utf8')+readFileSync(resolve(directory,'../doc-theme/reader.css'),'utf8');
- const result=`<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data: blob:; connect-src 'none'; worker-src blob:; object-src 'none'; base-uri 'none'"><title>${esc(data.title)}</title><style>${fontCSS()}${css}</style></head><body><nav class="sidebar"><div class="brand">EngDoc</div><div class="version">${esc(data.title)}</div><input id="search" type="search" aria-label="搜索" placeholder="搜索文档、对象与来源"><div id="results"></div><div id="toc"></div></nav><main><div id="notice" role="alert" hidden></div><nav id="breadcrumbs" aria-label="阅读位置"></nav><div id="reader"></div></main><aside class="properties"><h3>对象属性</h3><a id="object-link" hidden>跳转到工程对象</a><div id="selection-actions"></div><pre id="properties">点击图中对象查看来源与完整关系。</pre><nav id="page-toc" aria-label="本页目录"></nav></aside><script id="engdoc-data" type="application/json">{}</script><script id="engdoc-licenses" type="application/json">${json(licenses())}</script><script id="engdoc-book" type="application/json">${json(data)}</script><script>${script!.replace(/<\/script/gi,'<\\/script')}</script></body></html>`;
+ const result=`<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data: blob:; connect-src 'none'; worker-src blob:; object-src 'none'; base-uri 'none'"><title>${esc(data.title)}</title><style>${fontCSS()}${css}</style></head><body><nav class="sidebar"><div class="brand">edoc</div><div class="version">${esc(data.title)}</div><input id="search" type="search" aria-label="搜索" placeholder="搜索文档、对象与来源"><div id="results"></div><div id="toc"></div></nav><main><div id="notice" role="alert" hidden></div><nav id="breadcrumbs" aria-label="阅读位置"></nav><div id="reader"></div></main><aside class="properties"><h3>对象属性</h3><a id="object-link" hidden>跳转到工程对象</a><div id="selection-actions"></div><pre id="properties">点击图中对象查看来源与完整关系。</pre><nav id="page-toc" aria-label="本页目录"></nav></aside><script id="edoc-data" type="application/json">{}</script><script id="edoc-licenses" type="application/json">${json(licenses())}</script><script id="edoc-book" type="application/json">${json(data)}</script><script>${script!.replace(/<\/script/gi,'<\\/script')}</script></body></html>`;
  assertSelfContained(result);return result;
 }
 
@@ -78,7 +78,7 @@ export async function bookPrintHTML(book:Book):Promise<string>{
  const data=await compileBook(book,{headingLevel:(project,page,id,level)=>levels.get(headingKey(project,page,id))??level});
  const printId=(project:string,page:string,id='')=>'print-'+Array.from(new TextEncoder().encode(JSON.stringify([project,page,id])),b=>b.toString(16).padStart(2,'0')).join('');
  const destination=(route:any)=>{if(!data.projects[route.project])return '';if(route.kind==='page'&&!Object.hasOwn(data.pages,targetKey(route.project,route.id)))return '';if(route.kind==='entity'&&!Object.hasOwn(data.projects[route.project].entities,route.id))return '';if(route.kind==='page')return printId(route.project,route.id,route.anchor??'');if(route.kind==='entity'){const section=data.projects[route.project]?.sections[route.id];return section?printId(route.project,section.page,section.anchor):printId(route.project,'objects',route.id);}return '';};
- const rewrite=(text:string,project:string,page:string)=>text.replace(/\bid="([^"]+)"/g,(_all,id)=>'id="'+printId(project,page,id)+'"').replace(/((?:xlink:)?href=")#(?!engdoc=)([^"]+)(")/g,(_all,before,id,after)=>before+'#'+printId(project,page,id)+after).replace(/url\(#([^)]*)\)/g,(_all,id)=>'url(#'+printId(project,page,id)+')').replace(/(<a\b[^>]*href=")#engdoc=([^"]+)(")/g,(_all,before,encoded,after)=>{const target=destination(JSON.parse(decodeURIComponent(encoded)));return target?before+'#'+target+after:before.replace(/href="$/,'data-print-reference="')+'HTML'+after;});
+ const rewrite=(text:string,project:string,page:string)=>text.replace(/\bid="([^"]+)"/g,(_all,id)=>'id="'+printId(project,page,id)+'"').replace(/((?:xlink:)?href=")#(?!edoc=)([^"]+)(")/g,(_all,before,id,after)=>before+'#'+printId(project,page,id)+after).replace(/url\(#([^)]*)\)/g,(_all,id)=>'url(#'+printId(project,page,id)+')').replace(/(<a\b[^>]*href=")#edoc=([^"]+)(")/g,(_all,before,encoded,after)=>{const target=destination(JSON.parse(decodeURIComponent(encoded)));return target?before+'#'+target+after:before.replace(/href="$/,'data-print-reference="')+'HTML'+after;});
  const toc=(nodes:ReturnType<typeof bookNavigation>,depth=0):string=>nodes.map(n=>`<div class="print-toc-entry" style="padding-left:${depth*18}px">${n.page?`<a href="#${printId(n.project,n.page,n.anchor??'')}">${esc(n.label)}</a>`:`<span>${esc(n.label)}</span>`}</div>`+toc(n.children,depth+1)).join('');
  const printPage=(p:ReaderPage,depth:number)=>{
   emitted.add(targetKey(p.project,p.id));
@@ -94,7 +94,7 @@ export async function bookPrintHTML(book:Book):Promise<string>{
  }).join('');
  const chapters=printNavigation(navigation)+Object.values(data.pages).filter(p=>!emitted.has(targetKey(p.project,p.id))).map(p=>printPage(p,0)).join('');
  const referenced=new Map<string,Set<string>>();
- for(const page of Object.values(data.pages))for(const match of page.html.matchAll(/<a\b[^>]*href="#engdoc=([^"]+)"/g)){
+ for(const page of Object.values(data.pages))for(const match of page.html.matchAll(/<a\b[^>]*href="#edoc=([^"]+)"/g)){
   const route=JSON.parse(decodeURIComponent(match[1]));
   if(route.kind!=='entity'||!data.projects[route.project]?.entities[route.id]||data.projects[route.project].sections[route.id])continue;
   if(!referenced.has(route.project))referenced.set(route.project,new Set());referenced.get(route.project)!.add(route.id);
@@ -108,5 +108,5 @@ export async function bookPrintHTML(book:Book):Promise<string>{
    :`<details class="fact" id="${printId(p.id,'objects',id)}"><summary>${esc(e.label??id)}</summary><pre>${esc(JSON.stringify(e))}</pre></details>`).join('')+'</section>';
  }).join('');
  const css=readFileSync(resolve(directory,'../doc-theme/style.css'),'utf8')+readFileSync(resolve(directory,'../doc-theme/reader.css'),'utf8');
- return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><style>${fontCSS()}${css}</style></head><body><main><header class="cover"><h1>${esc(data.title)}</h1></header><div class="print-toc"><p class="print-toc-title">目录</p>${toc(navigation)}</div>${chapters}${facts}</main><script>window.EngDocReady=true</script></body></html>`;
+ return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><style>${fontCSS()}${css}</style></head><body><main><header class="cover"><h1>${esc(data.title)}</h1></header><div class="print-toc"><p class="print-toc-title">目录</p>${toc(navigation)}</div>${chapters}${facts}</main><script>window.EdocReady=true</script></body></html>`;
 }

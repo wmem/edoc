@@ -28,7 +28,7 @@ export function prepareOutline(graph:Graph){
     ...(parent?{parentId:parent.id}:{}),source:locations.get(node)??{file,line:1},children:[]};
    (parent?parent.children:roots).push(entry);flat.push(entry);entries.set(node,entry);
    // Markdoc.resolve 会克隆 AST；仅在本次解析的内存节点上携带内部关联键。
-   node.attributes.__engdocOutlineId=id;return entry;
+   node.attributes.__edocOutlineId=id;return entry;
   };
   const walk=(node:any,scope:Scope)=>{
    if(node.type==='tag'&&node.tag==='section'){

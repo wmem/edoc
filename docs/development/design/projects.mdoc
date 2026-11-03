@@ -49,17 +49,17 @@ Agent 维护子工程时，只需要处理本工程的配置、文档和数据�
 
 ```text
 repo/
-├── engdoc.config.js
+├── edoc.config.js
 ├── docs/
 │   ├── index.mdoc
 │   └── ir/
 ├── fpga/
-│   ├── engdoc.config.js
+│   ├── edoc.config.js
 │   └── docs/
 │       ├── index.mdoc
 │       └── ir/
 └── board/
-    ├── engdoc.config.js
+    ├── edoc.config.js
     └── docs/
         ├── index.mdoc
         └── ir/
@@ -73,8 +73,8 @@ export default {
   title: '仓库工程文档',
   documents: 'docs/index.mdoc',
   children: {
-    fpga: './fpga/engdoc.config.js',
-    board: './board/engdoc.config.js'
+    fpga: './fpga/edoc.config.js',
+    board: './board/edoc.config.js'
   }
 };
 ```
@@ -82,7 +82,7 @@ export default {
 子配置只管理自己：
 
 ```js
-// fpga/engdoc.config.js
+// fpga/edoc.config.js
 export default {
   projectId: 'fpga',
   title: 'FPGA 文档',

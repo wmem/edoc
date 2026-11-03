@@ -1,4 +1,4 @@
-.engdoc-build/
+.edoc-build/
 node_modules/
 coverage/
 *.tgz

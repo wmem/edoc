@@ -16,6 +16,8 @@
 
 每个文件应有完整闭合结构；不能跨文件拼半个 section。默认 read 排除嵌套 section 的正文，因此可用稳定小节把查询细节与主说明分开。
 
+完整创建配方及同源实际效果见[页面编排](../11-page-layout.mdoc)，不需要 IR。
+
 下面实际使用 columns 与 panel，将主说明和补充入口放在同一行；窄屏时会纵向排列：
 
 {% columns ratio="2:1" %}
@@ -40,6 +42,16 @@
 
 {% /section %}
 
+{% section id="ref:markdoc-fold-tabs" title="初始折叠与 Tabs 的规则" %}
+
+section.collapsed 缺省为 false；true 使用原生折叠区域，title 为折叠标题，未写 title 时使用 id。各节必须完整闭合，可嵌套，但不能跨文件拼接开闭标签。
+
+tabs 必须直接包含至少一个 tab，tab.name 必需且同组唯一；tab 不能独立放在 tabs 外。网页初始显示第一个 Tab，没有默认选中名称或按 URL 参数选择 Tab 的公开属性。文档 PDF 展开全部 Tab 与折叠内容。
+
+panel.title 是布局说明，不加入章节目录。columns.ratio 缺省 1:1，只接受 1:1、2:1、1:2、1:1:1；窄屏纵向排列。正文不接受任意 style/class、自由列宽或手工分页属性。后续发布与主题扩展属于规划，不是现有标签字段。
+
+{% /section %}
+
 {% section id="ref:markdoc-data" title="图、接口、表与时序" %}
 
 | 标签 | 引用目标 |
@@ -52,7 +64,9 @@
 
 它们均为自闭合标签。图、接口、表和时序的 id 必需，只从当前工程取数据；code 改用 file。未知、缺失或类型不符时报错，折叠与 Tabs 内也会校验。
 
-code 使用 file 而非 id，路径相对工程根：`{% code file="docs/engdoc.config.js" language="javascript" /%}`。它内联不含 NUL 的 UTF-8 文本，最大 128 KiB，保留来源并参与输入保护；不执行程序或模板标签，不加载其中的链接。适合展示真实配置和正文模板，避免复制后忘记同步。原文件中的 HTML/脚本按文本转义。与 file include 展开正文的用途不同。
+interface 的 mode 只控制 Node/Interface/直接端口 Group 的汇总或明细表；id 指向 View 时渲染图形，接口合并由视图 display 控制。实际表格对照见[接口汇总与逐信号表](../12-graph-options.mdoc#use:interface-tables)。
+
+code 使用 file 而非 id，路径相对工程根：`{% code file="docs/edoc.config.js" language="javascript" /%}`。它内联不含 NUL 的 UTF-8 文本，最大 128 KiB，保留来源并参与输入保护；不执行程序或模板标签，不加载其中的链接。适合展示真实配置和正文模板，避免复制后忘记同步。原文件中的 HTML/脚本按文本转义。与 file include 展开正文的用途不同。
 
 {% /section %}
 
@@ -68,6 +82,22 @@ code 使用 file 而非 id，路径相对工程根：`{% code file="docs/engdoc.
 file include 相对本工程根；普通 Markdown 文件链接相对实际源文件。本地文件链接检查文件与锚点。跨工程跳转使用 projectId，仅查当前 HTML，未包含提示，不产生外部源依赖。
 
 图片支持项目范围内 PNG/JPEG/WebP，并内联。普通外链限 http/https/mailto；不允许外链运行资源或任意 HTML/SVG 执行入口。
+
+{% /section %}
+
+{% section id="ref:reading-controls" title="阅读控制" %}
+
+| 操作范围 | 已有操作与效果 |
+| --- | --- |
+| 左侧文档目录 | 全部展开/折叠仅操作文档树；分组可单独切换，没有下级文档的文章不显示展开项 |
+| 右侧本页目录 | 定位当前文章的标题和 section；页内跳转仍高亮左侧所属文章 |
+| 搜索 | 按当前产物中的文章内容、对象与来源搜索；不读取未组合的外部工程 |
+| 后退与前进 | 在文章、对象与 PDF 之间返回，恢复正文滚动、折叠、Tab 和图形阅读状态 |
+| 正文编排 | Tabs 切换视角，section 展开细节，分栏按屏宽堆叠；网页隐藏不删除完整文档 PDF 的内容 |
+
+左侧两个批量按钮不控制右侧或正文，且支持原生按钮的键盘操作；没有可展开目录时禁用。折叠后仍保留当前文章身份，切换文章时会打开它所在的目录路径。这些是临时阅读状态，不写回源文件。
+
+独立工程与组合工程的加载边界见[工程组合](../08-projects-pdf.mdoc)，PDF 操作见 {% reference id="ref:pdf-reader" /%}；图中的工具栏另查 {% reference id="ref:graph-operations" /%}。
 
 {% /section %}
 {% /section %}

@@ -1,0 +1,16 @@
+{
+  "tables": [{
+    "id": "author:settings", "kind": "table", "label": "两组虚构参数",
+    "columns": [
+      {"field": "name", "label": "配置", "type": "string"},
+      {"field": "rate", "label": "频率", "type": "number", "unit": "Hz"},
+      {"field": "enabled", "label": "启用", "type": "boolean"},
+      {"field": "detail", "label": "补充数据", "type": "json"},
+      {"field": "note", "label": "说明", "type": "string"}
+    ],
+    "rows": [
+      {"id": "author:settings:normal", "values": {"name": "标准配置", "rate": 100, "enabled": true, "detail": {"mode": "normal", "channels": 2}, "note": "**普通文本**"}},
+      {"id": "author:settings:low", "values": {"name": "低功耗配置", "rate": 20, "enabled": false, "detail": {"mode": "low", "channels": 1}}}
+    ]
+  }]
+}

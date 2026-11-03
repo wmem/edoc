@@ -1,4 +1,4 @@
-// 保存为你的工程 docs/engdoc.config.js；数据来自 docs/ir/authoring/objects.json。
+// 保存为你的工程 docs/edoc.config.js；数据来自 docs/ir/authoring/objects.json。
 export default {
   documents: 'docs',
   views: [{

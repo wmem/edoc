@@ -1,5 +1,5 @@
 {
-  "name": "engdoc",
+  "name": "edoc",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -7,10 +7,10 @@
     "node": ">=24.0.0"
   },
   "bin": {
-    "engdoc": "./dist/packages/cli/engdoc.js"
+    "edoc": "./dist/packages/cli/edoc.js"
   },
   "scripts": {
-    "engdoc": "node packages/cli/engdoc.ts",
+    "edoc": "node packages/cli/edoc.ts",
     "test:schema": "node --test tests/schema.test.ts",
     "test:core": "node --test tests/core.test.ts",
     "test:query": "node --test tests/query.test.ts",
@@ -34,12 +34,12 @@
     "test:package": "node --test tests/package.test.ts",
     "test:reader": "node --test tests/reader.test.ts",
     "test:reader-browser": "node --test tests/reader-browser.test.ts",
-    "docs:build": "node packages/cli/engdoc.ts",
+    "docs:build": "node packages/cli/edoc.ts",
     "docs:dev": "node scripts/docs.ts",
-    "docs:pdf": "node packages/cli/engdoc.ts build --format pdf",
+    "docs:pdf": "node packages/cli/edoc.ts build --format pdf",
     "test:read": "node --test tests/read.test.ts",
-    "test:manual": "node --test tests/manual.test.ts",
-    "test:manual-browser": "node --test tests/manual-browser.test.ts"
+    "test:manual": "node --test tests/manual.test.ts tests/manual-capabilities.test.ts",
+    "test:manual-browser": "node --test tests/manual-browser.test.ts tests/manual-capabilities-browser.test.ts"
   },
   "dependencies": {
     "@antv/x6": "3.1.8",

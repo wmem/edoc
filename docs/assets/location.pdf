@@ -9,9 +9,9 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 7 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 186 >>
+<< /Length 184 >>
 stream
-BT /F1 24 Tf 60 700 Td (EngDoc PDF location example) Tj 0 -50 Td /F1 14 Tf (Fictional reference file - not a circuit design.) Tj 0 -30 Td (The target DETAIL is on physical page 2.) Tj ET
+BT /F1 24 Tf 60 700 Td (edoc PDF location example) Tj 0 -50 Td /F1 14 Tf (Fictional reference file - not a circuit design.) Tj 0 -30 Td (The target DETAIL is on physical page 2.) Tj ET
 endstream
 endobj
 5 0 obj
@@ -36,11 +36,11 @@ xref
 0000000131 00000 n 
 0000000194 00000 n 
 0000000320 00000 n 
-0000000557 00000 n 
-0000000683 00000 n 
-0000001046 00000 n 
+0000000555 00000 n 
+0000000681 00000 n 
+0000001044 00000 n 
 trailer
 << /Size 8 /Root 1 0 R >>
 startxref
-1116
+1114
 %%EOF

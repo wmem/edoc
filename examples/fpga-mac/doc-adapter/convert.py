@@ -1,7 +1,7 @@
 """限定 ANSI 声明子集的 RTL 文档 Adapter；不声称自动理解任意 SystemVerilog。"""
 import json,re,os,ast
 from pathlib import Path
-root=Path.cwd();out=Path(os.environ['ENGDOC_IR_OUTPUT']);out.mkdir(parents=True,exist_ok=True)
+root=Path.cwd();out=Path(os.environ['EDOC_IR_OUTPUT']);out.mkdir(parents=True,exist_ok=True)
 text=(root/'rtl/mac_example.sv').read_text();params={k:int(v)for k,v in re.findall(r'parameter\s+(\w+)\s*=\s*(\d+)',text)}
 sem=json.loads((root/'project/semantics.json').read_text())
 def expr(expression):

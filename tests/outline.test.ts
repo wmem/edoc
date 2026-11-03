@@ -68,16 +68,16 @@ test('深层章节不截短 outline 与查询',async t=>{
 
 test('按稳定章节与相对深度渐进返回目录，省略数量明确且不修改完整树',async t=>{
  const f=book(t,'{% section id="root" title="根" %}\n{% section id="branch" title="分支" %}\n{% section id="leaf" title="叶" %}\n内容\n{% /section %}\n{% /section %}\n{% /section %}');
- const project=await loadBook(await resolveProjectConfig(join(f.root,'engdoc.config.js'))),short=projectOutline(project,{depth:0});
+ const project=await loadBook(await resolveProjectConfig(join(f.root,'edoc.config.js'))),short=projectOutline(project,{depth:0});
  assert.equal(short.chapters[0].sectionId,'root');assert.equal(short.chapters[0].children.length,0);assert.equal(short.chapters[0].childrenOmitted,1);
  const branch=projectOutline(project,{id:'branch',depth:1});assert.equal(branch.chapters.length,1);assert.equal(branch.chapters[0].children[0].sectionId,'leaf');
  assert.equal(projectOutline(project).chapters[0].children[0].children[0].sectionId,'leaf');
  expectCode(()=>projectOutline(project,{id:'missing'}),'QUERY_NOT_FOUND');for(const depth of [-1,1.5,11,NaN])expectCode(()=>projectOutline(project,{depth}),'OUTLINE_DEPTH');
 });
 test('目录按已组合工程隔离，跨项目同名 ID 必须消歧且不返回另一工程正文',async t=>{
- const f=book(t,'{% section id="same" title="父" %}\n{% include project="part" /%}\n{% /section %}');mkdirSync(join(f.root,'component'));writeFileSync(join(f.root,'component/index.mdoc'),'{% section id="same" title="子" %}子正文{% /section %}');writeFileSync(join(f.root,'component/engdoc.config.js'),"export default {projectId:'child',documents:'index.mdoc'};");
- writeFileSync(join(f.root,'engdoc.config.js'),"export default {projectId:'parent',documents:'docs/book.mdoc',children:{part:'component/engdoc.config.js'}};");
- const project=await loadBook(await resolveProjectConfig(join(f.root,'engdoc.config.js'))),flatten=(nodes:any[]):any[]=>nodes.flatMap(n=>[n,...flatten(n.children)]);
+ const f=book(t,'{% section id="same" title="父" %}\n{% include project="part" /%}\n{% /section %}');mkdirSync(join(f.root,'component'));writeFileSync(join(f.root,'component/index.mdoc'),'{% section id="same" title="子" %}子正文{% /section %}');writeFileSync(join(f.root,'component/edoc.config.js'),"export default {projectId:'child',documents:'index.mdoc'};");
+ writeFileSync(join(f.root,'edoc.config.js'),"export default {projectId:'parent',documents:'docs/book.mdoc',children:{part:'component/edoc.config.js'}};");
+ const project=await loadBook(await resolveProjectConfig(join(f.root,'edoc.config.js'))),flatten=(nodes:any[]):any[]=>nodes.flatMap(n=>[n,...flatten(n.children)]);
  expectCode(()=>projectOutline(project,{id:'same'}),'OUTLINE_AMBIGUOUS');expectCode(()=>projectOutline(project,{project:'outside'}),'QUERY_NOT_FOUND');
  assert.ok(flatten(projectOutline(project,{project:'parent'}).chapters).every(n=>n.project==='parent'));
  const child=projectOutline(project,{project:'child',id:'same',depth:0});assert.equal(child.chapters[0].label,'子');assert.equal(child.chapters[0].project,'child');assert.deepEqual(child.projects,['child']);

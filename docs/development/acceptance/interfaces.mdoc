@@ -2,6 +2,8 @@
 
 > 历史记录：以下“当前”“本轮”仅指原文对应阶段，测试数量、环境和未验证项不作为现版本结论。现行用法见使用文档与查询参考。
 
+2026-11-02 的补充回归见 {% reference id="acceptance:interfaces:origin" label="同一信号的多视图定位" /%}。
+
 
 2026-11-01，按用户批准的[设计](../design/interfaces.mdoc)实现第一版。可在 `npm run demo` 的“接口分组与逐信号展开”章节操作。新增的是通用接口显示能力；AXI 名称与信号来自虚构数据，不代表已验证 RTL 或完整协议实现。
 
@@ -9,6 +11,18 @@
 
 
 当前接口输入、投影和边界统一维护在[接口参考](../../usage/reference/graph.mdoc#ref:interfaces)及[接口教程](../../usage/05-interfaces.mdoc)，本记录保留实现与当时验收。
+
+{% /section %}
+
+{% section id="acceptance:interfaces:origin" title="同一信号的多视图定位" %}
+
+2026-11-02，补充[接口排序与局部展开教程](../../usage/12-graph-options.mdoc#use:graph-interface-options)时发现：两个 Tab 的接口图引用同一真实端口，先初始化默认图再切到覆盖图，在覆盖图点击信号并选择“图中定位信号”，会展开隐藏的默认图。
+
+原因是选择事件只携带端口 ID，多个图监听同一事件，先注册者创建了定位操作。修复后，图内选择携带发起图；定位按所属图处理，正文选择优先使用当前可见图。工程 ID、接口归属和路由语义均不变。
+
+`tests/manual-capabilities-browser.test.ts` 保留上述真实点击回归，断言隐藏图仍保持合并、当前图可见；`tests/interface-browser.test.ts` 继续验证首次搜索定位和同一视图双实例等既有行为。两组测试及 playwright-cli 离线检查已通过。字段名与索引链接检查在 `tests/manual-capabilities.test.ts`，另从文档提取三份完整配方，在独立空工程构建表格、页面和图形；它们不代替浏览器阅读验证。
+
+PDF 抽检还发现，旧打印样式无论 Tab 是否带表格，都保留了图表两栏，单图因此只使用较窄的一栏。现在只有直接带表格的 Tab 保留并排；单图使用全部可用列宽。浏览器回归检查单图的打印宽度，实际 PDF 仍需核对文字和路径，不能只凭宽度判定质量。
 
 {% /section %}
 
@@ -58,11 +72,11 @@ npm run test:graph
 npm run test:browser
 npm run test:pdf
 npm run demo:build
-playwright-cli -s=engdoc-demo run-code --filename examples/gallery/interfaces.playwright.js
-playwright-cli -s=engdoc-demo run-code --filename examples/gallery/check.playwright.js
+playwright-cli -s=edoc-demo run-code --filename examples/gallery/interfaces.playwright.js
+playwright-cli -s=edoc-demo run-code --filename examples/gallery/check.playwright.js
 ```
 
-浏览器测试需要 ENGDOC_CHROMIUM 指向已有 Chromium。脚本、源数据与出处见 [Demo 说明](../regression/gallery-guide.mdoc)。
+浏览器测试需要 EDOC_CHROMIUM 指向已有 Chromium。脚本、源数据与出处见 [Demo 说明](../regression/gallery-guide.mdoc)。
 
 {% /section %}
 

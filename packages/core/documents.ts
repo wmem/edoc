@@ -3,7 +3,7 @@ import {extname,relative,resolve,dirname,sep,isAbsolute} from 'node:path';
 import Markdoc from '@markdoc/markdoc';
 import type {Graph,DocumentEntity} from './types.ts';
 import {projectPath,requireFile} from './paths.ts';
-import {EngDocError,failure} from './errors.ts';
+import {EdocError,failure} from './errors.ts';
 const attributes=(defs:Record<string,any>)=>defs;
 export const tags:Record<string,any>={
  section:{render:'section',attributes:attributes({id:{type:String,required:true},title:{type:String},collapsed:{type:Boolean}})},
@@ -39,8 +39,8 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
   // 先移除解析出的样例子树，避免校验、依赖扫描、include 和索引将示例当输入。
   for(const node of ast.walk())if(node.type==='fence'){node.children=[];node.attributes.process=false;}
   const errors=Markdoc.validate(ast,{tags});
-  if(errors.length)throw new EngDocError(errors.map(e=>({code:'DOCUMENT_TAG',file,path:`#L${(e.lines?.[0]??0)+1}`,message:e.error.message})));
-  for(const node of ast.walk()){locations.set(node,{file,line:(node.location?.start.line??0)+1});if(node.type==='link')node.attributes.__engdocSourceFile=file;}
+  if(errors.length)throw new EdocError(errors.map(e=>({code:'DOCUMENT_TAG',file,path:`#L${(e.lines?.[0]??0)+1}`,message:e.error.message})));
+  for(const node of ast.walk()){locations.set(node,{file,line:(node.location?.start.line??0)+1});if(node.type==='link')node.attributes.__edocSourceFile=file;}
   const expand=(node:any)=>{
    node.children=node.children.flatMap((child:any)=>{
     if(child.type==='tag'&&child.tag==='code'){
@@ -71,7 +71,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
   if(node.type==='tag'&&['diagram','interface','table','waveform','reference','page','attachment'].includes(node.tag??''))references.push({id:node.attributes.id,tag:node.tag!,...locations.get(node)!,...(node.attributes.project!==undefined?{project:node.attributes.project}:{}),...(node.attributes.target!==undefined?{target:node.attributes.target}:{})});
   if(node.type==='image'){
    const location=locations.get(node)!;
-   try{const target=projectPath(projectRoot,projectRoot,node.attributes.src);requireFile(target);files.add(node.attributes.src);}catch(error){if(error instanceof EngDocError)throw new EngDocError(error.diagnostics.map(d=>({...d,code:d.code==='PATH_SCOPE'?'DOCUMENT_IMAGE':d.code,file:location.file,path:`#L${location.line}`})));throw error;}
+   try{const target=projectPath(projectRoot,projectRoot,node.attributes.src);requireFile(target);files.add(node.attributes.src);}catch(error){if(error instanceof EdocError)throw new EdocError(error.diagnostics.map(d=>({...d,code:d.code==='PATH_SCOPE'?'DOCUMENT_IMAGE':d.code,file:location.file,path:`#L${location.line}`})));throw error;}
   }
  }
  return {documents,files:[...files],references};
@@ -92,11 +92,11 @@ export function validateDocuments(graph:Graph){
  for(const {file:entryFile,ast,locations} of documentAST(graph)){
   const file=entryFile;
   const containers=(node:any,parent?:any)=>{if(node.type==='tag'&&node.tag==='tab'&&parent?.tag!=='tabs')errors.push({code:'DOCUMENT_CONTAINER',file,path:'',message:'tab 必须直接位于 tabs 中'});if(node.type==='tag'&&node.tag==='tabs'){const tabs=node.children.filter((c:any)=>c.type==='tag'&&c.tag==='tab');if(!tabs.length||node.children.some((c:any)=>c.type!=='tag'||c.tag!=='tab')||new Set(tabs.map((c:any)=>c.attributes.name)).size!==tabs.length)errors.push({code:'DOCUMENT_CONTAINER',file,path:'',message:'tabs 必须包含名称唯一的 tab'});}for(const child of node.children??[])containers(child,node);};containers(ast);
-  for(const error of Markdoc.validate(ast,{tags,nodes:{link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__engdocSourceFile:{type:String}}}}})) errors.push({code:'DOCUMENT_TAG',file,path:`#L${(error.lines?.[0]??0)+1}`,message:error.error.message});
+  for(const error of Markdoc.validate(ast,{tags,nodes:{link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__edocSourceFile:{type:String}}}}})) errors.push({code:'DOCUMENT_TAG',file,path:`#L${(error.lines?.[0]??0)+1}`,message:error.error.message});
   for(const node of ast.walk()){
    const file=locations.get(node)?.file??entryFile;
    if(node.type==='tag'){
-    for(const key of Object.keys(node.attributes))if(key!=='__engdocOutlineId'&&!Object.hasOwn(tags[node.tag??'']?.attributes??{},key))errors.push({code:'DOCUMENT_ATTRIBUTE',file,path:'',message:`标签 ${node.tag} 不支持属性 ${key}`});
+    for(const key of Object.keys(node.attributes))if(key!=='__edocOutlineId'&&!Object.hasOwn(tags[node.tag??'']?.attributes??{},key))errors.push({code:'DOCUMENT_ATTRIBUTE',file,path:'',message:`标签 ${node.tag} 不支持属性 ${key}`});
     const id=node.attributes.id;
     if(node.attributes.project!==undefined&&(typeof node.attributes.project!=='string'||!node.attributes.project.trim()))errors.push({code:'DOCUMENT_PROJECT',file,path:`#L${locations.get(node)?.line??1}`,message:'project 必须是非空稳定项目 ID'});
     if(['reference','page','attachment'].includes(node.tag??'')&&typeof id==='string'&&!id.trim())errors.push({code:'DOCUMENT_REFERENCE_ID',file,path:`#L${locations.get(node)?.line??1}`,message:'跳转目标 ID 不能空白'});
@@ -114,7 +114,7 @@ export function validateDocuments(graph:Graph){
    }
   }
  }
- if(errors.length)throw new EngDocError(errors);
+ if(errors.length)throw new EdocError(errors);
 }
 
 // 普通文档链接相对实际源文件；只在当前工程内发现，不打开其他配置。

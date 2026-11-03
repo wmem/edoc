@@ -3,7 +3,8 @@ import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import authoringConfig from './recipes/engdoc.config.js';
+import authoringConfig from './recipes/edoc.config.js';
+import graphOptionsConfig from './recipes/graph-options.config.js';
 
 export function tutorialData({root}){
  const result={objects:[],relations:[],views:[],tables:[],waveforms:[],references:[]};
@@ -19,10 +20,10 @@ export function tutorialData({root}){
  };
  const hasUv=spawnSync('uv',['--version'],{stdio:'ignore'}).status===0;
  for(const name of ['board-flash','fpga-mac']){
-  const directory=mkdtempSync(join(tmpdir(),'engdoc-manual-')),prefix='examples/'+name;
+  const directory=mkdtempSync(join(tmpdir(),'edoc-manual-')),prefix='examples/'+name;
   try{
    const command=hasUv?'uv':'python3',args=hasUv?['run','--no-project','--no-config','--no-python-downloads','--no-managed-python','python','doc-adapter/convert.py']:['doc-adapter/convert.py'];
-   try{execFileSync(command,args,{cwd:join(root,prefix),env:{...process.env,ENGDOC_IR_OUTPUT:directory},stdio:'pipe',timeout:30000});}
+   try{execFileSync(command,args,{cwd:join(root,prefix),env:{...process.env,EDOC_IR_OUTPUT:directory},stdio:'pipe',timeout:30000});}
    catch(error){throw new Error(`手册图示复用 ${prefix} 的原 Adapter，需要本机已有 Python 3（优先 uv）：${error.stderr?.toString()??error.message}`);}
    for(const type of Object.keys(result)){
     try{const data=JSON.parse(readFileSync(join(directory,type+'.json'),'utf8'));result[type].push(...relocate(data[type],prefix));}
@@ -40,10 +41,11 @@ export function tutorialData({root}){
  const pipeline=json('docs/support/pipeline.json');
  for(const type of ['objects','relations'])result[type].push(...pipeline[type].map(entity=>({...entity,source:{file:'docs/support/pipeline.json',selector:entity.id}})));
  result.objects.push({id:'manual:pdf-source',kind:'node',label:'PDF 定位示例文件',source:{file:'docs/assets/location.pdf',selector:'DETAIL',attachment:{id:'location',target:'detail'}}});
- for(const file of ['objects','tables','waveforms','topology','layout']){
+ for(const file of ['objects','tables','waveforms','topology','layout','table-values','graph-options']){
   const path=`docs/ir/authoring/${file}.json`,data=json(path);
   for(const type of Object.keys(result))result[type].push(...(data[type]??[]).map(entity=>({...entity,source:entity.source??{file:path,selector:entity.id}})));
  }
- result.views.push(...authoringConfig.views.map(view=>({...view,source:{file:'docs/support/recipes/engdoc.config.js',selector:view.id}})));
+ result.views.push(...authoringConfig.views.map(view=>({...view,source:{file:'docs/support/recipes/edoc.config.js',selector:view.id}})));
+ result.views.push(...graphOptionsConfig.views.map(view=>({...view,source:{file:'docs/support/recipes/graph-options.config.js',selector:view.id}})));
  return result;
 }

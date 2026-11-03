@@ -4,7 +4,7 @@ import type {SchemaName} from './schema.ts';
 import {registerDocuments,validateDocuments} from './documents.ts';
 import type {DocumentPlan} from './documents.ts';
 import {validateRelations} from './relations.ts';
-import {EngDocError} from './errors.ts';
+import {EdocError} from './errors.ts';
 
 export type ResourcePart={type:ResourceType;data:any;file:string;prefix?:string};
 export const resourceSchemas:Record<ResourceType,SchemaName>={objects:'object',relations:'relation',views:'view',tables:'table',waveforms:'waveform',references:'reference'};
@@ -29,7 +29,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
    }
   }
  }
- if(diagnostics.length)throw new EngDocError(diagnostics);
+ if(diagnostics.length)throw new EdocError(diagnostics);
  const graph:Graph={attachments:options.attachments,manifest:metadata,projectRoot:options.root,irDirectory:options.directory??options.root,index,connections,adjacency:new Map(),...(options.documents?{documentPlan:options.documents}:{})};
  registerDocuments(graph);validateRelations(graph);validateDocuments(graph);
  graph.interfaceByPort=new Map();for(const entry of index.values())if(entry.type==='interface')for(const id of (entry.entity as Interface).members)graph.interfaceByPort.set(id,entry.id);

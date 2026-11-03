@@ -1,6 +1,6 @@
-{% section id="manual:home" title="EngDoc 文档" %}
+{% section id="manual:home" title="edoc 文档" %}
 
-EngDoc 将 Markdown 正文、结构化工程数据和阅读组织组合为离线文档。你维护事实与解释，工具负责图表、导航和交互；Agent 可以直接查源内容，不必读取生成的 HTML。
+edoc 将 Markdown 正文、结构化工程数据和阅读组织组合为离线文档。你维护事实与解释，工具负责图表、导航和交互；Agent 可以直接查源内容，不必读取生成的 HTML。
 
 ## 选择阅读路线
 
@@ -8,6 +8,7 @@ EngDoc 将 Markdown 正文、结构化工程数据和阅读组织组合为离线
 | --- | --- |
 | 让 Agent 组织或维护工程文档 | [给 Agent 的文档组织简略指南](usage/agent-guide.mdoc) |
 | 第一次使用，先生成一份文档 | [使用文档](usage/index.mdoc) |
+| 确认可用能力，查看实际例子 | [能力索引](usage/capabilities.mdoc) |
 | 已经知道要配置什么，查字段或语法 | [查询参考](usage/reference/index.mdoc) |
 | 修改工具、检查实现或查看设计依据 | [开发文档](development/index.mdoc) |
 
@@ -24,10 +25,10 @@ EngDoc 将 Markdown 正文、结构化工程数据和阅读组织组合为离线
 先读 README，再运行 outline 找到需要的章节；用 read 读取章节正文，用 query 查询工程事实。仅在需要时扩大读取范围，修改源文件后重新校验。
 
 ```sh
-engdoc outline --depth 0 --format json
-engdoc read --id use:start --format text
-engdoc read --id ref:config-data --format json
-engdoc query --id board:net.FLASH_SCK --depth 1
+edoc outline --depth 0 --format json
+edoc read --id use:start --format text
+edoc read --id ref:config-data --format json
+edoc query --id board:net.FLASH_SCK --depth 1
 ```
 
 这些命令在拥有本手册配置和源文件的工程目录运行。只有发布的 HTML 时，使用页面搜索、目录和对象详情；网页不会在本机提供 CLI 服务。

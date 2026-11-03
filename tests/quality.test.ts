@@ -18,7 +18,7 @@ test('父子层级包围框与 Node.parentId 保持一致',async t=>{
 });
 test('构建失败删除旧交付物，不把旧成功文件当成最新',t=>{
  const f=fixture(t);f.edit('relations',d=>d.relations[0].endpoints[2]='missing');const output=join(f.workspace,'old.html');writeFileSync(output,'OLD SUCCESS');
- const r=spawnSync(process.execPath,['packages/cli/engdoc.ts','build','--config',join(f.root,'engdoc.config.js'),'--format','html','--output',output],{cwd:repository,encoding:'utf8',timeout:10000});assert.equal(r.status,1);assert.equal(existsSync(output),false);
+ const r=spawnSync(process.execPath,['packages/cli/edoc.ts','build','--config',join(f.root,'edoc.config.js'),'--format','html','--output',output],{cwd:repository,encoding:'utf8',timeout:10000});assert.equal(r.status,1);assert.equal(existsSync(output),false);
 });
 test('表格类型、引用与 WaveJSON 正反例',t=>{
  const f=fixture(t);save(join(f.ir,'tables.json'),{tables:[{id:'table:x',kind:'table',label:'x',columns:[{field:'width',label:'width',type:'number'}],rows:[{id:'row:x',objectId:'board:U1.QSPI_CLK'}]}]});f.edit('manifest',d=>d.resources.push({type:'tables',path:'tables.json'}));assert.ok(f.load());

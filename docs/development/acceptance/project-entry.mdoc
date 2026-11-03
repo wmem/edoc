@@ -3,18 +3,18 @@
 > 历史记录：以下“当前”“本轮”仅指原文对应阶段，测试数量、环境和未验证项不作为现版本结论。现行用法见使用文档与查询参考。
 
 
-2026-11-01，本轮改变新项目的配置与构建入口：使用者直接编写 engdoc.config.js，工具扫描正文、发现标准数据并检查依赖，不再要求提前维护 manifest、command 或 inputs 清单。
+2026-11-01，本轮改变新项目的配置与构建入口：使用者直接编写 edoc.config.js，工具扫描正文、发现标准数据并检查依赖，不再要求提前维护 manifest、command 或 inputs 清单。
 
 {% section id="acceptance:project-entry:part-01" title="当前行为" %}
 
 
-- 无参数 engdoc 在当前目录读取 engdoc.config.js；--config 显式选择其他 JS 配置，相对配置路径以该配置目录为根。
+- 无参数 edoc 在当前目录读取 edoc.config.js；--config 显式选择其他 JS 配置，相对配置路径以该配置目录为根。
 - 空配置对象支持 README.md 纯正文，默认扫描 docs/ir/，没有数据目录也可生成 output/index.html。
 - 解析入口及全部 include，含 Tabs/折叠内容；先检查文档/图片依赖，再调用数据提供函数或扫描数据。
 - 标准数据自动建立全工程 ID 索引，缺失引用有实际文件、行号或 JSON Pointer。requiredFeatures 属于数据，不要求写在项目配置中。
 - 图表和输出可直接配置；只有正文引用的图形视图生成 Scene，完整原始关系与全工程搜索/查询保留。
 - 新 CLI 不接受旧 JSON 配置或 --ir；历史底层转换测试继续使用其原夹具，未作为新入口回退。
-- npm prepare 生成 JavaScript 安装包和运行资源；bin 使用真实路径识别 npm 符号链接入口，安装后可直接调用 engdoc。
+- npm prepare 生成 JavaScript 安装包和运行资源；bin 使用真实路径识别 npm 符号链接入口，安装后可直接调用 edoc。
 - 输出检查覆盖配置、正文、数据、来源及符号链接别名；暂存输出使用独立临时目录，不覆盖同名 .pending 用户文件。
 
 {% /section %}
@@ -52,7 +52,7 @@
 
 实际生成并查看桌面网页截图，以及 5 页 PDF 的第 3 页。该页包含可追踪的两条端口连线、线上标题和折叠参考表；PDF 提取确认两级目录书签和正文内容保留。CLI SVG 和浏览器下载 SVG 均生成。
 
-证据保存在本地 .engdoc-build/config-*.log、config-entry-desktop.png、config-entry-pdf.png、config-entry-browser.svg、config-entry-cli.svg；示例输出为 examples/document-first/output/manual.html 和 manual.pdf。这些是可重建产物，不加入源版本管理。
+证据保存在本地 .edoc-build/config-*.log、config-entry-desktop.png、config-entry-pdf.png、config-entry-browser.svg、config-entry-cli.svg；示例输出为 examples/document-first/output/manual.html 和 manual.pdf。这些是可重建产物，不加入源版本管理。
 
 {% /section %}
 

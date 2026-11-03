@@ -17,5 +17,5 @@ for(const file of walk(join(root,'packages'))){
  }else cpSync(file,target);
 }
 for(const name of ['docs','templates'])if(existsSync(join(root,name)))cpSync(join(root,name),join(output,name),{recursive:true});
-chmodSync(join(output,'packages/cli/engdoc.js'),0o755);
-console.error(`EngDoc 安装包已生成：${count} 个 JS 模块及 Schema、样式、指南和模板。`);
+chmodSync(join(output,'packages/cli/edoc.js'),0o755);
+console.error(`edoc 安装包已生成：${count} 个 JS 模块及 Schema、样式、指南和模板。`);

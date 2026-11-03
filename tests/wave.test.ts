@@ -39,10 +39,10 @@ test('Chromium 实际像素保留时钟阶梯与浅色总线，双实例和打�
  save(join(f.ir,'waveforms.json'),{waveforms:[{...wave,source:{file:'trace.json'}}]});
  f.edit('manifest',d=>{d.resources.push({type:'waveforms',path:'waveforms.json'});d.entryDocuments=['docs/waves.mdoc'];});
  writeFileSync(join(f.root,'docs/waves.mdoc'),'{% section id="waves" title="重复波形" %}\n{% waveform id="wave:handshake" /%}\n{% waveform id="wave:handshake" /%}\n{% /section %}');
- const dir=mkdtempSync(join(tmpdir(),'engdoc-wave-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));const file=join(dir,'waves.html');writeFileSync(file,await html(f.load(),'波形回归'));
- const browser=await chromium.launch({executablePath:process.env.ENGDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
+ const dir=mkdtempSync(join(tmpdir(),'edoc-wave-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));const file=join(dir,'waves.html');writeFileSync(file,await html(f.load(),'波形回归'));
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
  const context=await browser.newContext({offline:true,viewport:{width:1600,height:1000}}),page=await context.newPage();
- await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EngDocReady);
+ await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);
  const result=await page.evaluate(async()=>{
   const samples=[];
   for(const svg of document.querySelectorAll<SVGSVGElement>('.wave svg')){

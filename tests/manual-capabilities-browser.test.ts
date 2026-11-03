@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {pathToFileURL} from 'node:url';
+import {chromium} from 'playwright';
+import {loadBook} from '../packages/core/book.ts';
+import {resolveProjectConfig} from '../packages/core/project.ts';
+import {bookHTML} from '../packages/pack-html/book.ts';
+import {repository} from './helpers.ts';
+
+test('能力教程的表行、Tabs折叠、Group和接口局部设置可在离线网页实际操作',{timeout:120000},async t=>{
+ const root=mkdtempSync(join(tmpdir(),'edoc-capabilities-browser-'));t.after(()=>rmSync(root,{recursive:true,force:true}));const file=join(root,'manual.html');
+ writeFileSync(file,await bookHTML(await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js')))));
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());
+ const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const base=pathToFileURL(file).href,ready=()=>page.waitForFunction(()=>window.EdocReady);
+ const go=async(id:string)=>{await page.goto(base+'#edoc='+encodeURIComponent(JSON.stringify({kind:'entity',project:'edoc-manual',id})));await ready();};
+ await go('use:tables');const table=page.locator('#reader table').filter({hasText:'两组虚构参数'});assert.equal(await table.count(),1);assert.match(await table.innerText(),/频率 \(Hz\)/);assert.match(await table.innerText(),/false/);assert.match(await table.innerText(),/unknown/);assert.equal(await table.locator('strong').count(),0);
+ await page.locator('#reader').getByRole('link',{name:'查询低功耗行事实',exact:true}).click();await ready();assert.match(await page.locator('#reader').innerText(),/"rate": 20/);
+ await page.goBack();await ready();await page.locator('#reader').getByRole('link',{name:'定位表中的低功耗行',exact:true}).click();await ready();assert.ok(await page.locator('tr').filter({hasText:'低功耗配置'}).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=-1&&r.bottom<=innerHeight+1;}));
+ await go('use:page-layout-live');const fold=page.locator('#reader details').filter({hasText:'这里保存按需读取的字段说明'});assert.equal(await fold.evaluate(el=>(el as HTMLDetailsElement).open),false);
+ await page.getByRole('button',{name:'查询入口',exact:true}).click();assert.match(await page.locator('.tab:not([hidden])').innerText(),/已知问题/);
+ await page.locator('#reader').getByRole('link',{name:'打开详细参考',exact:true}).click();await ready();assert.ok(await page.locator('#reader details').filter({hasText:'这里保存按需读取的字段说明'}).evaluate(el=>(el as HTMLDetailsElement).open));
+ await go('use:graph-groups');const group=page.locator('[data-diagram="author:hierarchy"]');await group.scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-diagram="author:hierarchy"]')?.dataset.initialized==='true');
+ await group.locator('[data-group="author:workers"]').click();assert.equal(await page.evaluate(()=>window.EdocGraphs.find(g=>g.container.closest('[data-diagram]')?.getAttribute('data-diagram')==='author:hierarchy')!.getCellById('author:rx').isVisible()),false);await group.locator('[data-group="author:workers"]').click();
+ await go('use:graph-interface-options');await page.locator('[data-diagram="author:interface-default"]').scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-diagram="author:interface-default"]')?.dataset.initialized==='true');await page.getByRole('button',{name:'排序与局部展开',exact:true}).click();const view=page.locator('[data-diagram="author:interface-override"]');await view.scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-diagram="author:interface-override"]')?.dataset.initialized==='true');
+ const state=await page.evaluate(()=>window.EdocInterfaceViews.find(v=>v.holder.dataset.diagram==='author:interface-override')!.state);assert.equal(state.modes['author:host.ctrl'],'expanded');assert.equal(state.modes['author:device.ctrl'],'collapsed');
+ await view.locator('.canvas [data-source-port="author:host.command"]').click();await page.locator('#selection-actions').getByRole('button',{name:'图中定位信号',exact:true}).click();await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-diagram="author:interface-override"]')?.dataset.busy==='false');
+ assert.equal(await page.evaluate(()=>window.EdocInterfaceViews.find(v=>v.holder.dataset.diagram==='author:interface-default')!.state.modes['author:host.ctrl']),'collapsed','同一信号出现在多个图时，定位不能展开另一个隐藏视图');
+ assert.ok(await view.isVisible());
+ await page.emulateMedia({media:'print'});const printed=await view.evaluate(el=>({figure:el.getBoundingClientRect().width,tab:el.closest('.tab')!.getBoundingClientRect().width}));assert.ok(printed.figure>=printed.tab*0.9,'Tab中只有图时不应空出表格栏压缩图形');
+ await page.emulateMedia({media:'screen'});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);
+});

@@ -3,7 +3,7 @@
 > 保留原 Gallery 的环境、操作与分批验收记录，历史 --ir/--project-root 不是当前 CLI 用法。正文和配置已接入手册；原目录只维护共享数据和回归脚本。
 
 
-使用入口已合并进[正式使用文档](../../usage/index.mdoc)，运行 `npm run docs:build` 或 `npm run docs:dev`。架构、接线、接口展开、状态、波形与布局对照已进入对应教程；本目录保留共享样例数据与历史开发回归，下文记录当时的运行/验收方式。当前 CLI 不支持旧 --ir/--project-root，精确读取共享样例应在仓库根配置下使用 `engdoc query --id ...`、`engdoc read --id ...` 或源码 CLI。
+使用入口已合并进[正式使用文档](../../usage/index.mdoc)，运行 `npm run docs:build` 或 `npm run docs:dev`。架构、接线、接口展开、状态、波形与布局对照已进入对应教程；本目录保留共享样例数据与历史开发回归，下文记录当时的运行/验收方式。当前 CLI 不支持旧 --ir/--project-root，精确读取共享样例应在仓库根配置下使用 `edoc query --id ...`、`edoc read --id ...` 或源码 CLI。
 
 在工具仓库根目录运行：
 
@@ -11,7 +11,7 @@
 npm run demo
 ```
 
-打开 http://127.0.0.1:5174/ 。需要已有的 Node.js 24+、Python 3 和 Chromium；PDF 浏览器可通过 ENGDOC_CHROMIUM 指定。不会自动下载浏览器或修改全局配置。DEMO_PORT 可指定其他本机端口；Ctrl+C 停止预览。
+打开 http://127.0.0.1:5174/ 。需要已有的 Node.js 24+、Python 3 和 Chromium；PDF 浏览器可通过 EDOC_CHROMIUM 指定。不会自动下载浏览器或修改全局配置。DEMO_PORT 可指定其他本机端口；Ctrl+C 停止预览。
 
 仅生成交付物：
 
@@ -19,7 +19,7 @@ npm run demo
 npm run demo:build
 ```
 
-产物位于 `.engdoc-build/gallery/`：
+产物位于 `.edoc-build/gallery/`：
 
 | 文件 | 用途 |
 | --- | --- |
@@ -58,8 +58,8 @@ npm run demo:build
 需要精确查询时：
 
 ```sh
-node packages/cli/engdoc.ts query --ir .engdoc-build/gallery/ir --project-root . --id board:net.FLASH_SCK --depth 1 --format json
-node packages/cli/engdoc.ts outline --ir .engdoc-build/gallery/ir --project-root . --format text
+node packages/cli/edoc.ts query --ir .edoc-build/gallery/ir --project-root . --id board:net.FLASH_SCK --depth 1 --format json
+node packages/cli/edoc.ts outline --ir .edoc-build/gallery/ir --project-root . --format text
 ```
 
 {% /section %}
@@ -79,11 +79,11 @@ node packages/cli/engdoc.ts outline --ir .engdoc-build/gallery/ir --project-root
 浏览器场景保存在 check.playwright.js，离线场景在 offline.playwright.js。构建会生成本机测试用的 playwright.config.json，不写入版本管理。例如在仓库根目录：
 
 ```sh
-PLAYWRIGHT_MCP_ALLOW_UNRESTRICTED_FILE_ACCESS=1 playwright-cli -s=engdoc-gallery open http://127.0.0.1:5174/ --config=.engdoc-build/gallery/playwright.config.json
-playwright-cli -s=engdoc-gallery run-code --filename examples/gallery/check.playwright.js
-playwright-cli -s=engdoc-gallery run-code --filename examples/gallery/wave.playwright.js
-playwright-cli -s=engdoc-gallery goto "file://$PWD/.engdoc-build/gallery/demo.html"
-playwright-cli -s=engdoc-gallery run-code --filename examples/gallery/offline.playwright.js
+PLAYWRIGHT_MCP_ALLOW_UNRESTRICTED_FILE_ACCESS=1 playwright-cli -s=edoc-gallery open http://127.0.0.1:5174/ --config=.edoc-build/gallery/playwright.config.json
+playwright-cli -s=edoc-gallery run-code --filename examples/gallery/check.playwright.js
+playwright-cli -s=edoc-gallery run-code --filename examples/gallery/wave.playwright.js
+playwright-cli -s=edoc-gallery goto "file://$PWD/.edoc-build/gallery/demo.html"
+playwright-cli -s=edoc-gallery run-code --filename examples/gallery/offline.playwright.js
 ```
 
 {% /section %}
@@ -96,7 +96,7 @@ playwright-cli -s=engdoc-gallery run-code --filename examples/gallery/offline.pl
 打开 Demo 后可另行执行：
 
 ```bash
-playwright-cli -s=engdoc-demo run-code --filename examples/gallery/display.playwright.js
+playwright-cli -s=edoc-demo run-code --filename examples/gallery/display.playwright.js
 ```
 
 脚本检查文字开关、筛选组合、逐图状态、属性查询、打印和下载，保存 `display-default.png`、`display-attributes.png`、`display-minimal.png` 与 `display-minimal.svg` 到生成目录。
@@ -108,7 +108,7 @@ playwright-cli -s=engdoc-demo run-code --filename examples/gallery/display.playw
 
 “接口分组与逐信号展开”示例有控制模块、双接口处理模块和存储控制模块。17 条虚构连接投影为 2 条聚合线；点击接口三角只展开这一端，另一接口保持；点击聚合线可查组成并展开两端。按接口拆分的两张详图和信号表放在默认折叠的查阅区，PDF 完整展开。
 
-运行 `playwright-cli -s=engdoc-demo run-code --filename examples/gallery/interfaces.playwright.js` 可验证并保存总览、单端、完整展开截图及当前/完整 SVG，记录展开延迟。新字段与范围见 [接口分组实现与验收](../acceptance/interfaces.mdoc)。
+运行 `playwright-cli -s=edoc-demo run-code --filename examples/gallery/interfaces.playwright.js` 可验证并保存总览、单端、完整展开截图及当前/完整 SVG，记录展开延迟。新字段与范围见 [接口分组实现与验收](../acceptance/interfaces.mdoc)。
 
 {% /section %}
 
@@ -117,7 +117,7 @@ playwright-cli -s=engdoc-demo run-code --filename examples/gallery/display.playw
 
 新增“按需声明布局意图”一节，比较默认架构/接线图与同数据的相对布局：Control/Data plane、TX/RX、RX/FIFO 的顺序和对齐，主数据流与下方反馈，以及 FPGA–Flash 时钟主干和测试分支。网页、SVG/PDF 使用相同几何。
 
-运行 `playwright-cli -s=engdoc-demo run-code --filename examples/gallery/constraints.playwright.js` 检查默认与带提示的四张图，保存布局截图、打印图截图和实际下载的 SVG。先运行 demo:build 重建再刷新；旧预览进程未注册新增 SVG URL 时，可从生成目录直接打开文件，重启预览后提供完整下载路由。字段与限制见[使用与验收](../acceptance/layout.mdoc)。
+运行 `playwright-cli -s=edoc-demo run-code --filename examples/gallery/constraints.playwright.js` 检查默认与带提示的四张图，保存布局截图、打印图截图和实际下载的 SVG。先运行 demo:build 重建再刷新；旧预览进程未注册新增 SVG URL 时，可从生成目录直接打开文件，重启预览后提供完整下载路由。字段与限制见[使用与验收](../acceptance/layout.mdoc)。
 
 本批重建为 16 图（13 张带线）与 26 页 PDF；完整交互、四图约束对照、离线重载、两个新增独立 SVG 已用 playwright-cli/Chromium 检查，PDF 第 21、22 页视觉抽检，22 项书签的新增层级经提取核对。工具 195 项回归通过。前面的 11 图/22 页记录属于历史批次，当前范围以此处及使用与验收为准。
 
