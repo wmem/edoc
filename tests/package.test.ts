@@ -18,14 +18,14 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(!packed.files.some((f:any)=>f.path.endsWith('.ts')),'安装包不依赖 TypeScript 源文件运行');
  const prefix=join(root,'prefix');run('npm',['install','--prefix',prefix,join(root,packed.filename),'--ignore-scripts','--omit=dev','--prefer-offline','--package-lock=false']);
  const bin=join(prefix,'node_modules/.bin/edoc'),project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});
- writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'edoc.config.js'),"throw Error('不应默认读取项目根配置')");writeFileSync(join(project,'README.md'),'# 安装包演示\n\n普通正文。');
+ writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'edoc.config.js'),"throw Error('不应默认读取项目根配置')");writeFileSync(join(project,'README.md'),'# 仓库介绍\n\n不进入默认正式文档。');writeFileSync(join(project,'docs/index.mdoc'),'# 安装包演示\n\n普通正文。');
  assert.match(run(bin,['--version'],project),/edoc 1/);assert.match(run(bin,['guide'],project),/edoc.config.js/);
  run(bin,[],project);assert.ok(existsSync(join(project,'output/index.html')));
- writeFileSync(join(project,'README.md'),'{% section id="installed:read" title="安装包章节" %}原始 **说明**。{% /section %}');
+ writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:read" title="安装包章节" %}原始 **说明**。{% /section %}');
  const section=JSON.parse(run(bin,['read','--id','installed:read'],project));assert.match(section.content,/原始 \*\*说明\*\*/);assert.equal(section.scope,'self');
  assert.equal(JSON.parse(run(bin,['outline','--id','installed:read','--depth','0'],project)).chapters[0].sectionId,'installed:read');
  mkdirSync(join(project,'docs/ir'),{recursive:true});writeFileSync(join(project,'docs/ir/facts.json'),JSON.stringify({objects:[{id:'a',kind:'node',label:'A'},{id:'b',kind:'node',label:'B'}],relations:[{id:'ab',kind:'connection',class:'data',endpoints:['a','b']}]}));
- writeFileSync(join(project,'README.md'),'{% diagram id="overview" /%}');
+ writeFileSync(join(project,'docs/index.mdoc'),'{% diagram id="overview" /%}');
  writeFileSync(join(project,'docs/edoc.config.js'),`export default {views:[{id:'overview',kind:'architecture',include:{objects:['a','b'],relations:['ab']}}]};`);
  const check=JSON.parse(run(bin,['validate','--format','json'],project));assert.deepEqual(check.dataFiles,['docs/ir/facts.json']);
  assert.equal(JSON.parse(run(bin,['query','--id','ab'],project)).target.entity.endpoints.length,2);

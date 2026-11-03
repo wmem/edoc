@@ -37,7 +37,12 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
  const allowed=['title','projectId','documents','data','views','tables','waveforms','references','output','chromiumExecutable','compactIndex','children','attachments'];
  for(const key of Object.keys(input))if(!allowed.includes(key))failure('CONFIG_FIELD',file,'/'+pointer(key),`未知配置项：${key}`);
  const text=(key:'title'|'projectId',fallback:string)=>{const value=input[key]??fallback;if(typeof value!=='string'||!value.trim())failure('CONFIG_TYPE',file,'/'+key,'需要非空字符串');return value;};
- const docs=input.documents??(existsSync(resolve(root,'README.md'))?'README.md':existsSync(resolve(root,'docs'))?'docs':'README.md'),documents=Array.isArray(docs)?docs:[docs];
+ if(input.documents==null){
+  const entry=projectPath(root,root,'docs/index.mdoc',false);
+  if(!existsSync(entry)||!statSync(entry).isFile())failure('DOCUMENT_ENTRY',entry,'/documents','默认文档首页不存在或不是文件；请创建 docs/index.mdoc，或显式设置 documents');
+ }
+ // 首页先加入，再发现整个 docs；扫描器去重，显式 documents 保留原来的文件/目录契约。
+ const docs=input.documents??['docs/index.mdoc','docs'],documents=Array.isArray(docs)?docs:[docs];
  if(!documents.length||documents.some(v=>typeof v!=='string'||!v.trim())||new Set(documents).size!==documents.length)failure('CONFIG_DOCUMENTS',file,'/documents','需要非空的正文路径或有序且不重复的路径数组');
  for(const doc of documents){const path=projectPath(root,root,doc);if(statSync(path).isFile()&&!['.md','.mdoc'].includes(extname(doc)))failure('CONFIG_DOCUMENTS',file,'/documents','正文接受 .md/.mdoc 文件或目录');}
  if(input.children!==undefined&&(!plain(input.children)||Object.entries(input.children).some(([key,value])=>!key.trim()||typeof value!=='string'||!value.trim())))failure('CONFIG_CHILDREN',file,'/children','children 需要别名到子配置相对路径的对象');

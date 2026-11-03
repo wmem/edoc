@@ -1,65 +1,41 @@
 # edoc
 
-把 Markdown 正文、工程数据和阅读组织转换为对人友好的离线文档。Agent 维护低噪声的源数据与知识，工具负责图、表、接口、目录和交互；查询时按 ID 读取正文或事实，不必读取生成的 HTML。
+以 Markdown 为基础，扩展页面编排、数据图表和原文引用，生成可导航、可查询的离线工程文档。作者和 Agent 维护源数据与说明，工具负责渲染，不手工维护生成的 HTML/SVG。
 
-## 安装与第一次生成
+## 环境与编译
 
-需要 Node.js 24+。仓库版本推送到远程后，可通过 Git SSH 安装：
-
-```sh
-npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
-```
-
-工具名称已统一为 `edoc`，远程仓库地址暂沿用历史路径。已有工程按[名称迁移](docs/usage/reference/config.mdoc#ref:edoc-migration)更新命令、配置和环境变量。
-
-在你的工程准备 `README.md`，创建 `docs/edoc.config.js`：
-
-```js
-export default {};
-```
-
-运行 `edoc`，打开 `output/index.html`。纯正文不需要 IR、转换脚本或 Chromium。配置直接写在 JS 文件中；需要更多能力时逐项增加：
-
-```js
-export default {
-  projectId: 'my-project',
-  title: '工程手册',
-  documents: 'docs'
-};
-```
-
-标准数据默认扫描 `docs/ir/`，支持多文件、多目录。已有网表、CSV 或 RTL 时，由项目 `data` 函数转换；图、表和查询共用事实。HTML 携带运行资源和 PDF 附件，离线按篇阅读。文档导出 PDF 另需已有 Chromium。
-
-## 正式文档
-
-正式文档使用 edoc 自身渲染，图表和示例就是使用说明的一部分。当前仓库没有公开托管地址，在源码仓库运行：
+需要 Node.js 24+ 和 npm。在仓库根目录执行：
 
 ```sh
 npm ci
+npm run build:package
+```
+
+编译结果在 dist/。源码开发可用 npm run edoc -- --help 查看命令；安装到其他工程的方法见[安装说明](docs/usage/start/01-install.mdoc)。
+
+## 生成和阅读正式文档
+
+本仓库的正式文档首页是 docs/index.mdoc，正文、配置与文档资源集中在 docs 下。README 仅承担仓库介绍和操作入口，保持 GitHub/GitLab 可直接阅读的标准 Markdown。
+
+```sh
 npm run docs:build
 ```
 
-打开 正式文档 output/index.html（`output/index.html`），或运行 `npm run docs:dev`，访问 http://127.0.0.1:5175/ 。这是构建后的静态预览，修改后需重建并刷新。本仓库图示复用原样例 Adapter，需要已有 Python 3，优先通过 uv 调用；不会自动安装 Python 或浏览器。
-
-- [使用文档源入口](docs/usage/index.mdoc)：第一次生成 → 文档组织 → 数据 → 图表 → 工程组合与 PDF。
-- [查询参考源入口](docs/usage/reference/index.mdoc)：配置、命令、标签、数据、布局和限制，按需读取。
-- [能力索引](docs/usage/capabilities.mdoc)：按图形、表格、页面控制和接入发布，直达教程、字段与实际例子。
-- [开发文档源入口](docs/development/index.mdoc)：架构、修改与验证、需求及历史资料索引。
-
-教程直接展示架构、物理接线、多接口展开、状态、时序和布局对照；详细信号表和覆盖关系放在查询参考。硬件样例均为虚构，不能用于真实设计；波形和覆盖关联不代表执行了 RTL 仿真。
-
-## 给 Agent 的查询入口
-
-组织或维护文档前，先读[给 Agent 的文档组织简略指南](docs/usage/agent-guide.mdoc)。它总结理解路线、渐进查询和事实同源，正式文档首页也有直接入口。
-
-在具有配置和源文件的工程目录运行：
+打开 output/index.html。也可以运行静态预览：
 
 ```sh
-edoc outline --depth 0 --format json
-edoc read --id ref:config-data --format text
-edoc query --id board:net.FLASH_SCK --depth 1
+npm run docs:dev
 ```
 
-后两条 ID 属于本手册，用于其他工程时替换成该工程的稳定 ID。`read` 默认只取当前章节，明确返回来源、子章节和截断范围；`query` 取工程事实。修改源数据与知识后重建，不手改 HTML/SVG。源码开发可用 `node packages/cli/edoc.ts` 代替已安装的 `edoc`。
+访问 http://127.0.0.1:5175/ 。修改后重新构建并刷新；当前没有公开托管的文档地址。
 
-创建工程文档前可运行 `edoc guide` 读取[推荐指南](docs/usage/guide.mdoc)；维护本工具遵循 [AGENTS.md](AGENTS.md)。需求基线和历史验收的源码定位见[开发文档索引](docs/development/history.mdoc)，当时的测试通过不能代替当前图形与阅读体验验收。
+本仓库图示复用原样例转换器，需要已有 Python 3，优先通过 uv 调用。导出静态 PDF 可运行 npm run docs:pdf，需要已有 Chromium，通过 EDOC_CHROMIUM 或配置指定；不会自动安装 Python 或浏览器。
+
+## 使用与维护入口
+
+- [认识 edoc](docs/usage/overview.mdoc)：Markdown 基础、扩展渲染及各类输入的整体关系。
+- [使用文档](docs/usage/index.mdoc)：上手、正文组织、功能教程和查询参考。
+- [开发文档](docs/development/index.mdoc)：实现、构建与验证、设计依据。
+- [Agent 维护入口](AGENTS.md)和[文档组织简略指南](docs/usage/engineering/agent-guide.mdoc)：维护规则、理解路线与按需查询。
+
+修改工具后按[开发与验证](docs/development/contributing.mdoc)选择相关检查，先确认类型与行为，再检查网页和 PDF 的实际阅读效果。

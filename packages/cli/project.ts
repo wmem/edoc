@@ -51,7 +51,7 @@ export async function main(argv:string[]):Promise<number>{
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
   if(command==='build'&&args['--format']==='text')throw new UsageError('build 的 --format 只接受 html/pdf');
   if(!({build:['text','html','pdf'],validate:['json','text'],outline:['json','text'],query:['json','text'],read:['json','text'],export:['svg'],guide:['json','text']}[command]!).includes(format))throw new UsageError('命令输出格式不正确');
-  if(command==='guide'){const content=readFileSync(new URL('../../docs/usage/guide.mdoc',import.meta.url),'utf8');process.stdout.write(format==='json'?JSON.stringify({guideVersion:'3.0',source:'docs/usage/guide.mdoc',content},null,2)+'\n':content);return 0;}
+  if(command==='guide'){const content=readFileSync(new URL('../../docs/usage/engineering/guide.mdoc',import.meta.url),'utf8');process.stdout.write(format==='json'?JSON.stringify({guideVersion:'3.0',source:'docs/usage/engineering/guide.mdoc',content},null,2)+'\n':content);return 0;}
   if(command==='query'&&!args['--id'])throw new UsageError('query 需要 --id');
   if(command==='read'&&!args['--id'])throw new UsageError('read 需要 --id');
   if(command==='outline'&&args['--id']!==undefined&&!args['--id'].trim())throw new UsageError('outline 的 --id 必须是非空章节 ID');

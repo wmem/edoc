@@ -1,0 +1,52 @@
+{% section id="use:start" title="生成第一份文档" %}
+
+先生成一篇普通 Markdown 文档，不需要工程数据。尚未安装时先看[安装与运行环境](01-install.mdoc#use:install)。
+
+{% section id="use:first-build" title="最小配置" %}
+
+README.md 保留仓库介绍、编译及文档生成方法。正式正文从 docs/index.mdoc 开始，可以先只写普通 Markdown：
+
+```markdown
+# 工程手册
+
+这里介绍工程用途与阅读路线。
+```
+
+再创建 docs/edoc.config.js：
+
+```js
+export default {};
+```
+
+回到项目根目录运行：
+
+```sh
+edoc
+```
+
+打开生成的 output/index.html。工具默认读取 docs/edoc.config.js，以 docs/index.mdoc 为首页，并收集整个 docs 下的 .md/.mdoc 正文。未链接的文章也会纳入；README.md 不因位于仓库根而自动参与。首页缺失时提示创建文件。没有 docs/ir/ 时可以生成纯正文。
+
+docs 配置仍属于上一级工程，资源和输出路径不需要多写一层 docs 或 ../；相对 import 按 JavaScript 规则从配置所在目录解析。具体规则见配置参考。
+
+配置直接写在 JS 文件中，不要求 manifest、command、inputs 或另一份配置 JSON。
+
+{% /section %}
+
+{% section id="use:first-change" title="只在需要时增加配置" %}
+
+文档增多后继续放在 docs 下，不需要为自动发现再增加配置。需要显示自己的工程身份时再添加：
+
+```js
+export default {
+  projectId: 'my-project',
+  title: '工程手册'
+};
+```
+
+projectId 用作稳定工程身份，title 改变显示名称。显式 documents 可以改用其他正文入口或安排顺序，保留文件、目录和有序数组的能力；默认首页规则只在未设置 documents 时适用。要使用其他配置文件，运行 edoc --config path/to/custom.js；路径规则见 {% reference id="ref:config" label="配置参考" /%}。
+
+接下来阅读[组织多篇文档](../writing/documents.mdoc)。只想查默认值，直接查看 {% reference id="ref:config" label="配置参考" /%}。
+
+{% /section %}
+
+{% /section %}

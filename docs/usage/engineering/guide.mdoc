@@ -5,18 +5,18 @@
 
 只需掌握核心思想时，先读[给 Agent 的文档组织简略指南](agent-guide.mdoc)；本页供遇到具体组织问题时按小节查询。
 
-通用工具的既定要求见[需求与设计基线](../development/design/requirements.mdoc)，原文及来源见 [design/](../development/design/original-source.mdoc)。本指南的组织建议与原设计的质量要求分别说明，不将建议自动变为强制规则，也不降低已有验收标准。
+通用工具的既定要求见[需求与设计基线](../../development/design/requirements.mdoc)，原文及来源见 [design/](../../development/design/original-source.mdoc)。本指南的组织建议与原设计的质量要求分别说明，不将建议自动变为强制规则，也不降低已有验收标准。
 
-工具自身的正式文档已采用[使用路线](index.mdoc)、[查询参考](reference/index.mdoc)和[开发文档](../development/index.mdoc)分别组织，运行 npm run docs:build 自身渲染。README 负责说明与首次使用，正式使用文档按任务渐进引入概念，图形示例直接进入相应教程；这是用户对本工具文档的明确要求。一般项目仍按自己的读者任务选择组织，不必复制本工具目录。
+工具自身的正式文档先用[认识 edoc](../overview.mdoc)建立整体认识，再按[使用路线](../index.mdoc)进入正文、扩展、维护与发布，[查询参考](../reference/index.mdoc)按需查字段，[开发文档](../../development/index.mdoc)单独维护。运行 npm run docs:build 自身渲染。README 负责说明与首次使用，图形示例直接进入相应教程；这是用户对本工具文档的明确要求。一般项目仍按自己的读者任务选择组织，不必复制本工具目录。
 
 {% section id="guide:home:part-01" title="接入时先用最小配置" %}
 
 
-在项目创建 `docs/edoc.config.js`，最小内容为 `export default {};`。在项目根运行 `edoc`，正文默认工程根 `README.md`，标准工程数据扫描工程根 `docs/ir/`，输出工程根 `output/index.html`。标准 docs 配置属于上一级工程，其他显式自定义配置仍以配置目录为根；JS 相对 import 按配置文件本身解析。需要时直接增加 `documents`、`output`、`views`、`tables` 等字段，不再要求另建 manifest 或导入 JSON 配置。
+在项目创建 `docs/index.mdoc` 正式首页与 `docs/edoc.config.js`，配置最小内容为 `export default {};`。在项目根运行 `edoc`，默认首页为 docs/index.mdoc，并收集整个 docs 的正文；README.md 保留仓库介绍、编译和文档生成方法。标准工程数据扫描 docs/ir/，输出 output/index.html。首页缺失时明确提示；只有显式 documents 才覆盖默认收集规则。标准 docs 配置属于上一级工程，其他显式自定义配置仍以配置目录为根；JS 相对 import 按配置文件本身解析。需要时直接增加 output、views、tables 等字段，不再要求另建 manifest 或导入 JSON 配置。
 
 先组织入口正文及 include，再用稳定 ID 引用图表与事实。工具负责扫描参与发布的全部正文，发现标准数据、检查引用和来源路径；折叠和 Tabs 中的内容也会检查。不要让 Agent 维护第二份依赖清单。仅正文引用的视图会布局；全工程索引仍保留查询能力。
 
-已有标准数据放入 `docs/ir/`；原始 CSV、网表或 RTL 需要转换时，可在配置的 `data(context)` 函数中调用项目转换模块，返回标准数据对象。通用工具不猜测任意原始格式的语义。转换代码处理工程特有规则，视图与输出设置直接写配置。完整字段及边界见[项目配置与自动依赖](reference/config.mdoc)。
+已有标准数据放入 `docs/ir/`；原始 CSV、网表或 RTL 需要转换时，可在配置的 `data(context)` 函数中调用项目转换模块，返回标准数据对象。通用工具不猜测任意原始格式的语义。转换代码处理工程特有规则，视图与输出设置直接写配置。完整字段及边界见[项目配置与自动依赖](../reference/config.mdoc)。
 
 {% /section %}
 
@@ -57,7 +57,7 @@
 {% section id="guide:home:part-04" title="3. 用真实结构表达目录层级" %}
 
 
-建议起步时查看 [项目正文模板](../development/regression/sources.mdoc#regression:template)。例如：
+建议起步时查看 [项目正文模板](../../development/regression/sources.mdoc#regression:template)。例如：
 
 ```text
 {% section id="book:modules" title="功能模块" %}
@@ -71,7 +71,7 @@
 
 section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题从下一层开始，其余标题保留相对级别。布局面板标题不充当章节。普通 Markdown 的标题级别继续表达其相对层次。
 
-多篇正文建议用 documents 指定文档目录或有序文件数组，各篇在 HTML 内独立阅读。index.mdoc 负责整体说明，可在 section 内以 project include 接入子工程；普通文章使用文档链接，file include 只用于页内片段复用。工程内 section ID 保持唯一，普通同名标题不必全局重命名。完整契约见[组合工程与 PDF 附件](08-projects-pdf.mdoc)。
+多篇正文建议用 documents 指定文档目录或有序文件数组，各篇在 HTML 内独立阅读。index.mdoc 负责整体说明，可在 section 内以 project include 接入子工程；普通文章使用文档链接，file include 只用于页内片段复用。工程内 section ID 保持唯一，普通同名标题不必全局重命名。完整契约见[组合工程与 PDF 附件](composition.mdoc)。
 
 一般阅读目录控制在三到四层更易浏览，较深数据可以通过链接或折叠查看。这是写作建议，不是拒绝更深结构的校验规则。HTML 标题有六级限制，工具仍在 outline 中保留实际层级。
 
@@ -105,13 +105,13 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 
 各类展示采用“合理默认、按需声明、局部覆盖、明确校验”的原则。作者先确定数据、知识、阅读范围和必要的组织，不必为普通内容填写大量排版参数；有特殊需求时，再选择契约明确支持的属性。默认渲染质量仍由工具负责。
 
-关系图需要调整时，优先声明相对顺序、中心对齐、显示主干或反馈通道，再考虑固定位置。先理解需要保证的关系，再选择工具支持的提示；不要把无效引用、冲突或不支持字段当作可静默忽略的配置。字段、默认值和适用限制统一查[布局参考](reference/graph.mdoc#ref:graph-layout)，实际操作见[布局教程](07-layout.mdoc)。
+关系图需要调整时，优先声明相对顺序、中心对齐、显示主干或反馈通道，再考虑固定位置。先理解需要保证的关系，再选择工具支持的提示；不要把无效引用、冲突或不支持字段当作可静默忽略的配置。字段、默认值和适用限制统一查[布局参考](../reference/graph.mdoc#ref:graph-layout)，实际操作见[布局教程](../rendering/layout.mdoc)。
 
-展示设置只引用原对象，不手抄 pin、位宽或端点。网页临时筛选和展开不写回事实，也不使完整输出遗漏其定义范围。接口投影和导出规则统一查[接口参考](reference/graph.mdoc#ref:interfaces)与[显示参考](reference/graph.mdoc#ref:graph-display)；需要核对历史验证证据时，再查[布局验收](../development/acceptance/layout.mdoc)。
+展示设置只引用原对象，不手抄 pin、位宽或端点。网页临时筛选和展开不写回事实，也不使完整输出遗漏其定义范围。接口投影和导出规则统一查[接口参考](../reference/graph.mdoc#ref:interfaces)与[显示参考](../reference/graph.mdoc#ref:graph-display)；需要核对历史验证证据时，再查[布局验收](../../development/acceptance/layout.mdoc)。
 
-这是已批准的全工具设计方向。当前第一批实现图形布局属性；表格、时序、主题和发布设置，以及项目默认/引用处覆盖链仍待逐项实现，不能按规划中的字段生成当前配置。完整范围见[声明式展示与约束设计](../development/design/presentation.mdoc)。
+这是已批准的全工具设计方向。当前第一批实现图形布局属性；表格、时序、主题和发布设置，以及项目默认/引用处覆盖链仍待逐项实现，不能按规划中的字段生成当前配置。完整范围见[声明式展示与约束设计](../../development/design/presentation.mdoc)。
 
-跨工程跳转不建立外部源依赖，具体身份和未包含目标的行为见[组合教程](08-projects-pdf.mdoc)。原理图 PDF 可作为核对证据，附件入口不替代原事实来源；换版时核对定位映射，不把格式校验当作工程位置已验收。定义和定位规则见[PDF 参考](reference/pdf.mdoc)。
+跨工程跳转不建立外部源依赖，具体身份和未包含目标的行为见[组合教程](composition.mdoc)。原理图 PDF 可作为核对证据，附件入口不替代原事实来源；换版时核对定位映射，不把格式校验当作工程位置已验收。定义和定位规则见[PDF 参考](../reference/pdf.mdoc)。
 
 {% /section %}
 
@@ -157,21 +157,21 @@ outline 给出父子关系、级别、源 sectionId 与正文来源，不需要�
 - 沿线检查端点与分支，注意穿框、框内错误终止、假交点，以及扇入/扇出和不同方向的连线。
 - 字体加载后检查节点、端口、关系标签的重叠、裁切、压线与典型阅读尺寸；使用颜色以外的线型、箭头或标签传达类别。
 - HTML 的交互图、导出 SVG 和 PDF 静态图分别看。能缩放或能下载不等于默认排版已经清楚。
-- 时序图检查时钟阶梯、跳变、总线填色和文字；同一波形多次引用、折叠与打印时应保持正常。标题或 SVG 存在、文字能提取，都不能证明线条实际画对。实例见[时序图渲染修复](../development/acceptance/waveform.mdoc)。
+- 时序图检查时钟阶梯、跳变、总线填色和文字；同一波形多次引用、折叠与打印时应保持正常。标题或 SVG 存在、文字能提取，都不能证明线条实际画对。实例见[时序图渲染修复](../../development/acceptance/waveform.mdoc)。
 - 报告带连线视图的实际检查数量，避免用大量无连线概览稀释路由问题；没有检出缺陷也不能自动当作完整视觉验收。
 - 高密度图可以按明确范围拆分、过滤或使用视图提示；不能通过删除 Net 端点、复制引脚值或修改工程事实掩盖渲染问题。
 
-KY3134 的真实案例及检查范围见[图形渲染审查](../development/reviews/graphics.mdoc)。本轮发现的通用路径/标签问题应先在工具修复，不能要求每个项目手调所有连线来兜底。
+KY3134 的真实案例及检查范围见[图形渲染审查](../../development/reviews/graphics.mdoc)。本轮发现的通用路径/标签问题应先在工具修复，不能要求每个项目手调所有连线来兜底。
 
-相关修复见[图形渲染修复验收](../development/acceptance/graphics.mdoc)。测文字时应包含最终绘制变换，模型坐标或单个 text 的局部 getBBox 不能排除绘图库额外偏移。完整适配与清晰阅读分别检查，PDF 需要查看实际打印尺寸，不能只在放大的截图中判断字号。
+相关修复见[图形渲染修复验收](../../development/acceptance/graphics.mdoc)。测文字时应包含最终绘制变换，模型坐标或单个 text 的局部 getBBox 不能排除绘图库额外偏移。完整适配与清晰阅读分别检查，PDF 需要查看实际打印尺寸，不能只在放大的截图中判断字号。
 
 图名已明确范围时，可以使用简短显示名，完整身份仍由稳定 ID、属性与来源保留；省略内容不能造成跨板或跨模块歧义。关系类别可以通过图例、线型与筛选表达，避免每条短连线都重复一长串类别文字。这些是显示建议，不改变工程字段与关系。
 
-理解性图优先呈现身份与关键关系，精确属性按需查询；详细接口图再展示必要的信号信息。连线标题应能直接辨认所属路径，隐藏标题后也能追踪真实端点。不要通过删除源属性或 Net 来减少画面信息。配置与操作统一查[显示参考](reference/graph.mdoc#ref:graph-display)和[绘图教程](04-diagrams.mdoc)，历史检查范围见[文字显示验收](../development/acceptance/display.mdoc)。
+理解性图优先呈现身份与关键关系，精确属性按需查询；详细接口图再展示必要的信号信息。连线标题应能直接辨认所属路径，隐藏标题后也能追踪真实端点。不要通过删除源属性或 Net 来减少画面信息。配置与操作统一查[显示参考](../reference/graph.mdoc#ref:graph-display)和[绘图教程](../rendering/diagrams.mdoc)，历史检查范围见[文字显示验收](../../development/acceptance/display.mdoc)。
 
 一个模块有多组总线时，分别说明接口身份与真实成员归属，不按名字前缀猜协议或把跨模块逻辑集合当成一个模块的接口。总览帮助理解分组，详情再追踪逐信号连接；聚合不能改写真实方向、成员或多端点身份。
 
-展开后区分实际定义的成员与“当前视图没有显示连接”的成员，不根据缺线断言实际未使用。宽而密的完整图同时提供按接口拆分的详图和真实信号表，方便打印阅读。声明、共享信号处理、展开和导出规则见[接口教程](05-interfaces.mdoc)与[接口参考](reference/graph.mdoc#ref:interfaces)，历史实测范围见[接口验收](../development/acceptance/interfaces.mdoc)。
+展开后区分实际定义的成员与“当前视图没有显示连接”的成员，不根据缺线断言实际未使用。宽而密的完整图同时提供按接口拆分的详图和真实信号表，方便打印阅读。声明、共享信号处理、展开和导出规则见[接口教程](../rendering/interfaces.mdoc)与[接口参考](../reference/graph.mdoc#ref:interfaces)，历史实测范围见[接口验收](../../development/acceptance/interfaces.mdoc)。
 
 {% /section %}
 
@@ -188,7 +188,7 @@ Agent 的默认行动顺序：读项目入口与本指南 → 明确读者任务
 
 KY3134 接入时曾将模块、器件总览和引脚表平铺在目录中。原因分属两层：工具只保存目录的 id/label，丢掉父子关系；工程又把说明和全量查询数据直接并列。只给链接加缩进不能解决标题级别和 PDF 书签的问题。
 
-本例同时修正章节树与正文组织：理解正文先讲整体和模块职责，查询参考保留完整数据，并以稳定链接按需展开。验收也从“能跳转”补充为“父子路径正确、参考可展开、PDF 书签一致”。其他项目应按自己的读者任务选择分组，不必套用这块板的模块分类。具体实现与验证范围见[分层阅读改进记录](../development/acceptance/organization.mdoc)。
+本例同时修正章节树与正文组织：理解正文先讲整体和模块职责，查询参考保留完整数据，并以稳定链接按需展开。验收也从“能跳转”补充为“父子路径正确、参考可展开、PDF 书签一致”。其他项目应按自己的读者任务选择分组，不必套用这块板的模块分类。具体实现与验证范围见[分层阅读改进记录](../../development/acceptance/organization.mdoc)。
 
 ### 迁移已有文档时，分别核对内容覆盖与渲染质量
 

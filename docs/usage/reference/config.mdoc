@@ -16,7 +16,7 @@ docs/edoc.config.js 直接导出配置对象。在项目目录执行命令，未
 
 {% section id="ref:edoc-migration" title="已有工程的名称迁移" %}
 
-2026-11-03，工具名称由 EngDoc 统一为 edoc。功能与默认正文选择不变，旧名称不保留运行别名；已有工程需要同步更新：
+2026-11-03，工具名称由 EngDoc 统一为 edoc。更名这一步未改变功能和默认正文选择；同日后续的 docs 首页调整另见[documents 当前规则](#ref:config-documents)。旧名称不保留运行别名，已有工程需要同步更新：
 
 | 原名称 | 新名称 |
 | --- | --- |
@@ -42,7 +42,9 @@ docs/edoc.config.js 直接导出配置对象。在项目目录执行命令，未
 
 {% section id="ref:config-documents" title="documents" %}
 
-接受正文文件、目录或有序路径数组，均相对工程根。默认优先工程根 README.md，没有则使用 docs/；两者都不存在时报错。
+接受正文文件、目录或有序路径数组，均相对工程根。省略时以必需的 docs/index.mdoc 为首页，同时收集整个 docs/，未链接文章也参与。实现先加入首页再扫描目录并去重，保证首页顺序。缺少首页或该路径不是文件时报告 DOCUMENT_ENTRY 并提示创建，不回退 README.md 或 docs/index.md。
+
+README.md 默认只作为仓库介绍和编译/生成入口，不因位于根目录而自动纳入正式正文。显式 documents 保持原契约，不强制 docs/index.mdoc；例如 documents: 'README.md'、documents: 'docs' 或有序数组均由作者自行选择。正文主动链接到其他文章时，仍按下方的链接发现规则处理。
 
 目录递归发现 .md/.mdoc，index 优先，其余按相对路径排序；跳过 ir、_partials、node_modules、output 和隐藏项。普通文件链接会发现本工程其他文章，循环链接不会重复加入。文件 include 复用页内内容；project include 接入子工程。
 

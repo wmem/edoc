@@ -1,11 +1,11 @@
 {% section id="design:projects" title="可组合工程文档设计" %}
 
 
-状态：2026-11-01，本轮已实现并进入验收收尾。本文保留已确认的设计边界；当前字段及限制以[使用说明](../../usage/08-projects-pdf.mdoc)为准，实际验证见[验收记录](../acceptance/composition-pdf.mdoc)。
+状态：2026-11-01，本轮已实现并进入验收收尾。本文保留已确认的设计边界；当前字段及限制以[使用说明](../../usage/engineering/composition.mdoc)为准，实际验证见[验收记录](../acceptance/composition-pdf.mdoc)。
 
 {% section id="design:projects:part-01" title="当前目标与边界" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 父工程和子工程使用同一种文档模型：各自有配置、正文组织、图表、IR 和可独立生成的 HTML。父工程可以在自己的正文 section 中接入子工程入口，形成更大的文档树；子工程不需要知道自己将来被哪个父工程接入。
@@ -25,7 +25,7 @@ Agent 维护子工程时，只需要处理本工程的配置、文档和数据�
 
 {% section id="design:projects:part-02" title="本轮明确替换的前提" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 | 原实现/前一候选方案 | 当前行为 | 理由与影响 |
@@ -44,7 +44,7 @@ Agent 维护子工程时，只需要处理本工程的配置、文档和数据�
 
 {% section id="design:projects:part-03" title="配置与 section 组合" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 ```text
@@ -116,7 +116,7 @@ include 的 project 属性只引用 children 别名；普通 file include 与 pr
 
 {% section id="design:projects:part-04" title="稳定 ID 与产物索引" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 已有配置字段 projectId 用作对外稳定项目标识。需要被其他工程长期链接时应显式填写，避免依赖目录名默认值；移动目录或改变父工程挂载位置时，保持 projectId 和目标 ID 即可保持源跳转身份。
@@ -140,7 +140,7 @@ children 中的 fpga 是父工程的局部组合别名，不是目标工程的�
 
 {% section id="design:projects:part-05" title="跨工程仅生成跳转" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 工程对象跳转写法：
@@ -167,7 +167,7 @@ children 中的 fpga 是父工程的局部组合别名，不是目标工程的�
 
 {% section id="design:projects:part-06" title="本地校验与跨工程跳转的区别" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 本工程真正参与渲染的数据继续严格校验：diagram/interface/table/waveform 的目标、关系端点、接口成员、表格投影、来源路径等必须满足本地 Schema 与语义规则，本地 reference 拼错 ID 仍按原要求报告。
@@ -185,7 +185,7 @@ children 中的 fpga 是父工程的局部组合别名，不是目标工程的�
 
 {% section id="design:projects:part-07" title="独立生成与阅读行为" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 独立构建只处理本工程及它显式组合的子工程。父/兄弟源文件被移走或不可访问时，跨工程链接不能触发访问，也不能因此使独立构建失败；本工程自身数据完整性继续按原规则要求。
@@ -202,7 +202,7 @@ PDF 不作为决定上述模型的前置限制；用户已允许必要时缩减�
 
 {% section id="design:projects:part-08" title="HTML 携带 PDF 原始资源" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 新增需求：本工程可将原理图 PDF 原字节随 HTML 携带，通过稳定附件/位置 ID 跳转到具体页或区域，并用浏览器后退回到原文阅读位置。第一批只支持 PDF；这与将工程文档导出 PDF 是独立能力。
@@ -213,7 +213,7 @@ PDF 不作为决定上述模型的前置限制；用户已允许必要时缩减�
 
 {% section id="design:projects:part-09" title="实施与验收" %}
 
-历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/08-projects-pdf.mdoc)。
+历史设计：2026-11-01 的组合工程方案；本节保留当时的配置与边界说明。现行入口和路径规则见[配置参考](../../usage/reference/config.mdoc)，操作见[组合教程](../../usage/engineering/composition.mdoc)。
 
 
 本轮实施与验收路线：

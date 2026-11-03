@@ -1,0 +1,40 @@
+{% section id="use:projects-pdf" title="多工程组合" %}
+
+各工程独立维护配置、正文与数据，需要统一阅读时再显式组合。这里只讨论工程边界；原文附件见[PDF 定位](../rendering/references.mdoc#use:pdf)，输出整本见[发布](../publishing/output.mdoc#use:publish)。
+
+{% section id="use:composition" title="父子都是完整工程" %}
+
+父配置声明子配置，父正文的 section 决定接入位置：
+
+```js
+export default {
+  projectId: 'system', documents: 'docs',
+  children: {component: 'component/docs/edoc.config.js'}
+};
+```
+
+```text
+{% include project="component" /%}
+```
+
+下面是真正接入本手册的子工程入口，可以点击进入，再通过它的链接回来：
+
+{% include project="component" /%}
+
+每个工程保留自己的配置根、正文和 docs/ir。子工程可以独立生成；父配置不会变成只有目录的容器。
+
+{% /section %}
+
+{% section id="use:weak-links" title="跨工程只做弱跳转" %}
+
+```text
+{% reference project="board" id="device:controller" label="核对控制器" /%}
+```
+
+project 使用稳定 projectId，不是父子别名或磁盘路径。只查当前产物中已有的目标，不读取外部配置、正文或 IR。目标未包含时提示“当前生成的页面中没有此内容”，保留当前文章。
+
+例如点击 {% reference project="not-in-this-manual" id="device:controller" label="未包含目标的示例" /%}。这不会令独立构建失败。本地数据和渲染引用仍然严格校验。
+
+{% /section %}
+
+{% /section %}

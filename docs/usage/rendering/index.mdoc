@@ -1,0 +1,23 @@
+{% section id="use:rendering" title="使用扩展渲染" %}
+
+Markdown 负责常规说明；下面的扩展分别解决编排、数据呈现和证据跳转。选一种能回答当前问题的表达，不需要先学习全部数据格式。
+
+| 想表达什么 | 选择哪种扩展 | 输入 |
+| --- | --- | --- |
+| 主要说明并排，或按需切换、展开细节 | [页面编排](page-layout.mdoc) | 正文中的标签，不需要 IR |
+| 参数、对象字段或可查询的行 | [数据表格](tables.mdoc) | 表定义及行数据，或已有对象引用 |
+| 模块协作、真实连线或状态迁移 | [关系图](diagrams.mdoc) | 对象、关系和视图 |
+| 一个模块的多组信号先总览再展开 | [接口合并与展开](interfaces.mdoc) | 真实端口、接口成员和连接 |
+| 信号电平与总线随时间变化 | [时序图](waveforms.mdoc) | WaveJSON 与规范/仿真来源 |
+| 从解释跳到对象、文章或原文证据 | [引用与 PDF 原文定位](references.mdoc) | 稳定 ID；PDF 还需要原文件与位置 |
+
+各篇先展示实际效果，再给完整最小例子与常用调整。数据从默认 docs/ir 发现；已有原始文件需要转换时，再读[数据接入](../engineering/data.mdoc)。
+
+图较复杂时再查[分组与接口显示](graph-options.mdoc)和[布局调整](layout.mdoc)。精确字段和当前缺口集中在[查询参考](../reference/index.mdoc)。
+
+{% section id="use:state-wave" title="状态图与时序图如何选择" %}
+
+状态图回答“什么条件触发状态变化”，时序图回答“信号随时间怎样变化”。分别使用[关系图](diagrams.mdoc#use:state)和[时序图](waveforms.mdoc#use:waveform)。
+
+{% /section %}
+{% /section %}

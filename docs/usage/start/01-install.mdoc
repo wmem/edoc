@@ -1,0 +1,12 @@
+{% section id="use:install" title="安装与运行环境" %}
+
+需要 Node.js 24 或更新版本。仓库版本推送到远程后，可通过 Git SSH 安装：
+
+```sh
+npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+edoc --version
+```
+
+需要访问该 Git 仓库的 SSH 权限。远程地址暂沿用历史路径，安装后的包名和命令名为 edoc。该命令描述安装方式，不表示当前工作树已推送或已验证你的网络环境。也可在项目中安装为依赖，通过 npx edoc 或 npm script 运行。
+
+{% /section %}

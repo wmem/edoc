@@ -1,7 +1,7 @@
-# 最小工程手册
+# 最小工程示例
 
-这个工程只有正文和一份空配置。
+这个工程演示普通正文与一份空配置，不需要工程数据或转换脚本。
 
-直接运行 edoc，工具读取当前目录下的 docs/edoc.config.js，使用默认标题和输出路径生成 output/index.html。
+在本目录运行已安装的 edoc，读取 docs/edoc.config.js 并以 docs/index.mdoc 为首页，收集 docs/ 正文，生成 output/index.html。本文是仓库介绍，不作为默认正式正文。
 
 不需要 manifest、资源清单、转换命令或额外 JSON 配置。

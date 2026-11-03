@@ -1,0 +1,20 @@
+{% section id="acceptance:default-documents" title="默认正式文档首页" %}
+
+2026-11-03，用户批准将 README 与正式文档分工：README 保持标准 Markdown，介绍仓库、编译和文档生成；正式文档集中在 docs，以 docs/index.mdoc 为默认首页。
+
+{% section id="acceptance:default-documents:contract" title="规则和迁移影响" %}
+
+旧规则是优先读取根 README.md，不存在时发现 docs；新规则在省略 documents 时要求 docs/index.mdoc，先加入首页，再扫描整个 docs 并去重。未链接文章也收集。缺少首页或该路径不是文件时报 DOCUMENT_ENTRY，提示创建或显式配置；不回退 README.md 或 docs/index.md。
+
+配置默认位置仍为 docs/edoc.config.js，空对象可用；数据默认 docs/ir，输出默认 output/index.html。显式 documents 的文件、目录及有序数组语义保留，允许作者主动选择 README 或自定义目录。文档普通链接仍能主动发现本工程其他文章，不把“默认不纳入 README”误写为禁止显式引用。
+
+已有空配置、仅根 README 的工程需要把正式正文移到 docs/index.mdoc；明确声明 documents 的工程不因这次默认修改而丢失原顺序。模板、最小示例、入门教程和推荐指南同步采用新规则，历史记录保留当时身份。
+
+{% /section %}
+
+{% section id="acceptance:default-documents:checks" title="验证入口" %}
+
+`tests/project.test.ts` 检查固定首页、全目录发现、README 不自动参与、缺失报错和显式覆盖；安装包测试从空配置运行真实命令。正式手册的同源例子继续独立构建，浏览器检查目录、引用和 PDF；真实原理图工程使用远程固定依赖单独验收。结果按实际范围报告，不从默认路径改动推导工程电气结论。
+
+{% /section %}
+{% /section %}

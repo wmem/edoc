@@ -16,7 +16,7 @@ docs/
     objects.json
 ```
 
-配置 documents: 'docs' 后，目录递归发现正文；目录 index 先出现，并作为该目录首页。每个文件是一篇独立阅读页，同一 HTML 只显示当前文章。没有 index 的目录只负责分组，不生成空文章。
+默认以 docs/index.mdoc 为正式首页，递归发现 docs 下的正文；各子目录的 index 优先出现并作为该目录首页。README 保留仓库介绍和编译/生成方法。每个文件是一篇独立阅读页，同一 HTML 只显示当前文章。没有 index 的目录只负责分组，不生成空文章。
 
 网页左侧展示文档、目录分组与子工程；文章内的标题和 section 在右侧“本页目录”定位，不重复放进左侧。左侧的展开项因此表示实际下级文档或子工程；跳到页内小节时仍高亮所属文章。CLI outline 与导出 PDF 保留完整章节层级，供精确查询及静态阅读。
 
@@ -53,9 +53,9 @@ section 的包含关系形成章节层级，ID 在当前工程内唯一。普通
 {% include file="docs/_partials/warnings.mdoc" /%}
 ```
 
-片段本身不成为新阅读页。工程组合使用另一种 project include，见[工程组合](08-projects-pdf.mdoc)。
+片段本身不成为新阅读页。工程组合使用另一种 project include，见[工程组合](../engineering/composition.mdoc)。
 
-需要完整的 Tabs、初始折叠和分栏正文时，按[页面编排配方](11-page-layout.mdoc#use:page-layout-create)创建并操作实际例子。
+需要完整的 Tabs、初始折叠和分栏正文时，按[页面编排配方](../rendering/page-layout.mdoc#use:page-layout-create)创建并操作实际例子。
 
 {% /section %}
 
@@ -65,7 +65,7 @@ section 的包含关系形成章节层级，ID 在当前工程内唯一。普通
 
 折叠可以让同一篇文章更易阅读，但一份很长的源文件不会因网页折叠而减少 Agent 的输入。需要按 ID 查询的细节应有独立稳定章节，必要时拆成独立文章。
 
-本手册的[接口教程](05-interfaces.mdoc)先展示总览，信号表与详图位于[样例查询参考](reference/examples.mdoc)。二者引用同一批对象。
+本手册的[接口教程](../rendering/interfaces.mdoc)先展示总览，信号表与详图位于[样例查询参考](../reference/examples.mdoc)。二者引用同一批对象。
 
 {% /section %}
 {% /section %}

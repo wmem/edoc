@@ -33,7 +33,7 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
  check(Object.keys(table),'ref:tables');check(Object.keys(table.columns.items.properties),'ref:tables');
  for(const row of table.rows.items.oneOf)check(Object.keys(row.properties),'ref:tables');
  for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment','include'].includes(name)?'ref:markdoc-links':'ref:markdoc-data');
- const document=book.root.documents.documents.find(d=>d.file==='docs/usage/capabilities.mdoc')!;
+ const document=book.root.documents.documents.find(d=>d.file==='docs/usage/reference/capabilities.mdoc')!;
  let rows=0;
  for(const table of [...document.ast.walk()].filter(n=>n.type==='table'))for(const row of [...table.walk()].filter(n=>n.type==='tr')){
   const cells=row.children.filter((n:any)=>n.type==='td');if(!cells.length)continue;assert.equal(cells.length,4);rows++;
@@ -52,16 +52,17 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
  const book=await manual,graph=book.root.graph;
  const blocks=(id:string,language:string)=>[...readDocument(graph,id,{maxChars:100000}).content.matchAll(new RegExp('```'+language+'\\n([\\s\\S]*?)```','g'))].map(m=>m[1]);
  const one=(id:string,language:string)=>{const values=blocks(id,language);assert.equal(values.length,1,id);return values[0];};
- async function create(name:string,config:string,data:string|undefined,body:string){
+ async function create(name:string,config:string,data:string|undefined,body:string,files:Record<string,string|Buffer>={}){
   const root=mkdtempSync(join(tmpdir(),'edoc-'+name+'-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
-  const write=(file:string,text:string)=>{mkdirSync(dirname(join(root,file)),{recursive:true});writeFileSync(join(root,file),text);};
+  const write=(file:string,text:string|Buffer)=>{mkdirSync(dirname(join(root,file)),{recursive:true});writeFileSync(join(root,file),text);};
   write('docs/edoc.config.js',config);write('docs/index.mdoc',body);if(data)write('docs/ir/facts.json',data);
+  for(const [file,text]of Object.entries(files))write(file,text);
   const loaded=await loadBook(await resolveProjectConfig(undefined,root)),compiled=await compileBook(loaded);return {book:loaded,page:Object.values(compiled.pages)[0]};
  }
- const table=await create('tables',"export default {documents:'docs'};",one('use:table-values','json'),one('use:table-values','text'));
+ const table=await create('tables',"export default {};",one('use:table-values','json'),one('use:table-values','text'));
  assert.match(table.page.html,/<th>频率 \(Hz\)<\/th>/);assert.match(table.page.html,/<td>false<\/td>/);assert.match(table.page.html,/<td>unknown<\/td>/);assert.match(table.page.html,/<td>\*\*普通文本\*\*<\/td>/);
  assert.equal((query(table.book.root.graph,'author:settings:low').target.entity as any).values.rate,20);
- const layout=await create('pages',"export default {documents:'docs'};",undefined,one('use:page-layout-create','markdoc'));
+ const layout=await create('pages',"export default {};",undefined,one('use:page-layout-create','markdoc'));
  assert.equal(layout.book.root.graph.index.get('layout:details')?.type,'document');assert.match(layout.page.html,/class="tabs"/);assert.match(layout.page.html,/<details id=/);
  assert.ok(!readDocument(layout.book.root.graph,'layout:home').content.includes('这里保存按需读取的字段说明'));assert.match(readDocument(layout.book.root.graph,'layout:details').content,/字段说明/);
  const graphs=await create('graphs',one('use:graph-options-create','javascript'),one('use:graph-options-create','json'),one('use:graph-options-create','text'));
@@ -70,4 +71,16 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
  const node=scene.nodes.find(n=>n.id==='author:host')!,members=node.ports.filter(p=>p.interfaceId==='author:host.ctrl'&&!p.interfaceHeader&&!p.slot);
  assert.deepEqual(members.map(p=>p.label),['READY','COMMAND']);assert.ok(members.every(p=>p.side==='right'));
  assert.deepEqual(graphs.page.scenes['author:group-overview'].collapsedGroups,['author:workers']);
+ // 教程拆页以后，读者仍能单独复制一种能力，不依赖前面章节或仓库 Gallery。
+ const minimal="export default {};";
+ for(const [name,id,view]of [['interfaces','use:interface-create','simple:stream'],['wiring','use:wiring','wire:overview'],['states','use:state','author:state']]as const){
+  const sample=await create(name,minimal,one(id,'json'),one(id,'text'));
+  assert.ok(sample.page.scenes[view],id+' 的完整图形配方必须独立构建');
+  if(name==='interfaces'){assert.equal(sample.page.scenes[view].nets.length,1);assert.equal(sample.page.scenes[view].nets[0].sourceRelations?.length,2);}
+  if(name==='wiring')assert.equal((query(sample.book.root.graph,'wire:clock').target.entity as any).endpoints.length,3);
+  if(name==='states')assert.equal(sample.page.scenes[view].nets.length,2);
+ }
+ const wave=await create('waveform',minimal,one('use:waveform-create','json'),one('use:waveform-create','text'));assert.match(wave.page.html,/最小握手示意/);
+ const markdown=await create('markdown',minimal,undefined,one('use:markdown:create','markdown'));assert.match(markdown.page.html,/<strong>重点<\/strong>/);assert.match(markdown.page.html,/<blockquote>/);assert.match(markdown.page.html,/<ol>/);assert.deepEqual(Object.keys(markdown.page.scenes),[]);
+ const pdf=await create('attachments',one('use:pdf-create','javascript'),undefined,one('use:pdf-create','text'),{'source/reference.pdf':readFileSync(join(repository,'docs/assets/location.pdf'))});assert.equal(pdf.book.root.graph.attachments!.reference.targets.home.page,1);assert.match(pdf.page.html,/attachment-link/);
 });

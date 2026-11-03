@@ -1,0 +1,21 @@
+{
+  "objects": [
+    {"id":"wire:controller","kind":"node","label":"主控（虚构）","ports":[{"id":"wire:controller.clk","label":"CLK_OUT","direction":"out","width":1,"attributes":{"pin":"1"}}]},
+    {"id":"wire:device","kind":"node","label":"外设（虚构）","ports":[{"id":"wire:device.clk","label":"CLK_IN","direction":"in","width":1,"attributes":{"pin":"2"}}]},
+    {"id":"wire:probe","kind":"node","label":"观察点（虚构）","ports":[{"id":"wire:probe.clk","label":"CLK_PROBE","direction":"unknown","width":1,"attributes":{"pin":"unknown"}}]}
+  ],
+  "relations": [{"id":"wire:clock","kind":"connection","class":"clock","label":"共享时钟","endpoints":["wire:controller.clk","wire:device.clk","wire:probe.clk"]}],
+  "views": [{
+    "id":"wire:overview","kind":"wiring","label":"三端点接线示意",
+    "include":{"objects":["wire:controller","wire:device","wire:probe"],"relations":["wire:clock"]},
+    "layout": {
+      "constraints": [
+        {"type":"order","axis":"x","nodes":["wire:controller","wire:device"],"gap":140},
+        {"type":"align","axis":"y","nodes":["wire:controller","wire:device"]},
+        {"type":"order","axis":"y","nodes":["wire:probe","wire:controller"],"gap":80},
+        {"type":"align","axis":"x","nodes":["wire:probe","wire:controller"]}
+      ],
+      "relationHints":{"wire:clock":{"backbone":["wire:controller.clk","wire:device.clk"]}}
+    }
+  }]
+}

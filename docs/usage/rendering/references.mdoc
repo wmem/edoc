@@ -1,0 +1,66 @@
+{% section id="use:references" title="引用与 PDF 原文定位" %}
+
+用稳定身份把解释、工程事实和原文证据连起来。引用文字保留在正文，目标按需打开；PDF 附件与生成整本文档 PDF 是不同用途。
+
+{% section id="use:references:objects" title="从解释进入对象与文章" %}
+
+普通 Markdown 链接切换文章；reference 引用已有对象或稳定章节；page 可以明确指定文章及其中的锚点。
+
+试着打开 {% reference id="system:producer" label="生产者的事实与来源" /%}，再返回这里。这是图和表使用的同一个对象。自己的工程已有[两节点例子](diagrams.mdoc#use:architecture)后，可直接在 docs/index.mdoc 写入：
+
+```text
+{% reference id="system:producer" label="查看生产者" /%}
+```
+
+不需要数据的普通文章跳转，直接写 [Markdown 文档链接](../writing/documents.mdoc#use:pages)。需要按稳定行 ID 定位表格时，见[行事实与位置](tables.mdoc#use:table-row-links)；精确属性在[引用标签参考](../reference/markdoc.mdoc#ref:markdoc-links)。
+
+{% /section %}
+
+{% section id="use:pdf" title="携带 PDF 并定位" %}
+
+本手册内嵌一份两页的虚构 PDF，用来说明定位行为，不包含真实电路。
+
+{% attachment id="location" target="detail" label="打开第 2 页的示例区域" /%}
+
+{% attachment id="location" target="named" label="通过命名目标 DETAIL 打开" /%}
+
+进入后可以分页、缩放、下载原文件，并使用浏览器后退回到这里。
+
+也可打开 {% reference id="manual:pdf-source" label="示例文件对象" /%}，从对象详情的“查看原始 PDF”进入同一区域，体验 source.attachment 的核对入口。
+
+```js
+attachments: {
+  schematic: {
+    type: 'pdf', file: 'hardware/schematic.pdf',
+    targets: {
+      power: {page: 3, rect: [0.10, 0.20, 0.40, 0.35]}
+    }
+  }
+}
+```
+
+正文用 attachment id="schematic" target="power" 引用。附件 ID 和位置 ID 分开，PDF 换版时更新映射，正文身份可以保持。
+
+rect 是旋转及裁切后显示区域的归一化角点 [x0,y0,x1,y1]，左上为原点。细节、命名目标、source.attachment 和限制见 {% reference id="ref:pdf" label="PDF 参考" /%}。
+
+{% /section %}
+
+{% section id="use:pdf-create" title="携带自己的第一份 PDF" %}
+
+先准备 source/reference.pdf。要完整复现教程，可进入上方示例，点击“下载原 PDF”，把这份两页虚构文件保存到该路径。配置直接写在自己的 docs/edoc.config.js：
+
+{% code file="docs/support/recipes/attachments.config.js" language="javascript" /%}
+
+在自己的 docs/index.mdoc 写入：
+
+```text
+{% attachment id="reference" target="home" label="查看原文首页" /%}
+```
+
+执行 edoc，点击链接应打开这份 PDF 的物理第 1 页；浏览器返回恢复正文。附件 ID 是 reference，位置 ID 是 home，均由项目声明，不依赖文件的视觉标题。
+
+需要更精确的位置时，再按[PDF 参考](../reference/pdf.mdoc)增加 page/rect 或命名目标，像上方第 2 页区域那样核对实际内容。附件在配置中定义，不需要为了携带 PDF 创建一份工程 IR。
+
+{% /section %}
+
+{% /section %}

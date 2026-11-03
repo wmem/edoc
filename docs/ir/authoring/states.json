@@ -1,0 +1,14 @@
+{
+  "objects": [
+    {"id":"author:state.idle","kind":"node","label":"空闲"},
+    {"id":"author:state.busy","kind":"node","label":"处理"}
+  ],
+  "relations": [
+    {"id":"author:state.start","kind":"connection","class":"control","label":"收到请求","endpoints":["author:state.idle","author:state.busy"],"direction":{"sources":["author:state.idle"],"targets":["author:state.busy"]}},
+    {"id":"author:state.finish","kind":"connection","class":"control","label":"处理完成","endpoints":["author:state.busy","author:state.idle"],"direction":{"sources":["author:state.busy"],"targets":["author:state.idle"]}}
+  ],
+  "views": [{
+    "id":"author:state","kind":"state","label":"两状态规范示意",
+    "include":{"objects":["author:state.idle","author:state.busy"],"relations":["author:state.start","author:state.finish"]}
+  }]
+}

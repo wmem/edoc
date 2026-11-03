@@ -2,8 +2,11 @@
 
 2026-11-02，用户明确要求取消 docs/manual 层，正式文档直接放 docs，并在项目目录执行工具时自动使用 docs/edoc.config.js。具体行为和最终验证范围记录于本页。
 
+本页保留该阶段的入口搬迁记录；2026-11-03 已将默认正文改为 docs/index.mdoc 首页并收集 docs，当前规则见[默认正式文档首页](default-documents.mdoc)。
+
 {% section id="acceptance:docs-root:contract" title="路径规则" %}
 
+以下为 2026-11-02 配置迁移时的规则，README 优先是当时状态；现行正文默认规则见[配置参考](../../usage/reference/config.mdoc#ref:config-documents)。
 - 默认只查执行目录下的 docs/edoc.config.js；不向父级搜索、不自动回退根 edoc.config.js。
 - 标准 docs/edoc.config.js 的工程根为 docs 上一级；同位置的 edoc.config.mjs/.cjs 可显式选择，根规则相同。
 - 其他显式 --config 路径继续以配置目录作为工程根。JS 相对 import 始终相对配置文件。

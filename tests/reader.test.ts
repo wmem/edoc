@@ -57,6 +57,12 @@ test('页面重复路由与本地文档断锚点不静默接受',async t=>{
  const p=readerFixture(t);p.write('docs/index.md','# 重复首页');await assert.rejects(async()=>compileBook(await load(p.root)),/PAGE_DUPLICATE/);rmSync(join(p.root,'docs/index.md'));
  p.write('docs/index.mdoc','# 首页\n[错误锚点](architecture.mdoc#missing)');await assert.rejects(async()=>compileBook(await load(p.root)),/DOCUMENT_ANCHOR/);
 });
+test('同页 Markdown 中文标题链接与跨文件链接使用相同的片段身份',async t=>{
+ const p=readerFixture(t);p.write('docs/index.mdoc','# 首页\n[同页标题](#职责与边界)\n[另一页标题](architecture.mdoc#职责与边界)\n## 职责与边界\n正文。');p.write('docs/architecture.mdoc','# 架构\n## 职责与边界\n说明。');
+ const data=await compileBook(await load(p.root)),html=data.pages[targetKey('system','docs/index')].html;
+ const routes=[...html.matchAll(/href="(#edoc=[^"]+)"/g)].map(m=>parseRoute(m[1])).filter(r=>r?.anchor);
+ assert.equal(routes.length,2);assert.ok(routes.every(r=>r!.anchor==='职责与边界'));assert.ok(routes.some(r=>r!.id==='docs/index'));assert.ok(routes.some(r=>r!.id==='docs/architecture'));
+});
 test('稳定路由可逆且不依赖 hash 跟踪，恶意或损坏路由不能执行代码',()=>{
  const route={kind:'pdf' as const,project:'板卡:1',id:'a/b',target:'输入<&>'};assert.deepEqual(parseRoute(routeHash(route)),route);assert.equal(parseRoute('#edoc=%bad'),undefined);assert.equal(parseRoute('#edoc='+encodeURIComponent('{"kind":"js","project":"a","id":"b"}')),undefined);
 });

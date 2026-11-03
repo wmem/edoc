@@ -37,6 +37,8 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
   page.html=rendered.chapters;page.scenes=rendered.scenes;page.outline=rendered.outline;
   page.html=page.html.replace(/(<a\b[^>]*\bhref=")#([^"\s]*)(")/g,(whole,before,fragment,after)=>{
    if(fragment.startsWith('edoc='))return whole;
+   // Markdown 解析器会编码中文等片段；与跨文件链接相同，只在 URL 边界解码一次。
+   try{fragment=decodeURIComponent(fragment);}catch{failure('DOCUMENT_LINK',document.file,'','文档链接编码错误');}
    const section=Object.entries(data.projects[project].sections).find(([,s])=>s.anchor===fragment||s.anchor===anchor(fragment));
    if(section)return before+esc(routeHash({kind:'page',project,id:section[1].page,anchor:section[1].anchor}))+after;
    const entity=[...node.graph.index.keys()].find(key=>anchor(key)===fragment);if(entity)return before+esc(routeHash({kind:'entity',project,id:entity}))+after;

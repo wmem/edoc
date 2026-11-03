@@ -1,0 +1,39 @@
+{% section id="use:markdown" title="Markdown 支持范围" %}
+
+基础正文可以直接写 Markdown，不需要 IR。这里的基础能力包括标题、段落、强调、有序与无序列表、引用块、代码、普通表格、链接和本地图片；需要数据图表或受控布局时再使用扩展标签。
+
+{% section id="use:markdown:effect" title="看一段普通正文" %}
+
+下面直接包含同一个源文件，标题和表格都由基础渲染器生成：
+
+{% include file="docs/support/recipes/markdown.mdoc" /%}
+
+{% /section %}
+
+{% section id="use:markdown:create" title="复制到自己的工程" %}
+
+先按[快速开始](../start/02-first-document.mdoc)创建最小配置，将下面正文保存为 docs/index.mdoc，执行 edoc。README.md 继续作为仓库介绍。这里不引用任何数据文件：
+
+{% code file="docs/support/recipes/markdown.mdoc" language="markdown" /%}
+
+.md 和 .mdoc 采用同一套解析与渲染能力。普通正文可使用 .md；加入 edoc 标签时建议用 .mdoc，方便识别。后缀不是是否支持扩展的功能开关。
+
+{% /section %}
+
+{% section id="use:markdown:boundaries" title="链接、图片与扩展边界" %}
+
+普通文档链接相对写下链接的源文件，点击后切换阅读页；图片路径相对工程根，只接受本地 PNG、JPEG 或 WebP，并内联到 HTML：
+
+```markdown
+[模块说明](modules/acquisition.mdoc)
+![板卡照片](docs/assets/board.png)
+```
+
+上面是路径写法，复制时需要准备对应文件。本地链接会检查目标是否参与文档及锚点是否存在；普通外链支持 http、https 和 mailto。
+
+Markdown 表格适合少量说明；需要从对象取字段、查询一行或在图表间复用事实时，改用[数据表格](../rendering/tables.mdoc)。需要稳定章节、分栏、Tabs 或折叠时，使用[章节组织](documents.mdoc)及[页面编排](../rendering/page-layout.mdoc)。
+
+本文列出已核对的基础语法，不表示覆盖所有 GFM 扩展。工具不提供任意原生 HTML、JavaScript 或 CSS 执行入口，也没有独立的数学公式、脚注或任务清单展示契约。精确标签及限制以[正文语法参考](../reference/markdoc.mdoc)为准。
+
+{% /section %}
+{% /section %}

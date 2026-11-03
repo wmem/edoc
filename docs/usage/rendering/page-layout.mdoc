@@ -1,22 +1,22 @@
 {% section id="use:page-layout" title="编排页面与折叠内容" %}
 
-先按任务拆分文章，再安排一篇文章里的主说明、可选视角与参考。分栏并不创建下级文档；Tabs 与折叠也不会减少数据或自动缩短 Agent 的读取范围。文档树的组织方法见[组织多篇文档](02-organize.mdoc)。
-
-{% section id="use:page-layout-create" title="复制一份完整的页面编排" %}
-
-自己工程的 docs/edoc.config.js 使用 export default {documents: 'docs'}。将下面完整正文保存为 docs/index.mdoc，执行 edoc；这个例子不需要 IR：
-
-{% code file="docs/support/recipes/page-layout.mdoc" language="markdoc" /%}
-
-columns 把相关说明并排，panel 标识各栏用途，Tabs 在同页切换视角，collapsed=true 保留按需展开的参考。section 的 ID 用于稳定跳转和 read；panel 标题只负责布局，不成为章节。
-
-{% /section %}
+先按任务拆分文章，再安排一篇文章里的主说明、可选视角与参考。分栏并不创建下级文档；Tabs 与折叠也不会减少数据或自动缩短 Agent 的读取范围。文档树的组织方法见[组织多篇文档](../writing/documents.mdoc)。
 
 {% section id="use:page-layout-live" title="实际操作这份正文" %}
 
 下面直接包含同一个源文件，没有另写一份示例。切换“使用步骤 / 查询入口”，再点击“打开详细参考”或手动展开参考：
 
 {% include file="docs/support/recipes/page-layout.mdoc" /%}
+
+{% /section %}
+
+{% section id="use:page-layout-create" title="复制一份完整的页面编排" %}
+
+自己工程的 docs/edoc.config.js 使用 export default {}。将下面完整正文保存为 docs/index.mdoc，执行 edoc；这个例子不需要 IR：
+
+{% code file="docs/support/recipes/page-layout.mdoc" language="markdoc" /%}
+
+columns 把相关说明并排，panel 标识各栏用途，Tabs 在同页切换视角，collapsed=true 保留按需展开的参考。section 的 ID 用于稳定跳转和 read；panel 标题只负责布局，不成为章节。
 
 {% /section %}
 
@@ -38,4 +38,5 @@ read 默认 self，因此第一条不附带子 section 的完整正文；第二�
 当前是预设比例与组件组合，不是任意 CSS 排版。字段及比例见 {% reference id="ref:markdoc-structure" label="编排参考" /%}；统一的操作说明见 {% reference id="ref:reading-controls" label="阅读控制" /%}。
 
 {% /section %}
+
 {% /section %}

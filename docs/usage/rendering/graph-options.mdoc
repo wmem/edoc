@@ -1,6 +1,6 @@
 {% section id="use:graph-options" title="图形分组与接口显示" %}
 
-父子框图、逻辑选集和模块接口回答不同问题。先按[结构与接线](04-diagrams.mdoc)选好显示范围，再按本页设置分组、顺序和初始状态；不要把这些设置写回真实连接。
+父子框图、逻辑选集和模块接口回答不同问题。先按[结构与接线](diagrams.mdoc)选好显示范围，再按本页设置分组、顺序和初始状态；不要把这些设置写回真实连接。
 
 {% section id="use:graph-groups" title="父子框与逻辑集合不是同一种分组" %}
 
@@ -13,6 +13,16 @@
 {% diagram id="author:group-overview" /%}
 
 parentId 定义框内外层级；Group.members 只定义选集，不能替代物理或语义父子关系。Group 总览是旧逻辑集合的临时投影，不改变原关系；完整 SVG 与文档 PDF 保留视图定义内的原节点和连接。模块协议接口使用 Node.interfaces，见下节。
+
+{% /section %}
+
+{% section id="use:interface-multiple" title="多组接口独立操作" %}
+
+理解[最小接口图](interfaces.mdoc)后，再看这个多接口虚构样例。处理模块同时有控制和 DMA 接口，可以只展开其中一组；这些信号是演示摘录，不表示完整 AXI 实现。
+
+{% diagram id="gallery:interface-buses" /%}
+
+该例复用 examples/gallery/interfaces.json，完整逐信号详图与来源在[样例查询参考](../reference/examples.mdoc)。自己的工程仍按[完整创建配方](interfaces.mdoc#use:interface-create)提供真实成员，不按信号名称猜协议。
 
 {% /section %}
 

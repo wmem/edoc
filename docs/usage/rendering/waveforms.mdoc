@@ -1,0 +1,43 @@
+{% section id="use:waveform" title="时序图" %}
+
+用按时间排列的电平与总线描述规范或仿真结果。时序图需要波形数据，不会从任意 RTL 自动推断。状态如何迁移另见[状态图](diagrams.mdoc#use:state)。
+
+{% section id="use:waveform-live" title="握手与反压波形" %}
+
+{% waveform id="mac:tx-handshake" /%}
+
+该 WaveJSON 来自样例 handshake.json。semantic: 'specification' 明确标为规范示意；只有确有仿真来源时才使用 simulation。
+
+正文引用方式：
+
+```text
+{% waveform id="mac:tx-handshake" /%}
+```
+
+数据以 format: 'wavejson' 提供，并保留 source。完整字段见 {% reference id="ref:waveforms" label="时序参考" /%}。需要说明行为规范与覆盖关系时，可参考[样例查询参考](../reference/examples.mdoc)。
+
+上面的标签引用本手册已准备的 MAC 样例。在自己的工程创建时，按下面的完整例子保存数据和正文，不需要到仓库寻找 handshake.json。
+
+{% /section %}
+
+{% section id="use:waveform-create" title="创建最小规范波形" %}
+
+保留最小配置与 docs/index.mdoc 首页时，将下面完整定义保存为 docs/ir/authoring/waveforms.json。这份数据不依赖其他对象：
+
+{% code file="docs/ir/authoring/waveforms.json" language="json" /%}
+
+在自己的 docs/index.mdoc 写入并执行 edoc：
+
+```text
+{% waveform id="system:handshake" /%}
+```
+
+结果如下。此例中 p 为时钟、0/1 为电平、点号延续上一状态、x 为未知区间，3 表示带文字的总线区间：
+
+{% waveform id="system:handshake" /%}
+
+signal 的行顺序决定显示顺序；标签并不执行仿真。这里 semantic='specification' 表示规范示意，有真实仿真来源时才使用 simulation。字段与 WaveJSON 可选范围只在[时序参考](../reference/ir.mdoc#ref:waveforms)维护。
+
+{% /section %}
+
+{% /section %}

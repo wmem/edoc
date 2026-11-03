@@ -1,0 +1,21 @@
+{
+  "objects": [
+    {"id":"simple:source","kind":"node","label":"发送端","ports":[
+      {"id":"simple:source.data","label":"DATA","direction":"out","width":8},
+      {"id":"simple:source.valid","label":"VALID","direction":"out","width":1}
+    ],"interfaces":[{"id":"simple:source.stream","label":"STREAM","role":"source","members":["simple:source.data","simple:source.valid"]}]},
+    {"id":"simple:sink","kind":"node","label":"接收端","ports":[
+      {"id":"simple:sink.data","label":"DATA","direction":"in","width":8},
+      {"id":"simple:sink.valid","label":"VALID","direction":"in","width":1}
+    ],"interfaces":[{"id":"simple:sink.stream","label":"STREAM","role":"sink","members":["simple:sink.data","simple:sink.valid"]}]}
+  ],
+  "relations": [
+    {"id":"simple:data","kind":"connection","class":"data","label":"数据","endpoints":["simple:source.data","simple:sink.data"],"direction":{"sources":["simple:source.data"],"targets":["simple:sink.data"]}},
+    {"id":"simple:valid","kind":"connection","class":"data","label":"有效标记","endpoints":["simple:source.valid","simple:sink.valid"],"direction":{"sources":["simple:source.valid"],"targets":["simple:sink.valid"]}}
+  ],
+  "views": [{
+    "id":"simple:stream","kind":"interface","label":"两信号接口示例",
+    "include":{"objects":["simple:source","simple:sink"],"relations":["simple:data","simple:valid"]},
+    "display":{"interfaceMode":"collapsed"}
+  }]
+}

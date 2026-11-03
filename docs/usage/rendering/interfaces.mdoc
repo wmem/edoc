@@ -1,0 +1,69 @@
+{% section id="use:interfaces" title="接口合并与展开" %}
+
+一个模块有多组信号时，先展示接口身份，再按需展开真实端口。接口是模块内部的端口分组，不是另一套连接数据；图与查询仍使用同一批逐信号关系。
+
+{% section id="use:interface-overview" title="从总览进入逐信号" %}
+
+下面只用两个模块、两个信号演示接口。点击 STREAM 旁的三角，观察从总览到逐信号连接的变化。这是虚构数据，不是完整标准协议。
+
+{% diagram id="simple:stream" /%}
+
+点击接口名称旁的三角，只展开这一端；另一组接口保持原状态。点击聚合线查看组成关系，再选择“展开两端接口”。也可用工具栏切换接口总览和全部展开。
+
+展开后需要查看完整范围时点击“适配画布”；“清晰阅读”恢复原始比例，较宽的图可拖动查看。网页会保留阅读位置，展开状态与整张图的适配是两项操作。
+
+聚合线是显示投影。Connection 仍保存逐信号的真实端点，不会写回接口 ID。某个成员在当前视图没有显示连接，不代表真实工程没有使用它。
+
+{% /section %}
+
+{% section id="use:interface-create" title="创建一个最小接口图" %}
+
+保留[最小配置](../start/02-first-document.mdoc#use:first-build) export default {}，准备 docs/index.mdoc 首页。保存下面完整数据为 docs/ir/authoring/interfaces.json；对象、真实端口、接口成员、连接和视图都在同一个标准资源里：
+
+{% code file="docs/ir/authoring/interfaces.json" language="json" /%}
+
+在 docs/index.mdoc 写入并执行 edoc：
+
+```text
+{% diagram id="simple:stream" /%}
+```
+
+起初显示接口总览；展开后可以追踪 DATA 和 VALID。视图只决定怎么显示，原连接端点始终是真实 Port，不改成接口 ID。
+
+{% /section %}
+
+{% section id="use:interface-declare" title="声明接口身份与成员" %}
+
+在已有 Node 内增加接口，members 引用它自己的真实 Port：
+
+```json
+{
+  "interfaces": [{
+    "id": "ip:s_axi", "label": "S_AXI", "protocol": "AXI4-Lite", "role": "slave",
+    "members": ["ip:awvalid", "ip:awready"]
+  }]
+}
+```
+
+以上是已有 Node 的局部调整，不是一份完整资源；从零创建请使用上一节完整例子。Port 自身仍提供方向、位宽和来源；工具不会根据 AXI 名称自动补齐信号。视图设置 display.interfaceMode: 'collapsed' 可默认合并。
+
+接口属于一个模块；逻辑 Group 表示选集，不能代替模块接口归属。共享时钟保留独立端口与显式时钟域。
+
+{% /section %}
+
+{% section id="use:interface-reference" title="详图与精确查询" %}
+
+理解整体后，需要哪个接口再查哪个。查询本页最小例子的成员：
+
+```sh
+edoc query --id simple:source.stream --depth 1
+```
+
+[样例查询参考](../reference/examples.mdoc)保留按接口拆分的详图、信号表和来源。正文无需把它们全部展开，静态文档输出仍保留参与文档的完整内容。
+
+字段与边界见 {% reference id="ref:interfaces" label="接口参考" /%}。
+
+需要调整接口左右边、顺序或仅展开一端时，继续读[图形分组与接口显示](graph-options.mdoc)，其中包含完整数据、配置、汇总表和逐信号表。
+
+{% /section %}
+{% /section %}

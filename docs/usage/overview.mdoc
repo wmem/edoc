@@ -1,0 +1,50 @@
+{% section id="use:overview" title="认识 edoc" %}
+
+edoc 以 Markdown 为正文基础，让你继续写说明、代码和链接；需要更强的表达时，再加入受控的编排标签和数据图表。作者维护正文、事实与配置，工具生成对人友好的网页和静态文档，Agent 按章节或对象直接查询源内容。
+
+| 能力 | 表达和阅读能力 | 需要准备什么 |
+| --- | --- | --- |
+| [Markdown 基础](writing/markdown.mdoc) | 标题、列表、代码、普通表格、图片与链接 | 正文；图片使用本地文件 |
+| [页面编排](rendering/page-layout.mdoc) | 分栏、面板、Tabs、折叠与稳定章节 | 正文中的扩展标签，不需要工程数据 |
+| [数据驱动图表](rendering/index.mdoc) | 架构、接线、接口、状态、时序图与结构化表格 | 结构化数据；关系图还需选择显示范围的视图 |
+| [引用与证据](rendering/references.mdoc) | 从说明跳到对象、文章或 PDF 原文位置 | 稳定身份；引用 PDF 时携带原文件 |
+| [阅读、查询与发布](publishing/index.mdoc) | 文档树、搜索、图形操作、对象详情和离线输出 | 工具生成；机器查询在拥有源文件的工程中执行 |
+
+可以只用前两类能力。数据图表的标准格式称为 IR；有网表、CSV 或 RTL 时，由项目脚本转换成它，edoc 不猜测领域含义。正文解释“为什么”，数据保存“是什么”，配置安排“显示哪些内容、输出到哪里”。
+
+下面直接看几种效果。想立即动手，可跳到[快速开始](start/index.mdoc)；已经知道目标，可从表中直接进入对应教程。
+
+{% section id="use:overview:layout" title="正文可以按阅读任务编排" %}
+
+下面两栏都只写正文，不需要数据文件。教程还提供可操作的 Tabs 和折叠示例。
+
+{% columns ratio="2:1" %}
+{% panel title="主要说明" %}
+先解释读者需要理解的内容。这里可以继续写 **Markdown**、列表与链接。
+{% /panel %}
+{% panel title="按需细节" %}
+[查看页面编排](rendering/page-layout.mdoc)，需要时再展开参考。
+{% /panel %}
+{% /columns %}
+
+{% /section %}
+
+{% section id="use:overview:data" title="同一份事实可以同时出现在图和表里" %}
+
+图展示生产与消费的关系，表读取同一批对象的名称。更改源对象后重新生成，两处一起更新；不手工维护两份数值或生成的 SVG。
+
+{% diagram id="system:overview" /%}
+{% table id="system:modules" /%}
+
+关系图还能表达真实端口与多端点连接、接口总览与展开、状态迁移；时序图单独表达信号随时间的变化。按问题选择：[关系图](rendering/diagrams.mdoc)、[接口](rendering/interfaces.mdoc)、[时序](rendering/waveforms.mdoc)或[表格](rendering/tables.mdoc)。本例为虚构数据，不代表真实工程或仿真结果。
+
+{% /section %}
+
+{% section id="use:overview:evidence" title="解释可以直接连接原文证据" %}
+
+{% attachment id="location" target="detail" label="打开 PDF 第 2 页的示例区域" /%}，再用浏览器返回本页。原文件随 HTML 携带；这是核对证据，不是把原文内容复制进正文。
+
+生成的网页还提供左侧文档树、右侧本页目录、搜索和对象详情。HTML 保留交互；文档 PDF 展开为静态内容，源 PDF 附件不会自动合并进整本 PDF。具体用法分别见[引用与定位](rendering/references.mdoc)和[阅读与发布](publishing/index.mdoc)。
+
+{% /section %}
+{% /section %}

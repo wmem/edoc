@@ -1,6 +1,5 @@
 // 保存为自己工程的 docs/edoc.config.js；先准备 graph-options.json。
 export default {
-  documents: 'docs',
   views: [
     {
       id: 'author:hierarchy', kind: 'architecture', label: '父子层级与逻辑选集',

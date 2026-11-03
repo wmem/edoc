@@ -14,7 +14,17 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
  const book=await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js'))),graph=book.root.graph;
  assert.equal(book.projects.size,3);assert.equal(book.projects.get('manual-component')?.documents.documents.length,1);assert.ok(book.projects.has('document-first-demo'));
  const navigation=projectOutline(book),flatten=(entries:any[]):any[]=>entries.flatMap(e=>[e,...flatten(e.children)]),all=flatten(navigation.chapters);
- for(const label of ['使用文档','查询参考','开发文档','第一次生成','接口合并与展开'])assert.ok(all.some(n=>n.label===label),label);
+ for(const label of ['使用文档','查询参考','开发文档','生成第一份文档','接口合并与展开'])assert.ok(all.some(n=>n.label===label),label);
+ const usage=all.find(n=>n.sectionId==='use:home')!,branches=usage.children.filter((n:any)=>n.page!==usage.page);
+ assert.deepEqual(branches.map((n:any)=>n.label),['认识 edoc','快速开始','编写与组织正文','使用扩展渲染','接入和维护工程','阅读与发布','查询参考'],'先整体认识，再上手和按需使用，参考最后查询');
+ const branch=(id:string)=>branches.find((n:any)=>n.sectionId===id)!;
+ assert.deepEqual(branch('use:quickstart').children.map((n:any)=>n.label),['安装与运行环境','生成第一份文档']);
+ assert.deepEqual(branch('use:writing').children.map((n:any)=>n.label),['Markdown 支持范围','组织多篇文档']);
+ assert.ok(branch('use:rendering').children.some((n:any)=>n.sectionId==='use:tables'));assert.ok(branch('use:rendering').children.some((n:any)=>n.sectionId==='use:waveform'));
+ assert.ok(branch('ref:home').children.some((n:any)=>n.sectionId==='use:capabilities'));assert.ok(!branches.some((n:any)=>n.sectionId==='use:capabilities'),'字段索引不冒充入门');
+ for(const id of ['use:install','use:state-wave','use:state','use:waveform','use:projects-pdf','use:composition','use:pdf','use:publish','use:table','guide:agent','guide:home'])assert.equal(graph.index.get(id)?.type,'document',id+' 的稳定入口保留');
+ const introduction=readDocument(graph,'use:overview');assert.ok(introduction.range.totalChars<2000);assert.ok(!/```(?:json|javascript)/.test(introduction.content));
+ for(const name of ['Markdown','页面编排','数据驱动图表','引用与证据','阅读、查询与发布','不需要工程数据'])assert.ok(introduction.content.includes(name),name+' 必须在概念总览中直接可读');
  assert.ok(all.some(n=>n.sectionId==='ref:config-data'));assert.ok(book.root.documents.files.includes('docs/development/design/_partials/original-v1.mdoc'));
  const development=all.find(n=>n.sectionId==='dev:home')!;
  assert.deepEqual(development.children.slice(0,2).map((n:any)=>n.sectionId),['dev:architecture','dev:contributing']);
@@ -31,6 +41,7 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
  assert.equal((query(graph,'ifdemo:engine.s_ctrl').target.entity as any).source.file,'examples/gallery/interfaces.json');
  assert.equal((query(graph,'system:producer').target.entity as any).source.file,'docs/ir/authoring/objects.json');
  const data=await compileBook(book),pages=Object.values(data.pages);assert.ok(pages.some(p=>p.html.includes('data-diagram="gallery:interface-buses"')));assert.ok(pages.some(p=>p.html.includes('received frame')));assert.ok(pages.some(p=>p.html.includes('规范示意')));
+ const overview=pages.find(p=>p.file==='docs/usage/overview.mdoc')!;assert.deepEqual(Object.keys(overview.scenes),['system:overview']);assert.match(overview.html,/<caption>模块名称查询<\/caption>/);assert.match(overview.html,/class="columns"/);
  assert.ok(pages.filter(p=>p.file.includes('/usage/')&&!p.file.includes('/reference/')).every(p=>!p.html.includes('<caption>引脚与连接事实</caption>')),'全量投影留在参考');
  assert.equal(book.root.graph.attachments?.location.numPages,2);assert.deepEqual(book.root.graph.attachments?.location.targets.detail.rect,[.15,.25,.75,.65]);
  assert.ok(existsSync(join(repository,'docs/assets/location.pdf')));assert.match(readFileSync(join(repository,'README.md'),'utf8'),/正式文档/);
