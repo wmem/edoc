@@ -64,7 +64,7 @@ test('同一进程依次生成普通 PDF 与接口 PDF 工程，客户端缓存�
 
 test('PDF 返回时恢复第三张延迟初始化图的独立接口状态',{timeout:60000},async t=>{
  const p=readerFixture(t),config=join(p.root,'fpga/edoc.config.js');writeFileSync(config,readFileSync(config,'utf8').replace("documents:'docs'","documents:'docs/return.mdoc'"));
- p.write('fpga/docs/return.mdoc','# 多图恢复\n{% diagram id="overview" /%}\n{% diagram id="overview" /%}\n'+('占位说明，用于验证长文档中的延迟图形。\n\n'.repeat(70))+'{% diagram id="overview" /%}\n{% attachment id="schematic" target="power" label="打开源图" /%}');
+ p.write('fpga/docs/return.mdoc','# 多图恢复\n{% relation-diagram id="overview" /%}\n{% relation-diagram id="overview" /%}\n'+('占位说明，用于验证长文档中的延迟图形。\n\n'.repeat(70))+'{% relation-diagram id="overview" /%}\n{% attachment id="schematic" target="power" label="打开源图" /%}');
  const file=join(p.root,'return.html');writeFileSync(file,await bookHTML(await loadBook(await resolveProjectConfig(config))));
  const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1400,height:900}}),page=await context.newPage();await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);
  const third=page.locator('[data-diagram]').nth(2);await third.scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelectorAll<HTMLElement>('[data-diagram]')[2].dataset.initialized==='true');await third.locator('[data-action=interfaces-expand]').click();await page.waitForFunction(()=>document.querySelectorAll<HTMLElement>('[data-diagram]')[2].dataset.busy==='false');

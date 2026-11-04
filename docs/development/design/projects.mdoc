@@ -92,7 +92,7 @@ export default {
 
 children 定义可以接入的子配置，正文决定接入位置与顺序：
 
-```text
+```text {% process=false %}
 {% section id="system" title="系统说明" %}
 父工程自己的目标、总体结构和图表。
 {% /section %}
@@ -145,7 +145,7 @@ children 中的 fpga 是父工程的局部组合别名，不是目标工程的�
 
 工程对象跳转写法：
 
-```text
+```text {% process=false %}
 {% reference project="board" id="power" /%}
 ```
 

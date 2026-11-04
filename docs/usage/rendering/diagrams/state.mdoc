@@ -1,0 +1,21 @@
+{% section id="use:state" title="状态图：迁移与条件" %}
+
+需要表达“什么条件触发变化”时使用状态图。下面的两状态关系是规范示意，不表示执行了程序或仿真。
+
+{% relation-diagram id="author:state" /%}
+
+将状态作为 Node、迁移作为 Connection，条件放在关系 label，使用 kind: 'state' 的视图。反向迁移保留自己的路径和条件。
+
+保留最小配置与 docs/index.mdoc 首页时，将下面完整定义保存为 docs/ir/authoring/states.json：
+
+{% code file="docs/ir/authoring/states.json" language="json" /%}
+
+在自己的 docs/index.mdoc 加入并执行 edoc：
+
+```text {% process=false %}
+{% relation-diagram id="author:state" /%}
+```
+
+两个方向分别保留条件与路径。需要观察信号随时间的变化时，改用[时序图](../waveforms.mdoc)。
+
+{% /section %}

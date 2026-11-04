@@ -1,0 +1,15 @@
+{% section id="ref:tag-data-table" title="data-table：结构化记录" %}
+
+展示一组有类型的列与记录。需要机器查询、对象投影、稳定行引用时使用；简短说明表可直接用 Markdown，原生 Markdoc table 也保留。
+
+```text {% process=false %}
+{% data-table id="system:modules" /%}
+```
+
+id 必需，只接受当前工程的 Table。数据放在 tables 中：columns 定义字段、标题、类型与可选单位；rows 的每一行通过 objectId 投影已有对象，或通过 values 保存自身权威事实。两种行不能混用字段来源；完整字段及创建数据见[Table 契约](../ir.mdoc#ref:tables)。
+
+按 columns 和 rows 的声明顺序生成表格，未知字段显示 unknown，单元格中的 Markdown/HTML 作为文本显示。网页和 PDF 保留全部行；当前没有表内筛选、排序和分页。空 rows 保留表头；无效类型或引用明确失败。
+
+表与行均可 query，引用 objectId 时仍保留原事实身份。行 ID 可以定位或链接，具体做法见[表格教程](../../rendering/tables.mdoc)。此标签不绘制柱状图、折线图或占比图；未来统计图表另定义输入契约，不复用关系图的 Node/Port。
+
+{% /section %}

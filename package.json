@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit",
     "test:graph": "node --test tests/graph.test.ts",
     "test:layout": "node --test tests/layout.test.ts",
-    "test:document": "node --test tests/document.test.ts",
+    "test:document": "node --test tests/document.test.ts tests/markdoc.test.ts",
     "test:outline": "node --test tests/outline.test.ts",
     "test:adapter": "node --test tests/adapter.test.ts",
     "test:browser": "node --test tests/browser.test.ts",

@@ -1,0 +1,91 @@
+{% section id="use:markdoc" title="使用 Markdoc 原生能力" %}
+
+普通 Markdown 适合直接说明。需要复用术语、按条件选择说明、给元素加属性或复用带参数的片段时，使用 Markdoc 原生能力；edoc 的图表和工程引用在它之上扩展。这里不需要 IR。
+
+| 需要做什么 | 从哪里开始 |
+| --- | --- |
+| 复用名称、选择说明、写属性 | 本页的变量、条件和注解 |
+| 同一说明在多个位置复用 | [片段与上下文](markdoc-reuse.mdoc) |
+| 查内置函数、标签和配置字段 | [Markdoc 查询参考](../reference/markdoc-native.mdoc) |
+| 查看分栏、Tabs、图表和稳定引用 | [edoc 扩展](../rendering/index.mdoc) |
+
+{% section id="use:markdoc:variables" title="先使用变量和条件" %}
+
+配置字段直接写在 docs/edoc.config.js。已有最小工程只需增加 markdoc：
+
+```javascript
+export default {
+  markdoc: {
+    variables: {product: '我的工程', edition: 'full'}
+  }
+};
+```
+
+正文用变量的点号路径取值，条件和函数使用 Markdoc 语法：
+
+```text {% process=false %}
+当前工程是 **{% $product %}**。
+
+{% if equals($edition, "full") %}
+展示完整说明。
+{% else /%}
+展示简略说明。
+{% /if %}
+```
+
+执行 edoc 后，网页和 PDF 展示同一份选择结果，目录与 read 也基于该结果。未显示章节不作为本次产物中的跳转目标；条件分支中涉及的文件和工程数据引用仍须有效。
+
+{% /section %}
+
+{% section id="use:markdoc:annotations" title="用注解补充元素属性" %}
+
+注解是紧跟在 Markdown 元素后的 Markdoc 属性声明，常见用途是稳定的页内 ID、已有主题类和表格对齐：
+
+```text {% process=false %}
+### 接口说明 {% #interface-description .note %}
+
+{% table %}
+- 参数 {% width="30%" %}
+- 说明 {% align="right" %}
+---
+- 名称
+- 示例 {% align="right" %}
+{% /table %}
+```
+
+原生 table 处理正文表格，支持单元格注解。data-table 才引用 IR 中的工程事实表。普通管道表格的对齐、有序列表起始值、链接 title 和图片 title 也会保留。
+
+class 只应用现有主题类，不会自动生成相应样式。id 必须避免与本页其他元素重复；长期工程章节仍优先使用 edoc section 的稳定身份。
+
+{% /section %}
+
+{% section id="use:markdoc:fences" title="代码示例明确使用 process=false" %}
+
+Markdoc 默认会处理代码围栏里的标签。展示标签的源写法时，在围栏开头加 process=false，避免把例子当成真实的 include、工程引用或章节：
+
+~~~~text {% process=false %}
+```text {% process=false %}
+{% relation-diagram id="example-only" /%}
+```
+~~~~
+
+仅 process=false 的围栏与 edoc code.file 源码引用保持字面内容。普通行内代码也保持字面；需要展示完整真实文件时，优先使用 code.file，避免复制。
+
+{% /section %}
+
+{% section id="use:markdoc:effect" title="同源源码与实际效果" %}
+
+先看实际效果。它使用本手册配置中的变量、函数、片段和提示框 Schema；完整上下文见[复用与配置](markdoc-reuse.mdoc)。
+
+{% include file="docs/support/recipes/markdoc.mdoc" /%}
+
+{% section id="use:markdoc:source" title="需要复制时查看源码" collapsed=true %}
+
+下面展示刚才实际渲染的同一个文件，不另维护一份示例。网页按需展开，PDF 完整收录。
+
+{% code file="docs/support/recipes/markdoc.mdoc" language="markdoc" /%}
+
+{% /section %}
+
+{% /section %}
+{% /section %}

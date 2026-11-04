@@ -1,5 +1,5 @@
 import type {ElkNode,ElkExtendedEdge} from 'elkjs/lib/elk-api.js';
-import type {Graph,Connection,View} from '../core/types.ts';
+import type {Graph,Connection,RelationView} from '../core/types.ts';
 import type {SceneNode,SceneNet} from './index.ts';
 import {labelBox,orthogonal,placeLabel,simplify,splitPath,inside,distance,intersects,crosses} from './geometry.ts';
 import type {Point,Rect,LabelBox} from './geometry.ts';
@@ -11,7 +11,7 @@ const labelObstacles=(nodes:SceneNode[]):Rect[]=>nodes.flatMap(n=>nodes.some(c=>
 const netBase=(r:Connection)=>({id:r.id,label:r.label??r.id,class:r.class,source:r.source,endpoints:r.endpoints.slice(),junction:r.endpoints.length>2});
 const labelPaths=(net:SceneNet)=>net.junction?net.branches.map(b=>b.points):[simplify([...net.branches[0].points,...net.branches[1].points.slice().reverse().slice(1)])];
 
-export async function routeScene(elk:LayoutEngine,nodes:SceneNode[],relations:Connection[],graph:Graph,view:View):Promise<SceneNet[]>{
+export async function routeScene(elk:LayoutEngine,nodes:SceneNode[],relations:Connection[],graph:Graph,view:RelationView):Promise<SceneNet[]>{
  // 同一模块两个端口之间的关系需要外部回路和标题通道，不能沿用过短的默认自环。
  const automatic=!(view.layout?.positions?.length)&&!view.layout?.constraints?.length&&!Object.keys(view.layout?.relationHints??{}).length&&!nodes.some(n=>n.parentId)&&!relations.some(r=>new Set(r.endpoints.map(id=>graph.index.get(id)?.ownerId??id)).size===1);
  // 多端点沿用节点层次布局，再求一棵实际连接树；虚拟 hub 不再增加额外布局层。
@@ -43,7 +43,7 @@ export async function routeScene(elk:LayoutEngine,nodes:SceneNode[],relations:Co
  return nets;
 }
 
-function fixedRoutes(nodes:SceneNode[],relations:Connection[],graph:Graph,view:View):SceneNet[]{
+function fixedRoutes(nodes:SceneNode[],relations:Connection[],graph:Graph,view:RelationView):SceneNet[]{
  const plain=nodeObstacles(nodes),obstacles=plain.map(r=>({x:r.x-14,y:r.y-14,width:r.width+28,height:r.height+28}));
  const labelNodes=labelObstacles(nodes);
  const hintFor=(id:string)=>Object.hasOwn(view.layout?.relationHints??{},id)?view.layout!.relationHints![id]:undefined;

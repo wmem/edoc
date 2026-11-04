@@ -1,6 +1,6 @@
 import ELKModule from 'elkjs/lib/elk.bundled.js';
 import type {ElkNode} from 'elkjs/lib/elk-api.js';
-import type {Graph,Node,Port,View,Group,Connection,Source} from '../core/types.ts';
+import type {Graph,Node,Port,RelationView,Group,Connection,Source} from '../core/types.ts';
 import {failure} from '../core/errors.ts';
 import {routeScene} from './routing.ts';
 import {textWidth,labelBox,intersects} from './geometry.ts';
@@ -22,7 +22,7 @@ export type Scene = {interfaceModel?:InterfaceModel;interfaceState?:InterfaceSta
 export async function layoutScene(graph:Graph, id:string,hints:SceneHints={}):Promise<Scene> {
  const entry=graph.index.get(id);
  if(entry?.type!=='view') failure('VIEW_NOT_FOUND','<view>','',`视图不存在：${id}`);
- const view=entry.entity as View;
+ const view=entry.entity as RelationView;
  const chosen=new Set<string>(),fullNodes=new Set<string>(),selectedPorts=new Set<string>();
  const add=(id:string)=>{const e=graph.index.get(id)!;if(e.type==='group'){(e.entity as Group).members.forEach(add);}else {chosen.add(e.ownerId??id);if(e.type==='port')selectedPorts.add(id);if(e.type==='node')fullNodes.add(id);}};
  view.include.objects.forEach(add);

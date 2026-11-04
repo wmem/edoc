@@ -49,8 +49,8 @@ for(const [name,target,code]of [
  await assert.rejects(()=>load(p.root,'fpga/edoc.config.js'),new RegExp(code));
 });
 test('本地渲染错误仍失败，外部数据不能用 diagram 加载',async t=>{
- const p=readerFixture(t);p.write('fpga/docs/index.mdoc','{% diagram id="overview" project="board" /%}');await assert.rejects(()=>load(p.root,'fpga/edoc.config.js'),/DOCUMENT_TAG/);
- p.write('fpga/docs/index.mdoc','{% diagram id="missing" /%}');await assert.rejects(()=>load(p.root,'fpga/edoc.config.js'),/DOCUMENT_REFERENCE/);
+ const p=readerFixture(t);p.write('fpga/docs/index.mdoc','{% relation-diagram id="overview" project="board" /%}');await assert.rejects(()=>load(p.root,'fpga/edoc.config.js'),/DOCUMENT_TAG/);
+ p.write('fpga/docs/index.mdoc','{% relation-diagram id="missing" /%}');await assert.rejects(()=>load(p.root,'fpga/edoc.config.js'),/DOCUMENT_REFERENCE/);
  p.write('fpga/docs/index.mdoc','{% attachment id="schematic" target="" /%}');await assert.rejects(()=>load(p.root,'fpga/edoc.config.js'),/DOCUMENT_REFERENCE_ID/);
 });
 test('页面重复路由与本地文档断锚点不静默接受',async t=>{

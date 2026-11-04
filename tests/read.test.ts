@@ -22,9 +22,9 @@ CHILD_ONLY
 
 {% include file="docs/part.mdoc" /%}
 
-\`\`\`text
+\`\`\`text {% process=false %}
 {% include file="missing-sample.mdoc" /%}
-{% diagram id="example-only" /%}
+{% relation-diagram id="example-only" /%}
 {% section id="fake" %}代码里的标签{% /section %}
 \`\`\`
 
@@ -40,7 +40,7 @@ test('read 默认只读当前章节，保留 Markdown、引用字面量与来源
  const f=sample(t),result=readDocument(f.load(),'read:parent');
  assert.equal(result.scope,'self');assert.match(result.content,/父节 \*\*说明\*\* 😀/);assert.match(result.content,/片段 \*\*原文\*\*/);
  assert.ok(!result.content.includes('CHILD_ONLY'));assert.ok(!result.content.includes('UNRELATED_ONLY'));
- assert.match(result.content,/```text\n{% include file="missing-sample.mdoc"/);assert.match(result.content,/diagram id="example-only"/);
+ assert.match(result.content,/```text \{% process=false %\}\n{% include file="missing-sample.mdoc"/);assert.match(result.content,/diagram id="example-only"/);
  assert.deepEqual(result.children.map(c=>c.id),['read:child']);assert.equal(result.source.file,'docs/read.mdoc');assert.equal(result.source.line,1);
  assert.ok(result.sources.some(s=>s.file==='docs/part.mdoc'));assert.ok(!result.content.includes('__edoc'));
 });
@@ -84,7 +84,7 @@ test('源码引用显示真实模板，不执行其中标签，read 保留文件
  writeFileSync(file,content);writeFileSync(join(f.root,'docs/book.mdoc'),'{% section id="source:example" title="真实源码" %}\n{% code file="docs/example.mdoc" language="markdoc" /%}\n{% /section %}');
  f.edit('manifest',d=>d.entryDocuments=['docs/book.mdoc']);
  const graph=(await loadBook(await resolveProjectConfig(join(f.root,'edoc.config.js')))).root.graph,result=readDocument(graph,'source:example');assert.ok(!graph.index.has('not-a-fact'));assert.ok(graph.documentPlan?.files.includes('docs/example.mdoc'));
- assert.match(result.content,/include file="missing.mdoc"/);assert.ok(result.sources.some(s=>s.file==='docs/example.mdoc'&&s.line===1));
+ assert.match(result.content,/include file="missing.mdoc"/);assert.match(result.content,/```markdoc \{% process=false %\}/);assert.ok(result.sources.some(s=>s.file==='docs/example.mdoc'&&s.line===1));
  const rendered=await renderDocument(graph,'源码');assert.match(rendered.chapters,/&lt;script&gt;example\(\)&lt;\/script&gt;/);assert.match(rendered.chapters,/data-language="markdoc"/);
  writeFileSync(file,content.replace('模板','修改后的模板'));assert.match(readDocument(f.load(),'source:example').content,/修改后的模板/);
 });

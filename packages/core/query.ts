@@ -1,5 +1,6 @@
 import {anchor} from './identity.ts';
-import type { Graph, RecordEntry, Connection, Node, Port, Group, View, Interface } from './types.ts';
+import type { Graph, RecordEntry } from './types.ts';
+import {dataLinkResolvers} from './extension-links.ts';
 import { failure } from './errors.ts';
 
 function item(entry: RecordEntry) {
@@ -7,25 +8,10 @@ function item(entry: RecordEntry) {
     ...(entry.ownerId ? { ownerId: entry.ownerId } : {}) };
 }
 
-function links(graph: Graph, entry: RecordEntry): string[] {
-  const adjacent = [...(graph.adjacency.get(entry.id) ?? [])];
-  if (entry.type === 'node') {
-    const node = entry.entity as Node;
-    return [...adjacent, ...(node.ports ?? []).map(p => p.id),...(node.interfaces??[]).map(i=>i.id), ...(node.parentId ? [node.parentId] : [])];
-  }
-  if (entry.type === 'port') {
-    const port = entry.entity as Port;
-    return [...adjacent, entry.ownerId!, ...[port.groupId, port.clockDomainId,graph.interfaceByPort?.get(entry.id)].filter(Boolean) as string[]];
-  }
-  if (entry.type === 'connection') return (entry.entity as Connection).endpoints;
-  if (entry.type === 'group') return (entry.entity as Group).members;
-  if (entry.type === 'interface') return [...adjacent,entry.ownerId!,...(entry.entity as Interface).members];
-  if(entry.type==='reference') { const e=entry.entity as any;return [e.fromId,e.targetId]; }
-  if(entry.type==='table') return (entry.entity as any).rows.map((r:any)=>r.id);
-  if(entry.type==='row') return (entry.entity as any).objectId?[(entry.entity as any).objectId]:[];
-  if(entry.type!=='view') return [];
-  const view = entry.entity as View;
-  return [...view.include.objects, ...view.include.relations];
+function links(graph:Graph,entry:RecordEntry):string[]{
+ if(entry.type==='reference'){const e=entry.entity as import('./types.ts').Reference;return [e.fromId,e.targetId];}
+ for(const resolve of dataLinkResolvers){const links=resolve(graph,entry);if(links!==undefined)return links;}
+ return [];
 }
 
 export function query(graph: Graph, id: string, options: { depth?: number; maxItems?: number } = {}) {
@@ -64,5 +50,5 @@ export function summary(graph: Graph) {
   const counts: Record<string, number> = {};
   for (const entry of graph.index.values()) counts[entry.type] = (counts[entry.type] ?? 0) + 1;
   return { valid: true, irVersion: graph.manifest.irVersion, projectId: graph.manifest.projectId,
-    resources: graph.manifest.resources.length, counts, entryDocuments: graph.manifest.entryDocuments };
+    resources: graph.manifest.resources.length, counts, ...(graph.documentPlan?.warnings?.length?{warnings:graph.documentPlan.warnings}:{}), entryDocuments: graph.manifest.entryDocuments };
 }

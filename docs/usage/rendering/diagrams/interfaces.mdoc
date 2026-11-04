@@ -6,7 +6,7 @@
 
 下面只用两个模块、两个信号演示接口。点击 STREAM 旁的三角，观察从总览到逐信号连接的变化。这是虚构数据，不是完整标准协议。
 
-{% diagram id="simple:stream" /%}
+{% relation-diagram id="simple:stream" /%}
 
 点击接口名称旁的三角，只展开这一端；另一组接口保持原状态。点击聚合线查看组成关系，再选择“展开两端接口”。也可用工具栏切换接口总览和全部展开。
 
@@ -18,14 +18,14 @@
 
 {% section id="use:interface-create" title="创建一个最小接口图" %}
 
-保留[最小配置](../start/02-first-document.mdoc#use:first-build) export default {}，准备 docs/index.mdoc 首页。保存下面完整数据为 docs/ir/authoring/interfaces.json；对象、真实端口、接口成员、连接和视图都在同一个标准资源里：
+保留[最小配置](../../start/02-first-document.mdoc#use:first-build) export default {}，准备 docs/index.mdoc 首页。保存下面完整数据为 docs/ir/authoring/interfaces.json；对象、真实端口、接口成员、连接和视图都在同一个标准资源里：
 
 {% code file="docs/ir/authoring/interfaces.json" language="json" /%}
 
 在 docs/index.mdoc 写入并执行 edoc：
 
-```text
-{% diagram id="simple:stream" /%}
+```text {% process=false %}
+{% relation-diagram id="simple:stream" /%}
 ```
 
 起初显示接口总览；展开后可以追踪 DATA 和 VALID。视图只决定怎么显示，原连接端点始终是真实 Port，不改成接口 ID。
@@ -59,7 +59,7 @@
 edoc query --id simple:source.stream --depth 1
 ```
 
-[样例查询参考](../reference/examples.mdoc)保留按接口拆分的详图、信号表和来源。正文无需把它们全部展开，静态文档输出仍保留参与文档的完整内容。
+[样例查询参考](../../reference/examples.mdoc)保留按接口拆分的详图、信号表和来源。正文无需把它们全部展开，静态文档输出仍保留参与文档的完整内容。
 
 字段与边界见 {% reference id="ref:interfaces" label="接口参考" /%}。
 

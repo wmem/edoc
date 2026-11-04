@@ -10,13 +10,13 @@
 {% section id="acceptance:interfaces:part-01" title="当前支持" %}
 
 
-当前接口输入、投影和边界统一维护在[接口参考](../../usage/reference/graph.mdoc#ref:interfaces)及[接口教程](../../usage/rendering/interfaces.mdoc)，本记录保留实现与当时验收。
+当前接口输入、投影和边界统一维护在[接口参考](../../usage/reference/graph.mdoc#ref:interfaces)及[接口教程](../../usage/rendering/diagrams/interfaces.mdoc)，本记录保留实现与当时验收。
 
 {% /section %}
 
 {% section id="acceptance:interfaces:origin" title="同一信号的多视图定位" %}
 
-2026-11-02，补充[接口排序与局部展开教程](../../usage/rendering/graph-options.mdoc#use:graph-interface-options)时发现：两个 Tab 的接口图引用同一真实端口，先初始化默认图再切到覆盖图，在覆盖图点击信号并选择“图中定位信号”，会展开隐藏的默认图。
+2026-11-02，补充[接口排序与局部展开教程](../../usage/rendering/diagrams/graph-options.mdoc#use:graph-interface-options)时发现：两个 Tab 的接口图引用同一真实端口，先初始化默认图再切到覆盖图，在覆盖图点击信号并选择“图中定位信号”，会展开隐藏的默认图。
 
 原因是选择事件只携带端口 ID，多个图监听同一事件，先注册者创建了定位操作。修复后，图内选择携带发起图；定位按所属图处理，正文选择优先使用当前可见图。工程 ID、接口归属和路由语义均不变。
 

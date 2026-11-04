@@ -2,12 +2,13 @@
 
 docs/edoc.config.js 直接导出配置对象。在项目目录执行命令，未指定 --config 时只读取该目录下的 docs/edoc.config.js，不向上搜索，也不自动回退根目录配置。显式配置支持 .js/.mjs/.cjs，未知字段报错。
 
-标准位置 docs/edoc.config.js 的工程根为 docs 的上一级；显式指定同位置的 edoc.config.mjs/.cjs 也采用此规则。其余显式配置以所在目录为工程根。documents、data、include、code、source、children、附件和配置输出均相对工程根；JS 的相对 import 始终相对配置文件本身。CLI --output 相对执行目录。
+标准位置 docs/edoc.config.js 的工程根为 docs 的上一级；显式指定同位置的 edoc.config.mjs/.cjs 也采用此规则。其余显式配置以所在目录为工程根。documents、data、include、code、markdoc.partials 的路径值、source、children、附件和配置输出均相对工程根；JS 的相对 import 始终相对配置文件本身。CLI --output 相对执行目录。
 
 | 字段 | 用途 | 稳定章节 ID |
 | --- | --- | --- |
 | title、projectId | 标题与工程身份 | ref:config-identity |
 | documents | 正文入口与顺序 | ref:config-documents |
+| markdoc | 原生上下文、片段与扩展 Schema | ref:markdoc-context |
 | data | 标准数据路径、对象或函数 | ref:config-data |
 | views、tables、waveforms、references | 配置内联资源 | ref:config-resources |
 | children | 显式组合子工程 | ref:config-children |

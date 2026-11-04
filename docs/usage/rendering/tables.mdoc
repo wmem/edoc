@@ -18,12 +18,12 @@
 
 下面的表直接从两个对象读取名称：
 
-{% table id="system:modules" /%}
+{% data-table id="system:modules" /%}
 
 先按[数据接入](../engineering/data.mdoc#use:standard-data)保存两个对象，将 {% reference id="ref:table-example" label="最小投影表定义" /%} 保存为 docs/ir/authoring/tables.json。在参与发布的 docs/index.mdoc 加入：
 
-```text
-{% table id="system:modules" /%}
+```text {% process=false %}
+{% data-table id="system:modules" /%}
 ```
 
 执行 edoc。修改原对象 label 后重建，图与表会一起变化；表格行不用再抄一份名称。完整字段只在 {% reference id="ref:tables" label="表格参考" /%} 维护。
@@ -36,7 +36,7 @@
 
 以下两组参数是虚构数据，演示多类型单元格与缺失值：
 
-{% table id="author:settings" /%}
+{% data-table id="author:settings" /%}
 
 单位 Hz 显示在列标题，不会自动换算数值；未提供的 note 显示 unknown。配置名和说明是 string，频率是 number，启用状态是 boolean，补充对象使用 json。修改字段类型而不修改数据时，validate 会报告类型不符。
 
@@ -46,8 +46,8 @@
 
 在自己工程的 docs/index.mdoc 写入：
 
-```text
-{% table id="author:settings" /%}
+```text {% process=false %}
+{% data-table id="author:settings" /%}
 
 {% reference id="author:settings:low" label="查询低功耗行事实" /%}
 {% page id="docs/index" anchor="author:settings:low" label="定位表中的低功耗行" /%}

@@ -1,0 +1,81 @@
+{% section id="ref:markdoc-native" title="Markdoc 原生语法与配置" %}
+
+正文先由 Markdoc 解析和校验，再增加 edoc 的工程引用与发布处理。原生 table 保留原义，工程事实表使用 data-table。初次操作见[原生能力教程](../writing/markdoc.mdoc)与[复用和配置](../writing/markdoc-reuse.mdoc)。
+
+| 查询任务 | 稳定章节 |
+| --- | --- |
+| 原生标签、条件和表格 | ref:markdoc-native-tags |
+| 变量、函数、片段与配置 | ref:markdoc-context |
+| 节点属性、注解、围栏和注释 | ref:markdoc-native-nodes |
+| 来源、校验与原生差异 | ref:markdoc-native-boundaries |
+
+{% section id="ref:markdoc-native-tags" title="原生标签" %}
+
+| 标签 | 写法与含义 |
+| --- | --- |
+| if | primary 为位置参数，接受变量、字面量或函数；使用原生条件选择，不执行 JavaScript 表达式 |
+| else | if 内的自闭合分支标记；可带后续条件，省略条件表示默认分支 |
+| partial | file 为配置别名，variables 为可选局部覆盖对象；片段可嵌套，循环和过深嵌套报错 |
+| table | 原生块状标签，列表描述行列；支持管道表格之外的单元格注解 |
+| slot | primary 为插槽名称；需启用 markdoc.parse.slots，并由父标签 Schema 声明、处理 slots |
+
+条件按原生 truthy 规则：false、null、undefined 为假，0 和空字符串不按 JavaScript 的假值规则处理。所有正文最终只保留被选中的章节身份；文件与工程引用检查覆盖未选择分支。
+
+{% /section %}
+
+{% section id="ref:markdoc-context" title="配置上下文与函数" %}
+
+在 edoc.config.js 的 markdoc 中直接配置：
+
+| 字段 | 类型与用途 |
+| --- | --- |
+| variables | 原生变量对象；通过 `$name` 或点号路径使用，值按 Markdoc 规则解析 |
+| functions | 名称到 ConfigFunction；parameters、returns、validate、transform 使用原生定义，位置参数以 0、1 等键取得 |
+| partials | 别名到工程相对路径、Markdoc AST 或 AST 数组；路径是 edoc 提供的依赖追踪便利形式，AST 保留原生接入方式 |
+| tags | 新标签名到 Schema；支持 attributes、children、slots、inline、selfClosing、render、validate、transform，不能覆盖原生或 edoc 名称 |
+| tokenizer | 传给原生 Markdoc.Tokenizer；常用 allowComments:true。不是新增 Markdown 插件的隐式开关 |
+| parse | 传给原生 parse 的参数，常用 slots:true；file 始终由实际文件来源确定 |
+| validation | 传给原生校验器；例如 validateFunctions:true 检查函数名称及参数 |
+
+内置函数直接可用：
+
+| 函数 | 含义 |
+| --- | --- |
+| and、or、not | 按 Markdoc truthy 规则组合条件 |
+| equals | 参数之间严格相等 |
+| default | 第一个参数为 undefined 时返回第二个参数 |
+| debug | 将首个参数序列化为格式化 JSON 字符串 |
+
+正文使用原生函数调用，不执行 JS 算符、语句或任意源码。自定义函数和 Schema 的实现写在可信配置中。异步文本函数、Schema 校验和转换会在发布前等待完成；条件与工程 ID 应使用同步的确定值，避免依赖上游未定义的异步属性求值行为。目录、read、索引和渲染共享解析时得到的上下文；不要用随机数、时间或可变外部状态制造不稳定的章节身份。原生未定义变量的行为由提供的 variables 和 validation 决定，工程标签要求的 ID 等字段仍须得到有效值。
+
+配置中的模块 import 按项目本地依赖解析；仅全局安装命令时，基本变量、函数和路径片段配置不需要 import。edoc 通过公开 API 导出 Markdoc，可在配置中用 `import {Markdoc} from 'edoc'` 构造 AST、Tag 和原生定义。当前不提供替换全部基础节点渲染器的 nodes 配置入口；基础节点由工具统一处理目录、资源和离线输出，不将该范围描述为已验证的任意第三方插件兼容。
+
+{% /section %}
+
+{% section id="ref:markdoc-native-nodes" title="节点、注解与围栏" %}
+
+原生节点覆盖 document、heading、paragraph、hr、blockquote、list、item、table、thead、tbody、tr、th、td、inline、strong、em、s、link、image、code、fence、text、softbreak、hardbreak、comment 等。一般不必逐个配置；普通 Markdown 写法见[基础正文](../writing/markdown.mdoc)。
+
+- 全局注解 id/class 使用原生语法。Markdown 标题的显式 id 同时用于本页目录和跳转；它不替代 section 的全工程稳定身份。
+- 保留 list.start、link.title、image.title、表格 align，以及原生 th/td 的 width、colspan、rowspan。具体属性接受范围沿用原生 Schema。
+- fence 的 language 标记展示语言；process 缺省沿用 true，标签会被处理。process=false 不执行围栏内的标签，也不为其中的样例加载依赖或创建索引。
+- code.file 是 edoc 的字面源码引用，自动使用 process=false；普通行内代码不处理标签。
+- Frontmatter 只提取原文，不自动解析 YAML/JSON，不自动为每个页面创建 `$markdoc.frontmatter`；配置选择解析格式并显式提供变量。
+- HTML 风格注释默认沿用上游行为，启用 tokenizer.allowComments 后可隐藏作者备注；不因此开放原生 HTML。
+
+class 只能引用现有主题类，不是自由 CSS 入口。Schema 的 HTML 输出保留原生 Schema 转换得到的有效 HTML 属性，包括 id/class/title、语义属性及 data-/aria- 属性；不执行事件属性、自由 style 或外部运行资源。新增图片须通过 Markdown 图片节点或 render:img 的声明式属性记录来源，不能由不透明 transform 偷加未登记资源。
+
+{% /section %}
+
+{% section id="ref:markdoc-native-boundaries" title="校验、来源与兼容边界" %}
+
+Markdoc 的 error/critical 阻止生成，warning 保持告警级别，可在 validate 的 JSON 中查询 warnings。原生 Schema 对某些合法行内嵌套给出 warning；工具不再把这些警告变成构建失败。edoc 另检查工程标签的引用身份与类型、完整依赖、循环、项目范围及输出覆盖。
+
+read 返回本次上下文中的规范化正文和实际来源，code.file 等字面 AST 围栏会在返回正文中补齐 process=false，避免复制后改变含义；保留片段的局部结果及显式子章节边界；不读取生成 HTML。原生 table 不需要 IR，data-table 必须引用真实 Table。
+
+2026-11-04 的迁移：原工程数据表标签 table 改为 data-table；围栏不再隐式全部隔离，需要字面展示的既有示例增加 process=false。原始 V1 快照没有改写字节，由配置传入显式隔离围栏后的原生 AST。
+
+Markdoc 0.5.11 默认关闭 Setext 标题和缩进代码等上游差异保持记录，本轮不修补上游；详情见[兼容基线与差异调查](../../development/design/markdoc.mdoc#design:markdoc:upstream)。这也不意味着工具已经支持全部 GFM、脚注或数学公式。HTML/PDF 的实际功能以本手册示例与验收范围为准。
+
+{% /section %}
+{% /section %}

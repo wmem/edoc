@@ -1,13 +1,13 @@
 import type {Graph,Manifest,ResourceType,Entity,RecordEntry,Connection,Diagnostic,Interface} from './types.ts';
 import {validateSchema} from './schema.ts';
-import type {SchemaName} from './schema.ts';
+import {resourceSchemas} from './extension-contracts.ts';
 import {registerDocuments,validateDocuments} from './documents.ts';
 import type {DocumentPlan} from './documents.ts';
-import {validateRelations} from './relations.ts';
+import {validateResources} from './resource-validation.ts';
 import {EdocError} from './errors.ts';
 
 export type ResourcePart={type:ResourceType;data:any;file:string;prefix?:string};
-export const resourceSchemas:Record<ResourceType,SchemaName>={objects:'object',relations:'relation',views:'view',tables:'table',waveforms:'waveform',references:'reference'};
+export {resourceSchemas} from './extension-contracts.ts';
 
 // 文件发现与工程索引解耦：调用方可以来自文件扫描或 JS 配置，不需要 manifest 文件。
 export function graphFromResources(parts:ResourcePart[],metadata:Manifest,options:{root:string;directory?:string;documents?:DocumentPlan;strict?:boolean;attachments?:Graph['attachments']}):Graph{
@@ -31,7 +31,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
  }
  if(diagnostics.length)throw new EdocError(diagnostics);
  const graph:Graph={attachments:options.attachments,manifest:metadata,projectRoot:options.root,irDirectory:options.directory??options.root,index,connections,adjacency:new Map(),...(options.documents?{documentPlan:options.documents}:{})};
- registerDocuments(graph);validateRelations(graph);validateDocuments(graph);
+ registerDocuments(graph);validateResources(graph);validateDocuments(graph);
  graph.interfaceByPort=new Map();for(const entry of index.values())if(entry.type==='interface')for(const id of (entry.entity as Interface).members)graph.interfaceByPort.set(id,entry.id);
  for(const connection of connections.values())for(const id of connection.endpoints){
   const ids=[id,index.get(id)!.ownerId,graph.interfaceByPort.get(id)].filter(Boolean) as string[];

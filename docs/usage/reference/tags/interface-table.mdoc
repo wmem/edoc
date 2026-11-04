@@ -1,0 +1,25 @@
+{% section id="ref:tag-interface-table" title="interface-table：接口汇总与明细" %}
+
+把已有端口事实整理成表，不创建另一份信号数据，也不生成接口图。图中的端口与连线展开使用 [relation-diagram](relation-diagram.mdoc)。
+
+```text {% process=false %}
+{% interface-table id="author:host" mode="overview" /%}
+{% interface-table id="author:host.ctrl" /%}
+```
+
+| 属性 | 契约 |
+| --- | --- |
+| id | 必需；Node、Interface 或直接包含 Port 的 Group |
+| mode | overview 或 detailed；默认 detailed |
+
+Node 展示自己的端口；Interface 展示真实 members；Group 必须直接包含端口，不能包含模块或嵌套分组。关系视图、单个 Port、Table 和 Waveform 不是有效输入。
+
+overview 展示分组、信号数、方向与位宽集合。Node 有 interfaces 时按真实接口分组，未覆盖端口列为独立信号；否则按已有逻辑 Group 汇总，剩余列为未分组信号。逻辑 Group 允许重叠，因此这一汇总不承诺各行信号数可直接相加。
+
+detailed 按端口定义顺序或 members 顺序展示名称、方向、位宽、时钟域、属性与来源。未解析的宽度保留表达式，缺少字段显示 unknown，不推断缺失值。输入没有端口时保留表头，不生成假信号。
+
+网页与 PDF 都是完整表格，没有图形展开开关或独立 SVG 导出。点击信号可查原始对象，query 仍查询原来的 Node、Interface 或 Port。属性字段、成员约束只在[数据参考](../graph.mdoc#ref:interfaces)维护；实际汇总/明细效果见[接口表对照](../../rendering/diagrams/graph-options.mdoc#use:interface-tables)。
+
+缺失 ID、错误类型、非直接端口 Group 或无效 mode 都会失败。mode 不影响任何关系图。
+
+{% /section %}

@@ -1,0 +1,56 @@
+{% section id="design:markdoc" title="Markdoc 兼容基线与 edoc 扩展" %}
+
+2026-11-04，用户确定：以 Markdoc 原生能力为兼容基线，在其上增加 edoc 的工程文档能力；Markdoc 与 CommonMark 的差异记录即可，不另造一套缩减语法，也不以修复这些上游差异作为本轮目标。
+
+本页记录已批准方向、上游核查和实施范围。实际支持以使用文档与[对应验收记录](../acceptance/markdoc.mdoc)为准，不宣称任意第三方渲染器均已验证。当前可用标签仍以[正文语法参考](../../usage/reference/markdoc.mdoc)为准。
+
+{% section id="design:markdoc:baseline" title="原生能力与工程扩展的分工" %}
+
+- Markdoc 负责原生 Markdown 节点、标签、注解、变量、函数、partials，以及解析、校验和转换机制。edoc 不另写一套与其矛盾的基础语法校验。
+- edoc 在同一机制上增加稳定章节、页面编排、IR 图表、工程引用、目录、查询、附件与离线发布。工程标签的约束只校验工程标签，不误伤原生标签。
+- 原生节点的有效属性和含义应保留。列表 start、表格 align、链接 title 已由上游正确识别，此前 edoc 丢失它们属于工具缺陷。
+- 原生变量、函数和片段需要配置时，从 edoc.config.js 接入对应的 Markdoc 机制，避免再定义一套表达式语言。目录、引用、HTML 和 PDF 必须使用一致的解析上下文。
+- “兼容 Markdoc”不表示正文可以执行任意 JavaScript、CSS 或原生 HTML；既有工程事实和资源边界仍适用。Markdoc 默认转义原生 HTML，不以完整 CommonMark 为由放开它。
+- 上游本身拒绝或另作解释的语法要准确记录；edoc 自身造成的丢失、错误拒绝或不完整接入不能归咎于上游。
+
+{% /section %}
+
+{% section id="design:markdoc:upstream" title="Markdoc 与 CommonMark 的已核查差异" %}
+
+核查对象为本仓库安装的 @markdoc/markdoc 0.5.11 和 CommonMark 0.31.2。2026-11-04 对 652 个官方规范样例逐一调用原生 parse、validate、transform 和 HTML renderer，并补充标签、变量、Frontmatter 和围栏测试；未经过 edoc。这是差异调查，不是官方一致性认证，不以 HTML 字符串相同率表示兼容率。
+
+官方语法页将 Markdoc 定位为 CommonMark 的超集；当前安装版的源码和行为仍有下列差异。结论限定于该版本，升级后应重新核对。
+
+| 范围 | 原生行为与影响 |
+| --- | --- |
+| Setext 标题 | Tokenizer 明确关闭 lheading；下一行的等号或短横线不再产生相应标题 |
+| 缩进代码块 | Tokenizer 明确关闭 code；四空格或 Tab 缩进不再产生该类代码块 |
+| 原生 HTML、HTML 注释 | 默认按文字显示；allowComments 可单独启用注释处理。仅开启 html 选项也不足以提供相应 AST Schema |
+| 合法行内嵌套的校验 | 图片作为链接内容、强调内软/硬换行、部分同类强调嵌套会触发默认 Schema 的 warning；官方样例中 26 例有这类告警，不能把这些告警提升成构建错误 |
+| Frontmatter | 文首两条三短横线之间的内容被提取为元数据，不按普通正文显示 |
+| 标签、变量与注解 | 原本在 CommonMark 中属于普通文字的 Markdoc 定界内容会被解释；变量缺值时可能没有输出 |
+| 围栏内标签 | 默认 process=true，围栏内的 Markdoc 标签仍会处理；需要显式 process=false 才保持字面内容 |
+
+另有两项输出差异，不单独作为强制解析规则不兼容的证据：图片 alt 保留说明中的 Markdown 标记，而规范推荐提取纯文字；围栏 info string 有前导空格时，当前版本可能丢失 language。CommonMark 不强制 info string 的 HTML 输出形式。
+
+普通软换行转换为空格是 CommonMark 允许的行为。外层 article、HTML 空白、自闭合写法或围栏输出模板不同，不能直接算作语法失败。管道表格、删除线、任务清单、脚注和数学公式不是 CommonMark 基础语法：Markdoc 原生已有前两者，缺少其余能力不等于违反 CommonMark。
+
+核查依据：[CommonMark 0.31.2 规范](https://spec.commonmark.org/0.31.2/)、[官方样例](https://spec.commonmark.org/0.31.2/spec.json)、[Markdoc 语法](https://markdoc.dev/docs/syntax)、[原生节点及 fence.process](https://markdoc.dev/docs/nodes)、[Frontmatter](https://markdoc.dev/docs/frontmatter)，以及安装包的 src/tokenizer/index.ts、src/parser.ts、src/schema.ts、src/tokenizer/plugins/annotations.ts。临时批量结果在本次工作缓存中，不作为可复现所需的唯一来源。
+
+{% /section %}
+
+{% section id="design:markdoc:implementation" title="实施范围与已批准迁移" %}
+
+用户随后明确批准以下迁移，并要求使用文档覆盖 Markdoc 功能。实现与验证围绕以下范围展开，实际结果另记验收：
+
+1. 合并原生与 edoc Schema，移除只按 edoc 标签表校验全部标签的逻辑；原生转换结果保留有效属性，工程标签继续检查 IR 身份、类型和来源。
+2. 接入 Markdoc 原生上下文，使变量、函数、partials、注解和条件在正文、目录、引用、read 及发布中有明确一致的行为；条件分支和片段不能绕过来源与依赖检查。
+3. 消除标签命名冲突。原先 edoc 的自闭合 table 标签覆盖了原生块状 table；本次工程数据表改用 data-table，并迁移工具文档和样例，保留原生 table 的含义。
+4. 增加以原生 Markdoc 为参照的回归，覆盖原生能力、工程扩展及二者组合；验证网页、目录、查询、HTML/PDF 和实际字体。记录明确限制，不宣称已覆盖任意第三方自定义渲染器。
+
+**围栏默认行为已获单独批准。** 原契约要求所有代码围栏始终按字面展示，标签不执行、不创建索引、不加载依赖；原生 Markdoc 默认 process=true。本次以原生默认作为新契约，必须把工具文档、模板和样例中需要字面展示的围栏显式设为 process=false，并让扫描、索引和渲染统一识别它。理由是保留上游原生语义，同时让代码示例明确声明字面展示；影响是未声明 process=false 的既有围栏可能开始处理标签。该影响已单独说明并获得用户批准；使用文档、模板和样例同步迁移，原始 V1 文件原字节不改。
+
+现有任意 HTML/JS/CSS 限制、工程事实权威来源、稳定 ID、完整引用检查和离线资源约束不因兼容基线而自动取消。
+
+{% /section %}
+{% /section %}

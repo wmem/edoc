@@ -24,8 +24,15 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:read" title="安装包章节" %}原始 **说明**。{% /section %}');
  const section=JSON.parse(run(bin,['read','--id','installed:read'],project));assert.match(section.content,/原始 \*\*说明\*\*/);assert.equal(section.scope,'self');
  assert.equal(JSON.parse(run(bin,['outline','--id','installed:read','--depth','0'],project)).chapters[0].sectionId,'installed:read');
+ const api=run(process.execPath,['--input-type=module','-e',"import {Markdoc} from 'edoc'; console.log(typeof Markdoc.parse,typeof Markdoc.Tag)"],prefix);assert.match(api,/function function/);
+ mkdirSync(join(project,'docs/_partials'),{recursive:true});writeFileSync(join(project,'docs/_partials/native.mdoc'),'{% section id="installed:native-part" %}片段 {% $product %} 第 {% $count %} 次{% /section %}');
+ writeFileSync(join(project,'docs/edoc.config.js'),`export default {markdoc:{variables:{product:'安装包上下文',count:3},partials:{card:'docs/_partials/native.mdoc'}},tables:[{id:'installed:table',kind:'table',label:'安装包事实表',columns:[{field:'name',label:'名称',type:'string'}],rows:[{id:'installed:row',values:{name:'唯一事实'}}]}]};`);
+ writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:native" title="原生兼容" %}\n{% if true %}上下文 {% $product %}{% /if %}\n\n3. 起始值保留\n\n{% partial file="card" /%}\n\n{% table %}\n- 名称\n- 说明\n---\n- 原生表\n- 不需要 IR\n{% /table %}\n{% data-table id="installed:table" /%}\n{% code file="docs/_partials/native.mdoc" language="markdoc" /%}\n{% /section %}');
+ assert.match(JSON.parse(run(bin,['read','--id','installed:native-part'],project)).content,/片段 安装包上下文 第 3 次/);run(bin,[],project);
+ assert.match(JSON.parse(run(bin,['read','--id','installed:native'],project)).content,/```markdoc \{% process=false %\}/);
+ const nativeHtml=readFileSync(join(project,'output/index.html'),'utf8');assert.match(nativeHtml,/安装包上下文/);assert.match(nativeHtml,/安装包事实表/);assert.match(nativeHtml,/start=\\"3/);
  mkdirSync(join(project,'docs/ir'),{recursive:true});writeFileSync(join(project,'docs/ir/facts.json'),JSON.stringify({objects:[{id:'a',kind:'node',label:'A'},{id:'b',kind:'node',label:'B'}],relations:[{id:'ab',kind:'connection',class:'data',endpoints:['a','b']}]}));
- writeFileSync(join(project,'docs/index.mdoc'),'{% diagram id="overview" /%}');
+ writeFileSync(join(project,'docs/index.mdoc'),'{% relation-diagram id="overview" /%}');
  writeFileSync(join(project,'docs/edoc.config.js'),`export default {views:[{id:'overview',kind:'architecture',include:{objects:['a','b'],relations:['ab']}}]};`);
  const check=JSON.parse(run(bin,['validate','--format','json'],project));assert.deepEqual(check.dataFiles,['docs/ir/facts.json']);
  assert.equal(JSON.parse(run(bin,['query','--id','ab'],project)).target.entity.endpoints.length,2);

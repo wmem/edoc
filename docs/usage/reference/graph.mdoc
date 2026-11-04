@@ -1,6 +1,6 @@
 {% section id="ref:graph" title="图形参考" %}
 
-View 必需 id、kind、include；label、layout、display、source 可选。kind 为 architecture/interface/wiring/state。include.objects 与 include.relations 引用本工程稳定 ID，不复制数据。
+RelationView 是关系图视图，不是所有图表的公共视图。数据放在 views 中，query 类型为 view，正文使用 relation-diagram。必需 id、kind、include；label、layout、display、source 可选。kind 为 architecture/interface/wiring/state。include.objects 与 include.relations 引用本工程稳定 ID，不复制数据。
 
 {% section id="ref:graph-display" title="display" %}
 
@@ -26,7 +26,7 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 
 接口必需 id、label、非空 members，protocol、role、attributes、source 可选。members 只引用本 Node 的真实 Port，第一版同一 Port 不能属于多个接口。协议和角色是项目描述，不生成缺失信号。
 
-接口本身可被 view.include.objects、interface 标签或 query 引用。连接端点仍为原 Node/Port，不能换成接口 ID。网页可独立展开一端、两端或全部接口，投影后保留原关系身份和多端点分支。
+接口本身可被 view.include.objects、interface-table 标签或 query 引用。连接端点仍为原 Node/Port，不能换成接口 ID。网页可独立展开一端、两端或全部接口，投影后保留原关系身份和多端点分支。
 
 共享时钟等保留独立 Port 与显式 clockDomainId，不为多个接口复制真实信号。默认 SVG 和文档 PDF 保留视图定义内的逐信号内容；网页另有显式当前视图 SVG，沿用当前接口展开状态，不冒充完整逐信号输出。
 
@@ -51,7 +51,7 @@ View 必需 id、kind、include；label、layout、display、source 可选。kin
 
 direction 缺省 LR，routing 缺省 orthogonal。未写入 portOrder/interfaceOrder 的成员保留声明中的相对顺序。interfaceSides 只控制对应接口及其成员的 left/right；普通 Node 端点的边通过 relationHints.endpointSides 声明，不把 Node ID 填入接口映射。
 
-positions 的 objectId、x、y 是视图内布局提示，不是浏览器屏幕坐标；工具会整体平移以保留边界、标题和父框留白。完整的接口排序、侧边和局部展开对照见[图形进阶配方](../rendering/graph-options.mdoc#use:graph-options-create)。
+positions 的 objectId、x、y 是视图内布局提示，不是浏览器屏幕坐标；工具会整体平移以保留边界、标题和父框留白。完整的接口排序、侧边和局部展开对照见[图形进阶配方](../rendering/diagrams/graph-options.mdoc#use:graph-options-create)。
 
 relationHints 以当前视图中的原 Connection ID 为键。backbone 为多端点选择显示主干；channel 仅接受两端点关系，不能用于三端点 Net。字段和组合限制见 {% reference id="ref:relation-hints" label="relationHints 字段" /%}，可运行的数据见 {% reference id="ref:layout-example" label="主干与通道完整示例" /%}。
 
@@ -86,7 +86,7 @@ relationHints 是对象，键必须是本视图 include.relations 中已有的 C
 
 {% section id="ref:layout-example" title="主干与通道完整示例" %}
 
-前置：已有[数据教程的 objects.json](../engineering/data.mdoc#use:standard-data)和[绘图教程的配置](../rendering/diagrams.mdoc#use:architecture)。先把下面内容保存为 docs/ir/authoring/topology.json，增加一个观察点、一条两端点反馈和一条三端点时钟关系：
+前置：已有[数据教程的 objects.json](../engineering/data.mdoc#use:standard-data)和[绘图教程的配置](../rendering/diagrams/architecture.mdoc#use:architecture)。先把下面内容保存为 docs/ir/authoring/topology.json，增加一个观察点、一条两端点反馈和一条三端点时钟关系：
 
 {% code file="docs/ir/authoring/topology.json" language="json" /%}
 
@@ -96,11 +96,11 @@ relationHints 是对象，键必须是本视图 include.relations 中已有的 C
 
 在自己的 docs/index.mdoc 写入并运行 edoc：
 
-```text
-{% diagram id="system:routing" /%}
+```text {% process=false %}
+{% relation-diagram id="system:routing" /%}
 ```
 
-{% diagram id="system:routing" /%}
+{% relation-diagram id="system:routing" /%}
 
 数据主线从生产者右侧进入消费者左侧；两端点反馈偏好下方通道；三端点时钟使用 backbone，观察点仍保留为第三端点。显示主干不表示电气走线拓扑。执行 edoc query --id system:clock 可核对三个完整端点。
 
@@ -122,7 +122,7 @@ relationHints 是对象，键必须是本视图 include.relations 中已有的 C
 | 图中定位信号 | 图内选中真实信号后，在操作区展开所属接口并滚到该图 |
 | SVG / 当前视图 SVG | 完整逐信号导出与当前接口展开投影分开；文字开关按显示参考的规则处理 |
 
-Node.parentId、Group 和 Node.interfaces 的同源创建与实际操作见[图形分组与接口显示](../rendering/graph-options.mdoc)。Group 初始状态用 collapsedGroups，接口初始状态用 interfaceMode/Overrides；两者不能混用。临时选择和缩放不会写回源文件。
+Node.parentId、Group 和 Node.interfaces 的同源创建与实际操作见[图形分组与接口显示](../rendering/diagrams/graph-options.mdoc)。Group 初始状态用 collapsedGroups，接口初始状态用 interfaceMode/Overrides；两者不能混用。临时选择和缩放不会写回源文件。
 
 {% section id="ref:graph-classes" title="关系类别与预设线型" %}
 

@@ -2,22 +2,26 @@
 
 通用工具让项目维护低噪声的事实与知识，再由共用渲染器呈现。不能将项目特定网表规则、协议猜测或已有精确值搬进通用层。
 
-{% diagram id="tool:pipeline" /%}
+{% relation-diagram id="tool:pipeline" /%}
 
 {% section id="dev:modules" title="模块职责" %}
 
 | 位置 | 职责 |
 | --- | --- |
 | packages/core/project.ts | JS 配置、默认值、正文优先扫描、数据函数与输入保护 |
-| packages/core/documents.ts | Markdoc、片段展开、来源、引用与局部边界 |
-| packages/core/graph.ts、relations.ts | 数据索引和语义校验 |
+| packages/core/markdoc.ts | 原生配置、Schema 合并与分级校验 |
+| packages/core/documents.ts | 原生上下文投影、条件/片段展开、完整依赖与真实来源 |
+| packages/core/graph.ts、resource-validation.ts | 数据索引和语义校验 |
 | packages/core/book.ts、routes.ts | 同构工程组合、导航和稳定路由 |
 | packages/core/query.ts、read.ts、outline.ts | 对象查询、章节正文和目录 |
 | packages/render-graph | Scene、接口投影、布局、布线和 SVG |
 | packages/doc-theme | 正文呈现、当前页交互、PDF 阅读器 |
 | packages/pack-html | 单 HTML、离线载荷、字体与许可证 |
 | packages/render-pdf | 已有 Chromium 输出静态文档 |
-| packages/schema | 结构契约，与运行校验共同约束输入 |
+| packages/extensions | 关系图、数据表、波形与正文的类型、标签和数据契约；见[扩展维护](extensions.mdoc) |
+| packages/schema | 来源、配置、内部清单和语义引用等共用结构 |
+
+正文先使用原生 Markdoc 机制获得本次上下文的节点投影；条件和 partial 使用原生实现。未显示分支仍检查文件与工程引用，实际选择的章节建立目录和查询身份。异步文本/Schema 校验完成后再建索引，HTML/PDF 等待异步转换；字面围栏明确 process=false。通用呈现保留原生有效属性，工程数据表使用独立 data-table，不覆盖原生 table。精确契约见[原生语法参考](../usage/reference/markdoc-native.mdoc)。
 
 CLI 的 validate/read/query 复用加载与校验，但不调用图形布局。阅读器只创建当前文章 DOM，其余正文保留在离线载荷中，不应将“按篇”解释为文件体积不增长。
 

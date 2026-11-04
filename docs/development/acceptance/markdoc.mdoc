@@ -1,0 +1,36 @@
+{% section id="acceptance:markdoc" title="Markdoc 原生兼容与文档接入" %}
+
+2026-11-04，按用户批准的[兼容基线](../design/markdoc.mdoc)实施：保留 Markdoc 原生能力，edoc 增加工程文档扩展；上游与 CommonMark 的差异保留记录，不另写基础语法分支。
+
+{% section id="acceptance:markdoc:changes" title="实现与迁移范围" %}
+
+- 原生 if/else、partial、table、slot、注解、变量与内置函数使用原生机制。配置 markdoc 可提供局部片段、自定义函数、扩展 Schema、Tokenizer/parse 选项与校验选项。
+- 工程数据表改为 data-table，不再覆盖原生 table。工具文档、模板、样例与相关回归中的实际引用同步迁移。
+- 围栏沿用原生 process 默认值；字面示例显式 process=false，code.file 始终字面展示。原始 V1 快照原字节未改，配置通过原生 AST 为其中的历史围栏声明字面行为。
+- 列表起始值、表格对齐/跨行列、链接与图片 title、全局 id/class 得以保留；主题不覆盖单元格显式对齐，标题注解 ID 可用于目录和跳转。
+- 条件和片段生成一份上下文投影，目录、章节身份、read 与发布共享其值。隐藏分支仍检查依赖和工程引用；片段来源、循环、项目范围及输出保护继续检查。
+- 上游 children 校验中的 26 个规范样例发出的是 warning，之前将其描述为原生拒绝不准确；本次保留告警级别，在 validate JSON 中提供 warnings，不提升为构建错误。
+- 原生异步文本函数、Schema 校验与转换在发布前等待完成。数值、布尔、空值、数组和对象变量的 read 不再使上游 Markdown formatter 报类型错误，显示语义与原生结果对照。
+
+{% /section %}
+
+{% section id="acceptance:markdoc:documentation" title="使用文档与同源示例" %}
+
+[原生能力教程](../../usage/writing/markdoc.mdoc)先介绍变量、条件、注解与围栏，再展示实际效果；完整源文件按需展开。需要片段、函数、Frontmatter、注释或 Schema/slot 时进入[复用与配置](../../usage/writing/markdoc-reuse.mdoc)。精确字段与限制统一在[原生语法参考](../../usage/reference/markdoc-native.mdoc)，能力索引、配置、写作入口和认识 edoc 均可进入。
+
+教程直接渲染 docs/support/recipes/markdoc.mdoc，片段、元数据和配置均取实际执行的同一份输入。独立配方检查覆盖最小变量/条件、函数和 partial，不依赖手册的隐藏上下文。Agent 可先 read use:markdoc，再按 ref:markdoc-context、use:markdoc:partials 等稳定小节读取细节，不必解析生成 HTML 或通读全部配置。
+
+{% /section %}
+
+{% section id="acceptance:markdoc:verification" title="已完成的验证与边界" %}
+
+专项回归覆盖原生标签与属性、局部变量覆盖/嵌套片段、来源、循环与越界、原生告警、围栏隔离、函数快照、异步行为及 slot 内章节。相关 core/query/document/outline/read/reader/project/CLI 和手册回归共 169 项通过，其中原生专项 15 项；类型检查通过。实际 npm 包安装验证公共 Markdoc 导出、原生表格与工程数据表共存、数值变量的 read 及源码围栏的 process=false 标记。
+
+3 项手册浏览器回归检查新原生能力及原有图表、Tabs、查询和源 PDF。另用 playwright-cli 和已有 Chromium 实际检查变量、函数、条件、片段、Schema/slot、注释、围栏、真实表格对齐、注解 ID 跳转、返回、目录操作、窄屏和离线无外部请求。4 项 PDF 回归通过，手册 PDF 已生成，核对新章节书签并抽查实际效果、片段和配置配方的打印页面；未逐页人工审阅整本手册。
+
+书签元数据另发现独立限制：本次 Chromium 产物中有 8 个书签把标题拼接了两次，包括新增的 Markdoc API 小节和若干旧章节。HTML 只有一个相应标题，PDF 正文也只出现一次，书签目标可达。尝试标题整体分页未解决，已撤回该样式实验；根因尚未定位，不能把本次 PDF 回归通过理解为所有书签名称均正确。该问题保留为 PDF 导出待修项，不以改名或放宽验证冒充修复。
+
+本次验证不等于任意第三方 Schema 或全部 Tokenizer 参数组合均已验证。基础节点输出仍由 edoc 统一处理导航和资源；不提供任意 nodes 替换或 React 运行时。自定义 Schema 使用受控语义 HTML，事件属性、自由样式、外部运行资源等边界保留；条件和工程身份使用同步确定值，上游未定义的异步属性求值不作额外承诺。上游 CommonMark 差异与 GFM/脚注/公式等其他能力不因本次接入而宣称已修复。
+
+{% /section %}
+{% /section %}

@@ -31,5 +31,14 @@ test('能力教程的表行、Tabs折叠、Group和接口局部设置可在离�
  assert.equal(await page.evaluate(()=>window.EdocInterfaceViews.find(v=>v.holder.dataset.diagram==='author:interface-default')!.state.modes['author:host.ctrl']),'collapsed','同一信号出现在多个图时，定位不能展开另一个隐藏视图');
  assert.ok(await view.isVisible());
  await page.emulateMedia({media:'print'});const printed=await view.evaluate(el=>({figure:el.getBoundingClientRect().width,tab:el.closest('.tab')!.getBoundingClientRect().width}));assert.ok(printed.figure>=printed.tab*0.9,'Tab中只有图时不应空出表格栏压缩图形');
+ await page.emulateMedia({media:'screen'});
+ await go('use:markdoc:effect');const live=page.locator('#'+('ed-'+Buffer.from('use:markdoc:live').toString('hex')));
+ assert.match(await live.innerText(),/函数返回 EDOC/);assert.match(await live.innerText(),/当前选择完整说明/);assert.ok(!(await live.innerText()).includes('当前选择简略说明'));
+ assert.equal(await live.locator('aside[data-tone="info"] .panel-title').count(),1);assert.match(await live.locator('aside[data-tone="info"]').innerText(),/数据来自同一个上下文/);
+ assert.equal(await live.locator('table th[align="right"]').evaluate(el=>getComputedStyle(el).textAlign),'right');
+ assert.match(await live.locator('pre code').first().innerText(),/工程：edoc/);assert.match(await live.locator('pre code').last().innerText(),/not-a-real-file/);
+ assert.equal(await page.locator('#reader article').count(),1);assert.equal(await live.locator('h3,h4,h5,h6').filter({hasText:'共享术语'}).count(),1);
+ await page.locator('#page-toc details').evaluateAll(nodes=>nodes.forEach(n=>(n as HTMLDetailsElement).open=true));
+ await page.locator('#page-toc').getByRole('link',{name:'原生表格与注解',exact:true}).click();await ready();assert.equal(await page.locator('#native-table').count(),1);
  await page.emulateMedia({media:'screen'});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);
 });

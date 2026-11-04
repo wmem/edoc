@@ -1,3 +1,4 @@
+import Markdoc from '@markdoc/markdoc';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync,readdirSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
@@ -19,8 +20,12 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
  assert.deepEqual(branches.map((n:any)=>n.label),['认识 edoc','快速开始','编写与组织正文','使用扩展渲染','接入和维护工程','阅读与发布','查询参考'],'先整体认识，再上手和按需使用，参考最后查询');
  const branch=(id:string)=>branches.find((n:any)=>n.sectionId===id)!;
  assert.deepEqual(branch('use:quickstart').children.map((n:any)=>n.label),['安装与运行环境','生成第一份文档']);
- assert.deepEqual(branch('use:writing').children.map((n:any)=>n.label),['Markdown 支持范围','组织多篇文档']);
+ assert.deepEqual(branch('use:writing').children.map((n:any)=>n.label),['Markdown 支持范围','使用 Markdoc 原生能力','片段、元数据与扩展配置','组织多篇文档']);
  assert.ok(branch('use:rendering').children.some((n:any)=>n.sectionId==='use:tables'));assert.ok(branch('use:rendering').children.some((n:any)=>n.sectionId==='use:waveform'));
+ const rendering=branch('use:rendering'),diagrams=rendering.children.find((n:any)=>n.sectionId==='use:diagrams');
+ assert.ok(diagrams,'关系图是一个有总览页的文档分组');
+ assert.deepEqual(diagrams.children.map((n:any)=>n.sectionId),['use:architecture','use:wiring','use:interfaces','use:state','use:diagram-details','use:graph-options','use:layout'],'接口展开及显示设置属于关系图，分成独立短篇');
+ assert.ok(!rendering.children.some((n:any)=>n.sectionId==='use:interfaces'),'接口展开不与关系图平级');
  assert.ok(branch('ref:home').children.some((n:any)=>n.sectionId==='use:capabilities'));assert.ok(!branches.some((n:any)=>n.sectionId==='use:capabilities'),'字段索引不冒充入门');
  for(const id of ['use:install','use:state-wave','use:state','use:waveform','use:projects-pdf','use:composition','use:pdf','use:publish','use:table','guide:agent','guide:home'])assert.equal(graph.index.get(id)?.type,'document',id+' 的稳定入口保留');
  const introduction=readDocument(graph,'use:overview');assert.ok(introduction.range.totalChars<2000);assert.ok(!/```(?:json|javascript)/.test(introduction.content));
@@ -54,7 +59,7 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
 
 test('从正式正文提取的创建配方可在含 README 的用户工程连续构建，三端点 channel 明确失败',{timeout:60000},async t=>{
  const manual=await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js'))),graph=manual.root.graph;
- const blocks=(id:string,language:string)=>[...readDocument(graph,id).content.matchAll(new RegExp('```'+language+'\\n([\\s\\S]*?)```','g'))].map(match=>match[1]);
+ const blocks=(id:string,language:string)=>[...Markdoc.parse(readDocument(graph,id,{}).content).walk()].filter(node=>node.type==='fence'&&node.attributes.language===language).map(node=>node.attributes.content);
  const one=(id:string,language:string)=>{const values=blocks(id,language);assert.equal(values.length,1,id);return values[0];};
  const root=mkdtempSync(join(tmpdir(),'edoc-authoring-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
  const write=(file:string,content:string)=>{mkdirSync(join(root,file,'..'),{recursive:true});writeFileSync(join(root,file),content);};

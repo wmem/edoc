@@ -1,3 +1,4 @@
+import Markdoc from '@markdoc/markdoc';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
@@ -16,23 +17,23 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
  const book=await manual,graph=book.root.graph;
  const content=(id:string)=>readDocument(graph,id,{scope:'subtree',maxChars:100000}).content;
  const check=(fields:string[],id:string)=>{const text=content(id);for(const field of fields)assert.ok(new RegExp('\\b'+field+'\\b').test(text),id+' 缺少字段 '+field);};
- const view=json('packages/schema/view.schema.json').properties.views.items.properties;
- const objects=json('packages/schema/object.schema.json').properties.objects.items.oneOf;
+ const view=json('packages/extensions/relation-diagram/view.schema.json').properties.views.items.properties;
+ const objects=json('packages/extensions/relation-diagram/object.schema.json').properties.objects.items.oneOf;
  for(const object of objects)check(Object.keys(object.properties),'ref:objects');
  check(Object.keys(objects[0].properties.interfaces.items.properties),'ref:interfaces');
  check(Object.keys(json('packages/schema/common.schema.json').$defs.port.properties),'ref:objects');
- check(Object.keys(json('packages/schema/relation.schema.json').properties.relations.items.properties),'ref:connections');
- const waveform=json('packages/schema/waveform.schema.json').properties.waveforms.items.properties;
+ check(Object.keys(json('packages/extensions/relation-diagram/relation.schema.json').properties.relations.items.properties),'ref:connections');
+ const waveform=json('packages/extensions/waveform/waveform.schema.json').properties.waveforms.items.properties;
  check(Object.keys(waveform),'ref:waveforms');check(Object.keys(waveform.data.properties),'ref:waveforms');
  check(Object.keys(view),'ref:graph');check(Object.keys(view.include.properties),'ref:graph');
  check(Object.keys(view.layout.properties),'ref:graph-layout');check(Object.keys(view.display.properties),'ref:graph-display');
  check(Object.keys(view.layout.properties.positions.items.properties),'ref:graph-layout');
  for(const rule of view.layout.properties.constraints.items.oneOf)check(Object.keys(rule.properties),'ref:graph-layout');
  check(Object.keys(view.layout.properties.relationHints.additionalProperties.properties),'ref:relation-hints');
- const table=json('packages/schema/table.schema.json').properties.tables.items.properties;
+ const table=json('packages/extensions/data-table/table.schema.json').properties.tables.items.properties;
  check(Object.keys(table),'ref:tables');check(Object.keys(table.columns.items.properties),'ref:tables');
  for(const row of table.rows.items.oneOf)check(Object.keys(row.properties),'ref:tables');
- for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment','include'].includes(name)?'ref:markdoc-links':'ref:markdoc-data');
+ for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment'].includes(name)?'ref:markdoc-links':['include','code'].includes(name)?'ref:markdoc-files':'ref:tag-'+name);
  const document=book.root.documents.documents.find(d=>d.file==='docs/usage/reference/capabilities.mdoc')!;
  let rows=0;
  for(const table of [...document.ast.walk()].filter(n=>n.type==='table'))for(const row of [...table.walk()].filter(n=>n.type==='tr')){
@@ -50,7 +51,7 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
 
 test('新增表格、页面和图形配方可分别在空工程运行，事实与接口状态正确',{timeout:60000},async t=>{
  const book=await manual,graph=book.root.graph;
- const blocks=(id:string,language:string)=>[...readDocument(graph,id,{maxChars:100000}).content.matchAll(new RegExp('```'+language+'\\n([\\s\\S]*?)```','g'))].map(m=>m[1]);
+ const blocks=(id:string,language:string)=>[...Markdoc.parse(readDocument(graph,id,{maxChars:100000}).content).walk()].filter(node=>node.type==='fence'&&node.attributes.language===language).map(node=>node.attributes.content);
  const one=(id:string,language:string)=>{const values=blocks(id,language);assert.equal(values.length,1,id);return values[0];};
  async function create(name:string,config:string,data:string|undefined,body:string,files:Record<string,string|Buffer>={}){
   const root=mkdtempSync(join(tmpdir(),'edoc-'+name+'-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
@@ -81,6 +82,9 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
   if(name==='states')assert.equal(sample.page.scenes[view].nets.length,2);
  }
  const wave=await create('waveform',minimal,one('use:waveform-create','json'),one('use:waveform-create','text'));assert.match(wave.page.html,/最小握手示意/);
+ const native=await create('native',one('use:markdoc:variables','javascript'),undefined,one('use:markdoc:variables','text'));assert.match(native.page.html,/我的工程/);assert.match(native.page.html,/展示完整说明/);assert.ok(!native.page.html.includes('展示简略说明'));
+ const partial=await create('native-partial',one('use:markdoc:partials','javascript'),undefined,one('use:markdoc:partials','text'),{'docs/_partials/card.mdoc':readFileSync(join(repository,'docs/support/recipes/_partials/markdoc-card.mdoc'))});assert.match(readDocument(partial.book.root.graph,'term:shared').content,/共享术语/);assert.match(partial.page.html,/我的工程/);
+ const functions=await create('native-functions',one('use:markdoc:functions','javascript'),undefined,one('use:markdoc:functions','text'));assert.match(functions.page.html,/EDOC/);
  const markdown=await create('markdown',minimal,undefined,one('use:markdown:create','markdown'));assert.match(markdown.page.html,/<strong>重点<\/strong>/);assert.match(markdown.page.html,/<blockquote>/);assert.match(markdown.page.html,/<ol>/);assert.deepEqual(Object.keys(markdown.page.scenes),[]);
  const pdf=await create('attachments',one('use:pdf-create','javascript'),undefined,one('use:pdf-create','text'),{'source/reference.pdf':readFileSync(join(repository,'docs/assets/location.pdf'))});assert.equal(pdf.book.root.graph.attachments!.reference.targets.home.page,1);assert.match(pdf.page.html,/attachment-link/);
 });

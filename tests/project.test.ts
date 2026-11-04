@@ -64,7 +64,7 @@ test('子工程标准配置位于 docs 时，自动扫描边界覆盖其整个�
 });
 test('先扫描全部正文，包括 include/折叠/Tabs，再调用数据提供函数',async t=>{
  const p=project(t,`export default {documents:'docs/index.mdoc',data:({root,references})=>{if(references.length!==2)throw Error('引用不完整');return ${JSON.stringify(facts)};},views:[${JSON.stringify(view)}]};`);
- p.write('docs/index.mdoc','{% include file="docs/nested.mdoc" /%}');p.write('docs/nested.mdoc','{% section id="hidden" title="折叠" collapsed=true %}{% tabs %}{% tab name="图" %}{% diagram id="v" /%}{% reference id="a" /%}{% /tab %}{% /tabs %}{% /section %}');
+ p.write('docs/index.mdoc','{% include file="docs/nested.mdoc" /%}');p.write('docs/nested.mdoc','{% section id="hidden" title="折叠" collapsed=true %}{% tabs %}{% tab name="图" %}{% relation-diagram id="v" /%}{% reference id="a" /%}{% /tab %}{% /tabs %}{% /section %}');
  const loaded=await p.load();assert.equal(loaded.documents.references.length,2);assert.deepEqual(loaded.documents.files,['docs/index.mdoc','docs/nested.mdoc']);assert.equal(query(loaded.graph,'ab').target.entity.id,'ab');
  p.write('docs/nested.mdoc','{% include file="docs/missing.mdoc" /%}');await assert.rejects(p.load,/FILE_MISSING/);
 });
@@ -73,21 +73,21 @@ test('文档缺失或 include 循环在读取数据前失败',async t=>{
  p.write('docs/index.mdoc','{% include file="docs/index.mdoc" /%}');await assert.rejects(p.load,/DOCUMENT_INCLUDE_CYCLE/);
 });
 test('自动发现 docs/ir 下多级 IR，无清单也能建立完整关系及来源索引',async t=>{
- const p=project(t,`export default {views:[${JSON.stringify(view)}]};`);p.write('docs/index.mdoc','{% diagram id="v" /%}');p.write('docs/ir/nested/objects.json',{objects:facts.objects});p.write('docs/ir/relations.ir.json',{irVersion:'1.2',relations:facts.relations});p.write('docs/ir/source-not-ir.json',{notes:'不是配置清单或 IR'});
+ const p=project(t,`export default {views:[${JSON.stringify(view)}]};`);p.write('docs/index.mdoc','{% relation-diagram id="v" /%}');p.write('docs/ir/nested/objects.json',{objects:facts.objects});p.write('docs/ir/relations.ir.json',{irVersion:'1.2',relations:facts.relations});p.write('docs/ir/source-not-ir.json',{notes:'不是配置清单或 IR'});
  p.write('docs/ir/raw-array.json',[1,2]);p.write('data/unrelated.json','{不是本次数据目录');
  const loaded=await p.load();assert.equal(loaded.dataFiles.length,2);assert.equal(loaded.graph.connections.get('ab')!.endpoints.length,2);assert.equal(loaded.documents.references[0].id,'v');assert.equal(loaded.graph.index.get('a')!.location.file,join(p.root,'docs/ir/nested/objects.json'));
 });
 test('缺失的正文数据引用报告实际文件、行号和 ID，不猜文件名',async t=>{
- const p=project(t);p.write('docs/index.mdoc','第一行\n\n{% diagram id="missing:diagram" /%}');await assert.rejects(p.load,(error:any)=>error.diagnostics.some((d:any)=>d.code==='DOCUMENT_REFERENCE'&&d.file==='docs/index.mdoc'&&d.path==='#L3'&&d.id==='missing:diagram'));
+ const p=project(t);p.write('docs/index.mdoc','第一行\n\n{% relation-diagram id="missing:diagram" /%}');await assert.rejects(p.load,(error:any)=>error.diagnostics.some((d:any)=>d.code==='DOCUMENT_REFERENCE'&&d.file==='docs/index.mdoc'&&d.path==='#L3'&&d.id==='missing:diagram'));
 });
 test('配置直接定义图表，无第二份配置 JSON，只有被正文引用的视图生成 Scene',async t=>{
  const bad={...view,id:'unused',layout:{positions:[{objectId:'a',x:0,y:0},{objectId:'b',x:900,y:0}],constraints:[{type:'align',axis:'x',nodes:['a','b']}]}};
- const p=project(t,`export default {data:${JSON.stringify(facts)},views:[${JSON.stringify(view)},${JSON.stringify(bad)}]};`);p.write('docs/index.mdoc','{% diagram id="v" /%}');
+ const p=project(t,`export default {data:${JSON.stringify(facts)},views:[${JSON.stringify(view)},${JSON.stringify(bad)}]};`);p.write('docs/index.mdoc','{% relation-diagram id="v" /%}');
  const {graph}=await p.load(),before=JSON.stringify([...graph.index]);const rendered=await renderDocument(graph,'按需图');assert.deepEqual(Object.keys(rendered.scenes),['v']);assert.equal(JSON.stringify([...graph.index]),before);await assert.rejects(()=>scene(graph,'unused'),/LAYOUT_CONFLICT/);assert.ok(rendered.entities.unused,'未布局的对象仍可查询和搜索');
 });
 test('接口与布局约束能力自动按实际结构启用',async t=>{
  const p=project(t,`export default {data:{objects:[{id:'n',kind:'node',label:'N',ports:[{id:'p',label:'P',direction:'unknown'}],interfaces:[{id:'if',label:'IF',members:['p']}]}]},views:[{id:'v',kind:'interface',include:{objects:['n'],relations:[]},layout:{constraints:[]}}]};`);
- p.write('docs/index.mdoc','{% interface id="if" /%}');const {graph}=await p.load();assert.ok(graph.manifest.requiredFeatures!.includes('interface-groups'));assert.ok(graph.manifest.requiredFeatures!.includes('layout-intent'));
+ p.write('docs/index.mdoc','{% interface-table id="if" /%}');const {graph}=await p.load();assert.ok(graph.manifest.requiredFeatures!.includes('interface-groups'));assert.ok(graph.manifest.requiredFeatures!.includes('layout-intent'));
 });
 for(const [name,source,code]of [
  ['拼错配置项',`export default {documnts:'README.md'};`,'CONFIG_FIELD'],

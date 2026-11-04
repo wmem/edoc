@@ -27,3 +27,6 @@ pre,code{font-family:Consolas,'Noto Sans SC',monospace}
 .toolbar .display-control{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;font-size:12px;cursor:pointer}
 .interface-status{padding:6px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}.interface-status.error{color:#a12635;background:#fff0f0}#selection-actions{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}#selection-actions a{display:block;width:100%;font-size:12px}@media print{.interface-status{display:none!important}}
 .interface-selection{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;background:#eaf3fb;border-top:1px solid var(--line);font-size:12px;max-height:150px;overflow:auto;flex-shrink:0}.interface-selection[hidden]{display:none!important}.interface-selection details{margin:0}.interface-selection details a{display:block;padding:2px 0}@media print{.interface-selection{display:none!important}}
+
+/* 保留 Markdoc 原生表格对齐；主题默认值不能覆盖单元格声明。 */
+th[align=left],td[align=left]{text-align:left}th[align=center],td[align=center]{text-align:center}th[align=right],td[align=right]{text-align:right}

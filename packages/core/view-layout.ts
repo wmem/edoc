@@ -1,8 +1,8 @@
-import type {Graph,View,Node,Interface,Group,RecordEntry} from './types.ts';
+import type {Graph,RelationView,Node,Interface,Group,RecordEntry} from './types.ts';
 import {validateSchema} from './schema.ts';
 
 // 布局引用遵循实际视图范围，包含完整关系端点及其父容器；不改写原始 include。
-export function viewNodeIds(graph:Graph,view:View):Set<string>{
+export function viewNodeIds(graph:Graph,view:RelationView):Set<string>{
  const selected=new Set<string>(),visiting=new Set<string>();
  const add=(id:string)=>{if(visiting.has(id))return;visiting.add(id);const e=graph.index.get(id);if(!e)return;
   if(e.type==='group'){(e.entity as Group).members.forEach(add);return;}
@@ -14,7 +14,7 @@ export function viewNodeIds(graph:Graph,view:View):Set<string>{
  return selected;
 }
 export function validateViewLayout(graph:Graph,entry:RecordEntry,report:(code:string,path:string,message:string)=>void){
- const view=entry.entity as View,layout=view.layout;
+ const view=entry.entity as RelationView,layout=view.layout;
  const enabled=graph.manifest.requiredFeatures?.includes('layout-intent');
  if((layout?.constraints!==undefined||layout?.relationHints!==undefined)&&!enabled)report('IR_FEATURE_REQUIRED','/layout','布局意图需要声明 requiredFeatures: layout-intent');
  if(!layout||!enabled)return;

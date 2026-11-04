@@ -36,7 +36,7 @@ docs/
 
 需要长期引用或精确读取的内容使用有 ID 的 section；临时小标题仍用 Markdown：
 
-```text
+```text {% process=false %}
 {% section id="module:acquisition" title="采集模块" %}
 模块负责什么、输入输出与边界。
 
@@ -49,7 +49,7 @@ section 的包含关系形成章节层级，ID 在当前工程内唯一。普通
 
 需要在同一页复用片段时，使用 file include；路径相对工程根：
 
-```text
+```text {% process=false %}
 {% include file="docs/_partials/warnings.mdoc" /%}
 ```
 
@@ -65,7 +65,7 @@ section 的包含关系形成章节层级，ID 在当前工程内唯一。普通
 
 折叠可以让同一篇文章更易阅读，但一份很长的源文件不会因网页折叠而减少 Agent 的输入。需要按 ID 查询的细节应有独立稳定章节，必要时拆成独立文章。
 
-本手册的[接口教程](../rendering/interfaces.mdoc)先展示总览，信号表与详图位于[样例查询参考](../reference/examples.mdoc)。二者引用同一批对象。
+本手册的[接口教程](../rendering/diagrams/interfaces.mdoc)先展示总览，信号表与详图位于[样例查询参考](../reference/examples.mdoc)。二者引用同一批对象。
 
 {% /section %}
 {% /section %}

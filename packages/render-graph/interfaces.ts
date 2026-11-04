@@ -1,14 +1,14 @@
 // 接口视图的纯数据投影与共享布局；构建端和离线浏览器调用同一实现。
-import type {Graph,Node,Port,Interface,Connection,View,Group,RecordEntry} from '../core/types.ts';
+import type {Graph,Node,Port,Interface,Connection,RelationView,Group,RecordEntry} from '../core/types.ts';
 import {layoutScene} from './scene.ts';
 import {textWidth} from './geometry.ts';
 import type {Scene,SceneHints,ScenePort} from './scene.ts';
 export type InterfaceState={modes:Record<string,'collapsed'|'expanded'>;classes:string[]|null};
-export type InterfaceModel={view:View;nodes:Node[];visiblePorts:string[];relations:Connection[];domains:Record<string,string>};
+export type InterfaceModel={view:RelationView;nodes:Node[];visiblePorts:string[];relations:Connection[];domains:Record<string,string>};
 export type SceneInterface=Interface&{ownerId:string;expanded:boolean;visibleMembers:string[];connectedMembers:number;relationCount:number;visibleRelationCount:number;internalRelations:string[]};
 
 export function prepareInterfaceModel(graph:Graph,id:string):InterfaceModel|undefined{
- const view=graph.index.get(id)?.entity as View;
+ const view=graph.index.get(id)?.entity as RelationView;
  if(graph.index.get(id)?.type!=='view')return;
  // 接口元数据不自动改变普通架构图；接口视图或显式显示/包含声明才启用投影。
  if(view.kind!=='interface'&&!view.display?.interfaceMode&&!view.display?.interfaceOverrides&&!view.include.objects.some(id=>graph.index.get(id)?.type==='interface'))return;
@@ -82,13 +82,13 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
   hints.heights![n.id]=Math.max(90,row+14);hints.widths![n.id]=owned.some(i=>i.expanded)?340:Math.max(220,textWidth(n.label,17)+32,...ports.filter(p=>!portMeta.get(p.id)?.slot).map(p=>Math.max(textWidth(p.label,14)+56,textWidth(hints.annotations![p.id]??'',11)+30))); const {interfaces:_interfaces,...node}=n;return {...node,ports};
  });
  for(const i of interfaces){const ids=fakeNodes.flatMap(n=>n.ports??[]).filter(p=>portMeta.get(p.id)?.interfaceId===i.id).map(p=>p.id);for(const id of ids)hints.sideGroups![id]=ids;}
- const relationHints:NonNullable<NonNullable<View['layout']>['relationHints']>=Object.create(null),projectionWarnings=new Map<string,{code:string;message:string}[]>();
+ const relationHints:NonNullable<NonNullable<RelationView['layout']>['relationHints']>=Object.create(null),projectionWarnings=new Map<string,{code:string;message:string}[]>();
  for(const b of projected){const original=b.relations[0],hint=hintFor(original.id);if(!hint)continue;
   const projectedHint=structuredClone(hint);
   if(hint.backbone){const pair=hint.backbone.map(id=>b.slots.get(endpoint(id))??endpoint(id));if(pair[0]===pair[1]){delete projectedHint.backbone;projectionWarnings.set(b.id,[{code:'LAYOUT_BACKBONE_FOLDED',message:`${original.label??original.id} 的主干两端折叠到同一接口，展开后恢复原主干提示。`}]);}else projectedHint.backbone=pair as [string,string];}
   relationHints[b.id]=projectedHint;
  }
- const view:View={...model.view,include:{objects:fakeNodes.map(n=>n.id),relations:connections.map(r=>r.id)},layout:{...model.view.layout,...(model.view.layout?.relationHints?{relationHints}:{}),portOrder:fakeNodes.flatMap(n=>n.ports!.map(p=>p.id))}};
+ const view:RelationView={...model.view,include:{objects:fakeNodes.map(n=>n.id),relations:connections.map(r=>r.id)},layout:{...model.view.layout,...(model.view.layout?.relationHints?{relationHints}:{}),portOrder:fakeNodes.flatMap(n=>n.ports!.map(p=>p.id))}};
  const index=new Map<string,RecordEntry>();const add=(id:string,entity:RecordEntry['entity'],type:RecordEntry['type'],ownerId?:string)=>index.set(id,{id,entity,type,ownerId,location:{file:'<display>',path:''}});
  fakeNodes.forEach(n=>{add(n.id,n,'node');n.ports!.forEach(p=>add(p.id,p,'port',n.id));});connections.forEach(r=>add(r.id,r,'connection'));add(view.id,view,'view');
  // 时钟域名称不由显示投影推断，沿用构建时收集的标签。

@@ -4,8 +4,8 @@
 
 {% section id="ref:example-control" title="控制接口逐信号" %}
 
-{% diagram id="gallery:interface-ctrl-signals" /%}
-{% interface id="ifdemo:engine.s_ctrl" mode="detailed" /%}
+{% relation-diagram id="gallery:interface-ctrl-signals" /%}
+{% interface-table id="ifdemo:engine.s_ctrl" mode="detailed" /%}
 
 对象来源为 examples/gallery/interfaces.json。图中的缺线只反映当前视图范围，不代表实际协议完整性或未使用信号。
 
@@ -13,8 +13,8 @@
 
 {% section id="ref:example-dma" title="DMA 接口逐信号" %}
 
-{% diagram id="gallery:interface-dma-signals" /%}
-{% interface id="ifdemo:engine.m_dma" mode="detailed" /%}
+{% relation-diagram id="gallery:interface-dma-signals" /%}
+{% interface-table id="ifdemo:engine.m_dma" mode="detailed" /%}
 
 {% /section %}
 
@@ -22,10 +22,10 @@
 
 {% tabs %}
 {% tab name="引脚" %}
-{% table id="board:pins" /%}
+{% data-table id="board:pins" /%}
 {% /tab %}
 {% tab name="RTL 接口" %}
-{% table id="mac:port-table" /%}
+{% data-table id="mac:port-table" /%}
 {% /tab %}
 {% /tabs %}
 

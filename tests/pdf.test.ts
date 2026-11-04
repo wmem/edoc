@@ -17,7 +17,7 @@ test('PDF 保留中文、全部 Tabs/折叠内容、目录书签与内部链接'
 test('长表格跨页保留所有行与重复表头',{timeout:40000},t=>{
  const f=fixture(t);const rows=Array.from({length:160},(_,i)=>({id:'long:row.'+i,values:{name:'ROW_SENTINEL_'+String(i).padStart(3,'0'),value:i}}));
  save(join(f.ir,'tables.json'),{tables:[{id:'long:table',kind:'table',label:'长表测试',columns:[{field:'name',label:'ROW_HEADER_SENTINEL',type:'string'},{field:'value',label:'值',type:'number'}],rows}]});f.edit('manifest',d=>{d.resources.push({type:'tables',path:'tables.json'});d.entryDocuments=['docs/long.mdoc'];});
- writeFileSync(join(f.root,'docs/long.mdoc'),'{% section id="long:section" title="长表" %}\n{% table id="long:table" /%}\n{% /section %}');const output=join(f.workspace,'long.pdf');
+ writeFileSync(join(f.root,'docs/long.mdoc'),'{% section id="long:section" title="长表" %}\n{% data-table id="long:table" /%}\n{% /section %}');const output=join(f.workspace,'long.pdf');
  build(['--config',join(f.root,'edoc.config.js'),'--format','pdf','--output',output]);const d=inspect(output);assert.ok(d.pages>3);
  for(let i=0;i<160;i++)assert.ok(d.text.includes('ROW_SENTINEL_'+String(i).padStart(3,'0')));
  assert.ok(d.text.split('ROW_HEADER_SENTINEL').length>3);

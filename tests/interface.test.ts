@@ -74,7 +74,7 @@ for(const [name,edit,code]of [
 test('同一接口内重复成员由 Schema 拒绝',t=>{const f=interfaceFixture(t);f.edit('objects',d=>d.objects[1].interfaces[0].members.push(d.objects[1].interfaces[0].members[0]));expectCode(f.load,'SCHEMA');});
 test('接口与模块的 overview/detailed 标签共用同一批真实成员',async t=>{
  const {writeFileSync}=await import('node:fs'),{join}=await import('node:path'),{renderDocument}=await import('../packages/doc-theme/render.ts');
- const f=interfaceFixture(t);writeFileSync(join(f.root,'docs/interfaces.mdoc'),'{% interface id="ifdemo:engine" mode="overview" /%}\n{% interface id="ifdemo:engine.s_ctrl" mode="detailed" /%}');f.edit('manifest',d=>d.entryDocuments=['docs/interfaces.mdoc']);const doc=await renderDocument(f.load(),'接口');assert.match(doc.chapters,/S_AXI_CTRL/);assert.match(doc.chapters,/M_AXI_DMA/);assert.match(doc.chapters,/ctrl_optional/);assert.match(doc.chapters,/OPTION_WIDTH/);assert.ok(!doc.chapters.includes('未分组信号'));
+ const f=interfaceFixture(t);writeFileSync(join(f.root,'docs/interfaces.mdoc'),'{% interface-table id="ifdemo:engine" mode="overview" /%}\n{% interface-table id="ifdemo:engine.s_ctrl" mode="detailed" /%}');f.edit('manifest',d=>d.entryDocuments=['docs/interfaces.mdoc']);const doc=await renderDocument(f.load(),'接口');assert.match(doc.chapters,/S_AXI_CTRL/);assert.match(doc.chapters,/M_AXI_DMA/);assert.match(doc.chapters,/ctrl_optional/);assert.match(doc.chapters,/OPTION_WIDTH/);assert.ok(!doc.chapters.includes('未分组信号'));
 });
 
 test('未指定接口边时按真实邻接布局选边，四方向中整组信号保持同边',async t=>{

@@ -1,0 +1,27 @@
+{% section id="use:architecture" title="架构图：模块与关系" %}
+
+先看两个模块的最小结果：
+
+{% relation-diagram id="system:overview" /%}
+
+在自己的工程，将下面数据保存为 docs/ir/authoring/objects.json。它与[数据接入教程](../../engineering/data.mdoc#use:standard-data)使用同一个源文件：
+
+{% code file="docs/ir/authoring/objects.json" language="json" /%}
+
+再将下面完整配置保存为 docs/edoc.config.js。默认收集 docs 下的正文，views 只引用刚才定义的对象和关系：
+
+{% code file="docs/support/recipes/edoc.config.js" language="javascript" /%}
+
+已有其他配置时只增加 views 项，保留原来的 documents、data 等字段。配置对象整体替换会重置未写出的字段；validate 成功并不表示你期望的每篇文章都在发布入口中。
+
+在自己的 docs/index.mdoc 中写入：
+
+```text {% process=false %}
+{% relation-diagram id="system:overview" /%}
+```
+
+在项目根执行 edoc，打开 output/index.html，应该看到上面的两节点图。数据和视图引用同一批稳定 ID，不复制对象名称或关系。
+
+想确认正文入口时，先运行 edoc outline --depth 1 --format text。
+
+{% /section %}

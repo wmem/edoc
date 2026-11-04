@@ -29,4 +29,11 @@ scripts/checkpoint.py 保留早期双仓库检查点流程：工程和方案分�
 该脚本需要真实存在的方案仓库和指定目标目录，不表示当前普通项目构建依赖外部方案仓库。生成产物、node_modules 和 Chromium 工具包不是日常 Agent 修改入口；不默认使用文件内容 hash 缓存。
 
 {% /section %}
+{% section id="dev:api:markdoc" title="Markdoc 上下文与原生 API" %}
+
+ProjectConfig.markdoc 的变量、函数、片段、Schema 与解析选项见[原生配置参考](../usage/reference/markdoc-native.mdoc#ref:markdoc-context)。公共导出 Markdoc 与 MarkdocOptions 可用于构造原生 AST、Tag 和配置类型；不需要另写模板解析器。
+
+loadProject/loadBook 会等待原生异步文本与校验，再建立工程索引。直接调用 scanDocuments 并使用异步能力时，须 await Promise.all(plan.pending ?? []) 后再消费投影；通常优先使用完整的工程加载入口。HTML/PDF 的异步 Schema 转换由发布阶段等待，read 返回规范化源正文，不调用不透明的自定义 HTML 转换器。
+
+{% /section %}
 {% /section %}

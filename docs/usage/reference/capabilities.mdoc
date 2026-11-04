@@ -4,21 +4,32 @@
 
 人可点击查看效果，Agent 可用 outline 找 sectionId，再按需 read/query。字段参考是契约来源，教程解释选择，例子与被展示的数据或正文同源。
 
+{% section id="use:capabilities:markdoc" title="Markdoc 原生能力" %}
+
+| 能力 | 教程 | 查询参考 | 实际例子 |
+| --- | --- | --- | --- |
+| 变量、函数和条件 | [原生正文](../writing/markdoc.mdoc#use:markdoc:variables) | [上下文](markdoc-native.mdoc#ref:markdoc-context) | [同源效果](../writing/markdoc.mdoc#use:markdoc:effect) |
+| 注解、原生表格和围栏 | [节点属性](../writing/markdoc.mdoc#use:markdoc:annotations) | [节点](markdoc-native.mdoc#ref:markdoc-native-nodes) | [表格和围栏](../writing/markdoc.mdoc#use:markdoc:effect) |
+| partial、局部变量和来源 | [复用片段](../writing/markdoc-reuse.mdoc#use:markdoc:partials) | [标签](markdoc-native.mdoc#ref:markdoc-native-tags) | [两份独立片段](../writing/markdoc.mdoc#use:markdoc:effect) |
+| Frontmatter、注释、Schema 和 slot | [按需配置](../writing/markdoc-reuse.mdoc#use:markdoc-reuse) | [原生范围](markdoc-native.mdoc#ref:markdoc-native) | [实际配置和效果](../writing/markdoc.mdoc#use:markdoc:effect) |
+
+{% /section %}
+
 {% section id="use:capabilities:graphs" title="图形与时序" %}
 
 | 能力 | 教程 | 字段参考 | 实际例子 |
 | --- | --- | --- | --- |
-| 架构与父子层级 | [结构](../rendering/diagrams.mdoc#use:architecture) | [Node / parentId](ir.mdoc#ref:objects) | [父子框](../rendering/graph-options.mdoc#use:graph-groups) |
-| 接线与完整多端点 | [接线](../rendering/diagrams.mdoc#use:wiring) | [Connection](ir.mdoc#ref:connections) | [三端点](../rendering/diagrams.mdoc#use:wiring) |
-| 接口独立合并与展开 | [接口](../rendering/interfaces.mdoc#use:interface-overview) | [接口身份](graph.mdoc#ref:interfaces) | [多接口](../rendering/interfaces.mdoc#use:interface-overview) |
-| 接口排序、侧边与局部覆盖 | [进阶](../rendering/graph-options.mdoc#use:graph-interface-options) | [layout](graph.mdoc#ref:graph-layout) | [默认/覆盖对照](../rendering/graph-options.mdoc#use:graph-interface-options) |
-| 接口汇总表与逐信号表 | [接口表](../rendering/graph-options.mdoc#use:interface-tables) | [interface 标签](markdoc.mdoc#ref:markdoc-data) | [汇总/明细](../rendering/graph-options.mdoc#use:interface-tables) |
-| Group 临时总览 | [选集](../rendering/graph-options.mdoc#use:graph-groups) | [初始显示](graph.mdoc#ref:graph-display) | [展开/总览](../rendering/graph-options.mdoc#use:graph-groups) |
-| 相对顺序、对齐、主干与通道 | [布局](../rendering/layout.mdoc#use:layout-constraints) | [提示字段](graph.mdoc#ref:relation-hints) | [完整配方](graph.mdoc#ref:layout-example) |
-| 方向、固定位置与路由选择 | [布局对照](../rendering/layout.mdoc#use:layout-comparison) | [layout](graph.mdoc#ref:graph-layout) | [同数据对照](../rendering/layout.mdoc#use:layout-comparison) |
-| 类别、文字显隐与图内操作 | [显示](../rendering/diagrams.mdoc#use:diagram-details) | [操作与线型](graph.mdoc#ref:graph-operations) | [端口/连线开关](../rendering/diagrams.mdoc#use:wiring) |
-| 完整与当前视图 SVG | [接口](../rendering/interfaces.mdoc#use:interface-overview) | [输出范围](graph.mdoc#ref:interfaces) | [可操作接口图](../rendering/interfaces.mdoc#use:interface-overview) |
-| 状态与迁移条件 | [状态](../rendering/diagrams.mdoc#use:state) | [关系语义](ir.mdoc#ref:connections) | [反向迁移](../rendering/diagrams.mdoc#use:state) |
+| 架构与父子层级 | [结构](../rendering/diagrams/architecture.mdoc#use:architecture) | [Node / parentId](ir.mdoc#ref:objects) | [父子框](../rendering/diagrams/graph-options.mdoc#use:graph-groups) |
+| 接线与完整多端点 | [接线](../rendering/diagrams/wiring.mdoc#use:wiring) | [Connection](ir.mdoc#ref:connections) | [三端点](../rendering/diagrams/wiring.mdoc#use:wiring) |
+| 接口独立合并与展开 | [接口](../rendering/diagrams/interfaces.mdoc#use:interface-overview) | [接口身份](graph.mdoc#ref:interfaces) | [多接口](../rendering/diagrams/interfaces.mdoc#use:interface-overview) |
+| 接口排序、侧边与局部覆盖 | [进阶](../rendering/diagrams/graph-options.mdoc#use:graph-interface-options) | [layout](graph.mdoc#ref:graph-layout) | [默认/覆盖对照](../rendering/diagrams/graph-options.mdoc#use:graph-interface-options) |
+| 接口汇总表与逐信号表 | [接口表](../rendering/diagrams/graph-options.mdoc#use:interface-tables) | [interface-table 标签](tags/interface-table.mdoc#ref:tag-interface-table) | [汇总/明细](../rendering/diagrams/graph-options.mdoc#use:interface-tables) |
+| Group 临时总览 | [选集](../rendering/diagrams/graph-options.mdoc#use:graph-groups) | [初始显示](graph.mdoc#ref:graph-display) | [展开/总览](../rendering/diagrams/graph-options.mdoc#use:graph-groups) |
+| 相对顺序、对齐、主干与通道 | [布局](../rendering/diagrams/layout.mdoc#use:layout-constraints) | [提示字段](graph.mdoc#ref:relation-hints) | [完整配方](graph.mdoc#ref:layout-example) |
+| 方向、固定位置与路由选择 | [布局对照](../rendering/diagrams/layout.mdoc#use:layout-comparison) | [layout](graph.mdoc#ref:graph-layout) | [同数据对照](../rendering/diagrams/layout.mdoc#use:layout-comparison) |
+| 类别、文字显隐与图内操作 | [显示](../rendering/diagrams/display.mdoc#use:diagram-details) | [操作与线型](graph.mdoc#ref:graph-operations) | [端口/连线开关](../rendering/diagrams/wiring.mdoc#use:wiring) |
+| 完整与当前视图 SVG | [接口](../rendering/diagrams/interfaces.mdoc#use:interface-overview) | [输出范围](graph.mdoc#ref:interfaces) | [可操作接口图](../rendering/diagrams/interfaces.mdoc#use:interface-overview) |
+| 状态与迁移条件 | [状态](../rendering/diagrams/state.mdoc#use:state) | [关系语义](ir.mdoc#ref:connections) | [反向迁移](../rendering/diagrams/state.mdoc#use:state) |
 | 规范/仿真语义的 WaveJSON | [时序](../rendering/waveforms.mdoc#use:waveform) | [Waveform](ir.mdoc#ref:waveforms) | [独立配方](ir.mdoc#ref:waveform-example) |
 
 四类关系图与基本波形已有实现，但不会自动分析任意 RTL，也不代表执行了仿真。polyline 与复杂布局组合有已知实现差异，见本页缺口入口。

@@ -1,24 +1,26 @@
 import {readFileSync,readdirSync,statSync,realpathSync,existsSync} from 'node:fs';
 import {resolve,dirname,basename,relative,extname} from 'node:path';
 import {loadConfigFromFile} from 'vite';
-import type {Graph,Manifest,ResourceType,View,Table,Waveform,Reference} from './types.ts';
+import type {Graph,Manifest,ResourceType,RelationView,Table,Waveform,Reference} from './types.ts';
 import {graphFromResources} from './graph.ts';
 import type {ResourcePart} from './graph.ts';
 import {scanDocuments} from './documents.ts';
+import {markdocOptions} from './markdoc.ts';
+import type {MarkdocOptions} from './markdoc.ts';
 import type {DocumentPlan,DocumentReference} from './documents.ts';
 import {projectPath,requireFile} from './paths.ts';
 import {EdocError,failure} from './errors.ts';
 import {loadAttachments,record} from './attachments.ts';
 import type {AttachmentInput} from './attachments.ts';
 import {SUPPORTED_IR_VERSION} from './load.ts';
+import {resourceTypes} from './extension-contracts.ts';
 
 export type Dataset=Partial<Record<ResourceType,unknown[]>>&{irVersion?:string;requiredFeatures?:string[];projectId?:string;adapterVersion?:string;attachments?:Record<string,AttachmentInput>};
 export type DataContext={root:string;documents:readonly string[];references:readonly DocumentReference[]};
 export type DataSource=string|string[]|Dataset;
-export type ProjectConfig={title?:string;projectId?:string;documents?:string|string[];data?:DataSource|((context:DataContext)=>DataSource|Promise<DataSource>);views?:View[];tables?:Table[];waveforms?:Waveform[];references?:Reference[];output?:{html?:string|false;pdf?:string|false};chromiumExecutable?:string;compactIndex?:boolean;children?:Record<string,string>;attachments?:Record<string,AttachmentInput>};
-export type ResolvedConfig={file:string;root:string;title:string;projectId:string;documents:string[];data:ProjectConfig['data'];views:View[];tables:Table[];waveforms:Waveform[];references:Reference[];outputs:{format:'html'|'pdf';file:string}[];chromiumExecutable?:string;compactIndex:boolean;configInputs:string[];defaultData:boolean;children:Record<string,string>;attachments:Record<string,AttachmentInput>};
+export type ProjectConfig={markdoc?:MarkdocOptions;title?:string;projectId?:string;documents?:string|string[];data?:DataSource|((context:DataContext)=>DataSource|Promise<DataSource>);views?:RelationView[];tables?:Table[];waveforms?:Waveform[];references?:Reference[];output?:{html?:string|false;pdf?:string|false};chromiumExecutable?:string;compactIndex?:boolean;children?:Record<string,string>;attachments?:Record<string,AttachmentInput>};
+export type ResolvedConfig={markdoc:MarkdocOptions;file:string;root:string;title:string;projectId:string;documents:string[];data:ProjectConfig['data'];views:RelationView[];tables:Table[];waveforms:Waveform[];references:Reference[];outputs:{format:'html'|'pdf';file:string}[];chromiumExecutable?:string;compactIndex:boolean;configInputs:string[];defaultData:boolean;children:Record<string,string>;attachments:Record<string,AttachmentInput>};
 export type LoadedProject={config:ResolvedConfig;graph:Graph;documents:DocumentPlan;inputs:string[];dataFiles:string[]};
-const resourceTypes:ResourceType[]=['objects','relations','views','tables','waveforms','references'];
 const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments'];
 const pointer=(key:string)=>key.replace(/~/g,'~0').replace(/\//g,'~1');
 const plain=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.prototype.toString.call(v)==='[object Object]';
@@ -34,7 +36,7 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
  try{loaded=await loadConfigFromFile({command:'build',mode:'production'},file,root,'silent');}catch(error){failure('CONFIG_LOAD',file,'',String(error));}
  if(!loaded||!plain(loaded.config))failure('CONFIG_TYPE',file,'','配置须导出对象，例如 export default {}');
  const input=loaded.config as ProjectConfig;
- const allowed=['title','projectId','documents','data','views','tables','waveforms','references','output','chromiumExecutable','compactIndex','children','attachments'];
+ const allowed=['title','projectId','documents','data','views','tables','waveforms','references','output','chromiumExecutable','compactIndex','children','attachments','markdoc'];
  for(const key of Object.keys(input))if(!allowed.includes(key))failure('CONFIG_FIELD',file,'/'+pointer(key),`未知配置项：${key}`);
  const text=(key:'title'|'projectId',fallback:string)=>{const value=input[key]??fallback;if(typeof value!=='string'||!value.trim())failure('CONFIG_TYPE',file,'/'+key,'需要非空字符串');return value;};
  if(input.documents==null){
@@ -57,12 +59,12 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
  if(!outputs.length)failure('CONFIG_OUTPUT',file,'/output','至少启用一种输出');
  if(input.chromiumExecutable!==undefined&&typeof input.chromiumExecutable!=='string')failure('CONFIG_TYPE',file,'/chromiumExecutable','需要可执行文件路径');
  const executable=input.chromiumExecutable?(input.chromiumExecutable.startsWith('/')||/^[A-Za-z]:/.test(input.chromiumExecutable)?input.chromiumExecutable:projectPath(root,root,input.chromiumExecutable)):undefined;
- return {file,root,title:text('title',basename(root)||'工程文档'),projectId:text('projectId',basename(root)||'project'),documents,data:input.data??'docs/ir',...arrays,outputs,chromiumExecutable:executable,compactIndex:input.compactIndex??false,configInputs:[file,...loaded.dependencies.map(p=>resolve(root,p))],defaultData:input.data===undefined,children:input.children??{},attachments:input.attachments??{}};
+ return {file,root,markdoc:markdocOptions(input.markdoc,file),title:text('title',basename(root)||'工程文档'),projectId:text('projectId',basename(root)||'project'),documents,data:input.data??'docs/ir',...arrays,outputs,chromiumExecutable:executable,compactIndex:input.compactIndex??false,configInputs:[file,...loaded.dependencies.map(p=>resolve(root,p))],defaultData:input.data===undefined,children:input.children??{},attachments:input.attachments??{}};
 }
 
 // 配置、文档扫描先完成，再执行数据提供函数/扫描数据目录。无需用户手写资源清单。
 export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inputs:string[])=>void}={}):Promise<LoadedProject>{
- const documents=scanDocuments(config.root,config.documents,{projectRoots:Object.values(config.children).map(file=>configProjectRoot(resolve(config.root,file)))});if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
+ const documents=scanDocuments(config.root,config.documents,{markdoc:config.markdoc,configFile:config.file,projectRoots:Object.values(config.children).map(file=>configProjectRoot(resolve(config.root,file)))});await Promise.all(documents.pending??[]);if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
  const dataFiles:string[]=[],parts:ResourcePart[]=[],required=new Set<string>(),versions=[SUPPORTED_IR_VERSION],seenFiles=new Set<string>(),seenDirectories=new Set<string>();
  const attachmentDefinitions:Record<string,AttachmentInput>=Object.assign(Object.create(null),config.attachments);
  const addDataset=(raw:unknown,file:string,prefix='',explicit=true)=>{

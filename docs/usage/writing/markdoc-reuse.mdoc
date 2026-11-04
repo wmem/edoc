@@ -1,0 +1,111 @@
+{% section id="use:markdoc-reuse" title="片段、元数据与扩展配置" %}
+
+需要减少重复说明时，先使用 partial；需要自定义展示值时再增加函数。Frontmatter、注释和扩展标签按需配置，不是写第一篇正文的前置要求。入门与实际效果见[Markdoc 原生能力](markdoc.mdoc)。
+
+{% section id="use:markdoc:partials" title="使用带局部变量的 partial" %}
+
+在配置中给片段分配名字，路径相对工程根：
+
+```javascript
+export default {
+  markdoc: {
+    variables: {native: {product: '我的工程'}},
+    partials: {card: 'docs/_partials/card.mdoc'}
+  }
+};
+```
+
+正文以别名引用，并提供本次调用的变量：
+
+```text {% process=false %}
+{% partial file="card" variables={card:{id:"term:shared",title:"共享术语"}} /%}
+```
+
+片段可以继续使用 Markdown、Markdoc 和 edoc 标签。本手册的真实片段如下：
+
+{% code file="docs/support/recipes/_partials/markdoc-card.mdoc" language="markdoc" /%}
+
+partial 采用原生的局部变量覆盖规则，调用结束后不修改外层变量；也支持把 Markdoc AST 或 AST 数组直接放在配置的 partials 中。需要把同一片段放两次时，里面的 section 必须得到不同的稳定 ID。路径片段会作为输入记录来源并检查循环、项目范围和输出覆盖。
+
+edoc include.file 适合直接复用不带局部参数的正文；partial 适合可参数化的模板。它们均不需要维护第二份 manifest。
+
+{% /section %}
+
+{% section id="use:markdoc:functions" title="增加计算展示值的函数" %}
+
+内置 and、or、not、equals、default 和 debug 可直接使用。额外函数在配置中按原生 ConfigFunction 定义，正文只能调用配置注册的函数，不会执行正文中的 JavaScript：
+
+```javascript
+export default {
+  markdoc: {
+    variables: {product: 'edoc'},
+    functions: {
+      uppercase: {
+        returns: String,
+        parameters: {0: {type: String, required: true}},
+        transform(parameters) {return parameters[0].toUpperCase();}
+      }
+    }
+  }
+};
+```
+
+```text {% process=false %}
+{% uppercase($product) %}
+```
+
+函数应返回稳定的展示值。精确工程事实仍由源数据和 Adapter 提供，不在正文函数里重新维护引脚、位宽或网络。执行时机和参数规则见[配置与校验参考](../reference/markdoc-native.mdoc#ref:markdoc-context)。
+
+{% /section %}
+
+{% section id="use:markdoc:metadata" title="Frontmatter 与作者注释" %}
+
+Markdoc 只提取 Frontmatter 原文，不自动决定 YAML、JSON 或其他格式。这里选择 JSON，由配置读取并解析，再提供为变量：
+
+```javascript
+import {readFileSync} from 'node:fs';
+import {Markdoc} from 'edoc';
+
+const source = readFileSync(new URL('./index.mdoc', import.meta.url), 'utf8');
+const meta = JSON.parse(Markdoc.parse(source).attributes.frontmatter);
+export default {markdoc: {variables: {meta}}};
+```
+
+对应的正文可以写为：
+
+```text {% process=false %}
+---
+{"title":"工程说明"}
+---
+# {% $meta.title %}
+```
+
+这是选择 JSON 的配方，不意味着工具自动解析所有页面的 YAML。更复杂的元数据准备可在配置中调用自己的模块；需要准确来源时保留实际被引用的文件。本手册的 Frontmatter、配置和实际效果共用同一份输入。
+
+需要隐藏 HTML 风格的作者注释时，在 markdoc.tokenizer 中设置 allowComments:true；默认行为沿用上游。它只开启注释处理，不开放原生 HTML 执行。
+
+{% /section %}
+
+{% section id="use:markdoc:schemas" title="用 Schema 注册扩展标签和 slot" %}
+
+有重复的语义结构时，可在 markdoc.tags 中增加自己的标签。它们使用 Markdoc Schema 的 attributes、children、slots、validate 和 transform 机制，与 edoc 标签共存。原生和 edoc 标签名保留，不通过覆盖这些名字改变含义。
+
+本手册注册 reader-note：正文传入 tone，title 插槽放提示标题，剩余 children 放说明。slot 需要启用 markdoc.parse.slots：
+
+```text {% process=false %}
+{% reader-note tone="info" %}
+{% slot "title" %}
+适用边界
+{% /slot %}
+普通 Markdown 说明。
+{% /reader-note %}
+```
+
+Schema 在配置中生成受控的语义 HTML，不需要正文直接写 HTML；输出仍经过工具的资源和属性边界。它适合补充说明结构，不替代工具已有的图形渲染器。任意脚本、自由 CSS、外部运行资源和 React 组件运行时不属于当前离线 HTML 的公开入口。
+
+下面展示本手册实际执行的配置，包含变量、函数、片段、注释、slot 和 reader-note 的定义。已有基本认识后再按需查询，无须先读完这些配置才能写正文：
+
+{% code file="docs/edoc.config.js" language="javascript" /%}
+
+{% /section %}
+{% /section %}

@@ -1,6 +1,6 @@
 {% section id="ref:ir" title="数据契约" %}
 
-当前支持 IR 1.2。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+当前支持 IR 1.2。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Waveform 分属不同数据模型；[标签职责](tags/index.mdoc)说明各自如何展示。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
 
 | 外层字段 | 内容 | 本页条目 |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ Node、Port、接口、关系、视图、表、行、波形、关联和显式 se
 
 parentId 只能指向 Node，禁止自循环与层级循环。Group.members 引用 Node/Port/Group，允许共享子组的 DAG，但禁止分组循环；端口 groupId 和 clockDomainId 继续严格校验目标存在与类型，不通过布局或名字推断语义。正式引用不能藏在 attributes 中代替结构关系。
 
-正式结构位于仓库 packages/schema/object.schema.json 和 common.schema.json；接口成员见 {% reference id="ref:interfaces" /%}。
+正式结构位于仓库 packages/extensions/relation-diagram/object.schema.json 和 common.schema.json；接口成员见 {% reference id="ref:interfaces" /%}。
 
 {% /section %}
 
@@ -33,7 +33,7 @@ class 是开放字符串，用于类别与展示，不推断电气含义。direc
 
 sources/targets 若声明则各自非空、不重复、互不相交，且均属于原 endpoints；不要求覆盖所有被动端点。双向或未知方向可省略 direction，不能根据端口方向偷偷补出源/目标。
 
-折叠接口、过滤和显示主干只是投影，不能改变原 endpoints。完整结构见 packages/schema/relation.schema.json。
+折叠接口、过滤和显示主干只是投影，不能改变原 endpoints。完整结构见 packages/extensions/relation-diagram/relation.schema.json。
 
 {% /section %}
 
@@ -45,16 +45,16 @@ Table 必需 id、kind='table'、label、columns、rows。列必需 field、labe
 
 行二选一：{id, objectId} 从原对象投影，或 {id, values} 表达项目自身的权威表格事实。投影行不能同时复制 values。不存在的字段显示 unknown，存在值须符合列类型。
 
-[样例查询](examples.mdoc)中的引脚表与 RTL 表直接投影原对象。完整结构见 packages/schema/table.schema.json。
+[样例查询](examples.mdoc)中的引脚表与 RTL 表直接投影原对象。完整结构见 packages/extensions/data-table/table.schema.json。
 
 {% section id="ref:table-example" title="最小对象投影表" %}
 
-前置：已有[数据教程中的两个对象](../engineering/data.mdoc#use:standard-data)。将以下完整数据保存为自己工程的 docs/ir/authoring/tables.json，保留自动扫描 docs/ir 的配置；正文用 table 标签引用 system:modules。
+前置：已有[数据教程中的两个对象](../engineering/data.mdoc#use:standard-data)。将以下完整数据保存为自己工程的 docs/ir/authoring/tables.json，保留自动扫描 docs/ir 的配置；正文用 data-table 标签引用 system:modules。
 
 {% code file="docs/ir/authoring/tables.json" language="json" /%}
 
-```text
-{% table id="system:modules" /%}
+```text {% process=false %}
+{% data-table id="system:modules" /%}
 ```
 
 运行 edoc 后得到[教程中的两行表格](../rendering/tables.mdoc#use:table)。columns 的 field 从 objectId 指向的对象取值，rows 只维护行身份和对象引用。添加其他列时沿用同一对象，不把其值抄进 values。
@@ -93,7 +93,7 @@ unit 只追加到列标题，如“频率 (Hz)”，不修改数值或提供单�
 
 必需 id、kind='waveform'、label、format='wavejson'、semantic、data、source。semantic 只能为 specification 或 simulation，分别表示规范示意与有来源的仿真结果；不能为了图形效果混用。
 
-data 保存 WaveJSON 对象，交由时序渲染器处理。[时序教程](../rendering/waveforms.mdoc)展示样例握手；下面的最小定义可独立创建一张规范波形。完整外层结构见 packages/schema/waveform.schema.json。
+data 保存 WaveJSON 对象，交由时序渲染器处理。[时序教程](../rendering/waveforms.mdoc)展示样例握手；下面的最小定义可独立创建一张规范波形。完整外层结构见 packages/extensions/waveform/waveform.schema.json。
 
 data 必需 signal，可含 edge、head、foot、config。signal 可包含信号对象或命名分组，edge 描述标注，head/foot/config 交给 WaveDrom 处理；接受这些对象不表示其中每个第三方选项都已逐项验收，也不提供独立的通用时间窗口或时序布局配置层。
 
@@ -103,7 +103,7 @@ data 必需 signal，可含 edge、head、foot、config。signal 可包含信号
 
 {% code file="docs/ir/authoring/waveforms.json" language="json" /%}
 
-```text
+```text {% process=false %}
 {% waveform id="system:handshake" /%}
 ```
 

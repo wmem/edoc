@@ -5,12 +5,13 @@ edoc 以 Markdown 为正文基础，让你继续写说明、代码和链接；�
 | 能力 | 表达和阅读能力 | 需要准备什么 |
 | --- | --- | --- |
 | [Markdown 基础](writing/markdown.mdoc) | 标题、列表、代码、普通表格、图片与链接 | 正文；图片使用本地文件 |
+| [Markdoc 原生能力](writing/markdoc.mdoc) | 变量、条件、函数、注解、参数片段和原生表格 | 正文；需要上下文时在配置中提供 |
 | [页面编排](rendering/page-layout.mdoc) | 分栏、面板、Tabs、折叠与稳定章节 | 正文中的扩展标签，不需要工程数据 |
 | [数据驱动图表](rendering/index.mdoc) | 架构、接线、接口、状态、时序图与结构化表格 | 结构化数据；关系图还需选择显示范围的视图 |
 | [引用与证据](rendering/references.mdoc) | 从说明跳到对象、文章或 PDF 原文位置 | 稳定身份；引用 PDF 时携带原文件 |
 | [阅读、查询与发布](publishing/index.mdoc) | 文档树、搜索、图形操作、对象详情和离线输出 | 工具生成；机器查询在拥有源文件的工程中执行 |
 
-可以只用前两类能力。数据图表的标准格式称为 IR；有网表、CSV 或 RTL 时，由项目脚本转换成它，edoc 不猜测领域含义。正文解释“为什么”，数据保存“是什么”，配置安排“显示哪些内容、输出到哪里”。
+可以只写正文或使用 Markdoc 和页面编排，不需要工程数据。数据图表的标准格式称为 IR；有网表、CSV 或 RTL 时，由项目脚本转换成它，edoc 不猜测领域含义。正文解释“为什么”，数据保存“是什么”，配置安排“显示哪些内容、输出到哪里”。
 
 下面直接看几种效果。想立即动手，可跳到[快速开始](start/index.mdoc)；已经知道目标，可从表中直接进入对应教程。
 
@@ -27,16 +28,18 @@ edoc 以 Markdown 为正文基础，让你继续写说明、代码和链接；�
 {% /panel %}
 {% /columns %}
 
+要精确了解每个内置标签的职责、输入和边界，按需查[标签职责](reference/tags/index.mdoc)。
+
 {% /section %}
 
 {% section id="use:overview:data" title="同一份事实可以同时出现在图和表里" %}
 
 图展示生产与消费的关系，表读取同一批对象的名称。更改源对象后重新生成，两处一起更新；不手工维护两份数值或生成的 SVG。
 
-{% diagram id="system:overview" /%}
-{% table id="system:modules" /%}
+{% relation-diagram id="system:overview" /%}
+{% data-table id="system:modules" /%}
 
-关系图还能表达真实端口与多端点连接、接口总览与展开、状态迁移；时序图单独表达信号随时间的变化。按问题选择：[关系图](rendering/diagrams.mdoc)、[接口](rendering/interfaces.mdoc)、[时序](rendering/waveforms.mdoc)或[表格](rendering/tables.mdoc)。本例为虚构数据，不代表真实工程或仿真结果。
+关系图还能表达真实端口与多端点连接、接口总览与展开、状态迁移，这些能力都从[关系图](rendering/diagrams/index.mdoc)进入。信号随时间的变化使用[时序图](rendering/waveforms.mdoc)，结构化记录使用[表格](rendering/tables.mdoc)。本例为虚构数据，不代表真实工程或仿真结果。
 
 {% /section %}
 

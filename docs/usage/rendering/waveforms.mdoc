@@ -1,6 +1,6 @@
 {% section id="use:waveform" title="时序图" %}
 
-用按时间排列的电平与总线描述规范或仿真结果。时序图需要波形数据，不会从任意 RTL 自动推断。状态如何迁移另见[状态图](diagrams.mdoc#use:state)。
+用按时间排列的电平与总线描述规范或仿真结果。时序图需要波形数据，不会从任意 RTL 自动推断。状态如何迁移另见[状态图](diagrams/state.mdoc#use:state)。
 
 {% section id="use:waveform-live" title="握手与反压波形" %}
 
@@ -10,7 +10,7 @@
 
 正文引用方式：
 
-```text
+```text {% process=false %}
 {% waveform id="mac:tx-handshake" /%}
 ```
 
@@ -28,7 +28,7 @@
 
 在自己的 docs/index.mdoc 写入并执行 edoc：
 
-```text
+```text {% process=false %}
 {% waveform id="system:handshake" /%}
 ```
 

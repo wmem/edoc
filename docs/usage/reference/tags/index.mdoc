@@ -1,0 +1,19 @@
+{% section id="ref:tags" title="edoc 标签职责" %}
+
+先按要表达的内容选择标签，再准备对应类型的数据。标签名称表示展示职责，IR 类型表示事实；有一个数据类型，不代表需要同名标签。
+
+| 要表达什么 | 标签 | 输入与边界 |
+| --- | --- | --- |
+| 章节、分栏、面板、切换内容 | section、columns、panel、tabs、tab | 正文与编排属性；[排版契约](../markdoc.mdoc#ref:markdoc-structure) |
+| 模块结构、端口连接、状态迁移 | [relation-diagram](relation-diagram.mdoc) | 关系视图；端口分组展开也是这项能力 |
+| 接口汇总或逐信号明细 | [interface-table](interface-table.mdoc) | 模块、接口或直接端口集合；始终生成表 |
+| 结构化记录 | [data-table](data-table.mdoc) | Table 的列与行，不承担统计绘图 |
+| 数字信号时序 | [waveform](waveform.mdoc) | Waveform / WaveJSON，不执行仿真 |
+| 对象、文章、原始 PDF 跳转 | reference、page、attachment | [跳转契约](../markdoc.mdoc#ref:markdoc-links) |
+| 接入内容、展示真实源码 | include、code | [文件契约](../markdoc.mdoc#ref:markdoc-files) |
+
+这些是当前全部 14 个内置标签。Markdoc 的 if、else、partial、table、slot 属于[原生能力](../markdoc-native.mdoc)，与上述标签分别维护。工程自定义的 reader-note 等不属于内置标签。
+
+关系图、数据表和数字波形各自有类型，不要求统计数据伪装成 Node 或 Connection。测试通过率、耗时趋势等统计图表尚未实现，也没有预留可使用的 chart、graph 标签。新增能力先定义用途、输入、输出和边界，再注册名称。
+
+{% /section %}

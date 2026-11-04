@@ -6,9 +6,9 @@
 
 普通 Markdown 链接切换文章；reference 引用已有对象或稳定章节；page 可以明确指定文章及其中的锚点。
 
-试着打开 {% reference id="system:producer" label="生产者的事实与来源" /%}，再返回这里。这是图和表使用的同一个对象。自己的工程已有[两节点例子](diagrams.mdoc#use:architecture)后，可直接在 docs/index.mdoc 写入：
+试着打开 {% reference id="system:producer" label="生产者的事实与来源" /%}，再返回这里。这是图和表使用的同一个对象。自己的工程已有[两节点例子](diagrams/architecture.mdoc#use:architecture)后，可直接在 docs/index.mdoc 写入：
 
-```text
+```text {% process=false %}
 {% reference id="system:producer" label="查看生产者" /%}
 ```
 
@@ -53,7 +53,7 @@ rect 是旋转及裁切后显示区域的归一化角点 [x0,y0,x1,y1]，左上�
 
 在自己的 docs/index.mdoc 写入：
 
-```text
+```text {% process=false %}
 {% attachment id="reference" target="home" label="查看原文首页" /%}
 ```
 

@@ -1,16 +1,16 @@
 {% section id="use:graph-options" title="图形分组与接口显示" %}
 
-父子框图、逻辑选集和模块接口回答不同问题。先按[结构与接线](diagrams.mdoc)选好显示范围，再按本页设置分组、顺序和初始状态；不要把这些设置写回真实连接。
+父子框图、逻辑选集和模块接口回答不同问题。先按[结构与接线](index.mdoc)选好显示范围，再按本页设置分组、顺序和初始状态；不要把这些设置写回真实连接。
 
 {% section id="use:graph-groups" title="父子框与逻辑集合不是同一种分组" %}
 
 下面的处理模块用 parentId 包含接收、发送单元；两路单元另组成 Group，便于临时查看集合总览。试着点击“总览 两路处理单元”，然后展开：
 
-{% diagram id="author:hierarchy" /%}
+{% relation-diagram id="author:hierarchy" /%}
 
 同一批事实也可以初始显示集合总览：
 
-{% diagram id="author:group-overview" /%}
+{% relation-diagram id="author:group-overview" /%}
 
 parentId 定义框内外层级；Group.members 只定义选集，不能替代物理或语义父子关系。Group 总览是旧逻辑集合的临时投影，不改变原关系；完整 SVG 与文档 PDF 保留视图定义内的原节点和连接。模块协议接口使用 Node.interfaces，见下节。
 
@@ -20,9 +20,9 @@ parentId 定义框内外层级；Group.members 只定义选集，不能替代物
 
 理解[最小接口图](interfaces.mdoc)后，再看这个多接口虚构样例。处理模块同时有控制和 DMA 接口，可以只展开其中一组；这些信号是演示摘录，不表示完整 AXI 实现。
 
-{% diagram id="gallery:interface-buses" /%}
+{% relation-diagram id="gallery:interface-buses" /%}
 
-该例复用 examples/gallery/interfaces.json，完整逐信号详图与来源在[样例查询参考](../reference/examples.mdoc)。自己的工程仍按[完整创建配方](interfaces.mdoc#use:interface-create)提供真实成员，不按信号名称猜协议。
+该例复用 examples/gallery/interfaces.json，完整逐信号详图与来源在[样例查询参考](../../reference/examples.mdoc)。自己的工程仍按[完整创建配方](interfaces.mdoc#use:interface-create)提供真实成员，不按信号名称猜协议。
 
 {% /section %}
 
@@ -32,10 +32,10 @@ parentId 定义框内外层级；Group.members 只定义选集，不能替代物
 
 {% tabs %}
 {% tab name="默认总览" %}
-{% diagram id="author:interface-default" /%}
+{% relation-diagram id="author:interface-default" /%}
 {% /tab %}
 {% tab name="排序与局部展开" %}
-{% diagram id="author:interface-override" /%}
+{% relation-diagram id="author:interface-override" /%}
 {% /tab %}
 {% /tabs %}
 
@@ -47,17 +47,17 @@ interfaceOrder 排接口，portOrder 排成员，interfaceSides 决定接口及�
 
 {% section id="use:interface-tables" title="接口汇总表与逐信号表" %}
 
-interface 标签引用 Node、Interface 或直接含端口的 Group 时生成表。overview 汇总成员数量、方向和位宽集合；detailed 展开真实信号：
+interface-table 标签引用 Node、Interface 或直接含端口的 Group 时生成表。overview 汇总成员数量、方向和位宽集合；detailed 展开真实信号：
 
-```text
-{% interface id="author:host" mode="overview" /%}
-{% interface id="author:host.ctrl" mode="detailed" /%}
+```text {% process=false %}
+{% interface-table id="author:host" mode="overview" /%}
+{% interface-table id="author:host.ctrl" mode="detailed" /%}
 ```
 
-{% interface id="author:host" mode="overview" /%}
-{% interface id="author:host.ctrl" mode="detailed" /%}
+{% interface-table id="author:host" mode="overview" /%}
+{% interface-table id="author:host.ctrl" mode="detailed" /%}
 
-若 id 指向 View，标签渲染图形，折叠由视图 display 控制；mode 不替代 interfaceMode，也不把图变成表。图内点击展开后的真实信号，可查看属性和“图中定位信号”操作；准确事实仍可用 query 获取。
+interface-table 只接受端口事实，不能引用关系视图。图形使用 relation-diagram，接口折叠由视图 display 控制，mode 只决定表格的汇总或明细。图内点击展开后的真实信号，可查看属性和“图中定位信号”操作；准确事实仍可用 query 获取。
 
 {% /section %}
 
@@ -73,13 +73,13 @@ interface 标签引用 Node、Interface 或直接含端口的 Group 时生成表
 
 在 docs/index.mdoc 中引用要使用的视图或接口表，执行 edoc：
 
-```text
-{% diagram id="author:hierarchy" /%}
-{% diagram id="author:group-overview" /%}
-{% diagram id="author:interface-default" /%}
-{% diagram id="author:interface-override" /%}
-{% interface id="author:host" mode="overview" /%}
-{% interface id="author:host.ctrl" mode="detailed" /%}
+```text {% process=false %}
+{% relation-diagram id="author:hierarchy" /%}
+{% relation-diagram id="author:group-overview" /%}
+{% relation-diagram id="author:interface-default" /%}
+{% relation-diagram id="author:interface-override" /%}
+{% interface-table id="author:host" mode="overview" /%}
+{% interface-table id="author:host.ctrl" mode="detailed" /%}
 ```
 
 这是完整创建配方。实际项目只选择回答当前问题的视图，不必在主体一次展开全部图表。颜色、线型、快捷操作与静态输出范围见 {% reference id="ref:graph-operations" label="图形阅读与导出" /%}。

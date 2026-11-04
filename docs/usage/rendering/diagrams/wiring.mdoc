@@ -1,0 +1,37 @@
+{% section id="use:wiring" title="接线图：端点与分支" %}
+
+接线图需要真实端口，而不只是模块之间的一条功能线。先用一个三端点虚构时钟网络观察：一条关系同时连接主控、外设和观察点，不能拆成互不相关的 Net。
+
+{% relation-diagram id="wire:overview" /%}
+
+保留最小配置与 docs/index.mdoc 首页时，保存以下完整数据为 docs/ir/authoring/wiring.json：
+
+{% code file="docs/ir/authoring/wiring.json" language="json" /%}
+
+在自己的 docs/index.mdoc 写入并执行 edoc：
+
+```text {% process=false %}
+{% relation-diagram id="wire:overview" /%}
+```
+
+展开对象详情可查三个完整端点；“端口属性”开关显示 Pin，未知编号仍保留 unknown。例子的 layout 将主控与外设放在同一行、观察点放在上方，backbone 选择显示主干，不表示真实 PCB 走线。约束只组织显示，详细用法在[布局调整](layout.mdoc)。节点、编号与关系均为虚构示例，不能替代真实网表。
+
+{% section id="use:wiring:board" title="在板级例子中核对完整连接" %}
+
+下图复用虚构 FPGA–Flash 网表。FLASH_SCK 同时连接 FPGA、Flash 和测试连接器，始终是一条三端点 Net；显示主干不表示真实 PCB 走线拓扑。
+
+{% relation-diagram id="gallery:wiring-intent" /%}
+
+勾选“端口属性”查看 Ball/Pin；取消“连线标题”隐藏文字。点击 FLASH_SCK 核对完整 endpoints，再按需查询：
+
+```sh
+edoc query --id board:net.FLASH_SCK --depth 1
+```
+
+图宽时使用“大图查看”或“清晰阅读”，再拖动查看。不要靠删除第三端点或缩小到无法辨认来制造整洁。
+
+从上面的架构例子改为接线图时，在 Node 中提供真实 ports、Connection.endpoints 引用端口 ID，视图 kind 改为 wiring；字段和校验规则见[对象与端口](../../reference/ir.mdoc#ref:objects)及[Connection](../../reference/ir.mdoc#ref:connections)。本图的完整原始数据来自仓库虚构板级 Adapter，不把其中的 pin 当成自己的工程事实。
+
+{% /section %}
+
+{% /section %}

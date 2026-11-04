@@ -1,9 +1,9 @@
-import type {View,LayoutConstraint,Connection} from '../core/types.ts';
+import type {RelationView,LayoutConstraint,Connection} from '../core/types.ts';
 import type {SceneNode} from './scene.ts';
 import {intersects,labelBox} from './geometry.ts';
 
 // 相对约束在同一父容器的兄弟节点间求解；容器递归包围子图，移动时整体平移。
-export function constrainNodes(nodes:SceneNode[],view:View,relations:Connection[]=[]){
+export function constrainNodes(nodes:SceneNode[],view:RelationView,relations:Connection[]=[]){
  const constraints=view.layout?.constraints??[],positions=new Map((view.layout?.positions??[]).map(p=>[p.objectId,p]));
  const children=(id?:string)=>nodes.filter(n=>n.parentId===id),byId=new Map(nodes.map(n=>[n.id,n]));
  const descendants=(id:string):SceneNode[]=>[byId.get(id)!,...children(id).flatMap(n=>descendants(n.id))];

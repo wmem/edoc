@@ -1,0 +1,21 @@
+{% section id="use:diagrams" title="关系图" %}
+
+关系图表达对象的结构、连接或迁移，统一使用 relation-diagram 标签。接口合并和展开是其中的端口分组能力，不是独立的渲染扩展。
+
+按当前要理解的问题选择一篇短教程，无需顺序通读：
+
+| 你要看什么 | 阅读入口 |
+| --- | --- |
+| 模块有哪些职责、怎样协作 | [架构图：模块与关系](architecture.mdoc) |
+| 信号接到哪些端口、多端点怎样表示 | [接线图：端点与分支](wiring.mdoc) |
+| 多组总线先总览、再展开逐信号 | [接口合并与展开](interfaces.mdoc) |
+| 什么条件触发状态变化 | [状态图：迁移与条件](state.mdoc) |
+| 隐藏附注、筛选类别、导出完整图 | [显示设置与完整导出](display.mdoc) |
+| 父子框、逻辑集合、接口顺序与初始状态 | [图形分组与接口显示](graph-options.mdoc) |
+| 默认布局不够清楚时声明展示意图 | [需要时调整布局](layout.mdoc) |
+
+这些图共用 Node、Port、Interface、Connection 和 RelationView，使用视图选择范围，不从正文或任意 RTL 猜测连接。精确类型和边界见[关系图标签契约](../../reference/tags/relation-diagram.mdoc)。
+
+接口表使用 interface-table 整理已有端口，始终生成表格，见[接口表契约](../../reference/tags/interface-table.mdoc)。数字波形则用[时序图](../waveforms.mdoc)描述信号随时间的变化，不属于节点关系模型。
+
+{% /section %}

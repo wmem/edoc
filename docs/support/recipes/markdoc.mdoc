@@ -1,0 +1,55 @@
+---
+{"title":"Markdoc 原生功能实际效果","description":"本页的元数据按 JSON 解析，由配置传入变量"}
+---
+{% section id="use:markdoc:live" title=$native.meta.title %}
+
+当前工程是 **{% $native.product %}**；函数返回 {% uppercase($native.product) %}。这里的内容来自配置变量，没有工程 IR。
+
+{% if equals($native.edition, "full") %}
+当前选择完整说明。此句由原生 if 条件选中，未选中的分支不会加入阅读目录。
+{% else /%}
+当前选择简略说明。
+{% /if %}
+
+{% reader-note tone="info" %}
+{% slot "title" %}
+数据来自同一个上下文
+{% /slot %}
+片段、条件、标题、查询正文和网页共用本次解析的值。这个提示框通过 Markdoc Schema 注册，不在正文写 HTML。
+{% /reader-note %}
+
+{% partial file="native-card" variables={card:{id:"use:native-card:first",title:"共享术语"}} /%}
+{% partial file="native-card" variables={card:{id:"use:native-card:second",title:"适用边界"}} /%}
+
+### 原生表格与注解 {% #native-table %}
+
+原生 table 用列表描述行列。工程事实表使用独立的 data-table。
+
+{% table %}
+- 能力 {% width="35%" %}
+- 用途 {% align="right" %}
+---
+- 变量与函数
+- 复用名称和计算展示值 {% align="right" %}
+---
+- partial
+- 带局部变量复用片段 {% align="right" %}
+{% /table %}
+
+### 围栏的两种用途
+
+下面的围栏默认处理标签，显示当前变量与条件结果：
+
+```text
+{% if true %}工程：{% $native.product %}{% /if %}
+```
+
+下面明确设置 process=false，只显示写法，不读取这个不存在的文件：
+
+```text {% process=false %}
+{% include file="not-a-real-file.mdoc" /%}
+```
+
+<!-- 这是开启 allowComments 后不出现在页面中的作者备注。 -->
+
+{% /section %}
