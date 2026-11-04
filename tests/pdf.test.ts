@@ -71,3 +71,23 @@ print(json.dumps(paths,ensure_ascii=False))`;
  assert.ok(paths.some(p=>p.slice(-4).join('/')==='功能模块/存储与配置/QSPI 模块/职责与边界'),JSON.stringify(paths));
  assert.equal(paths.filter(p=>p.at(-1)==='QSPI 模块').length,1,'不额外创建同名文章标题书签');
 });
+
+test('directory-order 同步改变 PDF 正文和书签顺序，未列文章保留',{timeout:40000},t=>{
+ const root=mkdtempSync(join(tmpdir(),'edoc-directory-order-pdf-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ const write=(file:string,text:string)=>{mkdirSync(join(root,file,'..'),{recursive:true});writeFileSync(join(root,file),text);};
+ const section=(id:string,title:string,body:string)=>`{% section id="${id}" title="${title}" %}\n${body}\n{% /section %}`;
+ write('docs/edoc.config.js','export default {compactIndex:true};');
+ write('docs/index.mdoc',section('home','首页','{% directory-order items=["topic/", "z.mdoc"] /%}'));
+ write('docs/topic/index.mdoc',section('topic','模块','{% directory-order items=["b.mdoc"] /%}'));
+ write('docs/topic/a.mdoc',section('topic-a','甲接口','BODY_TOPIC_A'));
+ write('docs/topic/b.mdoc',section('topic-b','乙接口','BODY_TOPIC_B'));
+ write('docs/z.mdoc',section('root-z','后置概览','BODY_ROOT_Z'));
+ write('docs/a.mdoc',section('root-a','追加说明','BODY_ROOT_A'));
+ const output=join(root,'result.pdf');build(['--config',join(root,'docs/edoc.config.js'),'--format','pdf','--output',output]);
+ const data=inspect(output),body=['BODY_TOPIC_B','BODY_TOPIC_A','BODY_ROOT_Z','BODY_ROOT_A'].map(text=>data.text.indexOf(text));
+ assert.ok(body.every((offset,index)=>offset>=0&&(!index||offset>body[index-1])),JSON.stringify(body));
+ const code=`import json,sys\nfrom pypdf import PdfReader\ntitles=[]\ndef walk(items):\n for item in items:\n  if isinstance(item,list):walk(item)\n  else:titles.append(str(item['/Title']))\nwalk(PdfReader(sys.argv[1]).outline)\nprint(json.dumps(titles,ensure_ascii=False))`;
+ const result=spawnSync('python3',['-c',code,output],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stderr);
+ const titles:string[]=JSON.parse(result.stdout),positions=['模块','乙接口','甲接口','后置概览','追加说明'].map(title=>titles.indexOf(title));
+ assert.ok(positions.every((offset,index)=>offset>=0&&(!index||offset>positions[index-1])),JSON.stringify(titles));
+});

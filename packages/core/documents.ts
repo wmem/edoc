@@ -7,9 +7,10 @@ import {EdocError,failure} from './errors.ts';
 import {nativeConfig,validateMarkdoc} from './markdoc.ts';
 import type {MarkdocOptions} from './markdoc.ts';
 import {builtinTags,referenceTargets,targetChecks} from './extension-contracts.ts';
+import {directoryOrders} from './directory-order.ts';
 export const tags=builtinTags;
 export type DocumentReference={id:string;tag:string;file:string;line:number;project?:string;target?:string};
-export type DocumentPlan={documents:{file:string;ast:any;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config};
+export type DocumentPlan={documents:{file:string;ast:any;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config};
 // 正文解析不再要求先建立工程数据图；先完整展开 include，再收集所有 Tabs/折叠中的引用。
 export function scanDocuments(projectRoot:string,entryDocuments:string[],options:{projectRoots?:string[];markdoc?:MarkdocOptions;configFile?:string}={}):DocumentPlan{
  const roots=(options.projectRoots??[]).filter(p=>resolve(p)!==resolve(projectRoot)).map(p=>existsSync(p)?realpathSync(p):resolve(p));
@@ -19,7 +20,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const configured=options.markdoc??{},base=nativeConfig(configured,tags);
  for(const key of Object.keys(configured.tags??{}))if(Object.hasOwn(tags,key)||Object.hasOwn(Markdoc.tags,key))failure('CONFIG_FIELD',options.configFile??'<markdoc>','/markdoc/tags/'+key,'扩展标签不能覆盖原生或 edoc 保留名称：'+key);
  const location=(node:any,cfg:any)=>({file:node.location?.file??cfg.__edocFile,line:(node.location?.start.line??0)+1});
- const track=(node:any,cfg:any)=>{const source=location(node,cfg);locations.set(node,source);checks.push({node,...source});return node;};
+ const track=(node:any,cfg:any)=>{const source=location(node,cfg);locations.set(node,source);checks.push({node,...source,documentFile:cfg.__edocDocument,direct:cfg.__edocChain.length===1});return node;};
  function rawFile(file:string,chain:string[]){
   if(blocked(file))failure('DOCUMENT_PROJECT_SCOPE',file,'','正文属于已声明的子工程；使用 project include 组合或稳定项目 ID 跳转');
   const absolute=projectPath(projectRoot,projectRoot,file);requireFile(absolute);const identity=realpathSync(absolute);
@@ -94,7 +95,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const documents:DocumentPlan['documents']=[],seen=new Set<string>();
  for(let i=0;i<entries.length;i++){
   const file=entries[i],identity=realpathSync(projectPath(projectRoot,projectRoot,file));if(seen.has(identity))continue;seen.add(identity);
-  const raw=rawFile(file,[]),cfg={...projection,__edocFile:file,__edocChain:raw.chain};inspect(raw.ast,cfg);
+  const raw=rawFile(file,[]),cfg={...projection,__edocFile:file,__edocDocument:file,__edocChain:raw.chain};inspect(raw.ast,cfg);
   const ast=Markdoc.transform(raw.ast,cfg);documents.push({file,ast,locations});
   // 同时发现条件隐藏的文档链接，依赖校验不由当前显示分支决定。
   for(const check of checks)if(check.node.type==='link'){const href=check.node.attributes.href;if(typeof href==='string'&&!/^(#|https?:|mailto:)/i.test(href)){const target=localDocumentLink(projectRoot,check.file,href);if(target&&!entries.includes(target.file))entries.push(target.file);}}
@@ -120,6 +121,7 @@ export function registerDocuments(graph:Graph){
  }
 }
 export function validateDocuments(graph:Graph){
+ directoryOrders(graph.documentPlan??{documents:documentAST(graph),files:[],references:[]});
  const errors:any[]=[];
  const types=referenceTargets;
  for(const [documentIndex,{file:entryFile,ast,locations}] of documentAST(graph).entries()){

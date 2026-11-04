@@ -29,6 +29,7 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   if(typeof n!=='string')throw new Error('Markdoc 扩展标签须输出语义 HTML 标签名');
   if(n.startsWith('ed-')){
    const type=n.slice(3),id=a.id;
+   if(type==='directory-order')return '';
    if(type==='section'){const body=`${a.title?heading(anchor(id),a.outlineLevel,esc(a.title),true):''}${children()}`;return a.collapsed?`<details id="${anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${anchor(id)}"${a.class?` class="${esc(a.class)}"`:""}>${body}</section>`;}
    if(type==='heading')return `<div id="${id}" class="heading-anchor${a.class?' '+esc(a.class):''}">${heading(id,a.outlineLevel,children())}</div>`;
    if(type==='columns')return `<div class="columns${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''} style="--columns:${(a.ratio??'1:1').split(':').map((v:string)=>v+'fr').join(' ')}">${children()}</div>`;

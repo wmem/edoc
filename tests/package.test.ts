@@ -24,6 +24,9 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:read" title="安装包章节" %}原始 **说明**。{% /section %}');
  const section=JSON.parse(run(bin,['read','--id','installed:read'],project));assert.match(section.content,/原始 \*\*说明\*\*/);assert.equal(section.scope,'self');
  assert.equal(JSON.parse(run(bin,['outline','--id','installed:read','--depth','0'],project)).chapters[0].sectionId,'installed:read');
+ writeFileSync(join(project,'docs/a.mdoc'),'{% section id="installed:a" title="甲" %}A{% /section %}');writeFileSync(join(project,'docs/z.mdoc'),'{% section id="installed:z" title="乙" %}Z{% /section %}');
+ writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:read" title="安装包章节" %}\n{% directory-order items=["z.mdoc"] /%}\n普通说明。\n{% /section %}');
+ assert.deepEqual(JSON.parse(run(bin,['outline'],project)).chapters.map((n:any)=>n.label),['安装包章节','乙','甲']);assert.match(JSON.parse(run(bin,['read','--id','installed:read'],project)).content,/directory-order/);run(bin,[],project);
  const api=run(process.execPath,['--input-type=module','-e',"import {Markdoc} from 'edoc'; console.log(typeof Markdoc.parse,typeof Markdoc.Tag)"],prefix);assert.match(api,/function function/);
  mkdirSync(join(project,'docs/_partials'),{recursive:true});writeFileSync(join(project,'docs/_partials/native.mdoc'),'{% section id="installed:native-part" %}片段 {% $product %} 第 {% $count %} 次{% /section %}');
  writeFileSync(join(project,'docs/edoc.config.js'),`export default {markdoc:{variables:{product:'安装包上下文',count:3},partials:{card:'docs/_partials/native.mdoc'}},tables:[{id:'installed:table',kind:'table',label:'安装包事实表',columns:[{field:'name',label:'名称',type:'string'}],rows:[{id:'installed:row',values:{name:'唯一事实'}}]}]};`);

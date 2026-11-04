@@ -13,29 +13,8 @@ const nativeMeta=JSON.parse(Markdoc.parse(readFileSync(new URL('./support/recipe
 export default {
   projectId: 'edoc-manual',
   title: 'edoc 使用与开发文档',
-  documents: [
-    'docs/index.mdoc', 'docs/usage/index.mdoc', 'docs/usage/overview.mdoc',
-    'docs/usage/start',
-    'docs/usage/writing/index.mdoc', 'docs/usage/writing/markdown.mdoc', 'docs/usage/writing/markdoc.mdoc', 'docs/usage/writing/markdoc-reuse.mdoc', 'docs/usage/writing/documents.mdoc',
-    'docs/usage/rendering/index.mdoc',
-    'docs/usage/rendering/page-layout.mdoc', 'docs/usage/rendering/tables.mdoc',
-    'docs/usage/rendering/diagrams/index.mdoc',
-    'docs/usage/rendering/diagrams/architecture.mdoc', 'docs/usage/rendering/diagrams/wiring.mdoc',
-    'docs/usage/rendering/diagrams/interfaces.mdoc', 'docs/usage/rendering/diagrams/state.mdoc',
-    'docs/usage/rendering/diagrams/display.mdoc', 'docs/usage/rendering/diagrams/graph-options.mdoc',
-    'docs/usage/rendering/diagrams/layout.mdoc',
-    'docs/usage/rendering/waveforms.mdoc', 'docs/usage/rendering/references.mdoc',
-    'docs/usage/engineering/index.mdoc', 'docs/usage/engineering/data.mdoc',
-    'docs/usage/engineering/composition.mdoc', 'docs/usage/engineering/query.mdoc',
-    'docs/usage/engineering/agent-guide.mdoc', 'docs/usage/engineering/guide.mdoc',
-    'docs/usage/publishing/index.mdoc', 'docs/usage/publishing/reading.mdoc', 'docs/usage/publishing/output.mdoc',
-    'docs/usage/reference',
-    'docs/development/index.mdoc',
-    'docs/development/architecture.mdoc', 'docs/development/contributing.mdoc', 'docs/development/extensions.mdoc',
-    'docs/development/api.mdoc', 'docs/development/environment.mdoc', 'docs/development/agent-rules.mdoc',
-    'docs/development/history.mdoc', 'docs/development/design', 'docs/development/reviews',
-    'docs/development/acceptance', 'docs/development/regression', 'docs/development/history'
-  ],
+  // 正文范围与资源片段分开；各层阅读顺序在对应 index.mdoc 中定义。
+  documents: ['docs/index.mdoc', 'docs/usage', 'docs/development'],
   markdoc: {
     variables: {native: {product: 'edoc', edition: 'full', meta: nativeMeta}},
     functions: {

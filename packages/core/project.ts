@@ -14,6 +14,7 @@ import {loadAttachments,record} from './attachments.ts';
 import type {AttachmentInput} from './attachments.ts';
 import {SUPPORTED_IR_VERSION} from './load.ts';
 import {resourceTypes} from './extension-contracts.ts';
+import {directoryOrders} from './directory-order.ts';
 
 export type Dataset=Partial<Record<ResourceType,unknown[]>>&{irVersion?:string;requiredFeatures?:string[];projectId?:string;adapterVersion?:string;attachments?:Record<string,AttachmentInput>};
 export type DataContext={root:string;documents:readonly string[];references:readonly DocumentReference[]};
@@ -64,7 +65,7 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
 
 // 配置、文档扫描先完成，再执行数据提供函数/扫描数据目录。无需用户手写资源清单。
 export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inputs:string[])=>void}={}):Promise<LoadedProject>{
- const documents=scanDocuments(config.root,config.documents,{markdoc:config.markdoc,configFile:config.file,projectRoots:Object.values(config.children).map(file=>configProjectRoot(resolve(config.root,file)))});await Promise.all(documents.pending??[]);if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
+ const documents=scanDocuments(config.root,config.documents,{markdoc:config.markdoc,configFile:config.file,projectRoots:Object.values(config.children).map(file=>configProjectRoot(resolve(config.root,file)))});await Promise.all(documents.pending??[]);if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');directoryOrders(documents);const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
  const dataFiles:string[]=[],parts:ResourcePart[]=[],required=new Set<string>(),versions=[SUPPORTED_IR_VERSION],seenFiles=new Set<string>(),seenDirectories=new Set<string>();
  const attachmentDefinitions:Record<string,AttachmentInput>=Object.assign(Object.create(null),config.attachments);
  const addDataset=(raw:unknown,file:string,prefix='',explicit=true)=>{

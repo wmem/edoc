@@ -28,7 +28,43 @@ docs/
 [采集模块](modules/acquisition.mdoc)
 ```
 
-要控制顺序，可将 documents 写成文件或目录的有序数组。默认跳过 ir、_partials、node_modules、output 与隐藏项。
+顺序需要调整时，在本层 index 中声明 directory-order，见下一节；documents 继续用于正文范围与首页选择。默认跳过 ir、_partials、node_modules、output 与隐藏项。
+
+{% /section %}
+
+{% section id="use:directory-order" title="在本层入口安排阅读顺序" %}
+
+层级沿用文件目录，排序跟随对应的 index，Agent 修改一个主题时不必同时维护全局目录树。没有特殊顺序时无需写标签。
+
+在自己的工程准备以下文章，分别写入主题标题与简短说明，配置保留 export default {}：
+
+```text
+docs/
+  index.mdoc
+  overview.mdoc
+  modules/
+    index.mdoc
+  reference/
+    index.mdoc
+```
+
+在 docs/index.mdoc 写入：
+
+```text {% process=false %}
+{% section id="book:home" title="工程文档" %}
+{% directory-order items=["overview.mdoc", "modules/", "reference/"] /%}
+
+先了解整体，再选择模块，需要精确字段时进入查询参考。
+{% /section %}
+```
+
+运行 edoc，左侧应在首页后依次显示 overview、modules、reference 对应的文章标题。运行 edoc outline --depth 1 可查同一顺序；PDF 也按此树组织。
+
+之后新增 docs/notes.mdoc 时，它会自动追加，不需要补齐一份完整目录清单。模块内部需要自己的顺序时，直接在 docs/modules/index.mdoc 声明本层文件名；父入口只写 modules/，不枚举孙级文章。
+
+directory-order 是目录元数据，不显示在正文里；index 仍应说明本主题与阅读入口，不拼接全部子文章。另一角色或任务需要不同路线时，可在专题页链接原文章，不复制文件或改变主目录归属。
+
+准确的路径、默认、校验和组合规则见[标签契约](../reference/tags/directory-order.mdoc)。
 
 {% /section %}
 

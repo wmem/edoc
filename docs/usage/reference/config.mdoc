@@ -7,7 +7,7 @@ docs/edoc.config.js 直接导出配置对象。在项目目录执行命令，未
 | 字段 | 用途 | 稳定章节 ID |
 | --- | --- | --- |
 | title、projectId | 标题与工程身份 | ref:config-identity |
-| documents | 正文入口与顺序 | ref:config-documents |
+| documents | 正文范围、首页与缺省顺序 | ref:config-documents |
 | markdoc | 原生上下文、片段与扩展 Schema | ref:markdoc-context |
 | data | 标准数据路径、对象或函数 | ref:config-data |
 | views、tables、waveforms、references | 配置内联资源 | ref:config-resources |
@@ -50,6 +50,8 @@ README.md 默认只作为仓库介绍和编译/生成入口，不因位于根目
 目录递归发现 .md/.mdoc，index 优先，其余按相对路径排序；跳过 ir、_partials、node_modules、output 和隐藏项。普通文件链接会发现本工程其他文章，循环链接不会重复加入。文件 include 复用页内内容；project include 接入子工程。
 
 被 children 声明的子目录是正文自动扫描边界。目录层级成为阅读分组，普通文件成为独立页；section 和标题表达页内结构。普通 Markdown 链接相对所在源文件，file include 相对工程根。
+
+需要调整阅读顺序时，在对应 index.md/index.mdoc 中使用 [directory-order](tags/directory-order.mdoc)。本层声明优先于 documents 带来的顺序，未列出的按原顺序追加；不改变首页选择或加载范围。推荐用 documents 选择正文范围，用各层入口维护顺序，避免全局枚举每一篇文章。
 
 页面 ID 是相对根的路径去掉扩展名，例如 docs/interfaces。当前没有 frontmatter 自定义页面 ID。
 
