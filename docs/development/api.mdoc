@@ -18,6 +18,8 @@ const facts = query(book.root.graph, 'stable:object', {depth: 1, maxItems: 20});
 
 源码开发可从 packages/core/index.ts 导入。loadIR/loadConfig 等低层旧 API 保留给历史 Adapter 和回归夹具；它们不是恢复 JSON 配置作为新 CLI 入口的承诺。原 P0 API 的当时语义在[历史协议](history/ir-p0.mdoc)。
 
+npm 包同时交付 JS 与公共 TypeScript 声明，支持 NodeNext 和 Bundler 模块解析。使用 API 时将 edoc 安装为项目本地依赖，不能依靠全局 CLI 来解析 import；安装路径见[本地依赖](../usage/start/01-install.mdoc#use:install:local)。
+
 {% /section %}
 
 {% section id="dev:recovery" title="安装、恢复与检查点" %}
@@ -33,7 +35,7 @@ scripts/checkpoint.py 保留早期双仓库检查点流程：工程和方案分�
 
 ProjectConfig.markdoc 的变量、函数、片段、Schema 与解析选项见[原生配置参考](../usage/reference/markdoc-native.mdoc#ref:markdoc-context)。公共导出 Markdoc 与 MarkdocOptions 可用于构造原生 AST、Tag 和配置类型；不需要另写模板解析器。
 
-loadProject/loadBook 会等待原生异步文本与校验，再建立工程索引。直接调用 scanDocuments 并使用异步能力时，须 await Promise.all(plan.pending ?? []) 后再消费投影；通常优先使用完整的工程加载入口。HTML/PDF 的异步 Schema 转换由发布阶段等待，read 返回规范化源正文，不调用不透明的自定义 HTML 转换器。
+loadProject/loadBook 会等待原生异步文本与校验，再建立工程索引。直接调用 scanDocuments 并使用异步能力时，须 await Promise.all(plan.pending ?? []) 后再消费投影；通常优先使用完整的工程加载入口。HTML 的异步 Schema 转换由发布阶段等待，read 返回规范化源正文，不调用不透明的自定义 HTML 转换器。
 
 {% /section %}
 {% /section %}

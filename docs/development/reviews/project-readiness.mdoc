@@ -1,0 +1,151 @@
+{% section id="review:project-readiness" title="项目接入前的全面文档审阅" %}
+
+2026-11-04，审阅基线为 507dbb9。目标是判断新项目能否仅凭交付的工具和文档完成接入，并检查内容完整性、事实一致性、渐进阅读、查找成本和目录安排。本页保留该基线的发现与建议；后续 F01–F07 的处理和复验见[文档交付修复验收](../acceptance/documentation-delivery.mdoc)，以下缺口描述不代表修复后状态。
+
+结论：仓库内的使用文档已经形成较完整的学习和查询路径，不需要推倒重组；主要短板在安装后的文档交付，以及少数进阶配方和现行说明与实际产物不一致。普通安装包虽然携带 docs 源文件，但尚不能提供开箱可读、可按章节查询的完整工具手册。
+
+发现 1 项 P1、5 项 P2 和 1 组 P3。建议先补齐安装版手册，再修复配方前置条件、类型交付和说明差异，以普通安装用户的环境复验后推广接入。基础 CLI 已能用于有维护者引导的试点，不能将其等同于自助文档交付已经完成。
+
+{% section id="review:project-readiness:scope" title="审阅范围与整体评价" %}
+
+507dbb9 基线手册包含 3 个工程、109 篇阅读页和 429 个可读取章节。其中使用文档 49 篇、开发文档 57 篇，其余为总首页和两个子工程页面；本审阅页未计入这些数字。
+
+- 使用文档逐篇审阅，覆盖安装、最小配置、Markdown/Markdoc、正文组织、15 个内置标签、关系图和接口、表格、时序、查询、来源、工程组合、PDF 附件与 HTML/SVG 发布。
+- 开发区重点审阅架构、开发验证、扩展维护、API、环境、Agent 规则与各分支入口；历史设计和验收核对阶段身份、现行入口和独立读取的上下文，并抽查有关小节。未重新验收所有历史实现，也未逐字重新审定原始 V1 方案。
+- 对全部参与页面执行编译与本地链接检查，检查作者文档是否接入、章节能否读取，并对公开字段和创建配方运行现有回归。
+- 使用真实 npm 包验证安装后内容；在仓库外的临时用户工程复现全局命令使用方式，在安装目录外部验证 TypeScript 消费方，在浏览器抽查实际阅读路径和导出行为。
+
+| 审阅维度 | 结论 |
+| --- | --- |
+| 能否形成整体认识 | 总览明确区分正文、配置和数据，以及基础 Markdown、Markdoc、页面编排、数据图表和原文引用 |
+| 功能覆盖是否齐全 | 主要公开能力均有入口，15 个内置标签的职责、输入与边界可查；统计图表等未实现能力没有冒充已支持 |
+| 教程和查询是否分开 | 教程按任务组织，字段集中在参考，详图和完整信号表进入样例查询；总体方向合理 |
+| 是否有多份事实 | 图表与示例大多复用源数据和 code.file；未发现需要整体去重的第二套当前手册，但开发区仍有相反的旧发布说明，见 F06 |
+| Agent 定位成本 | 使用文档的单个 self 章节最长 5620 个字符，均未超过默认 12000 字符限额；ID、来源、子章节和按需读取可用。安装版工具手册的读取链路仍缺失 |
+| 目录与篇幅 | 使用、参考和开发分组清楚，关系图下包含接口展开；长参考保留稳定分节，不应仅按总字数拆页 |
+| 实际接入 | 最小配置、基础图表和既有独立配方可用；全局安装后的进阶 import、TypeScript API 和工具手册访问尚有缺口 |
+
+标题、已发现文章和本地锚点检查通过，不代表链接语义正确，也不代表所有页面均已逐页视觉验收。后面的能力索引误指和 SVG 说明差异正是现有存在性检查无法发现的问题。
+
+{% /section %}
+
+{% section id="review:project-readiness:installed-docs" title="F01 / P1：安装版没有可直接使用的完整手册" %}
+
+基线 507dbb9 的安装交付缺口：package.json 的 files 包含 docs，因此安装包带有 134 个 docs 下的文件，并非完全没有文档。它们主要是 Markdoc 正文、配置和资源；完整手册 HTML 不在包中，CLI 也没有打开或查询工具手册的专门入口。edoc guide 可以不依赖项目配置读取推荐指南，但不是完整使用手册。
+
+实测将 npm 包安装到隔离 prefix 后，执行安装版命令读取随包手册：
+
+```sh
+edoc outline --config <安装目录>/docs/edoc.config.js --format json
+```
+
+返回 FILE_MISSING，缺少 examples/fpga-mac/docs/SPEC.mdoc。包中没有 examples，手册还引用仓库中的源码、回归资料和转换器；只补这一个文件不能证明整套手册已可构建。普通安装用户无法按 README 的仓库构建步骤直接得到完整手册。
+
+当前项目的 read/query/outline 读取的是当前工程，不会自动转去工具手册。[查询教程](../../usage/engineering/query.mdoc#use:read)中的 ref:config-data 等 ID 属于本手册；新项目里没有这些章节。首页虽说明示例需在拥有手册源文件的工程运行，安装后的用户仍缺少取得和读取该手册的实际路径。
+
+影响：需要理解功能、查字段或让 Agent 按章节查工具用法的用户，仍要找到完整仓库及其依赖。不能把“包里有 docs 源文件”描述成“安装后自带完整可用文档”。
+
+建议：在交付阶段预构建完整 HTML，并提供可发现的访问入口；同时提供不依赖仓库 Python、examples 和当前用户项目配置的章节查询方式。区分工具手册与项目文档的命令作用域，保留现有源文件供 Agent 搜索；不通过要求用户修补 node_modules 解决。预构建方案仍须保持普通安装只依赖 Node.js，不能直接让 npm prepare 强制运行目前含 Python 转换器的仓库手册构建。该建议需要实现与安装验证，本轮尚未实施。
+
+{% /section %}
+
+{% section id="review:project-readiness:package-content" title="F02 / P2：包内混入子工程生成的 HTML" %}
+
+基线 507dbb9 的实测 npm 包包含 docs/component/output/index.html，大小 4015130 字节，约 3.83 MiB。它是组合演示子工程的生成页，不是完整工具手册；根手册的 output/index.html 没有交付。
+
+package.json 广泛收录 docs，导致本地运行过子工程文档构建后，其生成产物也进入 npm 包。它不属于显式设计的文档交付目录，还会使打包内容取决于此前是否生成过该文件。本轮没有据此宣称所有干净 Git 安装都会携带这一产物。
+
+建议：明确手册发布产物和源码的收录规则，排除子工程 output 与临时构建结果。验证既覆盖干净 Git 快照，也覆盖运行过 docs:build 的工作树；应该交付的是有意生成的完整手册，而不是偶然存在的子页。
+
+{% /section %}
+
+{% section id="review:project-readiness:markdoc-recipes" title="F03 / P2：进阶 Markdoc 配方缺少就近前置条件" %}
+
+基线 507dbb9 的[Frontmatter 教程](../../usage/writing/markdoc-reuse.mdoc#use:markdoc:metadata)使用 import {Markdoc} from 'edoc'。在仓库外创建没有项目本地 edoc 依赖的工程，用安装版 CLI 执行最小配置可以成功；直接复制该配方则报 ERR_MODULE_NOT_FOUND，无法从配置所在项目解析 edoc。
+
+这是全局命令与 Node 模块解析的区别，不是要求改变标准解析规则。[原生配置参考](../../usage/reference/markdoc-native.mdoc#ref:markdoc-context)已有“模块 import 按项目本地依赖解析”的说明，但安装页主线是全局命令，具体教程旁没有本地依赖的安装步骤。读者需要跨到参考才能发现为何复制失败。
+
+同页的 [Schema/slot 说明](../../usage/writing/markdoc-reuse.mdoc#use:markdoc:schemas)展示完整 docs/edoc.config.js，包含原方案解析、样例转换、子工程和附件等工具自身设置。它说明了实际实现，但不能代替独立用户工程的最小 Schema 配置。
+
+建议：在需要 import 的教程就近列明项目本地依赖前置，给出与全局 CLI 区分的可执行安装路径；补一份可独立复制的 Frontmatter 和 Schema/slot 配方，实际手册从该同源定义取用。验收应在仓库外运行，避免仓库自引用或上级 node_modules 掩盖缺失依赖。
+
+{% /section %}
+
+{% section id="review:project-readiness:typescript" title="F04 / P2：公开类型的说明与 npm 交付不一致" %}
+
+基线 507dbb9 的[扩展维护](../extensions.mdoc#dev:extensions:files)说明 Node、RelationView、Table、Waveform 等类型可以从 npm 包根导入，[核心 API](../api.mdoc#dev:api:markdoc)也介绍 MarkdocOptions 等类型。
+
+实际安装包没有任何 .d.ts，package.json 没有 types 入口，构建脚本仅去除 TypeScript 语法并跳过已有声明文件。外部 TypeScript 消费方执行 import type {Node, RelationView} from 'edoc' 时得到 TS7016：找不到 edoc 的声明文件，入口被视为隐式 any。仓库自身的类型检查通过不能证明安装后的类型接口可用。
+
+影响限定于 TypeScript 消费方；JavaScript API 和普通 CLI 不因这一诊断而失效。不能通过删掉类型说明，把已描述的类型交付能力当作已经修好。
+
+建议：构建时生成并收录公共声明，配置类型导出，并增加消费实际 npm 包的 TypeScript 编译验证。声明生成属于开发构建，不需要让普通用户安装 TypeScript。
+
+{% /section %}
+
+{% section id="review:project-readiness:svg" title="F05 / P2：完整 SVG 的文字显隐说明不准确" %}
+
+基线 507dbb9 的[display 参考](../../usage/reference/graph.mdoc#ref:graph-display)写道“当前 SVG 沿用当前文字状态，完整 SVG 使用构建设置”。实际应区分网页下载和 CLI 导出。
+
+在接线教程取消“连线标题”，再点击网页 SVG 按钮，下载的完整 SVG 中 wire:clock 标签带 display="none"；用安装版 CLI export 导出同一视图，该标签保持构建配置中的可见状态。client.ts 和 interface-client.ts 都会把文字开关同步到网页完整 SVG 使用的静态图副本。
+
+建议按两个维度说明：完整逐信号 / 当前接口投影决定内容范围；网页文字开关 / 配置决定文字状态。网页的完整逐信号导出仍跟随文字开关，CLI export 使用配置。不能让“完整范围”被理解为“一定重置为构建时文字设置”。
+
+本轮核对的是文档与既有行为的差异，没有更改导出语义。
+
+{% /section %}
+
+{% section id="review:project-readiness:history" title="F06 / P2：开发现行说明和历史上下文仍有残留" %}
+
+基线 507dbb9 已移除整本 PDF 导出，但现行维护入口仍有相反说法：
+
+- environment.mdoc 首段仍说“文档导出 PDF 与浏览器测试才需要已有 Chromium”。这段位于历史包装之外，应按当前 HTML 发布更新。
+- api.mdoc 的 Markdoc API 小节仍说“HTML/PDF 的异步 Schema 转换”，navigation.mdoc 的现行实现说明仍包含打印/PDF 共用目录树。相关打印打包器已经删除。
+- Agent 规则和需求基线仍出现 Markdoc“待实施契约冲突”等阶段措辞，虽然对应接入已经完成；应分别链接已实现范围和上游差异。
+
+独立读取也有问题：执行 read --id dev:environment:part-01，得到标题“当前已验证”、旧 Node.js 24.22.1 与 tslib 运行依赖说明，却没有父节中的 V1 历史标记。指南要求独立小节携带阶段身份，这处尚未贯彻。历史 P0 的包装文字还把当前入口指向已删除的 V1-开发与使用.md、V1-验收.md，纯文本路径不受普通链接检查保护。
+
+建议：修正现行维护说明；历史数据保留日期与原结论，在可独立 read 的小节补阶段和现行入口，更新包装层的失效指引。不要全局替换历史 PDF 记录，更不能改写原始方案快照。
+
+{% /section %}
+
+{% section id="review:project-readiness:minor" title="F07 / P3：少量重复与索引误指" %}
+
+基线 507dbb9 有以下局部编辑问题，不影响基本构建：
+
+- 命令参考的构建示例连续两行相同的 edoc build --format html --output output/manual.html，是移除 PDF 示例后的重复。
+- 能力索引“接口独立合并与展开”的“多接口”例子仍指向只有一对 STREAM 接口的最小示例；真正的多接口示例是 use:interface-multiple。
+- 同一索引的“Markdown 正文表”字段参考指向章节/分栏结构，“file 片段、源码内联与图片”合并指向跳转标签；链接存在，但不能直接给出全部对应规则。
+
+建议去掉重复命令，将索引逐项指向实际回答该问题的小节。存在性测试保留，不能将其视为索引语义已经审阅。
+
+{% /section %}
+
+{% section id="review:project-readiness:organization" title="组织与篇幅的取舍建议" %}
+
+对 507dbb9 的组织建议：保留“认识 → 上手 → 按功能使用 → 按需查询”的结构。功能职责已经解释清楚，接口合并/展开位于关系图之下，数据表和波形也没有被混成通用 Node 图模型。教程与参考有适当的同主题重复，用于保留可独立理解的上下文，不应机械删成只有链接。
+
+长查询参考和推荐指南有明确的稳定小节，单节读取较短，没有理由仅因整页较长就再拆一轮。“事实单一来源”也不等于在所有教程里删除必要的最小配置。
+
+图形进阶页在 1440px 宽的本轮浏览器中约高 6877px，含 5 张图与 4 个代码块，可见文本约 7310 个字符。它按父子框、逻辑集合、多接口、显示控制和创建步骤分节，仍可按需读；可将完整创建数据改为默认折叠，并明确“需要哪项再看哪项”。是否拆页应按任务决定，不设统一字数门槛。
+
+安装教程还宜补项目本地依赖、团队固定版本、CI 生成与升级复验的短路径。已知 npm 环境中直接 Git 全局安装失败的限制应在首条命令旁提醒，把已验证替代流程就近展示；保留单命令 Git 全局安装的目标，不把两步绕行当成原需求已完全满足。
+
+{% /section %}
+
+{% section id="review:project-readiness:validation" title="本轮验证与范围限制" %}
+
+以下结果限定于 2026-11-04 对 507dbb9 的审阅；新增本记录后另核对文档构建和手册回归，不扩展为全部产品功能已验收。
+
+- 手册字段/链接/独立配方与目录排序共 27 项检查通过；所有作者 mdoc 在当前仓库手册中有接入路径，未发现未接入正文。
+- 完整编译基线手册，逐一获取 429 个章节的 self 正文，无读取异常；使用文档没有触发默认字符截断。该结果证明结构和读取可用，不证明安装版能读取同一手册。
+- 3 项手册浏览器回归通过；另用 playwright-cli 与已有 Chromium 实际走过首页到认识、快速开始、接口进阶、Markdoc 原生效果、弱跳转、PDF 区域与返回，检查桌面和 390px 窄屏。断网后无外部请求、无页面脚本错误，窄屏整页宽度为 390px。
+- 真实 npm 包隔离安装后，最小工程生成成功；随包手册读取、全局使用者的 Frontmatter 配方和外部 TypeScript 消费方如 F01/F03/F04 所述失败。这些是复现的发现项，没有冒充全部接入流程通过。
+- 网页 SVG 与 CLI SVG 对同一视图的标题显隐差异已保存并检查；PDF 原文实际定位到第 2 页。没有重新导出已移除的整本文档 PDF。
+
+缓存位于 .edoc-build/documentation-review，包含安装文件清单、页面/章节统计、诊断、SVG、测试日志和截图。没有把临时缓存当作长期唯一依据；发现、基线、复现方式与建议保存在本页。
+
+未验证远程 git+ssh 认证、Windows/macOS、新读者真实用户测试、所有第三方 Markdoc 参数组合，也未逐图逐页重新视觉验收整本手册。没有提交或推送本轮审阅记录。
+
+{% /section %}
+{% /section %}

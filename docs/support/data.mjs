@@ -1,6 +1,6 @@
 // 手册与旧 Gallery 共用样例源和 Adapter，不复制 Ball、Pin 或 RTL 位宽。
 import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
-import {execFileSync,spawnSync} from 'node:child_process';
+import {execFileSync} from 'node:child_process';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import authoringConfig from './recipes/edoc.config.js';
@@ -18,13 +18,11 @@ export function tutorialData({root}){
   }
   return value;
  };
- const hasUv=spawnSync('uv',['--version'],{stdio:'ignore'}).status===0;
  for(const name of ['board-flash','fpga-mac']){
   const directory=mkdtempSync(join(tmpdir(),'edoc-manual-')),prefix='examples/'+name;
   try{
-   const command=hasUv?'uv':'python3',args=hasUv?['run','--no-project','--no-config','--no-python-downloads','--no-managed-python','python','doc-adapter/convert.py']:['doc-adapter/convert.py'];
-   try{execFileSync(command,args,{cwd:join(root,prefix),env:{...process.env,EDOC_IR_OUTPUT:directory},stdio:'pipe',timeout:30000});}
-   catch(error){throw new Error(`手册图示复用 ${prefix} 的原 Adapter，需要本机已有 Python 3（优先 uv）：${error.stderr?.toString()??error.message}`);}
+   try{execFileSync(process.execPath,['doc-adapter/convert.mjs'],{cwd:join(root,prefix),env:{...process.env,EDOC_IR_OUTPUT:directory},stdio:'pipe',timeout:30000});}
+   catch(error){throw new Error(`手册图示转换失败 ${prefix}：${error.stderr?.toString()??error.message}`);}
    for(const type of Object.keys(result)){
     try{const data=JSON.parse(readFileSync(join(directory,type+'.json'),'utf8'));result[type].push(...relocate(data[type],prefix));}
     catch(error){if(error.code!=='ENOENT')throw error;}

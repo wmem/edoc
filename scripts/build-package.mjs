@@ -6,6 +6,7 @@ import {stripTypeScriptTypes} from 'node:module';
 import {createRequire} from 'node:module';
 import {browserScript} from '../packages/pack-html/runtime.ts';
 import {licenses} from '../packages/pack-html/licenses.ts';
+import {execFileSync} from 'node:child_process';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),output=join(root,'dist');
 rmSync(output,{recursive:true,force:true});mkdirSync(output,{recursive:true});
@@ -38,5 +39,8 @@ const css=readFileSync(join(fontRoot,'400.css'),'utf8').replace(/, url\([^)]*\.w
 writeFileSync(join(fonts,'400.css'),css);cpSync(join(fontRoot,'LICENSE'),join(fonts,'LICENSE'));
 for(const match of css.matchAll(/url\(['"]?([^)'"\s]+)['"]?\)/g))cpSync(join(fontRoot,match[1]),join(fonts,match[1]));
 writeFileSync(join(runtime,'licenses.json'),JSON.stringify(licenses()));
+execFileSync(process.execPath,[join(dirname(require.resolve('typescript/package.json')),'bin/tsc'),'-p',join(root,'tsconfig.package.json')],{cwd:root,stdio:'inherit'});
+for(const file of walk(output).filter(file=>file.endsWith('.d.ts')))writeFileSync(file,readFileSync(file,'utf8').replace(/((?:from\s*|import\s*\(\s*)['"][^'"]+)\.ts(['"])/g,'$1.js$2'));
+await import('./build-manual.mjs');
 chmodSync(join(output,'packages/cli/edoc.js'),0o755);
 console.error(`edoc 安装包已生成：${count} 个 JS 模块、预编译前端、字体子集及许可证。`);

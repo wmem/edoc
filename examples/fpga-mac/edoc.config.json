@@ -4,8 +4,8 @@
   "irDirectory": ".edoc-build/ir",
   "adapter": {
     "command": [
-      "python3",
-      "doc-adapter/convert.py"
+      "node",
+      "doc-adapter/convert.mjs"
     ],
     "version": "1.0",
     "timeoutMs": 10000,

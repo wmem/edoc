@@ -1,17 +1,36 @@
 {% section id="ref:commands" title="命令参考" %}
 
-除 guide、--help、--version 外，项目命令默认读取当前项目 docs/edoc.config.js，也可用 --config 指定。validate、outline、read、query 不生成图形布局或发布页面；当前仍会重新加载和校验参与工程。
+docs 读取随包工具手册，guide、--help、--version 也无需项目配置；其他项目命令默认读取当前项目 docs/edoc.config.js，也可用 --config 指定。validate、outline、read、query 不生成图形布局或发布页面；当前仍会重新加载和校验参与工程。
 
 {% section id="ref:command-build" title="构建与校验" %}
 
 ```sh
 edoc
 edoc build --format html --output output/manual.html
-edoc build --format html --output output/manual.html
 edoc validate --format json
 ```
 
 无参数按配置生成 HTML；build --format 只接受 html，--output 只接受 .html。整本 PDF 导出不再提供。validate 检查正文、数据、引用和附件，返回当前参与工程；只有 build/export 才能发现的尺寸或布局问题仍可能在后续报错。
+
+{% /section %}
+
+{% section id="ref:command-docs" title="docs：工具自身手册" %}
+
+```sh
+edoc docs
+edoc docs --format json
+edoc docs serve --port 5176
+edoc docs outline --depth 0 --format json
+edoc docs read --id ref:config-data --format text
+edoc docs read --id ref:config --scope subtree --max-chars 2000 --offset 0
+edoc docs query --id board:net.FLASH_SCK --depth 1
+```
+
+docs 使用随当前工具版本携带的 HTML 与预构建索引，不加载工作目录的配置、Adapter 或外部文件。默认输出本地 HTML 地址；--format json 提供 html、url、sources 和 projects。serve 仅在 127.0.0.1 提供 HTML，默认端口 5176，允许 0 自动分配；Ctrl+C 结束。
+
+docs outline/read/query 与同名项目命令采用相同的 ID、范围、分页和退出码；--project 只选择手册内部工程。query 的 text/json 均输出 JSON。docs 不接受 --config：普通 edoc read/query/outline 查询当前项目，工具用法明确使用 edoc docs。
+
+手册随工具构建生成，安装用户不需要源码仓库、Python 或浏览器；serve 只是本机静态预览，不提供在线编辑或项目查询 API。
 
 {% /section %}
 
@@ -23,6 +42,8 @@ edoc outline --depth 0 --format json
 edoc outline --id design:home --depth 1 --format json
 edoc outline --format text
 ```
+
+以下项目命令中的示例 ID 应换成自己的工程 ID；查询工具手册使用上一节的 docs 前缀。
 
 返回组合后的阅读树、页和章节来源。显式 section 的导航锚点是 HTML 编码身份，read/query 使用源 section ID；本轮 outline 同时提供 sectionId 便于直接读取。
 

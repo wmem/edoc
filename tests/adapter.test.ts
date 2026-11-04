@@ -15,3 +15,9 @@ test('源 RTL 位宽更新，不改正文和视图就更新查询',t=>{const p=p
 test('Adapter 源冲突和失败不伪装新成功',t=>{const p=project(t,'board-flash');p.load();const path=join(p.root,'board/pins.csv');writeFileSync(path,readFileSync(path,'utf8').replace('board:U5.CLK','board:U1.QSPI_CLK'));expectCode(p.load,'ADAPTER_FAILED');const status=JSON.parse(readFileSync(join(p.root,'.edoc-build/adapter-status.json'),'utf8'));assert.equal(status.success,false);});
 test('Adapter 超时使用非成功诊断',t=>{const p=project(t,'board-flash');const path=join(p.root,'edoc.config.json');const c=JSON.parse(readFileSync(path,'utf8'));c.adapter.command=['node','-e','setInterval(()=>{},10000)'];c.adapter.timeoutMs=40;writeFileSync(path,JSON.stringify(c));expectCode(p.load,'ADAPTER_FAILED');});
 test('所用物理编号缺失时明确失败，不猜测 Ball',t=>{const p=project(t,'board-flash');const path=join(p.root,'board/pins.csv');writeFileSync(path,readFileSync(path,'utf8').replace(',A12,',',,'));expectCode(p.load,'ADAPTER_FAILED');});
+test('Node CSV 转换保留引号、逗号与换行，不静默丢弃空字段数据行',t=>{
+ const p=project(t,'board-flash'),file=join(p.root,'board/devices.csv'),rows=readFileSync(file,'utf8').trimEnd().split('\n');
+ const fields=rows[1].split(','),id=fields[0];fields[1]='"名称,含""引号""\n第二行"';rows[1]=fields.join(',');writeFileSync(file,rows.join('\n')+'\n');
+ assert.equal((query(p.load(),id).target.entity as any).label,'名称,含"引号"\n第二行');
+ const pins=join(p.root,'board/pins.csv');writeFileSync(pins,readFileSync(pins,'utf8')+'\n,,,,,,,,\n');expectCode(p.load,'ADAPTER_FAILED');
+});

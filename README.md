@@ -13,6 +13,8 @@ npm run build:package
 
 编译结果在 dist/。源码开发可用 npm run edoc -- --help 查看命令；安装到其他工程的方法见[安装说明](docs/usage/start/01-install.mdoc)。
 
+安装后的用户运行 `edoc docs` 获取自带 HTML 手册地址，或用 `edoc docs serve` 在本机阅读。Agent 可运行 `edoc docs outline --depth 0`、`edoc docs read --id ref:config-data` 查询工具用法，无需克隆仓库。
+
 ## 生成和阅读正式文档
 
 本仓库的正式文档首页是 docs/index.mdoc，正文、配置与文档资源集中在 docs 下。README 仅承担仓库介绍和操作入口，保持 GitHub/GitLab 可直接阅读的标准 Markdown。
@@ -29,7 +31,9 @@ npm run docs:dev
 
 访问 http://127.0.0.1:5175/ 。修改后重新构建并刷新；当前没有公开托管的文档地址。
 
-本仓库图示复用原样例转换器，需要已有 Python 3，优先通过 uv 调用。文档只导出 HTML，保留原始 PDF 附件的内嵌阅读和定位、单图 SVG 导出；构建文档无需浏览器。
+本仓库图示复用 Node.js 样例转换器，不需要 Python。文档只导出 HTML，保留原始 PDF 附件的内嵌阅读和定位、单图 SVG 导出；构建文档无需浏览器。
+
+`npm run build:package` 同时生成随包手册、查询索引和 TypeScript 声明；修改文档后重新运行该命令更新安装产物。`docs:build` 生成工作区阅读页，`docs:dev` 只预览工作区页面。
 
 ## 使用与维护入口
 

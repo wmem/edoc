@@ -1,0 +1,64 @@
+{% section id="acceptance:documentation-delivery" title="安装版文档交付修复" %}
+
+2026-11-04，用户批准修复[507dbb9 文档审阅](../reviews/project-readiness.mdoc)中的 F01–F07。审阅原文保留基线身份，本页记录修复后的实现和验证范围。
+
+{% section id="acceptance:documentation-delivery:changes" title="修复范围" %}
+
+| 发现 | 处理 |
+| --- | --- |
+| F01 手册交付缺口 | prepare 预生成完整 HTML 和章节/事实索引；edoc docs 输出地址，docs serve 本机阅读，docs outline/read/query 使用随包数据，不执行当前项目配置 |
+| F02 子工程 HTML 混入 | docs/.npmignore 排除各层 output、node_modules 和临时构建目录；正式手册仅由 dist/manual 交付 |
+| F03 Markdoc 配方前置 | 安装说明补项目本地依赖，Frontmatter 与 Schema/slot 提供独立完整配方，手册复用同一 Schema |
+| F04 类型未交付 | 开发构建生成公共 .d.ts，包根声明类型入口，消费方无需携带 TypeScript 运行依赖 |
+| F05 SVG 说明 | 区分导出范围与文字状态：网页 SVG 跟随文字开关，CLI export 使用配置；不改动原导出行为 |
+| F06 现行/历史混淆 | 清理当前 PDF 导出说法和失效的当前入口；环境历史子节逐节保留阶段提示，不改原始方案字节 |
+| F07 编辑和索引 | 删除重复命令，纠正多接口和正文/文件规则的索引，完整创建数据默认折叠 |
+
+项目 read/query/outline 作用域不变，工具手册显式使用 docs 前缀。索引由同一 Book 自动生成，正文分页与目录筛选复用核心实现，事实查询复用 query，不维护第二份手写文档或工程事实。
+
+{% /section %}
+
+{% section id="acceptance:documentation-delivery:build" title="仅依赖 Node.js 的预构建" %}
+
+2026-11-04，将虚构板级 CSV 与 MAC ANSI 声明子集的两个小型 Adapter 从 Python 迁至 Node.js，全部初始 IR 与原转换器逐文件按解析后的 JSON 对比一致。原 CSV、RTL、语义文件和稳定 ID 不变，旧转换实现删除，不保留第二套推导规则。宽度更新、缺失编号、重复来源和失败状态仍由 Adapter 回归检查。
+
+先构建 JS、浏览器脚本和字体，再生成声明及完整手册；手册复用已编译前端。安装后的阅读只加载 HTML 或压缩查询索引，不需要样例目录、Python、开发依赖或用户项目配置。源文随包保留，路径由 edoc docs --format json 返回。
+
+原始 V1 快照、旧阶段测试数量和历史 PDF 结论保持历史身份。随包手册的构建刷新与工作区 docs:build/preview 区分，不能将旧产物回退当作新构建成功。
+
+公共 Markdoc 声明会引用 React 与 markdown-it 的类型名称。React 只提供 @types/react，不安装 React 运行时；markdown-it 只提供具有一致 CommonJS 类型入口的 @types/markdown-it 13.0.9，并在 markdoc-types.ts 中把上游使用的 MarkdownItOptions 名称补为现有 Options 的别名。没有改动依赖安装目录，也没有用 any 或 skipLibCheck 跳过检查。消费方可在 skipLibCheck=false 下检查 SDK，工具正文仍只由 Markdoc 解析，没有引入另一套解析器、TypeScript 运行依赖或 React 组件入口。
+
+{% /section %}
+
+{% section id="acceptance:documentation-delivery:verification" title="验证范围" %}
+
+以下结果限定于 2026-11-04 的本批修复，不能推导全部图形和所有第三方配置均已验收：
+
+- TypeScript 类型检查通过。Schema、核心、查询、正文、Markdoc、阅读器、手册与同源索引共 136 项回归通过；Adapter 与索引的补充回归 10 项通过，包括 CSV 引号/换行/空字段、分页和跨工程同名章节。
+- 实际 npm 包安装到仓库外的隔离目录，项目命令、完整手册查询、未知 ID 和参数诊断、随机端口的手册服务器及 404 范围检查通过。当前目录配置即使抛出异常，也不影响工具手册。
+- 在外部本地依赖工程直接复制两份原生配方并生成 HTML；公共 JS 导入和 CommonJS require 通过。NodeNext 与 Bundler 在 strict、skipLibCheck=false 下检查通过，错误端口宽度和错误原生 tokenizer 选项均有反向类型检查，避免声明退化为 any。
+- 独立 Git 快照执行 prepare、打包和隔离全局安装通过；将 python、python3 和 uv 替换为立即失败的临时命令，构建仍成功。最终安装不含 Playwright、Vite、X6、完整字体开发包、TypeScript 或 React 运行包。
+- 正式手册 3 项浏览器回归通过。另用 playwright-cli 与已有 Chromium 打开实际全局安装的 docs serve 和 file:// 手册；检查安装入口、独立配方、创建步骤折叠、接口展开与适配、波形、SVG 文字隐藏及字体、PDF 第 2 页区域和浏览器返回、390px 窄屏。断网后的操作无外部请求和页面脚本错误，并人工查看截图。
+
+原始 V1 快照没有修改。缓存与复现产物在 .edoc-build/documentation-fixes；正式结论保存在本页，不依赖缓存才能理解。
+
+未验证远程 git+ssh 凭据、Windows/macOS 和所有页面的逐图视觉效果。npm 11.12.1 直接 Git 全局安装的既有限制仍在，实测交付流程是先 npm pack Git 源、再全局安装 tarball，见[安装说明](../../usage/start/01-install.mdoc#use:install:git-preparation)。本轮没有推送远程。
+
+{% /section %}
+
+{% section id="acceptance:documentation-delivery:size" title="修复后的安装体积" %}
+
+2026-11-04，Linux x64、Node.js 24.15.0、npm 11.12.1；实际打包后按普通全局安装流程装入隔离 prefix，不计 npm 缓存、临时预构建依赖或浏览器。MiB 使用 1048576 字节，数据取两位小数：
+
+| 项目 | 结果 |
+| --- | --- |
+| npm 压缩包 / 包内文件展开 | 11.46 MiB / 26.64 MiB |
+| 预构建完整手册 HTML / 压缩查询索引 | 14.36 MiB / 0.30 MiB，已包含在上一行 |
+| 最终第三方依赖，按文件路径累计 | 104.86 MiB |
+| 完整安装，按文件路径累计 | 131.50 MiB |
+| 完整安装，相同设备与 inode 的硬链接只计一次 | 120.60 MiB |
+
+普通安装时 esbuild 将同一约 10.9 MiB 平台程序硬链接到两个路径，因此按路径累计与硬链接去重的结果不同；不以文件内容 hash 去重，也不把文件系统分配块当作逻辑字节。旧[安装精简验收](html-install.mdoc#acceptance:html-install:size)只代表当时产物，比较时应同时留意手册增量与安装脚本生成的硬链接。本轮没有恢复整本 PDF 导出或浏览器开发运行依赖。
+
+{% /section %}
+{% /section %}

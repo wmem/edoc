@@ -12,6 +12,7 @@ import type {Diagnostic} from '../core/types.ts';
 import {scene,svg} from '../render-graph/index.ts';
 import {bookHTML} from '../pack-html/book.ts';
 import {loadBook,projectOutline} from '../core/book.ts';
+import {manualMain} from './manual.ts';
 
 const help=`edoc / IR ${SUPPORTED_IR_VERSION}
 用法：
@@ -24,6 +25,7 @@ const help=`edoc / IR ${SUPPORTED_IR_VERSION}
  edoc read [--project PROJECT_ID] --id SECTION_ID [--scope self|subtree] [--offset 0] [--max-chars 12000] [--format json|text]
  edoc export [--project PROJECT_ID] --view ID --format svg --output FILE
  edoc guide [--format text|json]
+ edoc docs [serve|outline|read|query]        阅读或查询随安装包携带的工具手册
 项目命令均可使用 --config；省略时只查找当前目录下的 docs/edoc.config.js。
 标准 docs/edoc.config.js 的工程根为 docs 上一级；其他显式配置以配置目录为工程根。
 配置内容直接写在 JS 中；不要求 manifest、command 或 inputs 清单。
@@ -41,6 +43,7 @@ export async function main(argv:string[]):Promise<number>{
  try{
   if(argv.length===1&&['--help','-h'].includes(argv[0])){process.stdout.write(help);return 0;}
   if(argv.length===1&&argv[0]==='--version'){process.stdout.write(`edoc 1.0.0 / IR ${SUPPORTED_IR_VERSION}\n`);return 0;}
+  if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
   const allowed=new Set(command==='guide'?['--format']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);

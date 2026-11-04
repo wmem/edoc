@@ -1,6 +1,6 @@
 {% section id="dev:environment" title="环境与可移植性" %}
 
-当前使用 Node.js 24+ 和 npm，依赖版本由 package-lock.json 固定。纯正文/标准 IR 项目不需 Python；本仓库手册复用样例转换器时需要已有 Python 3，优先 uv。生成 HTML 及内嵌 PDF 阅读不需要构建机 Chromium，文档导出 PDF 与浏览器测试才需要已有 Chromium。
+当前使用 Node.js 24+ 和 npm，依赖版本由 package-lock.json 固定。工程构建与随包手册预构建均只需 Node.js；本仓库的 CSV/RTL 演示转换器也使用 Node.js。生成 HTML、内嵌 PDF 阅读和 SVG 导出不需要构建机 Chromium，只有浏览器验证需要已有 Chromium。整本 PDF 导出已移除。
 
 本轮实际 Linux/WSL 环境与测试证据见验收记录；没有自动安装全局工具，也不把某个环境验证推导成所有平台可用。以下保留 V1 阶段原环境与恢复记录。
 
@@ -10,6 +10,8 @@
 
 
 {% section id="dev:environment:part-01" title="当前已验证" %}
+
+历史 V1 阶段记录：本节的版本、依赖、操作与验证范围仅指原阶段；当前环境及构建方式见[本页当前说明](#dev:environment)。
 
 
 - Linux、Node.js 24.22.1、Python 3.12；Node 原生运行 TypeScript，正式 tsc 严格类型检查。
@@ -21,6 +23,8 @@
 {% /section %}
 
 {% section id="dev:environment:part-02" title="Chromium" %}
+
+历史 V1 阶段记录：本节的版本、依赖、操作与验证范围仅指原阶段；当前环境及构建方式见[本页当前说明](#dev:environment)。
 
 
 本轮使用用户提供的 chromium-headless-shell-1243.tar.zst，浏览器版本为 Chromium 153。
@@ -38,6 +42,8 @@ export EDOC_CHROMIUM=/path/to/chromium/chromium_headless_shell-1243/chrome-headl
 
 {% section id="dev:environment:part-03" title="状态与恢复" %}
 
+历史 V1 阶段记录：本节的版本、依赖、操作与验证范围仅指原阶段；当前环境及构建方式见[本页当前说明](#dev:environment)。
+
 
 - 每次从配置执行的 validate/query/build 都重新运行项目 Adapter，不做文件内容 hash 缓存。
 - Adapter 输入范围显式声明；检查输入 mtime/size 未被转换脚本修改。输出在临时目录校验成功后切换，状态记录在生成目录旁。
@@ -47,6 +53,8 @@ export EDOC_CHROMIUM=/path/to/chromium/chromium_headless_shell-1243/chrome-headl
 {% /section %}
 
 {% section id="dev:environment:part-04" title="范围限制" %}
+
+历史 V1 阶段记录：本节的版本、依赖、操作与验证范围仅指原阶段；当前环境及构建方式见[本页当前说明](#dev:environment)。
 
 
 - Windows/macOS 未在本轮实际运行；Node 入口与项目转换脚本应可移植，文件权限和符号链接需在目标平台复验。

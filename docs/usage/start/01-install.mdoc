@@ -2,6 +2,8 @@
 
 需要 Node.js 24 或更新版本。仓库版本推送到远程后，可通过 Git SSH 安装：
 
+当前已验证的 npm 11.12.1 有 Git 全局安装预构建问题，建议先使用下一节的两步流程。其他环境可尝试以下直接命令；它仍是目标安装方式，不代表本轮已验证该环境：
+
 ```sh
 npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
 edoc --version
@@ -22,11 +24,52 @@ npm install -g ./edoc-1.0.0.tgz
 
 {% /section %}
 
+{% section id="use:install:manual" title="安装后直接读工具手册" %}
+
+安装包自带预构建的完整 HTML 和章节/事实索引，无需克隆仓库或准备 Python。从任意目录运行：
+
+```sh
+edoc docs
+edoc docs serve
+```
+
+第一条输出可打开的离线 HTML 地址；第二条在 http://127.0.0.1:5176/ 提供同一份手册，Ctrl+C 结束，--port 可换端口。手册也可复制成单个 HTML 文件离线阅读。
+
+Agent 直接查询工具用法，不读取当前项目配置：
+
+```sh
+edoc docs outline --depth 0
+edoc docs read --id ref:config-data --format text
+edoc docs query --id system:producer
+```
+
+普通 edoc read/query/outline 仍读取自己的项目。edoc guide 返回推荐指南；完整工具手册使用 docs 命令。源文目录可通过 edoc docs --format json 的 sources 字段取得，供 rg 搜索；源文不需要在安装目录再次构建。
+
+{% /section %}
+
+{% section id="use:install:local" title="项目本地依赖与固定版本" %}
+
+普通正文可只使用全局 CLI。配置需要 import {Markdoc} from 'edoc'、使用 TypeScript API，或团队希望固定同一版本时，将工具安装到项目开发依赖。在工程根执行：
+
+```sh
+npm install --save-dev git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+npx edoc --version
+npx edoc
+```
+
+本地 edoc 模块才可被当前工程配置 import；全局命令不会自动成为项目模块。已有全局命令时也优先使用 npx edoc 或 npm script，避免调用另一版本。
+
+可在 Git 地址后增加 #提交号 固定评审过的版本；或将 npm pack 生成的包安装为本地依赖。提交 package.json 和 package-lock.json，CI 用 npm ci 恢复，再用 npx edoc validate 和 npx edoc 构建。不要在首次 Git 源安装时禁用 prepare；已经生成的发布包不需要用户编译前端或手册。
+
+升级时更新固定版本和锁文件，先校验再生成，核对目录、必要的 query/read、关键图形与 PDF 原文位置。本工具不自动迁移项目源文件。
+
+{% /section %}
+
 {% section id="use:install:dependencies" title="安装体积与运行依赖" %}
 
 最终安装不包含 Playwright、Chromium、Vite、X6 开发包或完整字体库。前端预编译，字体只携带当前字重使用的 WOFF2 子集及许可证；生成 HTML 与 SVG 不需要本机浏览器。PDF.js 仍用于原始附件校验和内嵌阅读，仅有附件的 HTML 才加入 PDF 阅读资源。
 
-Linux x64 本轮实测运行依赖约 92 MiB，含工具、文档和预编译资源的完整安装约 108 MiB；大小随版本和平台变化。Git 预构建会临时安装开发依赖，npm 缓存与临时目录不计入上述最终安装体积。测量口径和保留依赖的原因见[安装精简验收](../../development/acceptance/html-install.mdoc)。
+运行依赖仍采用[安装精简验收](../../development/acceptance/html-install.mdoc)中的分工；该记录约 108 MiB 的旧总量不包含本次新增的完整手册与类型声明。最新安装结果见[文档交付修复验收](../../development/acceptance/documentation-delivery.mdoc)。大小随版本和平台变化；Git 预构建临时开发依赖和 npm 缓存不计入最终全局安装体积。
 
 {% /section %}
 

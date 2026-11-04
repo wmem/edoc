@@ -2,7 +2,7 @@
 
 正式文档由 docs/edoc.config.js 自身渲染，运行 `npm run docs:build`，入口为 output/index.html。使用路线在 [docs/usage/index.mdoc](../usage/index.mdoc)，字段/命令参考在 [docs/usage/reference/index.mdoc](../usage/reference/index.mdoc)，工具维护路线在 [docs/development/index.mdoc](index.mdoc)。先按任务选入口，不整本读取生成 HTML；`outline --depth 0 --format json` 提供入口 sectionId，再按分支查目录、用 `read --id ...` 读取章节，事实使用 query。read 默认 self，不附带子 section 正文，留意 range 截断与 nextOffset。
 
-先读 README.md 和 [需求与设计基线](design/requirements.mdoc)，再读 [推荐指南](../usage/engineering/guide.mdoc)。原始需求快照及来源见[原始方案来源](design/original-source.mdoc)，初次图形问题见 [图形渲染审查](reviews/graphics.mdoc)，修复及当前验证范围见 [图形渲染修复验收](acceptance/graphics.mdoc)。创建或重组工程文档前，也可运行 `node packages/cli/edoc.ts guide`；已安装的项目直接运行 `edoc guide` 读取同一份指南。项目接入默认使用 `docs/edoc.config.js`，字段直接写在配置中；正文先扫描、数据自动发现，不再要求手写 manifest/command/inputs。完整入口契约见 [项目配置与自动依赖](../usage/reference/config.mdoc)。
+先读 README.md 和 [需求与设计基线](design/requirements.mdoc)，再读 [推荐指南](../usage/engineering/guide.mdoc)。原始需求快照及来源见[原始方案来源](design/original-source.mdoc)，初次图形问题见 [图形渲染审查](reviews/graphics.mdoc)，修复及当前验证范围见 [图形渲染修复验收](acceptance/graphics.mdoc)。创建或重组工程文档前，也可运行 `node packages/cli/edoc.ts guide`；已安装的项目直接运行 `edoc guide` 读取同一份指南；完整工具手册用 `edoc docs` 阅读、`edoc docs outline/read/query` 按需查询，不加载当前项目配置。项目接入默认使用 `docs/edoc.config.js`，字段直接写在配置中；正文先扫描、数据自动发现，不再要求手写 manifest/command/inputs。完整入口契约见 [项目配置与自动依赖](../usage/reference/config.mdoc)。
 
 目录先用 outline --depth 0 看入口，再用 --id 与 --depth 按分支继续；只查当前组合，不加载弱跳转指向的外部项目。详细字段或说明用 read，真实事实用 query。新增正文需接入手册，当前契约保持单一来源，历史记录保留阶段身份。
 
@@ -19,7 +19,7 @@
 7. 从实际项目发现的通用问题，修复工具并补回归；将通用经验更新到推荐指南与模板，再在项目中验证。
 8. 按原设计的图形可行性门槛，优先验证端口、路径、分支和标签的准确与可读性。图能初始化、XML 合法、根边界不越界均不能替代连线与文字检查；浏览器和 SVG 分别验收，真实规模下不可读时先修订绘图策略。
 9. 展示采用合理默认、按需声明、局部覆盖、明确校验的原则。先使用默认行为，必要时在视图/编排层声明少量意图；不为展示复制工程事实，不把普通渲染缺陷转嫁为必须手调。当前图形字段及尚未实现的跨组件范围见[布局约束使用与验收](acceptance/layout.mdoc)。
-10. 正文以 Markdoc 原生能力为兼容基线，edoc 在其上扩展工程标签；不另造缩减语法，不用工程标签校验拒绝原生能力。Markdoc 与 CommonMark 的差异保留记录，不作为本轮修补上游的目标；已核查差异和待实施契约冲突见[兼容基线](design/markdoc.mdoc)。目标与当前支持范围分开说明，2026-11-04 用户已批准数据表改用 data-table、围栏沿用原生默认，字面示例显式 process=false；新变更仍须遵循语义变更规则。
+10. 正文以 Markdoc 原生能力为兼容基线，edoc 在其上扩展工程标签；不另造缩减语法，不用工程标签校验拒绝原生能力。Markdoc 与 CommonMark 的差异保留记录，不作为本轮修补上游的目标；已核查差异和当前兼容边界见[兼容基线](design/markdoc.mdoc)。目标与当前支持范围分开说明，2026-11-04 用户已批准数据表改用 data-table、围栏沿用原生默认，字面示例显式 process=false；新变更仍须遵循语义变更规则。
 
 实现入口为 packages/core（模型、正文与查询）、packages/doc-theme（正文/目录/交互）、packages/pack-html。领域类型、Schema 与标签契约位于 packages/extensions；共用 Schema 位于 packages/schema，扩展维护见[维护一种渲染扩展](extensions.mdoc)。历史验收记录只代表对应版本，不当成本轮结果。组合/阅读/PDF 附件的实现记录见 [组合工程与 PDF 附件](../usage/engineering/composition.mdoc)：父子工程同构，file include 复用页内片段，project include 接入子配置；跨工程链接只查当前产物，不读取外部配置或数据。
 

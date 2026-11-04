@@ -2,6 +2,7 @@ import Markdoc from '@markdoc/markdoc';
 import {documentAST} from './documents.ts';
 import {failure} from './errors.ts';
 import type {Graph} from './types.ts';
+import {readRange,validateReadRange} from './read-range.ts';
 
 export type ReadOptions={scope?:'self'|'subtree';offset?:number;maxChars?:number};
 
@@ -12,8 +13,7 @@ const proseValue=(value:any):string=>typeof value==='string'||typeof value==='nu
 export function readDocument(graph:Graph,id:string,options:ReadOptions={}){
  const scope=options.scope??'self',offset=options.offset??0,maxChars=options.maxChars??12000;
  if(!['self','subtree'].includes(scope))failure('READ_SCOPE','<read>','/scope','scope 只接受 self/subtree');
- if(!Number.isSafeInteger(offset)||offset<0)failure('READ_OFFSET','<read>','/offset','offset 必须是非负安全整数');
- if(!Number.isInteger(maxChars)||maxChars<1||maxChars>100000)failure('READ_LIMIT','<read>','/maxChars','maxChars 必须为 1–100000 的整数');
+ validateReadRange(offset,maxChars);
  const entry=graph.index.get(id);
  if(!entry)failure('QUERY_NOT_FOUND','<read>','/id','ID 不存在：'+id);
  if(entry.type!=='document')failure('READ_TYPE','<read>','/id','read 只读取有稳定 ID 的 section；工程对象使用 query');
@@ -32,10 +32,8 @@ export function readDocument(graph:Graph,id:string,options:ReadOptions={}){
    if(result.type==='fence'&&result.attributes.process===false){result.annotations=result.annotations.filter((a:any)=>a.name!=='process');result.annotations.push({type:'attribute',name:'process',value:false});}
    return result;
   };
-  const content=Markdoc.format(section.children.map(copy).filter(Boolean)).trim(),characters=Array.from(content),end=Math.min(characters.length,offset+maxChars);
-  if(offset>characters.length)failure('READ_OFFSET','<read>','/offset','offset 超过正文字符数');
-  return {projectId:graph.manifest.projectId,id,title:section.attributes.title??id,source:source(section),scope,format:'markdown' as const,content:characters.slice(offset,end).join(''),children,sources,
-   range:{offset,returnedChars:end-offset,totalChars:characters.length,truncated:end<characters.length,nextOffset:end<characters.length?end:null}};
+  const content=Markdoc.format(section.children.map(copy).filter(Boolean)).trim();
+  return {projectId:graph.manifest.projectId,id,title:section.attributes.title??id,source:source(section),scope,format:'markdown' as const,children,sources,...readRange(content,offset,maxChars)};
  }
  failure('QUERY_NOT_FOUND','<read>','/id','正文中没有此章节：'+id);
 }

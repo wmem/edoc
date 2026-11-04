@@ -26,6 +26,8 @@ CLI 的 validate/read/query 复用加载与校验，但不调用图形布局。�
 
 安装包预编译浏览器脚本并携带字体子集和许可证；生产运行无需 X6/Vite/Playwright 开发包。配置加载独立使用 bundle-require/esbuild，附件校验仍使用 PDF.js。构建、安装与体积的实测范围见[安装精简验收](acceptance/html-install.mdoc)。
 
+packages/core/manual.ts 从同一 Book 生成便携查询数据，复用目录筛选、正文 Unicode 分页和事实 query；packages/cli/manual.ts 提供 docs 命令和只读本机预览。构建阶段生成完整 HTML 与压缩索引，安装后无需配置、Adapter 或样例源，交付范围见[文档修复验收](acceptance/documentation-delivery.mdoc)。
+
 {% /section %}
 
 {% section id="dev:invariants" title="修改时保留的边界" %}
@@ -48,7 +50,7 @@ docs/edoc.config.js 直接编排正文、图形、子工程和附件。docs/supp
 
 使用正文解释如何用，查询参考保留稳定小节和完整样例细节。声明式引用由正式渲染链路生成实际图表；新增能力应同步到合适的使用任务与参考入口，不再增加一套独立长期 Demo 文案。
 
-工具 docs/edoc.config.js 的图示转换需要本地 Python 3，优先通过已有 uv 调用，禁用自动 Python 下载；普通用户的纯正文/标准 IR 项目仍只需 Node.js。临时转换结果在系统临时目录清理，不修改样例源。
+工具 docs/edoc.config.js 与随包手册预构建均使用 Node.js 样例转换器，不需要 Python。临时转换结果在系统临时目录清理，不修改样例源。
 
 {% /section %}
 {% /section %}

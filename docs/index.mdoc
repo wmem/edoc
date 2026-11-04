@@ -25,15 +25,15 @@ edoc 以 Markdown 为正文基础，扩展页面编排、数据图表和原文�
 
 ## 给 Agent 的短路径
 
-先读 README，再运行 outline 找到需要的章节；用 read 读取章节正文，用 query 查询工程事实。仅在需要时扩大读取范围，修改源文件后重新校验。
+安装后的工具手册直接运行 edoc docs 或 edoc docs serve 阅读。Agent 使用 docs 命令找到工具的章节和样例事实，无需加载当前项目配置：
 
 ```sh
-edoc outline --depth 0 --format json
-edoc read --id use:start --format text
-edoc read --id ref:config-data --format json
-edoc query --id board:net.FLASH_SCK --depth 1
+edoc docs outline --depth 0 --format json
+edoc docs read --id use:start --format text
+edoc docs read --id ref:config-data --format json
+edoc docs query --id board:net.FLASH_SCK --depth 1
 ```
 
-这些命令在拥有本手册配置和源文件的工程目录运行。只有发布的 HTML 时，使用页面搜索、目录和对象详情；网页不会在本机提供 CLI 服务。
+自己的工程使用不带 docs 的 outline/read/query，按所需范围读取正文与事实，修改源文件后重新校验。只有发布的 HTML 时，使用页面搜索、目录和对象详情；网页不会在本机提供 CLI 服务。
 
 {% /section %}

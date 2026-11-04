@@ -1,4 +1,5 @@
 import Markdoc from '@markdoc/markdoc';
+import './markdoc-types.ts';
 import type {Config,Node,ConfigFunction,ParserArgs} from '@markdoc/markdoc';
 import {failure,EdocError} from './errors.ts';
 

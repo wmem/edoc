@@ -5,11 +5,11 @@
 {% section id="use:read" title="查一段说明" %}
 
 ```sh
-edoc outline --depth 0 --format json
-edoc read --id ref:config-data --format text
+edoc docs outline --depth 0 --format json
+edoc docs read --id ref:config-data --format text
 ```
 
-outline 给出目录和来源，read 按显式 section ID 返回规范化 Markdown。默认 scope=self，不附带子 section 正文；返回子章节身份供继续选择，不包含 HTML、字体或图形载荷。
+上面查询工具自身手册，不读取当前项目。查自己的工程时去掉 docs，将 ID 换成项目的稳定章节。outline 给出目录和来源，read 按显式 section ID 返回规范化 Markdown。默认 scope=self，不附带子 section 正文；返回子章节身份供继续选择，不包含 HTML、字体或图形载荷。
 
 需要完整子树时显式指定 --scope subtree。默认最多返回 12000 个 Unicode 字符，JSON 的 range 说明总数、是否截断和 nextOffset；使用 --offset 继续读取。代码和表格可能跨分页，精确自动处理推荐 JSON。
 
@@ -20,11 +20,13 @@ read 保留图表引用标签，不把关系数据或 PDF 展开为正文。需�
 {% section id="use:query-object" title="查一个事实" %}
 
 ```sh
-edoc query --id board:U1.QSPI_CLK
-edoc query --id board:net.FLASH_SCK --depth 1
+edoc docs query --id board:U1.QSPI_CLK
+edoc docs query --id board:net.FLASH_SCK --depth 1
 ```
 
 默认 depth=0，不递归展开工程。关系的真实端点与直接关系保持完整，max-items 只限制额外展开，不能用它截短 Net。
+
+这是手册虚构板级例子的 ID。查实际项目用 edoc query --id 自己的对象ID。
 
 组合工程可增加 --project manual-component 选择本次已包含的工程，不能用它自动查找父目录或兄弟源。浏览器对象详情也会显示身份、来源与关系。
 

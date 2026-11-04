@@ -2,7 +2,7 @@
 
 已知道要表达什么时，从本页直接进入教程、字段参考或实际例子；第一次接触请先读[认识 edoc](../overview.mdoc)，再按[使用路线](../index.mdoc)选择功能。本页用于防遗漏和精确查询，不作为入门课程。支持表示已有公开契约与实现，不等于任意规模下的所有排版都已验收；实现缺口和未提供的能力单独列出。
 
-人可点击查看效果，Agent 可用 outline 找 sectionId，再按需 read/query。字段参考是契约来源，教程解释选择，例子与被展示的数据或正文同源。
+人可点击查看效果，Agent 可用 edoc docs outline 找 sectionId，再按需 docs read/query；自己的项目继续使用无 docs 前缀的命令。字段参考是契约来源，教程解释选择，例子与被展示的数据或正文同源。
 
 {% section id="use:capabilities:markdoc" title="Markdoc 原生能力" %}
 
@@ -21,7 +21,7 @@
 | --- | --- | --- | --- |
 | 架构与父子层级 | [结构](../rendering/diagrams/architecture.mdoc#use:architecture) | [Node / parentId](ir.mdoc#ref:objects) | [父子框](../rendering/diagrams/graph-options.mdoc#use:graph-groups) |
 | 接线与完整多端点 | [接线](../rendering/diagrams/wiring.mdoc#use:wiring) | [Connection](ir.mdoc#ref:connections) | [三端点](../rendering/diagrams/wiring.mdoc#use:wiring) |
-| 接口独立合并与展开 | [接口](../rendering/diagrams/interfaces.mdoc#use:interface-overview) | [接口身份](graph.mdoc#ref:interfaces) | [多接口](../rendering/diagrams/interfaces.mdoc#use:interface-overview) |
+| 接口独立合并与展开 | [接口](../rendering/diagrams/interfaces.mdoc#use:interface-overview) | [接口身份](graph.mdoc#ref:interfaces) | [多接口](../rendering/diagrams/graph-options.mdoc#use:interface-multiple) |
 | 接口排序、侧边与局部覆盖 | [进阶](../rendering/diagrams/graph-options.mdoc#use:graph-interface-options) | [layout](graph.mdoc#ref:graph-layout) | [默认/覆盖对照](../rendering/diagrams/graph-options.mdoc#use:graph-interface-options) |
 | 接口汇总表与逐信号表 | [接口表](../rendering/diagrams/graph-options.mdoc#use:interface-tables) | [interface-table 标签](tags/interface-table.mdoc#ref:tag-interface-table) | [汇总/明细](../rendering/diagrams/graph-options.mdoc#use:interface-tables) |
 | Group 临时总览 | [选集](../rendering/diagrams/graph-options.mdoc#use:graph-groups) | [初始显示](graph.mdoc#ref:graph-display) | [展开/总览](../rendering/diagrams/graph-options.mdoc#use:graph-groups) |
@@ -40,7 +40,7 @@
 
 | 能力 | 教程 | 字段参考 | 实际例子 |
 | --- | --- | --- | --- |
-| Markdown 正文表 | [选择表格](../rendering/tables.mdoc#use:table-choices) | [正文语法](markdoc.mdoc#ref:markdoc-structure) | [选择说明](../rendering/tables.mdoc#use:table-choices) |
+| Markdown 正文表 | [选择表格](../rendering/tables.mdoc#use:table-choices) | [原生表格](markdoc-native.mdoc#ref:markdoc-native-nodes) | [选择说明](../rendering/tables.mdoc#use:table-choices) |
 | objectId 对象投影 | [数据表](../rendering/tables.mdoc#use:table) | [Table](ir.mdoc#ref:tables) | [投影配方](ir.mdoc#ref:table-example) |
 | values、多类型、单位与缺失值 | [参数表](../rendering/tables.mdoc#use:table-values) | [单元格](ir.mdoc#ref:table-values) | [虚构参数](../rendering/tables.mdoc#use:table-values) |
 | 稳定行 ID、事实与位置引用 | [行跳转](../rendering/tables.mdoc#use:table-row-links) | [行身份](ir.mdoc#ref:table-rows) | [两种跳转](../rendering/tables.mdoc#use:table-row-links) |
@@ -56,7 +56,8 @@
 | 分栏与面板 | [页面编排](../rendering/page-layout.mdoc#use:page-layout-create) | [columns/panel](markdoc.mdoc#ref:markdoc-structure) | [完整正文](../rendering/page-layout.mdoc#use:page-layout-live) |
 | Tabs、初始折叠与稳定章节 | [网页与按需读取](../rendering/page-layout.mdoc#use:page-layout-reading) | [规则](markdoc.mdoc#ref:markdoc-fold-tabs) | [可操作正文](../rendering/page-layout.mdoc#use:page-layout-live) |
 | 目录批量控制、搜索与返回 | [导航](../writing/documents.mdoc#use:pages) | [阅读控制](markdoc.mdoc#ref:reading-controls) | [两侧导航](../writing/documents.mdoc#use:pages) |
-| file 片段、源码内联与图片 | [片段](../writing/documents.mdoc#use:sections) | [标签与链接](markdoc.mdoc#ref:markdoc-links) | [同源正文和代码](../rendering/page-layout.mdoc#use:page-layout-live) |
+| file 片段与源码内联 | [片段](../writing/documents.mdoc#use:sections) | [文件契约](markdoc.mdoc#ref:markdoc-files) | [同源正文和代码](../rendering/page-layout.mdoc#use:page-layout-live) |
+| 本地图片与普通链接 | [图片](../writing/markdown.mdoc#use:markdown:boundaries) | [链接与资源](markdoc.mdoc#ref:markdoc-links) | [正文图片](../writing/markdown.mdoc#use:markdown:effect) |
 
 {% /section %}
 

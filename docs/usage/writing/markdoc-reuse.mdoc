@@ -60,16 +60,11 @@ export default {
 
 {% section id="use:markdoc:metadata" title="Frontmatter 与作者注释" %}
 
-Markdoc 只提取 Frontmatter 原文，不自动决定 YAML、JSON 或其他格式。这里选择 JSON，由配置读取并解析，再提供为变量：
+本节配置需要 import edoc。先按[项目本地安装](../start/01-install.mdoc#use:install:local)将 edoc 加入当前工程的开发依赖；仅全局安装 CLI 不会让项目配置自动找到该模块。
 
-```javascript
-import {readFileSync} from 'node:fs';
-import {Markdoc} from 'edoc';
+Markdoc 只提取 Frontmatter 原文，不自动决定 YAML、JSON 或其他格式。这里选择 JSON，由配置读取并解析，再提供为变量。将以下完整配置保存为 docs/edoc.config.js：
 
-const source = readFileSync(new URL('./index.mdoc', import.meta.url), 'utf8');
-const meta = JSON.parse(Markdoc.parse(source).attributes.frontmatter);
-export default {markdoc: {variables: {meta}}};
-```
+{% code file="docs/support/recipes/frontmatter.config.js" language="javascript" /%}
 
 对应的正文可以写为：
 
@@ -90,7 +85,11 @@ export default {markdoc: {variables: {meta}}};
 
 有重复的语义结构时，可在 markdoc.tags 中增加自己的标签。它们使用 Markdoc Schema 的 attributes、children、slots、validate 和 transform 机制，与 edoc 标签共存。原生和 edoc 标签名保留，不通过覆盖这些名字改变含义。
 
-本手册注册 reader-note：正文传入 tone，title 插槽放提示标题，剩余 children 放说明。slot 需要启用 markdoc.parse.slots：
+先按[项目本地安装](../start/01-install.mdoc#use:install:local)准备 edoc 依赖。下面完整配置可单独保存为 docs/edoc.config.js；本手册也从同一文件读取 Schema：
+
+{% code file="docs/support/recipes/reader-note.config.js" language="javascript" /%}
+
+在 docs/index.mdoc 写入以下完整正文并运行 npx edoc。reader-note 的 title 插槽放提示标题，剩余 children 放说明；配置启用 markdoc.parse.slots：
 
 ```text {% process=false %}
 {% reader-note tone="info" %}
@@ -103,9 +102,7 @@ export default {markdoc: {variables: {meta}}};
 
 Schema 在配置中生成受控的语义 HTML，不需要正文直接写 HTML；输出仍经过工具的资源和属性边界。它适合补充说明结构，不替代工具已有的图形渲染器。任意脚本、自由 CSS、外部运行资源和 React 组件运行时不属于当前离线 HTML 的公开入口。
 
-下面展示本手册实际执行的配置，包含变量、函数、片段、注释、slot 和 reader-note 的定义。已有基本认识后再按需查询，无须先读完这些配置才能写正文：
-
-{% code file="docs/edoc.config.js" language="javascript" /%}
+已有配置时合并 markdoc.parse 和 markdoc.tags，保留自己的其他字段。此配方不依赖本工具仓库的样例、转换器、子工程或附件。
 
 {% /section %}
 {% /section %}

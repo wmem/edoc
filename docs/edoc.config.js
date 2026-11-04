@@ -1,6 +1,7 @@
 import {tutorialData} from './support/data.mjs';
 import {readFileSync} from 'node:fs';
 import Markdoc from '@markdoc/markdoc';
+import readerNote from './support/recipes/reader-note.config.js';
 
 // Markdoc 只提取 Frontmatter 原文；本例选择 JSON，并显式提供变量。
 const originalSnapshot=Markdoc.parse(readFileSync(new URL('./development/design/_partials/original-v1.mdoc',import.meta.url),'utf8'),{file:'docs/development/design/_partials/original-v1.mdoc'});
@@ -22,18 +23,8 @@ export default {
     },
     partials: {'native-card': 'docs/support/recipes/_partials/markdoc-card.mdoc', 'original-v1': originalSnapshot},
     tokenizer: {allowComments: true},
-    parse: {slots: true},
-    tags: {
-      'reader-note': {
-        attributes: {tone: {type: String, matches: ['info', 'warning'], default: 'info', render: 'data-tone'}},
-        slots: {title: {required: true, render: false}},
-        transform(node, context) {
-          return new Markdoc.Tag('aside', {class: 'panel', ...node.transformAttributes(context)}, [
-            new Markdoc.Tag('div', {class: 'panel-title'}, node.slots.title.transformChildren(context)), ...node.transformChildren(context)
-          ]);
-        }
-      }
-    }
+    parse: readerNote.markdoc.parse,
+    tags: readerNote.markdoc.tags
   },
   data: tutorialData,
   children: {component: 'docs/component/docs/edoc.config.js', documentFirst: 'examples/document-first/docs/edoc.config.js'},

@@ -10,9 +10,11 @@ npm run docs:build
 npm run docs:dev
 ```
 
-docs:build 使用 docs/edoc.config.js 生成 output/index.html，可直接离线打开。docs:dev 先构建再在 127.0.0.1:5175 预览，当前不监听源变化；修改后重建并刷新。EDOC_DOCS_PORT 可调整端口。图示数据转换需要已有 Python 3，优先 uv；不会自动安装 Python 或浏览器。
+docs:build 使用 docs/edoc.config.js 生成 output/index.html，可直接离线打开。docs:dev 先构建再在 127.0.0.1:5175 预览，当前不监听源变化；修改后重建并刷新。EDOC_DOCS_PORT 可调整端口。图示数据转换只需 Node.js，不会自动安装浏览器。
 
 源码 CLI 为 node packages/cli/edoc.ts，安装后的用户直接使用 edoc。文档只输出 HTML，保留原始 PDF 附件与单图 SVG；普通构建不需要浏览器。
+
+修改文档后运行 npm run build:package，刷新 dist/manual 的随包 HTML 和查询索引。此构建也生成公共声明；只运行 docs:build 不会刷新安装产物。普通用户用 edoc docs 读取当前安装版本的手册，不重建仓库配置。
 
 {% /section %}
 

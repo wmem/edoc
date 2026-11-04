@@ -63,12 +63,16 @@ export function pageTitle(document:LoadedProject['documents']['documents'][numbe
 }
 export type OutlineOptions={project?:string;id?:string;depth?:number};
 export function projectOutline(book:Book,options:OutlineOptions={}){
+ return selectOutline(bookNavigation(book),book.root.config.projectId,[...book.projects.keys()],options);
+}
+// 预构建手册与实时工程共用目录选择，不执行配置或重新发现源文件。
+export function selectOutline(navigation:Navigation[],rootProject:string,projects:string[],options:OutlineOptions={}){
  if(options.depth!==undefined&&(!Number.isInteger(options.depth)||options.depth<0||options.depth>10))failure('OUTLINE_DEPTH','<outline>','/depth','目录深度必须为 0–10 的整数');
- if(options.project!==undefined&&!book.projects.has(options.project))failure('QUERY_NOT_FOUND','<outline>','/project','当前组合中没有此工程：'+options.project);
- const navigation=bookNavigation(book),collect=(nodes:Navigation[],match:(node:Navigation)=>boolean):Navigation[]=>nodes.flatMap(node=>[...(match(node)?[node]:[]),...collect(node.children,match)]);
+ if(options.project!==undefined&&!projects.includes(options.project))failure('QUERY_NOT_FOUND','<outline>','/project','当前组合中没有此工程：'+options.project);
+ const collect=(nodes:Navigation[],match:(node:Navigation)=>boolean):Navigation[]=>nodes.flatMap(node=>[...(match(node)?[node]:[]),...collect(node.children,match)]);
  const inProject=(nodes:Navigation[]):Navigation[]=>nodes.flatMap(node=>node.project===options.project?[{...node,children:inProject(node.children)}]:inProject(node.children));
  let chapters=options.project?inProject(navigation):navigation;
  if(options.id){chapters=collect(chapters,node=>node.sectionId===options.id);if(!chapters.length)failure('QUERY_NOT_FOUND','<outline>','/id','当前目录中没有此章节：'+options.id);if(chapters.length>1)failure('OUTLINE_AMBIGUOUS','<outline>','/id','多个工程存在同名章节，请用 --project 指定：'+options.id);}
  const trim=(nodes:Navigation[],depth=0):Navigation[]=>nodes.map(node=>({...node,children:options.depth!==undefined&&depth>=options.depth?[]:trim(node.children,depth+1),...(options.depth!==undefined&&depth>=options.depth&&node.children.length?{childrenOmitted:node.children.length}:{})}));
- return {projectId:options.project??book.root.config.projectId,projects:options.project?[options.project]:[...book.projects.keys()],chapters:trim(chapters),...(options.depth!==undefined?{maxDepth:options.depth}:{})};
+ return {projectId:options.project??rootProject,projects:options.project?[options.project]:projects,chapters:trim(chapters),...(options.depth!==undefined?{maxDepth:options.depth}:{})};
 }
