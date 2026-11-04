@@ -1,6 +1,6 @@
-{% section id="use:publish" title="离线 HTML、SVG 与文档 PDF" %}
+{% section id="use:publish" title="离线 HTML 与单图 SVG" %}
 
-选择输出前，先区分整本文档和单张图。HTML 提供交互，文档 PDF 供静态阅读，SVG 用于分享单张完整矢量图；它们共用源正文和数据。
+选择输出前，先区分整本文档和单张图。HTML 提供按篇阅读和交互，SVG 用于分享单张完整矢量图；它们共用源正文和数据。
 
 {% section id="use:publish:html" title="生成和分发 HTML" %}
 
@@ -10,7 +10,7 @@
 edoc
 ```
 
-默认生成 output/index.html。HTML 携带正文、数据、字体、脚本和附件，按篇阅读；文件大小仍随内容和附件增长。复制这一文件后无需源目录或服务端即可查看。普通正文生成不需要 Chromium。
+默认生成 output/index.html。HTML 携带正文、数据、字体、脚本和附件，按篇阅读；文件大小仍随内容和附件增长。复制这一文件后无需源目录或服务端即可查看。包括 PDF 附件在内的 HTML 构建均不需要 Chromium。
 
 修改源文件后重新构建。工具仓库的 npm run docs:dev 只负责手册静态预览，不能把它误认为所有用户工程都必须提供的启动包装脚本。
 
@@ -28,18 +28,6 @@ edoc export --view system:overview --format svg --output output/overview.svg
 
 {% /section %}
 
-{% section id="use:publish:pdf" title="生成静态文档 PDF" %}
-
-文档 PDF 需要构建环境已有 Chromium。在当前配置增加 chromiumExecutable 指向本机浏览器，或设置 EDOC_CHROMIUM，然后执行：
-
-```sh
-edoc build --format pdf
-```
-
-默认生成 output/index.pdf；显式输出和多格式配置见[输出参考](../reference/config.mdoc#ref:config-output)。PDF 展开全部 Tabs、折叠章节和视图定义内的完整静态图，不自动合并原始 PDF 附件。浏览器打印只输出当前阅读文章。
-
-生成后核对目录、书签、长表和图形文字。不能只凭成功退出就宣称全部版面已可读；可在 HTML 中操作的接口总览也不代替完整静态图的可读性。
-
-{% /section %}
+文档只发布 HTML，不提供整本 PDF 导出。HTML 可携带原始 PDF 并定位阅读，见[原文附件](../rendering/references.mdoc#use:pdf)。浏览器自行打印只针对当前文章，不保证完整导出全部 Tab、折叠内容或其他文章。
 
 {% /section %}

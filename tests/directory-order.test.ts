@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {dirname,join} from 'node:path';
 import {resolveProjectConfig,loadProject} from '../packages/core/project.ts';
 import {loadBook,bookNavigation,projectOutline} from '../packages/core/book.ts';
-import {compileBook,bookPrintHTML} from '../packages/pack-html/book.ts';
+import {compileBook} from '../packages/pack-html/book.ts';
 import {readDocument} from '../packages/core/read.ts';
 import {targetKey} from '../packages/core/routes.ts';
 
@@ -92,13 +92,12 @@ test('字面示例不参与排序，原生变量和条件使用当前上下文�
  p.write('docs/index.mdoc',section('home','home','{% if false %}\n'+order(['missing.mdoc'])+'\n{% /if %}'));await assert.rejects(()=>p.validate(),/DIRECTORY_ORDER/);
 });
 
-test('HTML、outline 与打印共用局部顺序，read 保留声明但首页不展开其他文章',async t=>{
+test('HTML 与 outline 共用局部顺序，read 保留声明但首页不展开其他文章',async t=>{
  const p=project(t,{'docs/index.mdoc':section('home','入口',order(['z.mdoc','a.mdoc'])),'docs/a.mdoc':section('A','甲','BODY_A'),'docs/z.mdoc':section('Z','乙','BODY_Z')});
  const book=await p.load(),data=await compileBook(book),outline=projectOutline(book);
  assert.deepEqual(data.navigation.map(n=>n.label),['入口','乙','甲']);assert.deepEqual(outline.chapters.map(n=>n.label),['入口','乙','甲']);
  const home=data.pages[targetKey(book.root.config.projectId,'docs/index')];assert.ok(!home.html.includes('directory-order'));assert.ok(!home.html.includes('BODY_A'));assert.ok(!home.html.includes('BODY_Z'));
  assert.match(readDocument(book.root.graph,'home').content,/directory-order/);
- const print=await bookPrintHTML(book);assert.ok(print.indexOf('BODY_Z')<print.indexOf('BODY_A'));
 });
 
 test('子工程与父工程同名目录各自排序，局部声明不改变显式工程接入位置',async t=>{

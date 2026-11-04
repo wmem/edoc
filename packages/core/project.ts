@@ -1,6 +1,6 @@
 import {readFileSync,readdirSync,statSync,realpathSync,existsSync} from 'node:fs';
 import {resolve,dirname,basename,relative,extname} from 'node:path';
-import {loadConfigFromFile} from 'vite';
+import {bundleRequire} from 'bundle-require';
 import type {Graph,Manifest,ResourceType,RelationView,Table,Waveform,Reference} from './types.ts';
 import {graphFromResources} from './graph.ts';
 import type {ResourcePart} from './graph.ts';
@@ -19,8 +19,8 @@ import {directoryOrders} from './directory-order.ts';
 export type Dataset=Partial<Record<ResourceType,unknown[]>>&{irVersion?:string;requiredFeatures?:string[];projectId?:string;adapterVersion?:string;attachments?:Record<string,AttachmentInput>};
 export type DataContext={root:string;documents:readonly string[];references:readonly DocumentReference[]};
 export type DataSource=string|string[]|Dataset;
-export type ProjectConfig={markdoc?:MarkdocOptions;title?:string;projectId?:string;documents?:string|string[];data?:DataSource|((context:DataContext)=>DataSource|Promise<DataSource>);views?:RelationView[];tables?:Table[];waveforms?:Waveform[];references?:Reference[];output?:{html?:string|false;pdf?:string|false};chromiumExecutable?:string;compactIndex?:boolean;children?:Record<string,string>;attachments?:Record<string,AttachmentInput>};
-export type ResolvedConfig={markdoc:MarkdocOptions;file:string;root:string;title:string;projectId:string;documents:string[];data:ProjectConfig['data'];views:RelationView[];tables:Table[];waveforms:Waveform[];references:Reference[];outputs:{format:'html'|'pdf';file:string}[];chromiumExecutable?:string;compactIndex:boolean;configInputs:string[];defaultData:boolean;children:Record<string,string>;attachments:Record<string,AttachmentInput>};
+export type ProjectConfig={markdoc?:MarkdocOptions;title?:string;projectId?:string;documents?:string|string[];data?:DataSource|((context:DataContext)=>DataSource|Promise<DataSource>);views?:RelationView[];tables?:Table[];waveforms?:Waveform[];references?:Reference[];output?:{html?:string|false};children?:Record<string,string>;attachments?:Record<string,AttachmentInput>};
+export type ResolvedConfig={markdoc:MarkdocOptions;file:string;root:string;title:string;projectId:string;documents:string[];data:ProjectConfig['data'];views:RelationView[];tables:Table[];waveforms:Waveform[];references:Reference[];outputs:{format:'html';file:string}[];configInputs:string[];defaultData:boolean;children:Record<string,string>;attachments:Record<string,AttachmentInput>};
 export type LoadedProject={config:ResolvedConfig;graph:Graph;documents:DocumentPlan;inputs:string[];dataFiles:string[]};
 const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments'];
 const pointer=(key:string)=>key.replace(/~/g,'~0').replace(/\//g,'~1');
@@ -33,11 +33,15 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
  if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前项目没有 docs/edoc.config.js；可在该文件写 export default {}，或使用 --config 指定其他配置');
  requireFile(selected);const file=realpathSync(selected),root=configProjectRoot(file);
  if(!['.js','.mjs','.cjs'].includes(extname(file)))failure('CONFIG_FORMAT',file,'','配置使用 .js/.mjs/.cjs，直接导出配置内容');
- let loaded:Awaited<ReturnType<typeof loadConfigFromFile>>;
- try{loaded=await loadConfigFromFile({command:'build',mode:'production'},file,root,'silent');}catch(error){failure('CONFIG_LOAD',file,'',String(error));}
+ let loaded:{config:unknown;dependencies:string[]};
+ try{
+  const result=await bundleRequire({filepath:file,cwd:root,esbuildOptions:{logLevel:'silent'}});
+  const exported=result.mod&&Object.hasOwn(result.mod,'default')?result.mod.default:result.mod;
+  loaded={config:typeof exported==='function'?await exported({command:'build',mode:'production',isSsrBuild:false,isPreview:false}):exported,dependencies:result.dependencies};
+ }catch(error){failure('CONFIG_LOAD',file,'',String(error));}
  if(!loaded||!plain(loaded.config))failure('CONFIG_TYPE',file,'','配置须导出对象，例如 export default {}');
  const input=loaded.config as ProjectConfig;
- const allowed=['title','projectId','documents','data','views','tables','waveforms','references','output','chromiumExecutable','compactIndex','children','attachments','markdoc'];
+ const allowed=['title','projectId','documents','data','views','tables','waveforms','references','output','children','attachments','markdoc'];
  for(const key of Object.keys(input))if(!allowed.includes(key))failure('CONFIG_FIELD',file,'/'+pointer(key),`未知配置项：${key}`);
  const text=(key:'title'|'projectId',fallback:string)=>{const value=input[key]??fallback;if(typeof value!=='string'||!value.trim())failure('CONFIG_TYPE',file,'/'+key,'需要非空字符串');return value;};
  if(input.documents==null){
@@ -52,15 +56,14 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
  if(input.attachments!==undefined&&!plain(input.attachments))failure('CONFIG_TYPE',file,'/attachments','attachments 需要对象');
  const arrays={} as Record<'views'|'tables'|'waveforms'|'references',any[]>;
  for(const key of ['views','tables','waveforms','references'] as const){const value=input[key]??[];if(!Array.isArray(value))failure('CONFIG_TYPE',file,'/'+key,'需要数组');arrays[key]=value;}
- if(input.compactIndex!==undefined&&typeof input.compactIndex!=='boolean')failure('CONFIG_TYPE',file,'/compactIndex','需要布尔值');
  if(input.output!==undefined&&!plain(input.output))failure('CONFIG_TYPE',file,'/output','output 需要对象');
- for(const key of Object.keys(input.output??{}))if(!['html','pdf'].includes(key))failure('CONFIG_FIELD',file,'/output/'+pointer(key),`未知输出格式：${key}`);
+ for(const key of Object.keys(input.output??{}))if(key!=='html')failure('CONFIG_FIELD',file,'/output/'+pointer(key),`未知输出格式：${key}`);
  const outputs:ResolvedConfig['outputs']=[];
- for(const format of ['html','pdf'] as const){const value=input.output?.[format]??(format==='html'?'output/index.html':false);if(value===false)continue;if(typeof value!=='string'||!value.endsWith('.'+format))failure('CONFIG_OUTPUT',file,'/output/'+format,`需要 .${format} 输出路径或 false`);outputs.push({format,file:projectPath(root,root,value,false)});}
- if(!outputs.length)failure('CONFIG_OUTPUT',file,'/output','至少启用一种输出');
- if(input.chromiumExecutable!==undefined&&typeof input.chromiumExecutable!=='string')failure('CONFIG_TYPE',file,'/chromiumExecutable','需要可执行文件路径');
- const executable=input.chromiumExecutable?(input.chromiumExecutable.startsWith('/')||/^[A-Za-z]:/.test(input.chromiumExecutable)?input.chromiumExecutable:projectPath(root,root,input.chromiumExecutable)):undefined;
- return {file,root,markdoc:markdocOptions(input.markdoc,file),title:text('title',basename(root)||'工程文档'),projectId:text('projectId',basename(root)||'project'),documents,data:input.data??'docs/ir',...arrays,outputs,chromiumExecutable:executable,compactIndex:input.compactIndex??false,configInputs:[file,...loaded.dependencies.map(p=>resolve(root,p))],defaultData:input.data===undefined,children:input.children??{},attachments:input.attachments??{}};
+ const value=input.output?.html??'output/index.html';
+ if(value===false)failure('CONFIG_OUTPUT',file,'/output/html','需要启用 HTML 输出');
+ if(typeof value!=='string'||!value.endsWith('.html'))failure('CONFIG_OUTPUT',file,'/output/html','需要 .html 输出路径');
+ outputs.push({format:'html',file:projectPath(root,root,value,false)});
+ return {file,root,markdoc:markdocOptions(input.markdoc,file),title:text('title',basename(root)||'工程文档'),projectId:text('projectId',basename(root)||'project'),documents,data:input.data??'docs/ir',...arrays,outputs,configInputs:[file,...loaded.dependencies.map(p=>resolve(root,p))],defaultData:input.data===undefined,children:input.children??{},attachments:input.attachments??{}};
 }
 
 // 配置、文档扫描先完成，再执行数据提供函数/扫描数据目录。无需用户手写资源清单。

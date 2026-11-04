@@ -32,13 +32,13 @@ export function readJson(file: string, schema: SchemaName,compatible=false): any
   return data;
 }
 
-export function loadConfig(file: string): { irDirectory: string; projectRoot: string; projectId: string; title?:string; chromiumExecutable?:string } {
+export function loadConfig(file: string): { irDirectory: string; projectRoot: string; projectId: string; title?:string } {
   const configFile = realpathSync(resolve(file));
   const projectRoot = dirname(configFile);
   const config = readJson(configFile, 'config');
   const irDirectory = projectPath(projectRoot, projectRoot, config.irDirectory,false);
   runAdapter(projectRoot,irDirectory,config,stage=>{const graph=loadIR(stage,{projectRoot,projectId:config.projectId});if(graph.manifest.adapterVersion!==config.adapter.version)failure('ADAPTER_VERSION',file,'/adapter/version','Adapter 与 manifest 版本不一致');});
-  return { irDirectory, projectRoot, projectId: config.projectId,title:config.title,chromiumExecutable:config.chromiumExecutable?projectPath(projectRoot,projectRoot,config.chromiumExecutable):undefined };
+  return { irDirectory, projectRoot, projectId: config.projectId,title:config.title };
 }
 
 export function loadIR(irDirectory: string, options: { projectRoot?: string; projectId?: string } = {}): Graph {

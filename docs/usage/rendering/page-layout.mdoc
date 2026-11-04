@@ -20,11 +20,11 @@ columns 把相关说明并排，panel 标识各栏用途，Tabs 在同页切换�
 
 {% /section %}
 
-{% section id="use:page-layout-reading" title="网页、按需读取与打印的区别" %}
+{% section id="use:page-layout-reading" title="网页与按需读取" %}
 
 网页初始显示第一个 Tab，collapsed=true 的章节初始折叠。进入稳定章节链接时，阅读器会显示目标及其折叠上下文；浏览器返回恢复上一处阅读状态。
 
-文档 PDF 展开全部 Tabs 和折叠章节，分栏按打印样式顺序排布。浏览器打印只处理当前文章；导出整本使用 edoc build --format pdf。不要把网页隐藏的内容当作已经从 PDF 删除。
+文档发布为 HTML，保留 Tabs 和折叠交互。浏览器自行打印只处理当前文章，不保证输出隐藏内容与其他文章；工具不提供整本 PDF 导出。
 
 Agent 先读取主体，再按稳定 ID 获取细节：
 

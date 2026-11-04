@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,rmSync,writeFileSync,readFileSync,mkdirSync,existsSync} from 'node:fs';
+import {mkdtempSync,rmSync,writeFileSync,readFileSync,mkdirSync,existsSync,cpSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
@@ -17,6 +17,10 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/cli/edoc.js'));
  assert.ok(!packed.files.some((f:any)=>f.path.endsWith('.ts')),'安装包不依赖 TypeScript 源文件运行');
  const prefix=join(root,'prefix');run('npm',['install','--prefix',prefix,join(root,packed.filename),'--ignore-scripts','--omit=dev','--prefer-offline','--package-lock=false']);
+ for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite'])assert.ok(!existsSync(join(prefix,'node_modules',name)),name+' 不属于运行依赖');
+ assert.ok(!packed.files.some((f:any)=>f.path.startsWith('dist/packages/render-pdf/')));
+ assert.ok(packed.files.some((f:any)=>f.path==='dist/runtime/reader-true-true.js'));
+ assert.ok(packed.files.some((f:any)=>f.path==='dist/runtime/fonts/LICENSE'));
  const bin=join(prefix,'node_modules/.bin/edoc'),project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});
  writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'edoc.config.js'),"throw Error('不应默认读取项目根配置')");writeFileSync(join(project,'README.md'),'# 仓库介绍\n\n不进入默认正式文档。');writeFileSync(join(project,'docs/index.mdoc'),'# 安装包演示\n\n普通正文。');
  assert.match(run(bin,['--version'],project),/edoc 1/);assert.match(run(bin,['guide'],project),/edoc.config.js/);
@@ -43,4 +47,21 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  run(bin,['export','--view','overview','--format','svg','--output','output/overview.svg'],project);assert.match(readFileSync(join(project,'output/overview.svg'),'utf8'),/<svg/);
  const composed=readerFixture(undefined,join(root,'composed'));run(bin,['--config',join(composed.root,'edoc.config.js')],project);const composedHtml=readFileSync(join(composed.root,'output/index.html'),'utf8');assert.match(composedHtml,/pdfWorker/);assert.match(composedHtml,/power-input|SCHEMATIC|schematic/);assert.ok(composedHtml.includes('fpga'));
  const failure=spawnSync(bin,['query','--id','missing'],{cwd:project,encoding:'utf8'});assert.equal(failure.status,3);
+});
+
+test('Git 打包执行 prepare 后可全局安装，最终安装无需开发依赖',{timeout:240000},t=>{
+ const root=mkdtempSync(join(tmpdir(),'edoc-git-install-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
+ const source=join(root,'source'),prefix=join(root,'global');mkdirSync(source);
+ const run=(command:string,args:string[],cwd=source)=>{const r=spawnSync(command,args,{cwd,encoding:'utf8',timeout:180000});assert.equal(r.status,0,r.stderr||r.error?.message||'命令未成功退出');return r.stdout;};
+ // 使用当前工作树建立独立 Git 快照，覆盖与 git+ssh 相同的 prepare/打包流程，不提交实际仓库。
+ for(const name of ['package.json','package-lock.json','README.md','AGENTS.md','packages','docs','templates'])cpSync(join(repository,name),join(source,name),{recursive:true});
+ mkdirSync(join(source,'scripts'));cpSync(join(repository,'scripts/build-package.mjs'),join(source,'scripts/build-package.mjs'));
+ run('git',['init','--quiet']);run('git',['add','.']);run('git',['-c','user.name=edoc test','-c','user.email=edoc-test@example.invalid','commit','--quiet','-m','安装夹具']);
+ const packed=JSON.parse(run('npm',['pack','git+file://'+source,'--json','--pack-destination',root,'--prefer-offline']))[0];
+ run('npm',['install','--global','--prefix',prefix,join(root,packed.filename),'--omit=dev','--prefer-offline','--no-audit','--no-fund']);
+ const installed=join(prefix,'lib/node_modules/edoc'),bin=join(prefix,'bin/edoc');
+ for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','typescript'])assert.ok(!existsSync(join(installed,'node_modules',name)),name+' 不应留在最终全局安装中');
+ const project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'docs/index.mdoc'),'# Git 安装生成\n\n中文正文。');
+ assert.match(run(bin,['--version'],project),/edoc 1/);run(bin,[],project);assert.match(readFileSync(join(project,'output/index.html'),'utf8'),/Git 安装生成/);
+ const fixture=readerFixture(undefined,join(root,'with-pdf'));run(bin,['--config',join(fixture.root,'edoc.config.js')],project);assert.match(readFileSync(join(fixture.root,'output/index.html'),'utf8'),/pdfWorker/);
 });

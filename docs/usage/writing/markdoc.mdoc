@@ -33,7 +33,7 @@ export default {
 {% /if %}
 ```
 
-执行 edoc 后，网页和 PDF 展示同一份选择结果，目录与 read 也基于该结果。未显示章节不作为本次产物中的跳转目标；条件分支中涉及的文件和工程数据引用仍须有效。
+执行 edoc 后，网页展示本次选择结果，目录与 read 也基于该结果。未显示章节不作为本次产物中的跳转目标；条件分支中涉及的文件和工程数据引用仍须有效。
 
 {% /section %}
 
@@ -81,7 +81,7 @@ Markdoc 默认会处理代码围栏里的标签。展示标签的源写法时，
 
 {% section id="use:markdoc:source" title="需要复制时查看源码" collapsed=true %}
 
-下面展示刚才实际渲染的同一个文件，不另维护一份示例。网页按需展开，PDF 完整收录。
+下面展示刚才实际渲染的同一个文件，不另维护一份示例。网页按需展开，源文件仍可通过 read 或 code 查看。
 
 {% code file="docs/support/recipes/markdoc.mdoc" language="markdoc" /%}
 

@@ -4,7 +4,7 @@ import {rmSync,readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {resolveProjectConfig} from '../packages/core/project.ts';
 import {loadBook,bookNavigation} from '../packages/core/book.ts';
-import {compileBook,bookPrintHTML,bookHTML} from '../packages/pack-html/book.ts';
+import {compileBook,bookHTML} from '../packages/pack-html/book.ts';
 import {targetKey,routeHash,parseRoute} from '../packages/core/routes.ts';
 import {query} from '../packages/core/query.ts';
 import {readerFixture,samplePdf} from './reader-fixture.ts';
@@ -85,10 +85,10 @@ test('本工程多级文档目录保留文件夹层级，目录 index 作为分�
  const book=await load(p.root,'fpga/edoc.config.js'),navigation=bookNavigation(book),group=navigation.find(n=>n.label==='协议参考')!;
  assert.equal(group.page,'docs/protocols/index');assert.ok(group.children.some(n=>n.label==='AXI 接口'&&n.page==='docs/protocols/axi'));
 });
-test('网页左侧仅保留文档与工程，页内包装中的子工程提升保留，完整章节与打印目录不删减',async t=>{
+test('网页左侧仅保留文档与工程，页内包装中的子工程提升保留，完整章节目录不删减',async t=>{
  const p=readerFixture(t),book=await load(p.root),full=bookNavigation(book),original=JSON.stringify(full),sidebar=sidebarNavigation(full);
  const flatten=(nodes:typeof full):typeof full=>nodes.flatMap(n=>[n,...flatten(n.children)]),entries=flatten(sidebar);
- assert.equal(JSON.stringify(full),original,'网页目录投影不能修改 CLI 与打印共用的完整目录');
+ assert.equal(JSON.stringify(full),original,'网页目录投影不能修改 CLI 与页面共用的完整目录');
  assert.ok(entries.every(n=>!n.anchor));assert.ok(!entries.some(n=>['工程组成','握手','折叠参考'].includes(n.label)));
  assert.ok(flatten(full).some(n=>n.label==='折叠参考'));
  const root=sidebar.find(n=>n.project==='system'&&n.page==='docs/index')!;
@@ -98,22 +98,10 @@ test('网页左侧仅保留文档与工程，页内包装中的子工程提升�
  const protocols=fpga.children.find(n=>n.page==='docs/protocols/index')!;
  assert.ok(protocols.children.some(n=>n.page==='docs/protocols/axi'),'真实子文档仍在目录下');
  const keys=entries.filter(n=>n.page).map(n=>targetKey(n.project,n.page));assert.equal(keys.length,new Set(keys).size,'工程首页不重复显示，跨工程同名页面保留独立身份');
- const printed=await bookPrintHTML(book);assert.match(printed,/class="print-toc-entry"[^>]*>[^<]*<a[^>]*>折叠参考<\/a>/);
 });
 test('目录发现与 file include 不跨已声明子工程边界，显式 project include 才接入',async t=>{
  const p=readerFixture(t);p.write('edoc.config.js',`export default {projectId:'system',documents:'.',children:{fpga:'fpga/edoc.config.js',board:'board/edoc.config.js'}};`);
  // 发现整个父目录也不能把子工程正文当父工程页面读取。
  const book=await load(p.root);assert.deepEqual([...book.projects.keys()],['system','fpga','core','board']);assert.ok(book.root.documents.documents.every(d=>!d.file.startsWith('fpga/')&&!d.file.startsWith('board/')));
  p.write('docs/index.mdoc','{% include file="fpga/docs/index.mdoc" /%}');await assert.rejects(()=>load(p.root),/DOCUMENT_PROJECT_SCOPE/);
-});
-test('多篇打印遵循 compactIndex，保留被引用对象的有效目标，全量事实仍可查询',async t=>{
- const p=readerFixture(t);
- const config=(compactIndex:boolean)=>`export default {projectId:'system',documents:['docs/index.mdoc','docs/details.mdoc'],compactIndex:${compactIndex}};`;
- p.write('edoc.config.js',config(true));p.write('docs/index.mdoc','# 正文\n[细节](details.mdoc)\n{% reference id="shown" label="查看对象" /%}');p.write('docs/details.mdoc','# 细节\n精确说明。');
- p.write('docs/ir/facts.json',{objects:[{id:'shown',kind:'node',label:'引用对象',attributes:{payload:'FACT_JSON_SENTINEL'}},{id:'unused',kind:'node',label:'不应打印的未引用对象'}]});
- const book=await load(p.root),printed=await bookPrintHTML(book);
- assert.ok(printed.includes('引用对象'));assert.ok(!printed.includes('FACT_JSON_SENTINEL'));assert.ok(!printed.includes('不应打印的未引用对象'));
- const ids=new Set([...printed.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));for(const match of printed.matchAll(/href="#([^"]+)"/g))assert.ok(ids.has(match[1]),'PDF 内部引用目标必须存在：'+match[1]);
- assert.equal((query(book.root.graph,'shown').target.entity as any).attributes.payload,'FACT_JSON_SENTINEL');assert.ok((await bookHTML(book)).includes('FACT_JSON_SENTINEL'));
- p.write('edoc.config.js',config(false));assert.ok((await bookPrintHTML(await load(p.root))).includes('FACT_JSON_SENTINEL'),'缺省完整对象附录的语义保持');
 });

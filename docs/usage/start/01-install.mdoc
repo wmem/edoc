@@ -9,4 +9,25 @@ edoc --version
 
 需要访问该 Git 仓库的 SSH 权限。远程地址暂沿用历史路径，安装后的包名和命令名为 edoc。该命令描述安装方式，不表示当前工作树已推送或已验证你的网络环境。也可在项目中安装为依赖，通过 npx edoc 或 npm script 运行。
 
+{% section id="use:install:git-preparation" title="Git 全局安装的预构建问题" %}
+
+本轮 Node.js 24.15.0 / npm 11.12.1 环境中，直接全局安装 Git 源时，npm 将全局设置传给 Git 预构建子进程，导致依赖安装位置错误。遇到 git dep preparation failed 或预构建缺少 vite 等依赖时，使用已验证的两步流程：
+
+```sh
+npm pack git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+npm install -g ./edoc-1.0.0.tgz
+```
+
+第一步在临时目录完成源码构建，第二步全局安装生成的包；无需调整 npm 全局配置。文件名随包版本变化，以 npm pack 输出为准。不要在 Git 打包阶段禁用脚本，否则没有预编译产物。验证使用本地 Git 传输覆盖同一构建流程，SSH 权限和远程新版本仍需实际环境确认。
+
+{% /section %}
+
+{% section id="use:install:dependencies" title="安装体积与运行依赖" %}
+
+最终安装不包含 Playwright、Chromium、Vite、X6 开发包或完整字体库。前端预编译，字体只携带当前字重使用的 WOFF2 子集及许可证；生成 HTML 与 SVG 不需要本机浏览器。PDF.js 仍用于原始附件校验和内嵌阅读，仅有附件的 HTML 才加入 PDF 阅读资源。
+
+Linux x64 本轮实测运行依赖约 92 MiB，含工具、文档和预编译资源的完整安装约 108 MiB；大小随版本和平台变化。Git 预构建会临时安装开发依赖，npm 缓存与临时目录不计入上述最终安装体积。测量口径和保留依赖的原因见[安装精简验收](../../development/acceptance/html-install.mdoc)。
+
+{% /section %}
+
 {% /section %}

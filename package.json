@@ -22,7 +22,6 @@
     "test:outline": "node --test tests/outline.test.ts",
     "test:adapter": "node --test tests/adapter.test.ts",
     "test:browser": "node --test tests/browser.test.ts",
-    "test:pdf": "node --test tests/pdf.test.ts",
     "test:quality": "node --test tests/quality.test.ts",
     "demo": "node scripts/demo.ts",
     "demo:build": "node scripts/demo.ts --build",
@@ -36,26 +35,27 @@
     "test:reader-browser": "node --test tests/reader-browser.test.ts",
     "docs:build": "node packages/cli/edoc.ts",
     "docs:dev": "node scripts/docs.ts",
-    "docs:pdf": "node packages/cli/edoc.ts build --format pdf",
     "test:read": "node --test tests/read.test.ts",
     "test:manual": "node --test tests/manual.test.ts tests/manual-capabilities.test.ts",
     "test:manual-browser": "node --test tests/manual-browser.test.ts tests/manual-capabilities-browser.test.ts"
   },
   "dependencies": {
-    "@antv/x6": "3.1.8",
-    "@fontsource/noto-sans-sc": "5.3.1",
     "@markdoc/markdoc": "0.5.11",
     "ajv": "8.20.0",
+    "bundle-require": "5.1.0",
     "elkjs": "0.12.1",
+    "esbuild": "0.28.2",
     "pdfjs-dist": "6.4.299",
-    "playwright": "1.64.1",
-    "tslib": "2.9.1",
-    "vite": "8.3.5",
     "wavedrom": "3.8.0"
   },
   "devDependencies": {
+    "@antv/x6": "3.1.8",
+    "@fontsource/noto-sans-sc": "5.3.1",
     "@types/node": "26.6.6",
-    "typescript": "7.0.2"
+    "playwright": "1.64.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "tslib": "2.9.1"
   },
   "files": [
     "dist",

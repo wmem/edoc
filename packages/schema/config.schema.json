@@ -46,9 +46,6 @@
         "inputs"
       ],
       "additionalProperties": false
-    },
-    "chromiumExecutable": {
-      "$ref": "common.schema.json#/$defs/path"
     }
   },
   "required": [

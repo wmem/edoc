@@ -4,7 +4,7 @@
 
 {% section id="dev:extensions:contract" title="先写清契约" %}
 
-每种扩展说明：解决什么问题、不负责什么、接受哪些资源类型、属性与默认值、数据来源、空输入与错误行为、交互和 HTML/SVG/PDF 输出，以及 read/query 如何找到对应事实。正文标签负责选择与展示，精确事实由数据契约唯一维护。
+每种扩展说明：解决什么问题、不负责什么、接受哪些资源类型、属性与默认值、数据来源、空输入与错误行为、交互和 HTML/SVG 输出与 PDF 附件阅读，以及 read/query 如何找到对应事实。正文标签负责选择与展示，精确事实由数据契约唯一维护。
 
 2026-11-04 用户批准直接收敛名称、不保留历史兼容：diagram 改为 relation-diagram；interface 改为 interface-table，取消引用视图画图的分支。旧用法必须迁移。RelationView 取代原 TypeScript View 名称，数据字段 views 和 query 的 view 类型仍明确归属于关系图；它们不是未来扩展的通用视图。
 

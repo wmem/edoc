@@ -13,7 +13,7 @@ docs/edoc.config.js 直接导出配置对象。在项目目录执行命令，未
 | views、tables、waveforms、references | 配置内联资源 | ref:config-resources |
 | children | 显式组合子工程 | ref:config-children |
 | attachments | PDF 原始附件 | ref:pdf |
-| output、chromiumExecutable、compactIndex | 输出与打印 | ref:config-output |
+| output | HTML 输出 | ref:config-output |
 
 {% section id="ref:edoc-migration" title="已有工程的名称迁移" %}
 
@@ -94,13 +94,11 @@ views 仅引用已有对象和关系；tables 可从对象投影；waveforms 保
 
 {% /section %}
 
-{% section id="ref:config-output" title="output、Chromium 与 compactIndex" %}
+{% section id="ref:config-output" title="HTML 输出路径" %}
 
-output 默认 {html: 'output/index.html', pdf: false}。html/pdf 可写相对根的输出路径或 false，至少启用一种。CLI --output 相对当前执行目录。输出不得覆盖已知输入或其他输出；生成失败会记录失败状态，不能将旧产物解释为新成功。
+output 默认 {html: 'output/index.html'}，可指定相对工程根的 .html 输出路径。唯一发布格式是 HTML；output.html 为 false 导致没有可用输出时明确报错。CLI --output 相对当前执行目录。输出不得覆盖已知输入或其他输出；生成失败会记录失败状态，不能将旧产物解释为新成功。
 
-chromiumExecutable 指定已有 Chromium，或使用 EDOC_CHROMIUM。只有导出文档 PDF 需要；内嵌 PDF 阅读不需要。工具不会自动下载浏览器。
-
-compactIndex 默认 false，控制文档 PDF 的对象附录。单文档和多篇/组合打印均遵循各工程的设置：true 时不展开全量机器 JSON，多篇打印只为正文直接引用的对象保留简短身份与来源，内部链接仍可达；精确事实保留在正文投影表、HTML 对象详情和 query 中。HTML 按页阅读器始终按需显示详情。
+整本文档 PDF 导出已移除；output.pdf、chromiumExecutable、compactIndex 不再是配置字段，出现时明确报错。HTML 的对象详情按需显示，精确事实仍可通过 query 查询。原始 PDF 附件使用 attachments，与输出格式独立。
 
 {% /section %}
 {% /section %}

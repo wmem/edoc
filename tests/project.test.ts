@@ -22,6 +22,28 @@ function project(t:{after:(fn:()=>void)=>void},source='export default {};'){
 const facts={objects:[{id:'a',kind:'node',label:'A'},{id:'b',kind:'node',label:'B'}],relations:[{id:'ab',kind:'connection',class:'data',label:'数据流',endpoints:['a','b']}]};
 const view={id:'v',kind:'architecture',include:{objects:['a','b'],relations:['ab']}};
 const cli=(root:string,args:string[]=[])=>spawnSync(process.execPath,[join(repository,'packages/cli/edoc.ts'),...args],{cwd:root,encoding:'utf8',timeout:20000});
+test('轻量配置加载保留导入来源、函数上下文、重新读取和输入保护',async t=>{
+ const p=project(t),module=join(p.root,'docs/local/source.mjs');
+ p.write('docs/local/source.mjs',"import {fileURLToPath} from 'node:url'; export const file=fileURLToPath(import.meta.url); export const revision='first';");
+ p.write('docs/edoc.config.js',"import {file,revision} from './local/source.mjs'; export default env=>({title:env.command+':'+env.mode+':'+revision, data:{objects:[{id:'source',kind:'node',label:file}]}});");
+ const first=await p.load();assert.equal(first.config.title,'build:production:first');assert.equal(first.graph.index.get('source')!.entity.label,module);assert.ok(first.config.configInputs.includes(module));
+ assert.throws(()=>protectOutputs([{file:module}],first.inputs),/OUTPUT_SOURCE/);
+ p.write('docs/local/source.mjs',"export const file='second'; export const revision='second';");assert.equal((await p.load()).config.title,'build:production:second');
+ assert.ok(!readdirSync(join(p.root,'docs')).some(file=>file.includes('.bundled_')),'临时配置不遗留在源目录');
+});
+test('无效默认配置导出保持类型诊断',async t=>{
+ const p=project(t);for(const value of ['null','undefined','1','[]']){p.write('docs/edoc.config.js','export default '+value);await assert.rejects(()=>p.config(),/CONFIG_TYPE/);}
+});
+test('发布仅支持 HTML，旧 PDF 命令和配置明确失败且不改写已有文件',async t=>{
+ const p=project(t);p.write('kept.pdf','原始附件');
+ for(const args of [['build','--format','pdf'],['build','--output','kept.pdf']]){
+  const result=cli(p.root,args);assert.equal(result.status,2,result.stderr);
+  assert.equal(readFileSync(join(p.root,'kept.pdf'),'utf8'),'原始附件');
+ }
+ for(const config of [{output:{pdf:'manual.pdf'}},{chromiumExecutable:'/bin/browser'},{compactIndex:true}]){
+  p.write('docs/edoc.config.js','export default '+JSON.stringify(config));await assert.rejects(()=>p.config(),/CONFIG_FIELD/);
+ }
+});
 test('空 JS 配置支持纯正文，无 docs/ir/manifest/额外清单，默认值可直接构建',async t=>{
  const p=project(t),config=await p.config();assert.equal(config.file,join(p.root,'docs/edoc.config.js'));assert.equal(config.root,p.root);assert.equal(config.data,'docs/ir');assert.equal(config.title,p.root.split('/').at(-1));assert.deepEqual(config.documents,['docs/index.mdoc','docs']);assert.equal(config.outputs[0].file,join(p.root,'output/index.html'));assert.equal(config.outputs.length,1);
  const loaded=await p.load();assert.equal(loaded.dataFiles.length,0);assert.equal(loaded.graph.connections.size,0);assert.equal(existsSync(join(p.root,'manifest.json')),false);

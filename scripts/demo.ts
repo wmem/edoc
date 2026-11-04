@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-// 演示只编排现有数据与 Markdoc；HTML、SVG、PDF 均由正式渲染链路产生。
+// 演示只编排现有数据与 Markdoc；HTML、SVG 均由正式渲染链路产生。
 import {readFileSync,writeFileSync,mkdirSync,renameSync,rmSync,existsSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {dirname,join,resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadConfig,loadIR} from '../packages/core/index.ts';
 import {html} from '../packages/pack-html/index.ts';
-import {pdf} from '../packages/render-pdf/index.ts';
 import {scene,svg} from '../packages/render-graph/index.ts';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
@@ -52,16 +51,13 @@ try{writeFileSync(pending,await html(graph,'edoc · 图形能力 Demo',{compactI
 console.log('已生成 '+target);
 const exports:Record<string,string>={'wiring.svg':'board:flash-wiring','architecture.svg':'mac:overview','states.svg':'mac:tx-state','layout.svg':'gallery:layout-TB','architecture-intent.svg':'gallery:architecture-intent','wiring-intent.svg':'gallery:wiring-intent'};
 for(const [file,id]of Object.entries(exports))writeFileSync(join(output,file),svg(await scene(graph,id)));
-const print=join(output,'demo.pdf');
-{
- const candidates=[process.env.EDOC_CHROMIUM,process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,process.env.HOME?join(process.env.HOME,'work/software/playwright-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell'):undefined];
- const executable=candidates.find(p=>p&&existsSync(p));
- json(join(output,'playwright.config.json'),{browser:{browserName:'chromium',launchOptions:{headless:true,...(executable?{executablePath:executable}:{}),args:['--no-sandbox']}}});
- try{await pdf(target,print+'.pending',executable);renameSync(print+'.pending',print);console.log('已生成 '+print);}catch(error){rmSync(print,{force:true});throw error;}finally{rmSync(print+'.pending',{force:true});}
-}
+// 开发浏览器验证的配置与 HTML/SVG 构建分开，不启动或下载浏览器。
+const candidates=[process.env.EDOC_CHROMIUM,process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,process.env.HOME?join(process.env.HOME,'work/software/playwright-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell'):undefined];
+const executable=candidates.find(p=>p&&existsSync(p));
+json(join(output,'playwright.config.json'),{browser:{browserName:'chromium',launchOptions:{headless:true,...(executable?{executablePath:executable}:{}),args:['--no-sandbox']}}});
 if(!buildOnly){
  const port=Number(process.env.DEMO_PORT??5174);if(!Number.isInteger(port)||port<1||port>65535)throw new Error('DEMO_PORT 范围 1–65535');
- const allowed:Record<string,[string,string]>={'/':[target,'text/html; charset=utf-8'],'/demo.html':[target,'text/html; charset=utf-8'],'/demo.pdf':[print,'application/pdf'],...Object.fromEntries(Object.keys(exports).map(file=>['/'+file,[join(output,file),'image/svg+xml']]))};
+ const allowed:Record<string,[string,string]>={'/':[target,'text/html; charset=utf-8'],'/demo.html':[target,'text/html; charset=utf-8'],...Object.fromEntries(Object.keys(exports).map(file=>['/'+file,[join(output,file),'image/svg+xml']]))};
  const server=createServer((request,response)=>{
   const path=new URL(request.url??'/','http://localhost').pathname;
   if(path==='/favicon.ico'){response.writeHead(204);response.end();return;}

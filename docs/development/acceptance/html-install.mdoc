@@ -1,0 +1,47 @@
+{% section id="acceptance:html-install" title="HTML 发布与安装精简" %}
+
+2026-11-04，用户明确批准移除整本文档 PDF 导出。原始 PDF 附件阅读、稳定位置引用、下载与浏览器历史、内联波形 SVG 和关系图 SVG 导出继续保留。该决定替代原 V1 的整本 PDF 交付要求，原始需求快照及旧 PDF 验收保留历史身份。
+
+{% section id="acceptance:html-install:changes" title="实现与依赖取舍" %}
+
+- 删除 render-pdf、整本打印打包器、build --format pdf、docs:pdf 与 PDF 导出专用测试。output.pdf、chromiumExecutable 和项目 compactIndex 字段明确报错，不再静默保留无效配置。
+- 安装前生成六种阅读/图形脚本，生产生成过程读取预编译资源；源码开发仍按需编译前端。X6、Vite、Playwright 和 tslib 留在开发依赖。
+- Fontsource 留在开发依赖，包中只保留 400 字重的 101 个 WOFF2 子集、对应 CSS 和许可证。文档及模板不再同时整份复制到 dist，CLI guide 保留同源入口。
+- 浏览器下载 SVG 改为读取明确标识的文档样式块，避免 X6 插入样式后误取首个 style、漏掉内嵌字体；普通图与接口图的当前/完整 SVG 均补充字体回归，三项相关浏览器测试通过。
+- JS 配置加载改用 bundle-require 与 esbuild，保留 .js/.mjs/.cjs、相对导入、导入模块的来源路径、依赖追踪和输出保护。已有配置功能未因安装精简而收窄。
+
+PDF.js 和其 Node 原生画布依赖仍用于构建时检查页数与命名目标；阅读器、worker、CMap、字体和解码资源仅在 HTML 携带附件时内嵌。当前没有为了减体积而移除损坏 PDF、页号或命名目标的检查，也没有裁剪第三方已安装包的目录。
+
+{% /section %}
+
+{% section id="acceptance:html-install:size" title="实际安装体积" %}
+
+在 Linux x64、Node.js 24.15.0、npm 11.12.1 下，打包当前工作树并安装到独立全局 prefix。按普通文件字节累加，不将 npm 缓存、临时构建目录、浏览器或文件系统分配块计入。旧依赖清单来自 b8db515 审查阶段，使用同一环境与口径重算。
+
+| 项目 | 结果 |
+| --- | --- |
+| 精简前运行依赖 | 245.93 MiB |
+| 精简后运行依赖 | 92.34 MiB，减少约 62% |
+| 完整全局安装，含工具和资源 | 约 108 MiB |
+| npm 压缩包 / 包内文件展开 | 约 7.75 MiB / 15.7 MiB，不含第三方安装依赖 |
+
+预编译脚本使自有压缩包从约 5.41 MiB 增至 7.75 MiB，换取最终安装不携带浏览器开发库和完整字体库。剩余大头为 PDF.js 及其画布依赖约 68.6 MiB、esbuild 平台程序约 10.9 MiB、ELK 约 7.8 MiB；进一步缩小需另评估 PDF 校验/渲染与配置加载方案，不能直接删除这些依赖。
+
+这是当前版本与平台的一次测量，不承诺所有系统相同；安装源码时 npm prepare 会临时安装开发依赖，下载和缓存体积与最终全局安装体积不同。
+
+{% /section %}
+
+{% section id="acceptance:html-install:verification" title="验证与已知安装限制" %}
+
+类型检查，以及配置/CLI、文档目录、Markdoc、查询、附件与阅读相关回归通过。安装回归实际打包当前工作树，在无开发依赖的安装目录执行 edoc、guide、read、query、HTML 与 SVG；检查包内预编译脚本、字体许可及已移除的 PDF 运行时。
+
+Git 回归用临时独立 Git 快照执行 npm pack，再全局安装生成的 tarball，验证 prepare、全局 bin、中文正文、组合文档和 PDF 附件。没有提交实际仓库，也没有推送新版本或验证远程 SSH 凭据。
+
+当前 npm 11.12.1 的直接 Git 全局安装失败：外层 global/prefix 设置进入 Git 预构建的 npm 子进程，日志表明其将依赖装到全局目录，预构建在 Git 临时目录找不到 vite。采用“先 npm pack Git 源，再 npm install -g tarball”的实测流程绕开该问题，详见[安装说明](../../usage/start/01-install.mdoc#use:install:git-preparation)。不把两步流程的通过写成单条 Git 全局安装已通过，也不修改用户全局 npm 配置。
+
+阅读器及手册的六项浏览器回归通过，覆盖离线阅读、目录、接口操作、PDF 区域/命名目标、下载和历史恢复。另使用 playwright-cli 与已有 Chromium 检查实际安装包生成的手册，验证离线接口展开、内联波形、SVG 下载、PDF 实际绘制与返回；观察文字和连线，不以文件存在代替浏览效果。
+
+本轮产物与测量位于 .edoc-build/html-install；它们不作为源码或运行依赖。未验证 Windows/macOS 的安装体积和远程 git+ssh 连接。
+
+{% /section %}
+{% /section %}

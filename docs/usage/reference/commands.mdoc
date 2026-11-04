@@ -7,11 +7,11 @@
 ```sh
 edoc
 edoc build --format html --output output/manual.html
-edoc build --format pdf --output output/manual.pdf
+edoc build --format html --output output/manual.html
 edoc validate --format json
 ```
 
-无参数按配置输出；指定 html/pdf 时选择对应输出。PDF 需要已有 Chromium。validate 检查正文、数据、引用和附件，返回当前参与工程；只有 build/export 才能发现的尺寸或布局问题仍可能在后续报错。
+无参数按配置生成 HTML；build --format 只接受 html，--output 只接受 .html。整本 PDF 导出不再提供。validate 检查正文、数据、引用和附件，返回当前参与工程；只有 build/export 才能发现的尺寸或布局问题仍可能在后续报错。
 
 {% /section %}
 

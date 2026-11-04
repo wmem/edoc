@@ -17,13 +17,14 @@
 | packages/render-graph | Scene、接口投影、布局、布线和 SVG |
 | packages/doc-theme | 正文呈现、当前页交互、PDF 阅读器 |
 | packages/pack-html | 单 HTML、离线载荷、字体与许可证 |
-| packages/render-pdf | 已有 Chromium 输出静态文档 |
 | packages/extensions | 关系图、数据表、波形与正文的类型、标签和数据契约；见[扩展维护](extensions.mdoc) |
 | packages/schema | 来源、配置、内部清单和语义引用等共用结构 |
 
-正文先使用原生 Markdoc 机制获得本次上下文的节点投影；条件和 partial 使用原生实现。未显示分支仍检查文件与工程引用，实际选择的章节建立目录和查询身份。异步文本/Schema 校验完成后再建索引，HTML/PDF 等待异步转换；字面围栏明确 process=false。通用呈现保留原生有效属性，工程数据表使用独立 data-table，不覆盖原生 table。精确契约见[原生语法参考](../usage/reference/markdoc-native.mdoc)。
+正文先使用原生 Markdoc 机制获得本次上下文的节点投影；条件和 partial 使用原生实现。未显示分支仍检查文件与工程引用，实际选择的章节建立目录和查询身份。异步文本/Schema 校验完成后再建索引，HTML 等待异步转换；字面围栏明确 process=false。通用呈现保留原生有效属性，工程数据表使用独立 data-table，不覆盖原生 table。精确契约见[原生语法参考](../usage/reference/markdoc-native.mdoc)。
 
 CLI 的 validate/read/query 复用加载与校验，但不调用图形布局。阅读器只创建当前文章 DOM，其余正文保留在离线载荷中，不应将“按篇”解释为文件体积不增长。
+
+安装包预编译浏览器脚本并携带字体子集和许可证；生产运行无需 X6/Vite/Playwright 开发包。配置加载独立使用 bundle-require/esbuild，附件校验仍使用 PDF.js。构建、安装与体积的实测范围见[安装精简验收](acceptance/html-install.mdoc)。
 
 {% /section %}
 

@@ -5,7 +5,7 @@
     {"id":"tool:core","kind":"node","label":"扫描、数据、校验与索引"},
     {"id":"tool:query","kind":"node","label":"outline / read / query"},
     {"id":"tool:render","kind":"node","label":"图表与文档渲染"},
-    {"id":"tool:html","kind":"node","label":"离线 HTML / 文档 PDF"}
+    {"id":"tool:html","kind":"node","label":"离线 HTML"}
   ],
   "relations": [
     {"id":"tool:input-data","kind":"connection","class":"data","label":"data 转换为标准数据","endpoints":["tool:sources","tool:core"],"direction":{"sources":["tool:sources"],"targets":["tool:core"]}},

@@ -1,0 +1,71 @@
+{% section id="review:documentation-pdf" title="文档现状与 PDF 导出评估" %}
+
+2026-11-04，审查基线为 b8db515。用户要求评估当前文档是否过时，以及今后是否只提供 HTML 文档导出。以下评估保留审查时的证据与结论。用户随后于同日明确批准移除整本文档 PDF 导出；当前契约已改为 HTML 发布，PDF 附件与 SVG 保留。
+
+结论：当前使用文档大部分与实现一致，文档 PDF 导出仍可运行，Tabs 也能转为静态内容。主要问题是 PDF 的可读性、交互丢失、已知缺陷的入口说明和持续维护成本；不应把“成功导出”当成“与 HTML 同等完整可用”。
+
+建议整本文档以 HTML 为正式交付格式，单张关系图 SVG 与 HTML 内原始 PDF 附件继续保留。移除已获得明确批准，实现、需求、使用契约与测试一并更新；本页旧版 PDF 数据仅用于解释取舍，不代表当前仍有该命令。
+
+{% section id="review:documentation-pdf:evidence" title="当前能力与实际证据" %}
+
+以下数字限定于 b8db515 的手册，不包含本审查记录。后续增加文档或更换 Chromium 后，页数和分页位置可能变化。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 构建 | 使用已有 Chromium，CLI 整本 PDF 导出成功 |
+| 范围 | 3 个组合工程、107 篇阅读页；源正文实际包含 18 个 Tab 面板和 6 个初始折叠 section |
+| 产物 | A4 横向，409 页，约 7.6 MiB；489 个书签、1035 个链接注释 |
+| Tabs | 打印 DOM 中 18 个面板均可见；第 55、56 页分别保留“使用步骤”和“查询入口”；第 320、321 页分别保留 TX、RX 正文、图与信号表 |
+| 折叠 | 初始折叠的详细参考进入第 56 页；导出器会展开 details |
+| 书签 | 检查的目的页均有效，但有 10 个标题被拼接两次 |
+| 图形 | 40 个关系图实例进入打印 DOM；打印样式预检中，24 个实例的文字字号中位数估算低于 8pt；多接口图约 3pt |
+| HTML 专有跳转 | 打印转换中有 4 个链接失去 href：3 个 PDF 附件位置入口和 1 个未包含工程的弱跳转 |
+
+字号估算使用约等于 A4 横向内容宽度的打印媒体布局及 SVG 变换矩阵；8pt 只是本轮审查筛选值，不是新增的工程验收门槛。实际目视检查了 PDF 第 55、56、78、79、154、320、321 页，确认多接口图和信号详图在正常纸面尺寸下文字过小。未据此断言所有图都不可读，也未逐页审阅全书。
+
+Tabs 的切换交互不会保留在 PDF，内容转为顺序展开的静态区块；分栏也会按打印样式重新排列。这是当前实现的设计行为，不是 Tabs 无法导出。
+
+对应实现：packages/render-pdf/index.ts 展开 Tab/details 并调用 Chromium；packages/pack-html/book.ts 按统一目录生成打印文档并转换跳转；packages/doc-theme/style.css 约束静态图高度与 Tab 打印布局。原附件仍在 HTML 中由 PDF.js 阅读，文档 PDF 没有合并它们。
+
+{% /section %}
+
+{% section id="review:documentation-pdf:findings" title="文档需要更新的地方" %}
+
+| 优先级 | 范围 | 问题与建议 |
+| --- | --- | --- |
+| P1 | [发布教程](../../usage/publishing/output.mdoc#use:publish)、[关系图契约](../../usage/reference/tags/relation-diagram.mdoc) | “完整静态图”需要区分内容范围与纸面可读性；当前大图明显过小，已知限制尚未在主要使用入口具体说明 |
+| P1 | [输出参考](../../usage/reference/config.mdoc#ref:config-output)、[错误与限制](../../usage/reference/errors.mdoc#ref:limits) | PDF 的标题重复此前已记录在开发验收，当前仍复现，正式使用入口不易发现；如继续支持导出，应明确列为待修缺陷 |
+| P2 | [页面编排](../../usage/rendering/page-layout.mdoc#use:page-layout-reading)、[正文标签](../../usage/reference/markdoc.mdoc#ref:markdoc-fold-tabs) | 展开 Tabs 的描述是正确的；建议更明确地写成静态顺序内容，避免被理解为保留切换能力 |
+| P2 | [单图导出](../../usage/publishing/output.mdoc#use:publish:svg) | “逐图 SVG 按钮”的范围容易误读，应明确为关系图；波形虽然生成内联 SVG，当前没有对应下载按钮 |
+| P2 | [Agent 规则](../agent-rules.mdoc)、[需求基线](../design/requirements.mdoc) | 指向 Markdoc 的“待实施契约冲突”等阶段措辞未清理，容易把已接入能力当成未完成；应分别链接当前验收与真实限制，不宣称任意第三方扩展都已兼容 |
+
+CLI、默认 docs 入口、directory-order、标签类型边界、配置与资源发现、read/query 以及明确列出的未实现功能，未发现足以判定大范围过时的证据。当前构建检查覆盖本地文章和锚点；字段与同源配方测试通过，但这些不能替代真实版面检查。
+
+PDF 附件不合并的说明已经存在，因此附件跳转在静态输出中丢失属于已知能力边界，不把它伪装成新发现的文档事实错误。若产品目标要求源原理图可定位核对，HTML 仍然承载这条阅读链路。
+
+{% /section %}
+
+{% section id="review:documentation-pdf:decision" title="后续发布格式的取舍" %}
+
+| 选择 | 收益与代价 |
+| --- | --- |
+| HTML 与 PDF 继续作为并列正式产物 | 满足固定版归档和纸面阅读；每种新扩展都需要静态降级、分页、字号、链接及书签验收，当前还需修复已发现问题 |
+| HTML 正式交付，PDF 仅作辅助导出 | 保留现有用途，但仍存在维护和用户误解成本，必须明确辅助输出的限制 |
+| 整本文档只交付 HTML | 保持交互与渐进阅读，减少打印链路维护；不再提供工具管理的整本 PDF 归档与纸面排版 |
+
+本项目以低噪声源数据、可查询知识、交互图与原理图核对为主要目标，结合用户本次提出的方向，建议选择整本文档只交付 HTML。理由是产品目标与维护投入，不是 PDF 格式无法承载文字或 Tabs 内容。审查时原先生成网页和 PDF 的要求仍然有效；用户随后批准只发布 HTML，当前不再承诺整本 PDF 排版。
+
+当时提出、现已批准的变更：原要求是 HTML/PDF 同源发布并对静态内容验收，拟改为仅承诺 HTML 整本文档发布。影响范围包括 PDF 构建命令、output.pdf、构建用 Chromium 设置、打印打包器、使用文档与测试。需求基线也必须同步，历史证据保留阶段身份。
+
+单张关系图 SVG 导出与原理图 PDF 附件阅读不在撤销范围；PDF.js、位置引用和浏览器前进/返回继续保留。开发者仍需要已有 Chromium 做浏览器验证，不应把停止 PDF 发布解释为不再验证网页。
+
+{% /section %}
+
+{% section id="review:documentation-pdf:verification" title="审查方法与边界" %}
+
+在基线提交下设置已有 EDOC_CHROMIUM，运行 node packages/cli/edoc.ts build --format pdf。读取当前正文、渲染和打印实现，用 pypdf 检查书签、文本和链接，使用 pdftoppm 栅格化选定页面并目视检查；另用 playwright-cli 在打印媒体下检查实际 DOM、全部 Tab、静态图字号与退化的跳转。
+
+本轮缓存位于 .edoc-build/doc-pdf-audit，包含原产物、打印 HTML、源条目基线、结构检查和截图，不作为仓库运行依赖。正式结论、对应提交、观察范围和取舍保存在本页；没有将历史验收数量当作本轮测试。
+
+{% /section %}
+{% /section %}

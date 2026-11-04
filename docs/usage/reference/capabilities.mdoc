@@ -54,7 +54,7 @@
 | 分篇、目录分组与页内定位 | [组织文档](../writing/documents.mdoc#use:pages) | [documents](config.mdoc#ref:config-documents) | [当前文档树](../writing/documents.mdoc#use:pages) |
 | index 本层顺序与未列项追加 | [本层排序](../writing/documents.mdoc#use:directory-order) | [directory-order](tags/directory-order.mdoc#ref:tag-directory-order) | [创建示例](../writing/documents.mdoc#use:directory-order) |
 | 分栏与面板 | [页面编排](../rendering/page-layout.mdoc#use:page-layout-create) | [columns/panel](markdoc.mdoc#ref:markdoc-structure) | [完整正文](../rendering/page-layout.mdoc#use:page-layout-live) |
-| Tabs、初始折叠与稳定章节 | [网页与打印](../rendering/page-layout.mdoc#use:page-layout-reading) | [规则](markdoc.mdoc#ref:markdoc-fold-tabs) | [可操作正文](../rendering/page-layout.mdoc#use:page-layout-live) |
+| Tabs、初始折叠与稳定章节 | [网页与按需读取](../rendering/page-layout.mdoc#use:page-layout-reading) | [规则](markdoc.mdoc#ref:markdoc-fold-tabs) | [可操作正文](../rendering/page-layout.mdoc#use:page-layout-live) |
 | 目录批量控制、搜索与返回 | [导航](../writing/documents.mdoc#use:pages) | [阅读控制](markdoc.mdoc#ref:reading-controls) | [两侧导航](../writing/documents.mdoc#use:pages) |
 | file 片段、源码内联与图片 | [片段](../writing/documents.mdoc#use:sections) | [标签与链接](markdoc.mdoc#ref:markdoc-links) | [同源正文和代码](../rendering/page-layout.mdoc#use:page-layout-live) |
 
@@ -67,7 +67,7 @@
 - [真实子工程入口](../engineering/composition.mdoc#use:composition)与[children](config.mdoc#ref:config-children)：组合和独立发布；跨工程弱跳转不读取外部源。
 - [PDF 原文实例](../rendering/references.mdoc#use:pdf)与[PDF 参考](pdf.mdoc)：携带原字节，跳到物理页、区域或命名目标，并返回正文。
 - [正文和事实查询](../engineering/query.mdoc)与[命令](commands.mdoc)：outline/read/query、显式范围和来源；SVG 导出也有独立命令。
-- [离线发布](../publishing/output.mdoc#use:publish)与[输出参考](config.mdoc#ref:config-output)：单 HTML、整本静态 PDF、compactIndex；PDF 需要已有 Chromium。
+- [离线发布](../publishing/output.mdoc#use:publish)与[输出参考](config.mdoc#ref:config-output)：单 HTML 和单图 SVG；保留 PDF 附件，生成文档无需 Chromium。
 
 {% /section %}
 

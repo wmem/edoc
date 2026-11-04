@@ -15,6 +15,7 @@ test('离线双实例接口展开、连线、查询、筛选、当前/完整 SVG
  await page.goto(pathToFileURL(file).href);
  const run=runInNewContext('('+readFileSync(join(repository,'examples/gallery/interfaces.playwright.js'),'utf8')+')');const result=await run(page,{output});assert.equal(result.expandedRelations,17);assert.equal(result.singleEnd,true);assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
  const current=readFileSync(join(output,'interfaces-current.svg'),'utf8'),full=readFileSync(join(output,'interfaces-signals.svg'),'utf8');assert.equal((current.match(/data-bundle="true"/g)??[]).length,2);assert.ok(!full.includes('data-bundle="true"'));assert.equal((full.match(/data-relation="/g)??[]).length,17);assert.ok(current.includes('ifdemo:net.ctrl_awvalid'));assert.ok(full.includes('ifdemo:engine.ctrl_optional'));
+ for(const content of [current,full])assert.match(content,/data:font\/woff2;base64,/,'独立 SVG 必须携带文档字体，不误取 X6 动态样式');
 });
 
 test('首次搜索折叠章节内未初始化的接口信号，可显式定位并只展开所属接口',{timeout:40000},async t=>{

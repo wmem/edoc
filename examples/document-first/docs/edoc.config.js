@@ -2,7 +2,7 @@ export default {
   projectId: 'document-first-demo',
   title: '文档先行 · 虚构连接演示',
   documents: 'docs/index.mdoc',
-  output: { html: 'output/manual.html', pdf: 'output/manual.pdf' },
+  output: { html: 'output/manual.html' },
   views: [{
     id: 'demo:overview', kind: 'wiring', label: '处理模块与存储模块（虚构）',
     include: { objects: ['demo:engine', 'demo:memory'], relations: ['demo:data', 'demo:valid'] },

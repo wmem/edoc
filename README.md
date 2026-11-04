@@ -29,7 +29,7 @@ npm run docs:dev
 
 访问 http://127.0.0.1:5175/ 。修改后重新构建并刷新；当前没有公开托管的文档地址。
 
-本仓库图示复用原样例转换器，需要已有 Python 3，优先通过 uv 调用。导出静态 PDF 可运行 npm run docs:pdf，需要已有 Chromium，通过 EDOC_CHROMIUM 或配置指定；不会自动安装 Python 或浏览器。
+本仓库图示复用原样例转换器，需要已有 Python 3，优先通过 uv 调用。文档只导出 HTML，保留原始 PDF 附件的内嵌阅读和定位、单图 SVG 导出；构建文档无需浏览器。
 
 ## 使用与维护入口
 
@@ -38,4 +38,4 @@ npm run docs:dev
 - [开发文档](docs/development/index.mdoc)：实现、构建与验证、设计依据。
 - [Agent 维护入口](AGENTS.md)和[文档组织简略指南](docs/usage/engineering/agent-guide.mdoc)：维护规则、理解路线与按需查询。
 
-修改工具后按[开发与验证](docs/development/contributing.mdoc)选择相关检查，先确认类型与行为，再检查网页和 PDF 的实际阅读效果。
+修改工具后按[开发与验证](docs/development/contributing.mdoc)选择相关检查，先确认类型与行为，再检查网页、SVG 和 PDF 附件的实际阅读效果。
