@@ -26,6 +26,7 @@ export function prepareOutline(graph:Graph){
  for(const {file,ast,locations} of documents){
   type Scope={section?:OutlineEntry;rawBase:number;headings:OutlineEntry[]};
   const add=(node:any,label:string,id:string,kind:OutlineEntry['kind'],level:number,parent?:OutlineEntry)=>{
+   const namespace=node.attributes.__edocNamespace??'';id=namespace+id;
    const entry:OutlineEntry={id,label,kind,level,depth:parent?parent.depth+1:0,
     ...(parent?{parentId:parent.id}:{}),source:locations.get(node)??{file,line:1},children:[]};
    (parent?parent.children:roots).push(entry);flat.push(entry);entries.set(node,entry);
@@ -33,7 +34,7 @@ export function prepareOutline(graph:Graph){
    node.attributes.__edocOutlineId=id;return entry;
   };
   const walk=(node:any,scope:Scope)=>{
-   if(node.type==='tag'&&node.tag==='section'){
+   if(node.type==='tag'&&['section','specification'].includes(node.tag)){
     const entry=add(node,node.attributes.title??node.attributes.id,anchor(node.attributes.id),'section',(scope.section?.level??0)+1,scope.section);
     entry.sectionId=node.attributes.id;
     entry.collapsed=node.attributes.collapsed===true;
@@ -44,7 +45,7 @@ export function prepareOutline(graph:Graph){
     const level=scope.section?scope.section.level+1+node.attributes.level-scope.rawBase:node.attributes.level;
     while(scope.headings.length&&scope.headings.at(-1)!.level>=level)scope.headings.pop();
     const parent=scope.headings.at(-1)??scope.section;
-    scope.headings.push(add(node,text(node).trim(),(()=>{if(typeof node.attributes.id==='string')return node.attributes.id;const base='heading-'+text(node).toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'');const n=(usedHeadings.get(base)??0)+1;usedHeadings.set(base,n);return base+(n>1?'-'+n:'');})(),'heading',level,parent));
+    scope.headings.push(add(node,text(node).trim(),(()=>{if(typeof node.attributes.id==='string')return node.attributes.id;const base='heading-'+text(node).toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'');const key=(node.attributes.__edocNamespace??'')+base;const n=(usedHeadings.get(key)??0)+1;usedHeadings.set(key,n);return base+(n>1?'-'+n:'');})(),'heading',level,parent));
    }
    nodes(node).forEach((n:any)=>walk(n,scope));
   };

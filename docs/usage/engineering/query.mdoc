@@ -13,6 +13,8 @@ edoc docs read --id ref:config-data --format text
 
 需要完整子树时显式指定 --scope subtree。默认最多返回 12000 个 Unicode 字符，JSON 的 range 说明总数、是否截断和 nextOffset；使用 --offset 继续读取。代码和表格可能跨分页，精确自动处理推荐 JSON。
 
+行为需要一次读取完整规范时使用 --with-specs；条款可直接按规范 ID read，query 可反查使用行为。实际例子见[规范聚合](../rendering/specifications.mdoc#use:specifications-read)。
+
 read 保留图表引用标签，不把关系数据或 PDF 展开为正文。需要哪个对象再 query 哪个对象。
 
 {% /section %}

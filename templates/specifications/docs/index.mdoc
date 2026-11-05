@@ -1,0 +1,21 @@
+{% section id="example:specifications" title="规范库（虚构示例）" %}
+本例只说明 edoc 的复用能力，不是实际硬件合同。
+
+{% specification id="example:clock" title="运行条件" %}
+只有时钟运行时，处理过程才推进。
+停钟时保留待处理请求，恢复后继续处理。
+{% /specification %}
+
+{% specification id="example:request" title="请求约束" %}
+上一笔请求未确认完成时，不得用新请求覆盖它。
+
+- 适用条件：请求已被接受，尚未完成。
+- 例外：显式复位按组件复位约定处理。
+{% /specification %}
+{% /section %}
+
+{% section id="example:clear" title="整组清零（虚构示例）" %}
+清零请求被接受后，整组数据清零；调用方通过返回的新代数确认完成。
+
+{% spec-list for="example:clear" common=["example:clock"] specific=["example:request"] /%}
+{% /section %}

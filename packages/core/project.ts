@@ -14,6 +14,8 @@ import {loadAttachments,record} from './attachments.ts';
 import type {AttachmentInput} from './attachments.ts';
 import {SUPPORTED_IR_VERSION} from './load.ts';
 import {resourceTypes} from './extension-contracts.ts';
+import {prepareSpecificationDocuments} from '../extensions/specification/prepare.ts';
+import {validateSchema} from './schema.ts';
 import {directoryOrders} from './directory-order.ts';
 
 export type Dataset=Partial<Record<ResourceType,unknown[]>>&{irVersion?:string;requiredFeatures?:string[];projectId?:string;adapterVersion?:string;attachments?:Record<string,AttachmentInput>};
@@ -22,7 +24,7 @@ export type DataSource=string|string[]|Dataset;
 export type ProjectConfig={markdoc?:MarkdocOptions;title?:string;projectId?:string;documents?:string|string[];data?:DataSource|((context:DataContext)=>DataSource|Promise<DataSource>);views?:RelationView[];tables?:Table[];waveforms?:Waveform[];references?:Reference[];output?:{html?:string|false};children?:Record<string,string>;attachments?:Record<string,AttachmentInput>};
 export type ResolvedConfig={markdoc:MarkdocOptions;file:string;root:string;title:string;projectId:string;documents:string[];data:ProjectConfig['data'];views:RelationView[];tables:Table[];waveforms:Waveform[];references:Reference[];outputs:{format:'html';file:string}[];configInputs:string[];defaultData:boolean;children:Record<string,string>;attachments:Record<string,AttachmentInput>};
 export type LoadedProject={config:ResolvedConfig;graph:Graph;documents:DocumentPlan;inputs:string[];dataFiles:string[]};
-const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments'];
+const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments','specifications'];
 const pointer=(key:string)=>key.replace(/~/g,'~0').replace(/\//g,'~1');
 const plain=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.prototype.toString.call(v)==='[object Object]';
 // 标准 docs 配置属于上一级工程；其他显式配置保留配置目录作为工程根。
@@ -72,7 +74,7 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
  const dataFiles:string[]=[],parts:ResourcePart[]=[],required=new Set<string>(),versions=[SUPPORTED_IR_VERSION],seenFiles=new Set<string>(),seenDirectories=new Set<string>();
  const attachmentDefinitions:Record<string,AttachmentInput>=Object.assign(Object.create(null),config.attachments);
  const addDataset=(raw:unknown,file:string,prefix='',explicit=true)=>{
-  if(!plain(raw)){if(!explicit)return;failure('DATA_FORMAT',file,prefix,'数据需要包含 objects/relations/views/tables/waveforms/references 数组的对象');}
+  if(!plain(raw)){if(!explicit)return;failure('DATA_FORMAT',file,prefix,'数据需要包含 objects/relations/views/tables/waveforms/references/specifications 数组的对象');}
   const keys=resourceTypes.filter(type=>Object.hasOwn(raw,type));
   if(!keys.length&&!Object.hasOwn(raw,'attachments')){if(explicit)failure('DATA_FORMAT',file,prefix,'文件没有可识别的工程数据数组');return;}
   const allowed=[...resourceTypes,'irVersion','requiredFeatures','projectId','adapterVersion','attachments'];
@@ -116,9 +118,14 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
  for(const part of parts){const visit=(value:any)=>{if(!value||typeof value!=='object')return;if(plain(value.source)&&typeof value.source.file==='string'&&!inputSources.has(value.source.file)){inputs.add(projectPath(config.root,config.root,value.source.file,false));inputSources.add(value.source.file);}for(const [key,child]of Object.entries(value))if(key!=='source')if(Array.isArray(child))child.forEach(visit);else if(plain(child))visit(child);};visit(part.data);}
  const attachments=await loadAttachments(config.root,attachmentDefinitions,config.file,file=>inputs.add(file));
  if(Object.keys(attachments).length)required.add('pdf-attachments');
- const allInputs=[...inputs];options.onInputs?.(allInputs);
  const metadata:Manifest={projectId:config.projectId,irVersion:versions.sort((a,b)=>Number(b.split('.')[1])-Number(a.split('.')[1]))[0],requiredFeatures:[...required],resources:parts.map(p=>({type:p.type,path:relative(config.root,p.file).split('\\').join('/')})),entryDocuments:config.documents};
+ for(const part of parts)if(part.type==='specifications'){const errors=validateSchema('specification',part.data,part.file);if(errors.length)throw new EdocError(errors);}
+ prepareSpecificationDocuments(config.root,documents,parts.filter(p=>p.type==='specifications').flatMap(p=>p.data.specifications));await Promise.all(documents.pending??[]);
+ for(const file of documents.files)inputs.add(resolve(config.root,file));
+ if(documents.documents.some(d=>[...d.ast.walk()].some(n=>n.type==='tag'&&n.tag==='specification')))required.add('specifications');
+ metadata.requiredFeatures=[...required];const allInputs=[...inputs];options.onInputs?.(allInputs);
  const graph=graphFromResources(parts,metadata,{root:config.root,documents,strict:true,attachments});
+
  return {config,graph,documents,inputs:allInputs,dataFiles};
 }
 

@@ -15,7 +15,9 @@
 | DOCUMENT_PROJECT_SCOPE | 是否误把子工程当父正文扫描 |
 | PROJECT_CYCLE / PROJECT_ID_DUPLICATE | 显式组合关系与 projectId |
 | ATTACHMENT_REFERENCE | 附件或位置 ID |
-| QUERY_NOT_FOUND / READ_TYPE | 目标身份、read 是否指向显式 section |
+| QUERY_NOT_FOUND / READ_TYPE | 目标身份、read 是否指向 section 或 specification |
+| SPECIFICATION_BEHAVIOR / SPECIFICATION_REFERENCE | for 是否指向 section，列表中的 ID 是否为已加载规范 |
+| SPECIFICATION_APPLICATION / SPECIFICATION_NESTING | 集合定义是否唯一、角色是否重叠，是否违规嵌套 |
 | READ_SCOPE / READ_OFFSET / READ_LIMIT | 正文范围与分页参数 |
 | DOCUMENT_CODE_SIZE / DOCUMENT_CODE_TEXT | 源码示例的 128 KiB 上限、UTF-8 与 NUL |
 | OUTLINE_DEPTH / OUTLINE_AMBIGUOUS | 目录深度范围，跨项目同名章节需指定 project |

@@ -34,7 +34,7 @@ export async function loadBook(config:ResolvedConfig,options:{onInputs?:(inputs:
  const root=await load(config,[]);return {root,projects,inputs:[...inputs]};
 }
 export function bookNavigation(book:Book):Navigation[]{
- const build=(node:ProjectNode):Navigation[]=>{const pages=node.documents.documents.map(document=>{
+ const build=(node:ProjectNode):Navigation[]=>{const visible=node.documents.documents.filter(d=>!d.hidden),pages=visible.map(document=>{
   const graph=pageGraph(node,document),plan=prepareOutline(graph),id=pageId(document.file),label=pageTitle(document),root:Navigation={label,project:node.config.projectId,page:id,children:[]},entries=new Map<string,Navigation>();
   const walk=(ast:any,section:Navigation)=>{
    const outline=plan.entries.get(ast);let context=section;
@@ -46,9 +46,9 @@ export function bookNavigation(book:Book):Navigation[]{
  const roots:Navigation[]=[],folders=new Map<string,Navigation>(),keys=new Map<Navigation,string>();
  const configured=node.config.documents.filter(file=>statSync(resolve(node.config.root,file)).isDirectory()).map(file=>relative(node.config.root,resolve(node.config.root,file)).split('\\').join('/')||'.');
  let base=configured.length===1?configured[0]:dirname(node.documents.documents[0].file);
- while(base!=='.'&&node.documents.documents.some(d=>d.file!==base&&!d.file.startsWith(base+'/')))base=dirname(base);
+ while(base!=='.'&&visible.some(d=>d.file!==base&&!d.file.startsWith(base+'/')))base=dirname(base);
  const folder=(path:string):Navigation[]=>{if(!path||path==='.')return roots;const existing=folders.get(path);if(existing)return existing.children;const parent=folder(dirname(path)),entry:Navigation={label:path.split('/').at(-1)!,project:node.config.projectId,page:'',children:[]};folders.set(path,entry);keys.set(entry,path.split('/').at(-1)!+'/');parent.push(entry);return entry.children;};
- pages.forEach((entry,index)=>{const file=node.documents.documents[index].file,local=base==='.'?file:file.startsWith(base+'/')?file.slice(base.length+1):file,path=dirname(local);const siblings=folder(path),name=local.split('/').at(-1)!;if(/^index\.(md|mdoc)$/i.test(name)&&path!=='.'){const group=folders.get(path)!,children=group.children;Object.assign(group,{...entry,children:[...entry.children,...children]});}else{if(!/^index\.(md|mdoc)$/i.test(name))keys.set(entry,name);siblings.push(entry);}});
+ pages.forEach((entry,index)=>{const file=visible[index].file,local=base==='.'?file:file.startsWith(base+'/')?file.slice(base.length+1):file,path=dirname(local);const siblings=folder(path),name=local.split('/').at(-1)!;if(/^index\.(md|mdoc)$/i.test(name)&&path!=='.'){const group=folders.get(path)!,children=group.children;Object.assign(group,{...entry,children:[...entry.children,...children]});}else{if(!/^index\.(md|mdoc)$/i.test(name))keys.set(entry,name);siblings.push(entry);}});
  for(const [directory,items]of directoryOrders(node.documents)){
   const path=directory===base?'.':base==='.'?directory:directory.slice(base.length+1),siblings=path==='.'?roots:folders.get(path)?.children;
   if(siblings)orderDirectory(siblings,items,entry=>keys.get(entry));

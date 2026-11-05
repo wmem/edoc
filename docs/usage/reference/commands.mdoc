@@ -34,7 +34,7 @@ docs 默认显示随包 .mdoc 主入口、使用目录及查询方法，Agent �
 
 docs outline 缺省 depth=0，只返回当前入口；--depth 0–10 按分支逐层展开，--all 返回完整树，两者不能同时使用。text 目录同时显示 project 与 sectionId，JSON 的 sectionId 才可传给 read/outline，id/anchor 用于网页导航。项目 edoc outline 的默认完整范围不变。
 
-docs read 默认 self，返回当前正文及子章节身份，显式 subtree 才展开，分页见 read 参考。源文、目录、章节和事实查询不依赖 HTML 文件；serve 才需要预构建 HTML，仅在 127.0.0.1 提供本机阅读，默认端口 5176，允许 0 自动分配，Ctrl+C 结束。
+docs read 读取 section 默认 self，返回当前正文及子章节身份，显式 subtree 才展开，分页见 read 参考。源文、目录、章节和事实查询不依赖 HTML 文件；serve 才需要预构建 HTML，仅在 127.0.0.1 提供本机阅读，默认端口 5176，允许 0 自动分配，Ctrl+C 结束。
 
 docs outline/read/query 与同名项目命令采用相同的 ID、范围、分页和退出码；--project 只选择手册内部工程。query 的 text/json 均输出 JSON。docs 不接受 --config：普通 edoc read/query/outline 查询当前项目，工具用法明确使用 edoc docs。
 
@@ -65,11 +65,14 @@ edoc outline --format text
 
 ```sh
 edoc read --id ref:config-data
+edoc read --id example:clear --with-specs
 edoc read --id ref:config --scope subtree --max-chars 4000 --offset 0
 edoc read --project manual-component --id component:home --format text
 ```
 
-id 必须是显式 section 的源 ID，普通标题或工程对象使用其他导航/query。scope 默认 self，只返回本节正文，不包括子 section；subtree 显式包括后代。两种模式均保留子章节的身份与来源，project include 仍只是引用，不展开外部工程。
+id 接受显式 section 或 specification 的源 ID，普通标题和其他工程对象使用导航/query。section 的 scope 默认 self，只返回本节正文，不包括子 section；subtree 显式包括后代。两种模式均保留子章节的身份与来源，project include 仍只是引用，不展开外部工程。
+
+直接 read specification 总是返回完整条款子树。行为轻量读取保留 spec-list 标签、specFor 与 applications（有序公共/专属 ID）；--with-specs 追加完整条款，按 ID 去重，在 specifications 中保留身份、来源与各行为角色。它不展开任意图表或链接，docs read 也支持此参数。先聚合再统一分页，不把完整条款放进 JSON 侧字段绕过预算。详见[规范契约](tags/specification.mdoc)。
 
 正文是已解析 AST 格式化的 Markdown，包含代码、表格和图表引用；不是原始字节切片或生成 HTML。JSON 默认返回 projectId、id、title、source、scope、format、content、children、sources、range。sources 按文件汇总首次参与内容的位置，include 片段保留自身来源，不重复列出每个段落。
 

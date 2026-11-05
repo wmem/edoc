@@ -46,6 +46,10 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  // 安装源文及 include/code 依赖可独立加载；不借助仓库外的 examples。
  assert.ok(JSON.parse(run(bin,['outline','--config',join(location.sources,'edoc.config.js'),'--depth','0'],project)).chapters.length>0);
  assert.equal(JSON.parse(run(bin,['docs','read','--id','ref:config-data'],project)).id,'ref:config-data');
+ assert.ok(packed.files.some((f:any)=>f.path==='templates/specifications/docs/index.mdoc'));
+ const specs=JSON.parse(run(bin,['docs','read','--id','example:clear','--with-specs'],project));
+ assert.match(specs.content,/上一笔请求未确认完成/);assert.match(specs.content,/例外/);assert.equal(specs.specifications.length,2);
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','example:clock'],project)).references[0].entity.class,'applies-common');
  assert.equal(JSON.parse(run(bin,['docs','query','--id','system:producer'],project)).target.entity.label,'生产者');
  writeFileSync(join(project,'docs/edoc.config.js'),"throw Error('工具手册不得执行当前工程配置')");
  const server=spawn(bin,['docs','serve','--port','0'],{cwd:project,stdio:['ignore','pipe','pipe']});

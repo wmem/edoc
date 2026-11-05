@@ -1,0 +1,54 @@
+{% section id="use:specifications" title="在行为页完整阅读适用规范" %}
+
+行为页描述“发生什么”，规范保存“必须满足什么”。同一条规范只维护一份，在需要它的行为页直接显示全文，读者可以一次读完现象、要求、条件和例外。
+
+普通共享说明仍可用 include/partial；需要稳定条款身份、适用关系及反向查询时，用 specification 与 spec-list。公共/专属表示这次应用的角色，两类都生效，没有隐含覆盖或优先级。
+
+{% section id="use:specifications-create" title="最小写法" %}
+
+在 docs/edoc.config.js 写 export default {}，将以下正文保存为 docs/index.mdoc，执行 edoc。没有外部数据、manifest 或额外转换脚本。
+
+{% code file="templates/specifications/docs/index.mdoc" language="markdoc" /%}
+
+specification 定义条款，工具自动提取标准 specifications 资源。行为继续使用 section；spec-list 的 for 必须明确指向已加载 section，common、specific 是有序条款 ID 数组。带任一数组表示定义集合，一种行为只能定义一次；省略的另一类为空。
+
+在其他位置完整展示已有集合，只写 for；实际效果见下一节：
+
+```markdoc {% process=false %}
+{% spec-list for="example:clear" /%}
+```
+
+只提供 for 是复用，不是重新定义；找不到集合会失败。规范文件可与行为分开，由本工程 documents 范围发现；ID 不会触发跨工程加载。
+
+{% /section %}
+
+{% section id="use:specifications-live" title="同源实际效果" %}
+
+以下直接渲染上面的同一份源文件。规范库和行为属于不同阅读任务；改唯一条款后重新生成，两处同步。
+
+{% include file="templates/specifications/docs/index.mdoc" /%}
+
+{% section id="example:review" title="复核时复用完整约束集合" %}
+这里再次完整显示整组清零的约束。展示次数不增加规范实体或适用关系，原文入口可追溯定义，浏览器返回恢复阅读。
+
+{% spec-list for="example:clear" /%}
+{% /section %}
+{% /section %}
+
+{% section id="use:specifications-read" title="Agent 读取与查询" %}
+
+```sh
+edoc docs read --id example:clear --format text
+edoc docs read --id example:clear --with-specs --format text
+edoc docs read --id example:clock --format text
+edoc docs query --id example:clock
+```
+
+首条保留行为与约束 ID，第二条附带完整条款及来源，第三条直接读取条款，第四条查哪些行为使用它。自己工程中去掉 docs 前缀。
+
+聚合读取按 ID 去重，保留各行为的公共/专属关系；同一预算覆盖行为与所有展开正文。range.truncated 为 true 时，按 nextOffset 继续；必要条件可能在后续页。图表仍保留引用标签，按需 query，不自动展开全部数据或链接。
+
+有身份的条款必须带完整前提和例外，不能依赖未展示的上级文章才能成立。工具不会检查自然语言冲突或生成测试。精确字段、机器源格式与错误边界见[规范标签契约](../reference/tags/specification.mdoc)。
+
+{% /section %}
+{% /section %}

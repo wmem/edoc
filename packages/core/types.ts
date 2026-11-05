@@ -7,19 +7,20 @@ export type * from '../extensions/relation-diagram/types.ts';
 export type * from '../extensions/data-table/types.ts';
 export type * from '../extensions/waveform/types.ts';
 
-export type Entity = Node | Interface | Group | Port | Connection | RelationView | Table | Waveform | Reference | DocumentEntity | Row;
-export type ResourceType = 'objects' | 'relations' | 'views' | 'tables' | 'waveforms' | 'references';
+export type Entity = Node | Interface | Group | Port | Connection | RelationView | Table | Waveform | Reference | DocumentEntity | Specification | Row;
+export type ResourceType = 'objects' | 'relations' | 'views' | 'tables' | 'waveforms' | 'references' | 'specifications';
 export type Manifest = {
   irVersion: string; projectId: string; resources: { type: ResourceType; path: string }[];
   entryDocuments: string[]; adapterVersion?: string; requiredFeatures?:string[];
 };
 export type Diagnostic = { code: string; file: string; path: string; message: string; id?: string };
 export type RecordEntry = {
-  id: string; type: 'node' | 'interface' | 'port' | 'group' | 'connection' | 'view' | 'table' | 'waveform' | 'reference' | 'document' | 'row'; entity: Entity;
+  id: string; type: 'node' | 'interface' | 'port' | 'group' | 'connection' | 'view' | 'table' | 'waveform' | 'reference' | 'document' | 'specification' | 'row'; entity: Entity;
   location: { file: string; path: string }; ownerId?: string;
 };
 export type Graph = {
   attachments?:Record<string,import('./attachments.ts').PdfAttachment>;
+  specifications?:import('../extensions/specification/prepare.ts').SpecificationPlan;
   documentPlan?:import('./documents.ts').DocumentPlan;
   manifest: Manifest; projectRoot: string; irDirectory: string;
   index: Map<string, RecordEntry>; connections: Map<string, Connection>;
@@ -29,3 +30,5 @@ export type Graph = {
 export type Reference = {id:string;kind:'reference';label?:string;fromId:string;targetId:string;class:string;source?:Source};
 export type DocumentEntity={id:string;kind:'document';label:string;source:Source};
 export type Row={id:string;kind?:'row';objectId?:string;values?:Record<string,unknown>;source?:Source;label?:string};
+
+export type Specification={id:string;kind:"specification";label:string;body:{format:"markdoc";content:string};source:Source};

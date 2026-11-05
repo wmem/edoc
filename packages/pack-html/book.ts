@@ -8,8 +8,9 @@ import {bookNavigation,pageGraph,pageId,pageTitle} from '../core/book.ts';
 import {routeHash,targetKey} from '../core/routes.ts';
 import type {ReaderData} from '../core/reader-model.ts';
 import {localDocumentLink} from '../core/documents.ts';
+import {specificationNamespace} from '../extensions/specification/prepare.ts';
 import {renderDocument} from '../doc-theme/render.ts';
-import {anchor,anchorCandidates} from '../core/identity.ts';
+import {anchor,resolveHTMLAnchor} from '../core/identity.ts';
 import {preflightBook} from '../core/document-preflight.ts';
 import {failure} from '../core/errors.ts';
 import {fontCSS} from '../render-graph/font.ts';
@@ -24,7 +25,7 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
  const filePayloads=new Map<string,string>();
  for(const node of book.projects.values()){
   const project=node.config.projectId,sections:Record<string,{page:string;anchor:string}>=Object.create(null);
-  for(const document of node.documents.documents){const id=pageId(document.file);if(Object.hasOwn(data.pages,targetKey(project,id)))failure('PAGE_DUPLICATE',document.file,'','文档路由重复：'+id);for(const tag of document.ast.walk())if(tag.type==='tag'&&tag.tag==='section')sections[tag.attributes.id]={page:id,anchor:anchor(tag.attributes.id)};
+  for(const document of node.documents.documents){const id=pageId(document.file);if(Object.hasOwn(data.pages,targetKey(project,id)))failure('PAGE_DUPLICATE',document.file,'','文档路由重复：'+id);const collect=(tag:any,namespace='')=>{if(tag.type==='tag'&&['section','specification'].includes(tag.tag)){sections[tag.attributes.id]={page:id,anchor:namespace+anchor(tag.attributes.id)};if(tag.tag==='specification')namespace=specificationNamespace(tag.attributes.id);}for(const child of [...Object.values(tag.slots??{}),...tag.children??[]])collect(child,namespace);};collect(document.ast);
    data.pages[targetKey(project,id)]={id,project,title:pageTitle(document),file:document.file,html:'',scenes:{},outline:[]};}
   const attachments:typeof node.graph.attachments=Object.create(null);for(const [key,attachment]of Object.entries(node.graph.attachments??{})){const identity=realpathSync(resolve(node.config.root,attachment.file));let payload=filePayloads.get(identity);if(!payload){payload='pdf-'+filePayloads.size;filePayloads.set(identity,payload);data.pdfFiles[payload]=attachment.data;}attachments![key]={...attachment,data:'',payload};}
   data.projects[project]={id:project,title:node.config.title,irVersion:node.graph.manifest.irVersion,records:Object.fromEntries([...node.graph.index].map(([id,e])=>[id,{type:e.type,location:{...e.location,file:isAbsolute(e.location.file)?relative(node.config.root,e.location.file).split('\\').join('/'):e.location.file},...(e.ownerId?{ownerId:e.ownerId}:{})}])),entities:Object.fromEntries([...node.graph.index].map(([id,entry])=>[id,entry.entity])),relations:Object.fromEntries(node.graph.connections),sections,attachments:attachments!};
@@ -36,7 +37,7 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
    const target=pageId(link.file);if(!Object.hasOwn(data.pages,targetKey(project,target)))failure('DOCUMENT_LINK',source,'','链接文档未参与发布：'+link.file);
    return routeHash({kind:'page',project,id:target,...(link.anchor?{anchor:link.anchor}:{})});
   }});
-  page.html=rendered.chapters;page.scenes=rendered.scenes;page.outline=rendered.outline;
+  page.html=rendered.chapters;page.anchorAliases=rendered.anchorAliases;page.scenes=rendered.scenes;page.outline=rendered.outline;
   page.html=page.html.replace(/(<a\b[^>]*\bhref=")#([^"\s]*)(")/g,(whole,before,fragment,after)=>{
    if(fragment.startsWith('edoc='))return whole;
    // Markdown 解析器会编码中文等片段；与跨文件链接相同，只在 URL 边界解码一次。
@@ -53,13 +54,13 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
    const route=JSON.parse(decodeURIComponent(match[1].slice('#edoc='.length).replace(/&amp;/g,'&')));if(route.project!==page.project)continue;
    if(route.kind==='page'){
     const target=data.pages[targetKey(route.project,route.id)];if(!target)failure('DOCUMENT_PAGE',page.file,'','本地文档不存在：'+route.id);
-    if(route.anchor){const resolved=resolvePageAnchor(target.html,route.anchor);if(!resolved)failure('DOCUMENT_ANCHOR',page.file,'','本地锚点不存在：'+route.anchor);}
+    if(route.anchor){const resolved=resolvePageAnchor(target.html,route.anchor,target.anchorAliases);if(!resolved)failure('DOCUMENT_ANCHOR',page.file,'','本地锚点不存在：'+route.anchor);}
    }
   }
  }
  return data;
 }
-export function resolvePageAnchor(html:string,id:string){for(const candidate of anchorCandidates(id))if(html.includes('id="'+esc(candidate)+'"'))return candidate;}
+export const resolvePageAnchor=resolveHTMLAnchor;
 export async function bookHTML(book:Book):Promise<string>{
  const data=await compileBook(book),hasPdf=Object.values(data.projects).some(p=>Object.keys(p.attachments).length),hasInterfaces=Object.values(data.pages).some(p=>Object.values(p.scenes).some(s=>s.interfaceModel));
  if(hasPdf){const root=dirname(require.resolve('pdfjs-dist/package.json'));data.pdfWorker=readFileSync(resolve(root,'build/pdf.worker.min.mjs'),'utf8');data.pdfSupport=Object.create(null);for(const name of ['cmaps','standard_fonts','wasm','iccs'])for(const file of readdirSync(resolve(root,name)))if(!file.startsWith('LICENSE')&&!file.startsWith('quickjs'))data.pdfSupport![name+'/'+file]=readFileSync(resolve(root,name,file)).toString('base64');}

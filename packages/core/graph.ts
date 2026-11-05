@@ -4,6 +4,7 @@ import {resourceSchemas} from './extension-contracts.ts';
 import {registerDocuments,validateDocuments} from './documents.ts';
 import type {DocumentPlan} from './documents.ts';
 import {validateResources} from './resource-validation.ts';
+import {prepareMachineSpecifications,registerSpecifications} from '../extensions/specification/prepare.ts';
 import {EdocError} from './errors.ts';
 
 export type ResourcePart={type:ResourceType;data:any;file:string;prefix?:string};
@@ -31,7 +32,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
  }
  if(diagnostics.length)throw new EdocError(diagnostics);
  const graph:Graph={attachments:options.attachments,manifest:metadata,projectRoot:options.root,irDirectory:options.directory??options.root,index,connections,adjacency:new Map(),...(options.documents?{documentPlan:options.documents}:{})};
- registerDocuments(graph);validateResources(graph);validateDocuments(graph);
+ prepareMachineSpecifications(graph);registerDocuments(graph);registerSpecifications(graph);validateResources(graph);validateDocuments(graph);
  graph.interfaceByPort=new Map();for(const entry of index.values())if(entry.type==='interface')for(const id of (entry.entity as Interface).members)graph.interfaceByPort.set(id,entry.id);
  for(const connection of connections.values())for(const id of connection.endpoints){
   const ids=[id,index.get(id)!.ownerId,graph.interfaceByPort.get(id)].filter(Boolean) as string[];

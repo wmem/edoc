@@ -36,6 +36,7 @@
     "test:reader-browser": "node --test tests/reader-browser.test.ts",
     "docs:build": "node packages/cli/edoc.ts",
     "docs:dev": "node scripts/docs.ts",
+    "test:specification": "node --test tests/specification.test.ts tests/specification-browser.test.ts",
     "test:read": "node --test tests/read.test.ts",
     "test:manual": "node --test tests/manual.test.ts tests/manual-capabilities.test.ts",
     "test:manual-browser": "node --test tests/manual-browser.test.ts tests/manual-capabilities-browser.test.ts",

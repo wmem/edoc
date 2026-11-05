@@ -1,0 +1,13 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"https://edoc.local/schema/v1/specification.schema.json",
+ "type":"object",
+ "properties":{"specifications":{"type":"array","items":{
+  "type":"object","properties":{
+   "id":{"$ref":"common.schema.json#/$defs/id"},"kind":{"const":"specification"},
+   "label":{"type":"string","minLength":1},
+   "body":{"type":"object","properties":{"format":{"const":"markdoc"},"content":{"type":"string","minLength":1}},"required":["format","content"],"additionalProperties":false},
+   "source":{"$ref":"common.schema.json#/$defs/source"}
+  },"required":["id","kind","label","body","source"],"additionalProperties":false
+ }}},"required":["specifications"],"additionalProperties":false
+}

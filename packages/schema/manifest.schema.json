@@ -22,7 +22,8 @@
               "views",
               "tables",
               "waveforms",
-              "references"
+              "references",
+              "specifications"
             ]
           },
           "path": {

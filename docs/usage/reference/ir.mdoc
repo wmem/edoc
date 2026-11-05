@@ -1,6 +1,6 @@
 {% section id="ref:ir" title="数据契约" %}
 
-当前支持 IR 1.2。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Waveform 分属不同数据模型；[标签职责](tags/index.mdoc)说明各自如何展示。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+当前支持 IR 1.3。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Waveform、Specification 分属不同数据模型；[标签职责](tags/index.mdoc)说明各自如何展示。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
 
 | 外层字段 | 内容 | 本页条目 |
 | --- | --- | --- |
@@ -10,6 +10,7 @@
 | tables | 投影或权威表格行 | ref:tables |
 | waveforms | WaveJSON 与语义来源 | ref:waveforms |
 | references | 有身份的语义关联 | ref:references |
+| specifications | 富文本规范条款 | [Specification](tags/specification.mdoc#ref:specifications) |
 
 {% section id="ref:objects" title="Node、Port 与 Group" %}
 
@@ -17,7 +18,7 @@ Node 必需 id、kind='node'、label；可含 parentId、ports、interfaces、at
 
 Port 嵌套在唯一 Node 中，必需 id、label、direction。direction 为 in/out/inout/passive/unknown；width 为已解析正整数，未解析可保留 widthExpr、parameterContext。可选 groupId、clockDomainId、attributes、source。未知方向不能补成确定方向，时钟域不靠名字推断。
 
-Node、Port、接口、关系、视图、表、行、波形、关联和显式 section 均占用所属工程的同一 ID 空间。attributes 保存领域扩展，顶层契约字段严格校验。
+Node、Port、接口、关系、视图、表、行、波形、规范、关联和显式 section 均占用所属工程的同一 ID 空间。attributes 保存领域扩展，顶层契约字段严格校验。
 
 parentId 只能指向 Node，禁止自循环与层级循环。Group.members 引用 Node/Port/Group，允许共享子组的 DAG，但禁止分组循环；端口 groupId 和 clockDomainId 继续严格校验目标存在与类型，不通过布局或名字推断语义。正式引用不能藏在 attributes 中代替结构关系。
 

@@ -4,7 +4,7 @@ import type {PdfReader,PdfPosition} from './pdf-reader.ts';
 import type {ReaderData,ReaderPage} from '../core/reader-model.ts';
 import {routeHash,parseRoute,targetKey} from '../core/routes.ts';
 import type {Route} from '../core/routes.ts';
-import {anchor} from '../core/identity.ts';
+import {anchor,resolveHTMLAnchor} from '../core/identity.ts';
 import {query} from '../core/query.ts';
 import type {Graph,RecordEntry} from '../core/types.ts';
 import type {Navigation} from '../core/book.ts';
@@ -33,7 +33,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const projectOf=(route:Route)=>own(data.projects,route.project);
  function normalize(route:Route):Route{if(route.kind==='entity'){const unit=projectOf(route),section=unit?own(unit.sections,route.id):undefined;if(section)return {kind:'page',project:route.project,id:section.page,anchor:section.anchor};}return route;}
  function exists(route:Route){const project=projectOf(route);if(!project)return false;if(route.kind==='entity')return route.id===''||Object.hasOwn(project.entities,route.id);if(route.kind==='pdf'){const a=own(project.attachments,route.id);return !!a&&(!route.target||Object.hasOwn(a.targets,route.target));}const page=own(data.pages,targetKey(route.project,route.id));return !!page&&(!route.anchor||!!resolveAnchor(page,route.anchor));}
- function resolveAnchor(page:ReaderPage,id:string){for(const candidate of [id,anchor(id),'heading-'+id.toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'')])if(page.html.includes('id="'+esc(candidate)+'"'))return candidate;}
+ function resolveAnchor(page:ReaderPage,id:string){return resolveHTMLAnchor(page.html,id,page.anchorAliases);}
  const figureIndex=(holder:Element|null)=>[...reader.querySelectorAll('[data-diagram]')].indexOf(holder!);
  function save(){if(!current||restoring)return;const state:ReadingState={route:current,scroll:window.scrollY,details:[...reader.querySelectorAll<HTMLDetailsElement>('details[id]')].filter(d=>d.open).map(d=>d.id),tabs:[...reader.querySelectorAll<HTMLElement>('.tab')].map(t=>!!t.hidden),graphs:window.EdocGraphs?.map(g=>({figure:figureIndex(g.container.closest('[data-diagram]')),zoom:g.zoom(),translation:g.translate()})),displays:[...reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]')].map(i=>i.checked),interfaces:window.EdocInterfaceViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),pdf:currentPdf};history.replaceState(state,'');}
  function reveal(page:ReaderPage,id:string){const key=resolveAnchor(page,id),target=key?document.getElementById(key):undefined;if(!target)return;for(let parent:HTMLElement|null=target;parent&&parent!==reader;parent=parent.parentElement){if(parent instanceof HTMLDetailsElement)parent.open=true;if(parent.classList.contains('tab'))parent.hidden=false;}target.scrollIntoView({block:'start'});}

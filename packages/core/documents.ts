@@ -10,11 +10,12 @@ import {builtinTags,referenceTargets,targetChecks} from './extension-contracts.t
 import {directoryOrders} from './directory-order.ts';
 export const tags=builtinTags;
 export type DocumentReference={id:string;tag:string;file:string;line:number;project?:string;target?:string};
-export type DocumentPlan={media?:Map<string,import('./media.ts').ImageAsset>;documents:{file:string;ast:any;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config};
+export type DocumentPlan={media?:Map<string,import('./media.ts').ImageAsset>;documents:{file:string;hidden?:boolean;ast:any;scopes?:WeakMap<object,any>;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config;scopes?:WeakMap<object,any>;options?:MarkdocOptions;projectRoots?:string[];preparedSpecifications?:Set<string>;renderScopes?:Map<string,any>};
 // 正文解析不再要求先建立工程数据图；先完整展开 include，再收集所有 Tabs/折叠中的引用。
-export function scanDocuments(projectRoot:string,entryDocuments:string[],options:{projectRoots?:string[];markdoc?:MarkdocOptions;configFile?:string}={}):DocumentPlan{
+export function scanDocuments(projectRoot:string,entryDocuments:string[],options:{projectRoots?:string[];markdoc?:MarkdocOptions;configFile?:string;virtual?:{file:string;content:string;line?:number}}={}):DocumentPlan{
  const roots=(options.projectRoots??[]).filter(p=>resolve(p)!==resolve(projectRoot)).map(p=>existsSync(p)?realpathSync(p):resolve(p));
  const blocked=(file:string)=>{const path=resolve(projectRoot,file),target=existsSync(path)?realpathSync(path):path;return roots.some(root=>{const local=relative(root,target);return local===''||!isAbsolute(local)&&local!=='..'&&!local.startsWith('..'+sep);});};
+ const scopes=new WeakMap<object,any>();
  const locations=new WeakMap<object,{file:string;line:number}>(),files=new Set<string>(),checks:NonNullable<DocumentPlan['checks']>=[],warnings:any[]=[],pending:Promise<unknown>[]=[];
  const enqueue=(promise:Promise<unknown>)=>{pending.push(promise);void promise.catch(()=>{});};
  const configured=options.markdoc??{},base=nativeConfig(configured,tags);
@@ -23,11 +24,14 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const track=(node:any,cfg:any)=>{const source=location(node,cfg);locations.set(node,source);checks.push({node,...source,documentFile:cfg.__edocDocument,direct:cfg.__edocChain.length===1});return node;};
  function rawFile(file:string,chain:string[]){
   if(blocked(file))failure('DOCUMENT_PROJECT_SCOPE',file,'','正文属于已声明的子工程；使用 project include 组合或稳定项目 ID 跳转');
-  const absolute=projectPath(projectRoot,projectRoot,file);requireFile(absolute);const identity=realpathSync(absolute);
+  const virtual=chain.length===0&&options.virtual?.file===file?options.virtual:undefined;
+  const absolute=projectPath(projectRoot,projectRoot,file,!virtual);if(!virtual)requireFile(absolute);const identity=virtual?"virtual:"+file:realpathSync(absolute);
   if(chain.includes(identity))failure('DOCUMENT_INCLUDE_CYCLE',file,'','正文 include/partial 构成循环');
   if(chain.length>=32)failure('DOCUMENT_INCLUDE_DEPTH',file,'','正文 include/partial 嵌套最多 32 层');
-  files.add(file);
-  return {ast:Markdoc.parse(new Markdoc.Tokenizer(configured.tokenizer).tokenize(readFileSync(absolute,'utf8')),{...configured.parse,file}),chain:[...chain,identity]};
+  if(!virtual)files.add(file);
+  const ast=Markdoc.parse(new Markdoc.Tokenizer(configured.tokenizer).tokenize(virtual?.content??readFileSync(absolute,'utf8')),{...configured.parse,file});
+  if(virtual?.line)for(const node of ast.walk())if(node.location){node.location.start.line+=virtual.line-1;node.location.end.line+=virtual.line-1;}
+  return {ast,chain:[...chain,identity]};
  }
  function inspect(ast:any,cfg:any){
   // 仅显式 process=false 的围栏隔离；其余保留原生 process=true 行为。
@@ -40,12 +44,14 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  }
  function capture(node:any,cfg:any):any{
   engineAttributes(node,cfg);
-  const children=node.type==='fence'&&node.attributes.process===false?[]:node.transformChildren(cfg);
-  const slots=Object.fromEntries(Object.entries(node.slots).map(([key,slot]:[string,any])=>[key,slot.transform(cfg)]));
+  if(cfg.__edocSpecificationDepth&&node.type==='tag'&&['specification','spec-list'].includes(node.tag)){const source=location(node,cfg);failure('SPECIFICATION_NESTING',source.file,`#L${source.line}`,'规范正文不能嵌套 specification 或 spec-list');}
+  const childConfig=node.type==='tag'&&node.tag==='specification'?{...cfg,__edocSpecificationDepth:(cfg.__edocSpecificationDepth??0)+1}:cfg;
+  const children=node.type==='fence'&&node.attributes.process===false?[]:node.transformChildren(childConfig);
+  const slots=Object.fromEntries(Object.entries(node.slots).map(([key,slot]:[string,any])=>[key,slot.transform(childConfig)]));
   const copy=Object.assign(new Markdoc.Ast.Node(),node,{children,slots});
   if(node.type==='link')copy.attributes={...copy.attributes,__edocSourceFile:location(node,cfg).file};
   if(copy.type==='text'&&copy.attributes.content&&typeof copy.attributes.content.then==='function')enqueue(Promise.resolve(copy.attributes.content).then(value=>{copy.attributes={...copy.attributes,content:value};}));
-  track(copy,cfg);return copy;
+  scopes.set(copy,cfg.variables);track(copy,cfg);return copy;
  }
  // 原生条件负责选择分支；先投影全部子树，使未选择分支也参与依赖与工程引用检查。
  function conditional(node:any,cfg:any){
@@ -91,24 +97,25 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
   nodes:Object.fromEntries(Object.entries(Markdoc.nodes).map(([key,value])=>[key,{...value,transform:capture}])),
   tags:Object.fromEntries(Object.entries(base.tags??{}).map(([key,value])=>[key,{...value,transform:key==='if'?conditional:key==='partial'?partial:key==='include'?include:key==='code'?code:capture}]))};
  const entries:string[]=[];
- const discover=(file:string)=>{if(blocked(file))return;const path=projectPath(projectRoot,projectRoot,file);if(statSync(path).isDirectory()){for(const entry of readdirSync(path,{withFileTypes:true}).sort((a,b)=>Number(/^index\.(md|mdoc)$/i.test(b.name))-Number(/^index\.(md|mdoc)$/i.test(a.name))||a.name.localeCompare(b.name))){if(entry.name.startsWith('.')||['ir','_partials','node_modules','output'].includes(entry.name))continue;const child=relative(projectRoot,resolve(path,entry.name)).split('\\').join('/');if(entry.isDirectory())discover(child);else if(entry.isFile()&&['.md','.mdoc'].includes(extname(child)))entries.push(child);}}else entries.push(relative(projectRoot,path).split('\\').join('/'));};entryDocuments.forEach(discover);
+ const discover=(file:string)=>{if(blocked(file))return;const path=projectPath(projectRoot,projectRoot,file);if(statSync(path).isDirectory()){for(const entry of readdirSync(path,{withFileTypes:true}).sort((a,b)=>Number(/^index\.(md|mdoc)$/i.test(b.name))-Number(/^index\.(md|mdoc)$/i.test(a.name))||a.name.localeCompare(b.name))){if(entry.name.startsWith('.')||['ir','_partials','node_modules','output'].includes(entry.name))continue;const child=relative(projectRoot,resolve(path,entry.name)).split('\\').join('/');if(entry.isDirectory())discover(child);else if(entry.isFile()&&['.md','.mdoc'].includes(extname(child)))entries.push(child);}}else entries.push(relative(projectRoot,path).split('\\').join('/'));};if(options.virtual)entries.push(options.virtual.file);else entryDocuments.forEach(discover);
  const documents:DocumentPlan['documents']=[],seen=new Set<string>();
  for(let i=0;i<entries.length;i++){
-  const file=entries[i],identity=realpathSync(projectPath(projectRoot,projectRoot,file));if(seen.has(identity))continue;seen.add(identity);
-  const raw=rawFile(file,[]),cfg={...projection,__edocFile:file,__edocDocument:file,__edocChain:raw.chain};inspect(raw.ast,cfg);
-  const ast=Markdoc.transform(raw.ast,cfg);documents.push({file,ast,locations});
+  const file=entries[i],identity=options.virtual?.file===file?"virtual:"+file:realpathSync(projectPath(projectRoot,projectRoot,file));if(seen.has(identity))continue;seen.add(identity);
+  const raw=rawFile(file,[]),cfg={...projection,__edocFile:file,__edocDocument:file,__edocChain:raw.chain,__edocSpecificationDepth:options.virtual?.file===file?1:0};inspect(raw.ast,cfg);
+  const ast=Markdoc.transform(raw.ast,cfg);documents.push({file,ast,locations,scopes});
   // 同时发现条件隐藏的文档链接，依赖校验不由当前显示分支决定。
   for(const check of checks)if(check.node.type==='link'){const href=check.node.attributes.href;if(typeof href==='string'&&!/^(#|https?:|mailto:)/i.test(href)){const target=localDocumentLink(projectRoot,check.file,href);if(target&&!entries.includes(target.file))entries.push(target.file);}}
  }
  const references:DocumentReference[]=[];
  for(const {node,file,line}of checks){
   if(node.type==='tag'&&(Object.hasOwn(referenceTargets,node.tag??'')||['reference','page','attachment'].includes(node.tag??'')))references.push({id:node.attributes.id,tag:node.tag!,file,line,...(node.attributes.project!==undefined?{project:node.attributes.project}:{}),...(node.attributes.target!==undefined?{target:node.attributes.target}:{})});
+  if(node.type==='tag'&&node.tag==='spec-list'){for(const id of [node.attributes.for,...node.attributes.common??[],...node.attributes.specific??[]])references.push({id,tag:node.tag,file,line});}
   if(node.type==='image'||node.type==='tag'&&base.tags?.[node.tag!]?.render==='img'){
    const src=node.type==='image'?node.attributes.src:node.transformAttributes(base).src;
    try{const target=projectPath(projectRoot,projectRoot,src);requireFile(target);files.add(src);}catch(error){if(error instanceof EdocError)throw new EdocError(error.diagnostics.map(d=>({...d,code:d.code==='PATH_SCOPE'?'DOCUMENT_IMAGE':d.code,file,path:`#L${line}`})));throw error;}
   }
  }
- return {documents,files:[...files],references,checks,warnings,pending,markdoc:base};
+ return {documents,files:[...files],references,checks,warnings,pending,markdoc:base,scopes,options:configured,projectRoots:options.projectRoots};
 }
 export function documentAST(graph:Graph){graph.documentPlan??=scanDocuments(graph.projectRoot,graph.manifest.entryDocuments);return graph.documentPlan.documents;}
 export function registerDocuments(graph:Graph){

@@ -9,7 +9,7 @@ const indexFile=(file:string)=>/^index\.(md|mdoc)$/i.test(posix.basename(file));
 export function directoryOrders(plan:DocumentPlan):DirectoryOrders{
  const candidates=new Map<string,Set<string>>();
  const add=(directory:string,item:string)=>{if(!candidates.has(directory))candidates.set(directory,new Set());candidates.get(directory)!.add(item);};
- for(const {file}of plan.documents){
+ for(const {file}of plan.documents.filter(d=>!d.hidden)){
   let directory=posix.dirname(file);
   if(!indexFile(file))add(directory,posix.basename(file));
   while(directory!=='.'){

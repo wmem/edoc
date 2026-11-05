@@ -20,7 +20,7 @@ const help=`edoc 自带工具手册（不读取当前项目配置）
  edoc docs --format json                  输出手册位置和工程身份
  edoc docs serve [--port 5176]             本机 HTTP 阅读，Ctrl+C 结束
  edoc docs outline [--project ID] [--id SECTION_ID] [--depth 0..10 | --all] [--format json|text]
- edoc docs read --id ID [--project ID] [--scope self|subtree] [--offset 0] [--max-chars 12000] [--format json|text]
+ edoc docs read --id ID [--project ID] [--scope self|subtree] [--with-specs] [--offset 0] [--max-chars 12000] [--format json|text]
  edoc docs query --id ID [--project ID] [--depth 0..10] [--max-items 1..10000] [--format json|text]
 目录默认 depth=0；--all 显式返回全量。读取使用 sectionId，不使用导航 id/anchor。
 入门：edoc docs read --id use:home --format text
@@ -34,9 +34,9 @@ export async function manualMain(argv:string[]):Promise<number>{
   if((argv.length===1&&['--help','-h'].includes(argv[0]))||(['serve','outline','read','query'].includes(argv[0])&&argv.slice(1).some(t=>['--help','-h'].includes(t)))){process.stdout.write(help);return 0;}
   const command=!argv.length||argv[0].startsWith('--')?'location':argv[0],tokens=command==='location'?argv:argv.slice(1);
   if(!['location','serve','outline','read','query'].includes(command))throw new UsageError('未知手册命令；使用 edoc docs --help');
-  const allowed=new Set(command==='location'?['--format']:command==='serve'?['--port']:['--format','--project','--id',...(['outline','query'].includes(command)?['--depth']:[]),...(command==='outline'?['--all']:[]),...(command==='query'?['--max-items']:[]),...(command==='read'?['--scope','--offset','--max-chars']:[])]);
+  const allowed=new Set(command==='location'?['--format']:command==='serve'?['--port']:['--format','--project','--id',...(['outline','query'].includes(command)?['--depth']:[]),...(command==='outline'?['--all']:[]),...(command==='query'?['--max-items']:[]),...(command==='read'?['--scope','--offset','--max-chars','--with-specs']:[])]);
   const args:Record<string,string>=Object.create(null);
-  for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key)||Object.hasOwn(args,key))throw new UsageError('未知或重复选项：'+key);if(key==='--all'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(key+' 缺少值');args[key]=tokens[i++];}
+  for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key)||Object.hasOwn(args,key))throw new UsageError('未知或重复选项：'+key);if(key==='--all'||key==='--with-specs'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(key+' 缺少值');args[key]=tokens[i++];}
   if(args['--all']&&args['--depth']!==undefined)throw new UsageError('--all 与 --depth 不能同时指定');
   format=args['--format']??(['read','query','outline'].includes(command)?'json':'text');if(!['text','json'].includes(format))throw new UsageError('--format 只接受 text/json');
   const number=(key:string,fallback:number,min:number,max:number)=>{const raw=args[key];if(raw===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(raw)||+raw<min||+raw>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +raw;};
@@ -70,7 +70,7 @@ export async function manualMain(argv:string[]):Promise<number>{
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':outlineText(result.chapters).join('\n')+'\n');return 0;
   }
   if(command==='query'){process.stdout.write(JSON.stringify(manualQuery(manual,args['--id'],{project:args['--project'],depth,maxItems}),null,2)+'\n');return 0;}
-  const result=manualRead(manual,args['--id'],{project:args['--project'],scope:args['--scope'] as 'self'|'subtree'|undefined,offset,maxChars});
+  const result=manualRead(manual,args['--id'],{project:args['--project'],withSpecs:args['--with-specs']==='true',scope:args['--scope'] as 'self'|'subtree'|undefined,offset,maxChars});
   process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':readText(result));return 0;
  }catch(error){
   if(error instanceof UsageError){process.stderr.write(error.message+'\n');return 2;}

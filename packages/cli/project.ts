@@ -28,7 +28,7 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
  edoc validate [--format json|text]         扫描文档、发现数据并校验依赖
  edoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
  edoc query [--project PROJECT_ID] --id ID [--depth 0..10] [--max-items 1..10000] [--format json|text]
- edoc read [--project PROJECT_ID] --id SECTION_ID [--scope self|subtree] [--offset 0] [--max-chars 12000] [--format json|text]
+ edoc read [--project PROJECT_ID] --id ID [--scope self|subtree] [--with-specs] [--offset 0] [--max-chars 12000] [--format json|text]
  edoc export [--project PROJECT_ID] --view ID --format svg --output FILE
  edoc guide [--full] [--format text|json]    文档组织指南，默认简版；--full 完整版
  edoc docs [serve|outline|read|query]        定位 .mdoc 源文或按需查询工具手册
@@ -52,9 +52,9 @@ export async function main(argv:string[]):Promise<number>{
   if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
-  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);
+  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-specs']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);
   const args:Record<string,string>=Object.create(null);
-  for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
+  for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'||key==='--with-specs'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
   if(command==='build'&&args['--format']==='text')throw new UsageError('build 的 --format 只接受 html');
   if(!({build:['text','html'],validate:['json','text'],outline:['json','text'],query:['json','text'],read:['json','text'],export:['svg'],guide:['json','text']}[command]!).includes(format))throw new UsageError('命令输出格式不正确');
@@ -78,7 +78,7 @@ export async function main(argv:string[]):Promise<number>{
   const book=await loadBook(config,{onInputs(inputs){protectOutputs(targets,inputs);if(!Object.keys(config!.children).length)canClean=true;}});protectOutputs(targets,book.inputs);canClean=true;const project=book.root,selected=args['--project']?book.projects.get(args['--project']):project;if(!selected)throw new EdocError([{code:'QUERY_NOT_FOUND',file:config.file,path:'/project',message:'当前组合中没有此工程：'+args['--project']}]);const graph=selected.graph;
   if(command==='query'){process.stdout.write(JSON.stringify(query(graph,args['--id'],{depth,maxItems}),null,2)+'\n');return 0;}
   if(command==='read'){
-   const result=readDocument(graph,args['--id'],{scope:args['--scope'] as 'self'|'subtree'|undefined,offset:readOffset,maxChars:readLimit});
+   const result=readDocument(graph,args['--id'],{withSpecs:args['--with-specs']==='true',scope:args['--scope'] as 'self'|'subtree'|undefined,offset:readOffset,maxChars:readLimit});
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':readText(result));return 0;
   }
   if(command==='outline'){

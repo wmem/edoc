@@ -1,6 +1,6 @@
 {% section id="ref:tags" title="edoc 标签职责" %}
 
-{% directory-order items=["directory-order.mdoc","relation-diagram.mdoc","interface-table.mdoc","data-table.mdoc","waveform.mdoc"] /%}
+{% directory-order items=["directory-order.mdoc","relation-diagram.mdoc","interface-table.mdoc","data-table.mdoc","waveform.mdoc","specification.mdoc"] /%}
 
 先按要表达的内容选择标签，再准备对应类型的数据。标签名称表示展示职责，IR 类型表示事实；有一个数据类型，不代表需要同名标签。
 
@@ -13,9 +13,10 @@
 | 结构化记录 | [data-table](data-table.mdoc) | Table 的列与行，不承担统计绘图 |
 | 数字信号时序 | [waveform](waveform.mdoc) | Waveform / WaveJSON，不执行仿真 |
 | 对象、文章、原始 PDF 跳转 | reference、page、attachment | [跳转契约](../markdoc.mdoc#ref:markdoc-links) |
+| 唯一规范与行为页完整约束 | [specification、spec-list](specification.mdoc) | 条款正文与有序适用集合；非通用任意章节嵌入 |
 | 接入内容、展示真实源码 | include、code | [文件契约](../markdoc.mdoc#ref:markdoc-files) |
 
-这些是当前全部 15 个内置标签。Markdoc 的 if、else、partial、table、slot 属于[原生能力](../markdoc-native.mdoc)，与上述标签分别维护。工程自定义的 reader-note 等不属于内置标签。
+这些是当前全部 17 个内置标签。Markdoc 的 if、else、partial、table、slot 属于[原生能力](../markdoc-native.mdoc)，与上述标签分别维护。工程自定义的 reader-note 等不属于内置标签。
 
 关系图、数据表和数字波形各自有类型，不要求统计数据伪装成 Node 或 Connection。测试通过率、耗时趋势等统计图表尚未实现，也没有预留可使用的 chart、graph 标签。新增能力先定义用途、输入、输出和边界，再注册名称。
 
