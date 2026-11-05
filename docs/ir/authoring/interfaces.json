@@ -1,21 +1,195 @@
 {
   "objects": [
-    {"id":"simple:source","kind":"node","label":"发送端","ports":[
-      {"id":"simple:source.data","label":"DATA","direction":"out","width":8},
-      {"id":"simple:source.valid","label":"VALID","direction":"out","width":1}
-    ],"interfaces":[{"id":"simple:source.stream","label":"STREAM","role":"source","members":["simple:source.data","simple:source.valid"]}]},
-    {"id":"simple:sink","kind":"node","label":"接收端","ports":[
-      {"id":"simple:sink.data","label":"DATA","direction":"in","width":8},
-      {"id":"simple:sink.valid","label":"VALID","direction":"in","width":1}
-    ],"interfaces":[{"id":"simple:sink.stream","label":"STREAM","role":"sink","members":["simple:sink.data","simple:sink.valid"]}]}
+    {
+      "id": "simple:source",
+      "kind": "node",
+      "label": "发送端",
+      "ports": [
+        {
+          "id": "simple:source.data",
+          "label": "DATA",
+          "direction": "out",
+          "width": 8
+        },
+        {
+          "id": "simple:source.valid",
+          "label": "VALID",
+          "direction": "out",
+          "width": 1
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "simple:source.stream",
+          "label": "STREAM",
+          "role": "source",
+          "members": [
+            "simple:source.data",
+            "simple:source.valid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "simple:sink",
+      "kind": "node",
+      "label": "接收端",
+      "ports": [
+        {
+          "id": "simple:sink.data",
+          "label": "DATA",
+          "direction": "in",
+          "width": 8
+        },
+        {
+          "id": "simple:sink.valid",
+          "label": "VALID",
+          "direction": "in",
+          "width": 1
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "simple:sink.stream",
+          "label": "STREAM",
+          "role": "sink",
+          "members": [
+            "simple:sink.data",
+            "simple:sink.valid"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "simple:component",
+      "kind": "node",
+      "label": "独立组件接口",
+      "ports": [
+        {
+          "id": "simple:component.clk",
+          "label": "CLK",
+          "direction": "in",
+          "width": 1
+        },
+        {
+          "id": "simple:component.reset",
+          "label": "RESET_N",
+          "direction": "in",
+          "width": 1,
+          "clockDomainId": "simple:component.clk"
+        },
+        {
+          "id": "simple:component.request",
+          "label": "REQUEST",
+          "direction": "in",
+          "width": 32,
+          "clockDomainId": "simple:component.clk"
+        },
+        {
+          "id": "simple:component.ready",
+          "label": "READY",
+          "direction": "out",
+          "width": 1,
+          "clockDomainId": "simple:component.clk"
+        },
+        {
+          "id": "simple:component.gpio",
+          "label": "GPIO",
+          "direction": "inout",
+          "widthExpr": "DATA_W"
+        },
+        {
+          "id": "simple:component.pending",
+          "label": "PENDING",
+          "direction": "out",
+          "width": 1,
+          "clockDomainId": "simple:component.clk"
+        }
+      ],
+      "interfaces": [
+        {
+          "id": "simple:component.call",
+          "label": "CALL",
+          "role": "target",
+          "members": [
+            "simple:component.request",
+            "simple:component.ready"
+          ]
+        }
+      ]
+    }
   ],
   "relations": [
-    {"id":"simple:data","kind":"connection","class":"data","label":"数据","endpoints":["simple:source.data","simple:sink.data"],"direction":{"sources":["simple:source.data"],"targets":["simple:sink.data"]}},
-    {"id":"simple:valid","kind":"connection","class":"data","label":"有效标记","endpoints":["simple:source.valid","simple:sink.valid"],"direction":{"sources":["simple:source.valid"],"targets":["simple:sink.valid"]}}
+    {
+      "id": "simple:data",
+      "kind": "connection",
+      "class": "data",
+      "label": "数据",
+      "endpoints": [
+        "simple:source.data",
+        "simple:sink.data"
+      ],
+      "direction": {
+        "sources": [
+          "simple:source.data"
+        ],
+        "targets": [
+          "simple:sink.data"
+        ]
+      }
+    },
+    {
+      "id": "simple:valid",
+      "kind": "connection",
+      "class": "data",
+      "label": "有效标记",
+      "endpoints": [
+        "simple:source.valid",
+        "simple:sink.valid"
+      ],
+      "direction": {
+        "sources": [
+          "simple:source.valid"
+        ],
+        "targets": [
+          "simple:sink.valid"
+        ]
+      }
+    }
   ],
-  "views": [{
-    "id":"simple:stream","kind":"interface","label":"两信号接口示例",
-    "include":{"objects":["simple:source","simple:sink"],"relations":["simple:data","simple:valid"]},
-    "display":{"interfaceMode":"collapsed"}
-  }]
+  "views": [
+    {
+      "id": "simple:stream",
+      "kind": "interface",
+      "label": "两信号接口示例",
+      "include": {
+        "objects": [
+          "simple:source",
+          "simple:sink"
+        ],
+        "relations": [
+          "simple:data",
+          "simple:valid"
+        ]
+      },
+      "display": {
+        "interfaceMode": "collapsed"
+      }
+    },
+    {
+      "id": "simple:component-overview",
+      "kind": "interface",
+      "label": "单框组件 · 边界方向与反向握手",
+      "include": {
+        "objects": [
+          "simple:component"
+        ],
+        "relations": []
+      },
+      "display": {
+        "interfaceMode": "expanded",
+        "showPortAttributes": true
+      }
+    }
+  ]
 }

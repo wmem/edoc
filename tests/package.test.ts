@@ -24,7 +24,7 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(packed.files.some((f:any)=>f.path==='examples/fpga-mac/docs/SPEC.mdoc'),'源文 include 引用的样例必须随包');
  assert.ok(!packed.files.some((f:any)=>/^(docs|examples)\//.test(f.path)&&f.path.includes('/output/')),'运行过文档构建也不能混入子工程 HTML');
  const prefix=join(root,'prefix');run('npm',['install','--prefix',prefix,join(root,packed.filename),'--ignore-scripts','--omit=dev','--prefer-offline','--package-lock=false']);
- for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','react','typescript'])assert.ok(!existsSync(join(prefix,'node_modules',name)),name+' 不属于运行依赖');
+ for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','react','typescript','fontkit'])assert.ok(!existsSync(join(prefix,'node_modules',name)),name+' 不属于运行依赖');
  assert.ok(!packed.files.some((f:any)=>f.path.startsWith('dist/packages/render-pdf/')));
  assert.ok(packed.files.some((f:any)=>f.path==='dist/runtime/reader-true-true.js'));
  assert.ok(packed.files.some((f:any)=>f.path==='dist/runtime/fonts/LICENSE'));
@@ -129,7 +129,7 @@ test('Git 打包执行 prepare 后可全局安装，最终安装无需开发依�
  const packed=JSON.parse(run('npm',['pack','git+file://'+source,'--json','--pack-destination',root,'--prefer-offline'],source,{...process.env,PATH:guards+':'+process.env.PATH}))[0];
  run('npm',['install','--global','--prefix',prefix,join(root,packed.filename),'--omit=dev','--prefer-offline','--no-audit','--no-fund']);
  const installed=join(prefix,'lib/node_modules/edoc'),bin=join(prefix,'bin/edoc');
- for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','typescript'])assert.ok(!existsSync(join(installed,'node_modules',name)),name+' 不应留在最终全局安装中');
+ for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','typescript','fontkit'])assert.ok(!existsSync(join(installed,'node_modules',name)),name+' 不应留在最终全局安装中');
  const project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'docs/index.mdoc'),'# Git 安装生成\n\n中文正文。');
  assert.match(run(bin,['--version'],project),/edoc 1/);run(bin,[],project);assert.match(readFileSync(join(project,'output/index.html'),'utf8'),/Git 安装生成/);
  const location=JSON.parse(run(bin,['docs','--format','json'],project));assert.equal(location.entry,join(installed,'docs/index.mdoc'));

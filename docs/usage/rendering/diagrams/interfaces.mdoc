@@ -32,6 +32,18 @@
 
 {% /section %}
 
+{% section id="use:interface-boundary" title="单框组件与端口方向引线" %}
+
+只展示一个模块、尚不需要画对端时，kind: 'interface' 也可以生成完整的单框接口图。下面的组件与视图同样来自上方 interfaces.json，不需要虚构外部模块或 Connection：
+
+{% relation-diagram id="simple:component-overview" /%}
+
+无可见对端的信号用短边界引线表达方向：in 指向框内，out 指向框外，inout 双向；unknown/passive 不猜方向。有真实可见连接的端口沿用连接路径，避免重复画线。引线不代表工程中未连接，查询的真实连接数量也不会增加。
+
+REQUEST [31:0] 与反向 READY 留在 CALL 组内；点击合并后，较粗的双向接口引线表示成员的混合流向，不是把它们改成 RTL inout。GPIO 的 DATA_W 保留参数表达式，时钟和复位保留独立端口及域。端口属性开关只控制附注，名称中的范围继续可见。网页、完整逐信号 SVG 和当前视图 SVG 使用同一份边界几何。
+
+{% /section %}
+
 {% section id="use:interface-declare" title="声明接口身份与成员" %}
 
 在已有 Node 内增加接口，members 引用它自己的真实 Port：

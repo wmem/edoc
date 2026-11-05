@@ -1,14 +1,63 @@
 {
-  "waveforms": [{
-    "id": "system:handshake", "kind": "waveform", "label": "最小握手示意",
-    "format": "wavejson", "semantic": "specification",
-    "data": {
-      "signal": [
-        {"name": "clk", "wave": "p..."},
-        {"name": "valid", "wave": "01.0"},
-        {"name": "data", "wave": "x3.x", "data": ["payload"]}
-      ]
+  "waveforms": [
+    {
+      "id": "system:handshake",
+      "kind": "waveform",
+      "label": "最小握手示意",
+      "format": "wavejson",
+      "semantic": "specification",
+      "data": {
+        "signal": [
+          {
+            "name": "clk",
+            "wave": "p..."
+          },
+          {
+            "name": "valid",
+            "wave": "01.0"
+          },
+          {
+            "name": "data",
+            "wave": "x3.x",
+            "data": [
+              "payload"
+            ]
+          }
+        ]
+      },
+      "source": {
+        "file": "docs/ir/authoring/waveforms.json",
+        "selector": "system:handshake"
+      }
     },
-    "source": {"file": "docs/ir/authoring/waveforms.json", "selector": "system:handshake"}
-  }]
+    {
+      "id": "system:pending",
+      "kind": "waveform",
+      "label": "长中文标签与标题示意",
+      "format": "wavejson",
+      "semantic": "specification",
+      "data": {
+        "signal": [
+          {
+            "name": "clk",
+            "wave": "p......."
+          },
+          {
+            "name": "pending（调用方判断）",
+            "wave": "0.1...0."
+          }
+        ],
+        "head": {
+          "text": "请求在完成之前保持挂起，调用方根据返回值判断下一次调用是否允许开始"
+        },
+        "foot": {
+          "text": "规范示意：长文字完整保留，不代表已执行仿真"
+        }
+      },
+      "source": {
+        "file": "docs/ir/authoring/waveforms.json",
+        "selector": "system:pending"
+      }
+    }
+  ]
 }

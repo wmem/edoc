@@ -49,7 +49,9 @@ RelationView 是关系图视图，不是所有图表的公共视图。数据放�
 
 约束对象的 type 为 order/align，axis 使用 x/y，nodes 至少两个不重复、同父容器的 Node。order.gap 缺省 80，最小 16，表示最小间距；align.axis 是中心坐标对齐轴。它们与已有固定位置冲突时明确报错。
 
-direction 缺省 LR，routing 缺省 orthogonal。未写入 portOrder/interfaceOrder 的成员保留声明中的相对顺序。interfaceSides 只控制对应接口及其成员的 left/right；普通 Node 端点的边通过 relationHints.endpointSides 声明，不把 Node ID 填入接口映射。
+direction 显式指定时采用 LR/RL/TB/BT；未声明方向且没有 positions、constraints、relationHints 的非 wiring 小图（最多12节点、无父子容器）比较 LR/TB 候选，优先适合典型正文比例的布局，其余保留 LR 回退。routing 缺省 orthogonal。自动候选不覆盖作者意图，也不保证所有图都无需调整。未写入 portOrder/interfaceOrder 的成员保留声明中的相对顺序。interfaceSides 只控制对应接口及其成员的 left/right；普通 Node 端点的边通过 relationHints.endpointSides 声明，不把 Node ID 填入接口映射。
+
+节点尺寸根据标题和端口文字计算，标题必要时换行且保留原名称；固定位置的已有带端口节点保留较宽的基础尺寸，避免改变原布局的占位假设。来源、端点和查询身份不受显示尺寸变化影响。
 
 positions 的 objectId、x、y 是视图内布局提示，不是浏览器屏幕坐标；工具会整体平移以保留边界、标题和父框留白。完整的接口排序、侧边和局部展开对照见[图形进阶配方](../rendering/diagrams/graph-options.mdoc#use:graph-options-create)。
 
@@ -123,6 +125,10 @@ relationHints 是对象，键必须是本视图 include.relations 中已有的 C
 | SVG / 当前视图 SVG | 完整逐信号导出与当前接口展开投影分开；文字开关按显示参考的规则处理 |
 
 Node.parentId、Group 和 Node.interfaces 的同源创建与实际操作见[图形分组与接口显示](../rendering/diagrams/graph-options.mdoc)。Group 初始状态用 collapsedGroups，接口初始状态用 interfaceMode/Overrides；两者不能混用。临时选择和缩放不会写回源文件。
+
+初始图优先保证主要标题/端口名至少约12px，附注仍使用较小字号。整体放不下时明确提示局部显示，保留平移和完整适配入口；不会删去节点或关系。显式选择完整适配后，窗口变化仍沿用总览模式；选择清晰阅读后维持1:1。接口展开保留已有缩放和操作模块位置。
+
+kind=interface 中没有可见对端的端口使用短边界引线，in 向内、out 向外、inout 双向，unknown/passive 无箭头；有真实连接的端口不重复引线。多位端口名称旁显示 [N-1:0]，widthExpr 显示参数范围。聚合接口的粗引线表示成员流向，混合流向不等于成员为RTL inout；展开头部不冒充一个真实信号。引线属于展示几何，不是 Connection，SVG 与网页共用同一结果。见[单框组件](../rendering/diagrams/interfaces.mdoc#use:interface-boundary)。
 
 {% section id="ref:graph-classes" title="关系类别与预设线型" %}
 

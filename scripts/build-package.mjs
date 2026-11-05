@@ -10,6 +10,7 @@ import {execFileSync} from 'node:child_process';
 import {sourceBuildInfo} from '../packages/core/build-info.ts';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),output=join(root,'dist');
+await import('./font-metrics.mjs');
 rmSync(output,{recursive:true,force:true});mkdirSync(output,{recursive:true});
 writeFileSync(join(output,'build-info.json'),JSON.stringify({...sourceBuildInfo(root),builtAt:new Date().toISOString()},null,2)+'\n');
 const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(dir,e.name)):[join(dir,e.name)]);

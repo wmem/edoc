@@ -1,3 +1,5 @@
+import {nodeHeading,addPortLeads,readableViewport} from './graph-presentation.ts';
+import {portLabel} from '../render-graph/ports.ts';
 import {drawnPaths} from '../render-graph/net-tree.ts';
 import {anchor} from '../core/identity.ts';
 import {Graph as X6} from '@antv/x6';
@@ -30,14 +32,15 @@ function initialize(holder:HTMLElement){
  window.EdocGraphs.push(graph);
  const cellID=(base:string)=>{let id=base;while(graph.getCellById(id))id+='#';return id;};
  for(const n of s.nodes){
-  const markup:any[]=[{tagName:'rect',selector:'body'},{tagName:'text',selector:'title'}];
-  const attrs:any={body:{fill:'#fff',stroke:'#93a9bd',strokeWidth:1.3,rx:10,ry:10},title:{refX:0,refY:0,textAnchor:'start',text:n.label,x:16,y:27,fontSize:n.titleSize,fontWeight:700,fill:'#17324d',fontFamily:'Noto Sans SC'}};
-  n.ports.forEach((p,i)=>{for(const [key,text,offset,size,color]of [['p',p.label,-4,14,'#17324d'],['a',p.annotation,11,11,'#617487']]as const){markup.push({tagName:'text',selector:key+i});attrs[key+i]={refX:0,refY:0,text,x:p.side==='left'?13:n.width-13,y:p.y-n.y+offset,textAnchor:p.side==='left'?'start':'end',fontSize:size,fill:color,fontFamily:'Noto Sans SC',...(key==='a'?{'data-port-annotation':p.id,display:s.display.showPortAttributes?'':'none'}:{})};}});
+  const heading=nodeHeading(n),markup:any[]=[{tagName:'rect',selector:'body'},...heading.markup];
+  const attrs:any={body:{fill:'#fff',stroke:'#93a9bd',strokeWidth:1.3,rx:10,ry:10},...heading.attrs};
+  n.ports.forEach((p,i)=>{for(const [key,text,offset,size,color]of [['p',portLabel(p),-4,14,'#17324d'],['a',p.annotation,11,11,'#617487']]as const){markup.push({tagName:'text',selector:key+i});attrs[key+i]={refX:0,refY:0,text,x:p.side==='left'?13:n.width-13,y:p.y-n.y+offset,textAnchor:p.side==='left'?'start':'end',fontSize:size,fill:color,fontFamily:'Noto Sans SC',...(key==='a'?{'data-port-annotation':p.id,display:s.display.showPortAttributes?'':'none'}:{})};}});
   graph.addNode({id:n.id,zIndex:1,x:n.x,y:n.y,width:n.width,height:n.height,markup,attrs,ports:{groups:{absolute:{position:{name:'absolute'},attrs:{circle:{r:4,magnet:false,stroke:'#447599',fill:'white'}}}},items:n.ports.map(p=>({id:p.id,group:'absolute',args:{x:p.x-n.x,y:p.y-n.y}}))},data:{entityId:n.id}});
  }
  for(const n of s.nodes)if(n.parentId&&graph.getCellById(n.parentId))graph.getCellById(n.parentId).addChild(graph.getCellById(n.id));
  for(const n of s.nodes)if(s.nodes.some(child=>child.parentId===n.id)){const parent=graph.getCellById(n.id);parent.setZIndex(-1);parent.attr('body/fill','#f1f6f9');}
  const connectionCells=new Map<string,string[]>();
+ addPortLeads(graph,s);
  for(const net of s.nets){
   const style=styles[net.class]??styles.other;
   const cells:string[]=[];
@@ -52,17 +55,19 @@ function initialize(holder:HTMLElement){
   const label=graph.addNode({id:cellID('label:'+net.id),zIndex:2,x:box.x,y:box.y,width:box.width,height:box.height,markup,attrs,data:{entityId:net.id}});cells.push(label.id);
   connectionCells.set(net.id,cells);
  }
- function highlight(id:string){select(id);const adjacent=s.nets.filter(n=>n.id===id||n.endpoints.some(p=>p===id||s.nodes.find(n=>n.id===id)?.ports.some(port=>port.id===p))).map(n=>n.id);const owners=new Set(s.nets.filter(n=>adjacent.includes(n.id)).flatMap(n=>n.endpoints.map(p=>s.nodes.find(n=>n.id===p||n.ports.some(port=>port.id===p))?.id)));for(const cell of graph.getEdges())cell.attr('line/opacity',adjacent.includes(cell.getData()?.entityId)?1:.18);for(const n of s.nodes)graph.getCellById(n.id).attr('body/stroke',owners.has(n.id)||n.id===id?'#0a8aa5':'#b9c7d3');}
+ function highlight(id:string){select(id);const adjacent=s.nets.filter(n=>n.id===id||n.endpoints.some(p=>p===id||s.nodes.find(n=>n.id===id)?.ports.some(port=>port.id===p))).map(n=>n.id);const owners=new Set(s.nets.filter(n=>adjacent.includes(n.id)).flatMap(n=>n.endpoints.map(p=>s.nodes.find(n=>n.id===p||n.ports.some(port=>port.id===p))?.id)));for(const cell of graph.getEdges())cell.attr('line/opacity',cell.getData()?.portLead?(cell.getData()?.entityId===id||cell.getData()?.ownerId===id?1:.18):adjacent.includes(cell.getData()?.entityId)?1:.18);for(const n of s.nodes)graph.getCellById(n.id).attr('body/stroke',owners.has(n.id)||n.id===id?'#0a8aa5':'#b9c7d3');}
  graph.on('node:click',({node,e})=>highlight((e.target as Element).closest('[port]')?.getAttribute('port')??node.getData()?.entityId??node.id));graph.on('edge:click',({edge})=>highlight(edge.getData()?.entityId??edge.id));
- const fit=()=>graph.zoomToFit({padding:26,maxScale:1});
+ let viewportMode:'readable'|'fit'|'actual'='readable';
+ const viewport=()=>readableViewport(graph,s,holder,viewportMode);
+ const fit=()=>{viewportMode='fit';viewport();};
  holder.querySelector('[data-action=fit]')!.addEventListener('click',fit);
- holder.querySelector('[data-action=read]')!.addEventListener('click',()=>{graph.zoomTo(1);graph.translate(24-Math.min(s.width,...s.nodes.map(n=>n.x)),36-Math.min(s.height,...s.nodes.map(n=>n.y)));});
+ holder.querySelector('[data-action=read]')!.addEventListener('click',()=>{viewportMode='actual';viewport();});
  const expand=holder.querySelector<HTMLButtonElement>('[data-action=expand]')!;
  expand.onclick=()=>{
   const active=holder.classList.toggle('diagram-expanded');expand.setAttribute('aria-pressed',String(active));expand.textContent=active?'关闭大图':'大图查看';
   if(active){holder.setAttribute('role','dialog');holder.setAttribute('aria-modal','true');holder.setAttribute('aria-label',s.label);}
   else{holder.removeAttribute('role');holder.removeAttribute('aria-modal');holder.removeAttribute('aria-label');expand.focus();}
-  requestAnimationFrame(()=>{graph.resize(holder.clientWidth,canvas.clientHeight);fit();});
+  requestAnimationFrame(()=>{graph.resize(holder.clientWidth,canvas.clientHeight);viewport();});
  };
  holder.addEventListener('keydown',event=>{
   if(!holder.classList.contains('diagram-expanded'))return;
@@ -71,11 +76,11 @@ function initialize(holder:HTMLElement){
  });
  holder.querySelector('[data-action=plus]')!.addEventListener('click',()=>graph.zoom(.15));
  holder.querySelector('[data-action=minus]')!.addEventListener('click',()=>graph.zoom(-.15));
- holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));s.nodes.forEach(n=>graph.getCellById(n.id).attr('body/stroke','#93a9bd'));panel.textContent='选择图中对象查看工程属性';fit();});
+ holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));s.nodes.forEach(n=>graph.getCellById(n.id).attr('body/stroke','#93a9bd'));panel.textContent='选择图中对象查看工程属性';viewport();});
  holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const clone=holder.querySelector('.static-svg svg')!.cloneNode(true) as SVGSVGElement;const style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
  const filtered=new Set<string>(s.visibleClasses?s.nets.filter(n=>!s.visibleClasses!.includes(n.class)).map(n=>n.class):[]),collapsed=new Set<string>();
  let showRelationLabels=s.display.showRelationLabels;
- function visibility(){for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));const cells=connectionCells.get(net.id)!;for(const [i,id]of cells.entries())graph.getCellById(id).setVisible(!hide&&(i!==cells.length-1||showRelationLabels));}}
+ function visibility(){for(const edge of graph.getEdges())if(edge.getData()?.portLead)edge.setVisible(graph.getCellById(edge.getData().ownerId).isVisible());for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));const cells=connectionCells.get(net.id)!;for(const [i,id]of cells.entries())graph.getCellById(id).setVisible(!hide&&(i!==cells.length-1||showRelationLabels));}}
  const staticSVG=holder.querySelector('.static-svg svg')!;
  const portAttributes=holder.querySelector<HTMLInputElement>('[data-display="port-attributes"]');
  if(portAttributes)portAttributes.onchange=()=>{
@@ -96,7 +101,7 @@ function initialize(holder:HTMLElement){
   const busIds:string[]=[];const members=s.nodes.filter(n=>group.members.includes(n.id));
   button.onclick=()=>{if(collapsed.has(group.id)){collapsed.delete(group.id);busIds.splice(0).forEach(id=>graph.removeCell(id));members.forEach(n=>graph.getCellById(n.id).show());button.textContent='总览 '+group.label;}else{collapsed.add(group.id);button.textContent='展开 '+group.label;if(members.length){members.forEach(n=>graph.getCellById(n.id).hide());const aggregate=graph.addNode({id:cellID('aggregate:'+group.id),shape:'rect',zIndex:1,x:members[0].x,y:members[0].y,width:200,height:90,attrs:{body:{fill:'#eaf3f7',stroke:'#52788e',rx:10},label:{text:group.label+'\n'+related.length+' independent nets',fontFamily:'Noto Sans SC'}},data:{entityId:group.id}});busIds.push(aggregate.id);for(const net of related){for(const endpoint of net.endpoints){const owner=s.nodes.find(n=>n.id===endpoint||n.ports.some(p=>p.id===endpoint))!;if(members.some(n=>n.id===owner.id))continue;const edge=graph.addEdge({source:{cell:aggregate.id},target:{cell:owner.id,...(endpoint!==owner.id?{port:endpoint}:{})},router:{name:'orth'},attrs:{line:{stroke:(styles[net.class]??styles.other).color,targetMarker:null}},labels:[{attrs:{label:{text:net.label,display:showRelationLabels?'':'none'}}}],data:{entityId:net.id}});busIds.push(edge.id);}}}else owners.slice(1).forEach((id,i)=>{const bus=graph.addEdge({id:cellID('bus:'+group.id+':'+i),source:{cell:owners[0]},target:{cell:id},router:{name:'orth'},attrs:{line:{stroke:'#52687d',strokeWidth:5,targetMarker:null}},labels:[{attrs:{label:{text:`${group.label} · ${related.length} independent nets`,display:showRelationLabels?'':'none'}}}],data:{entityId:group.id}});busIds.push(bus.id);});select(group.id);}visibility();};if(s.collapsedGroups.includes(group.id))button.click();
  }
- visibility();fit();const resize=new ResizeObserver(()=>{if(!stopped){graph.resize(holder.clientWidth,canvas.clientHeight);fit();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
+ visibility();viewport();const resize=new ResizeObserver(()=>{if(!stopped){graph.resize(holder.clientWidth,canvas.clientHeight);viewport();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
 }
 const holders=[...document.querySelectorAll<HTMLElement>('[data-diagram]')];
 const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){initialize(entry.target as HTMLElement);observer.unobserve(entry.target);}},{rootMargin:'600px'});

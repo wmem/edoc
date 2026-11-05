@@ -10,8 +10,31 @@ import type {Waveform} from '../packages/core/types.ts';
 import {waveform} from '../packages/render-wave/index.ts';
 import {html} from '../packages/pack-html/index.ts';
 import {fixture,save,repository} from './helpers.ts';
+import {fontCSS} from '../packages/render-graph/font.ts';
+import {wrapText} from '../packages/render-graph/text.ts';
 const data=JSON.parse(readFileSync(join(repository,'examples/fpga-mac/project/handshake.json'),'utf8'));
 const wave:Waveform={id:'wave:handshake',kind:'waveform',label:'握手与反压',format:'wavejson',semantic:'specification',data,source:{file:'examples/fpga-mac/project/handshake.json'}};
+
+test('长中文自动换行不把逗号留在行首或把开括号留在行尾',()=>{
+ const text='前置条件成立，继续执行处理（保留完整语义）。',lines=wrapText(text,14,84);assert.equal(lines.join(''),text);assert.ok(lines.every(line=>!/^[，。！？、）]/.test(line)&&!/[（]$/.test(line)));
+});
+
+test('长中文标签、内部标题脚注、分组及富文本的实际文字全部位于SVG内',{timeout:40000},async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'edoc-wave-bounds-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const definitions=[
+  {signal:[{name:'clk',wave:'p.......'},{name:'pending（调用方判断）',wave:'0.1...0.'}]},
+  {signal:[{name:'clk',wave:'p.'},{name:'valid',wave:'01'}],head:{text:'请求在完成之前保持挂起，调用方根据返回值判断下一次调用是否允许开始'},foot:{text:'长中文脚注应完整显示且不改变握手时序的真实语义'}},
+  {signal:[['长中文请求与完成状态分组',{name:'request_<b>pending</b><sup>2</sup>',wave:'01..'},{name:'返回状态（含异常与重试条件）',wave:'0.1.'},{name:'base<sup>iiiiiiiiiiiiiiiiiiiiiiii</sup>_tail',wave:'01..'},{name:'<tt>iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii</tt>',wave:'0..1'}]]},
+ ];
+ const file=join(dir,'waves.html');writeFileSync(file,`<!doctype html><meta charset="utf-8"><style>${fontCSS()}</style>`+definitions.map((data,i)=>waveform({...wave,data},i)).join(''));
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const page=await browser.newPage();
+ await page.goto(pathToFileURL(file).href);await page.evaluate(()=>document.fonts.ready);
+ const outside=await page.evaluate(()=>[...document.querySelectorAll<SVGSVGElement>('.wave svg')].flatMap(svg=>{
+  const v=svg.viewBox.baseVal;return [...svg.querySelectorAll<SVGTextElement>('text')].flatMap(text=>{const b=text.getBBox(),m=svg.getCTM()!.inverse().multiply(text.getCTM()!);const p=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]].map(([x,y])=>new DOMPoint(x,y).matrixTransform(m));return p.some(q=>q.x<v.x-.1||q.y<v.y-.1||q.x>v.x+v.width+.1||q.y>v.y+v.height+.1)?[{text:text.textContent,points:p.map(p=>({x:p.x,y:p.y})),viewBox:[v.x,v.y,v.width,v.height]}]:[];});
+ }));assert.deepEqual(outside,[]);
+ assert.match(await page.locator('.wave').first().innerText(),/pending（调用方判断）/);
+ for(const svg of await page.locator('.wave svg').all())assert.ok((await svg.getAttribute('viewBox'))!.startsWith('0 0 '));
+});
 
 test('波形图元保留真实 skin 描边与总线填色，输出不产生全局样式',()=>{
  const output=waveform(wave,0);

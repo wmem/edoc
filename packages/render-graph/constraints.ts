@@ -51,9 +51,9 @@ export function constrainNodes(nodes:SceneNode[],view:RelationView,relations:Con
     if(attempt===siblings.length*siblings.length-1)conflict(`没有可用的节点间距：${siblings.map(n=>n.id).join(' / ')}`);
    }
   }
-  if(parentId&&siblings.length){const parent=byId.get(parentId)!,portHeight=parent.ports.length?80+parent.ports.length*38:0,oldY=parent.y;
-   parent.x=Math.min(...siblings.map(n=>n.x))-60;parent.y=Math.min(...siblings.map(n=>n.y))-90;
-   parent.width=Math.max(240,...siblings.map(n=>n.x+n.width-parent.x+60));parent.height=Math.max(portHeight,...siblings.map(n=>n.y+n.height-parent.y+60));
+  if(parentId&&siblings.length){const parent=byId.get(parentId)!,portHeight=parent.ports.length?80+parent.ports.length*38+(parent.headerHeight??42)-42:0,oldY=parent.y;
+   parent.x=Math.min(...siblings.map(n=>n.x))-60;parent.y=Math.min(...siblings.map(n=>n.y))-((parent.headerHeight??42)+48);
+   parent.width=Math.max(parent.width,240,...siblings.map(n=>n.x+n.width-parent.x+60));parent.height=Math.max(portHeight,...siblings.map(n=>n.y+n.height-parent.y+60));
    parent.ports.forEach(p=>{const row=p.y-oldY;p.x=parent.x+(p.side==='right'?parent.width:0);p.y=parent.y+row;});
    const fixed=positions.get(parentId);if(fixed){const dx=fixed.x+60-parent.x,dy=fixed.y+70-parent.y;if((Math.abs(dx)>.001||Math.abs(dy)>.001)&&siblings.some(n=>locked(n.id)))conflict(`父容器 ${parentId} 与子节点的固定位置不一致`);shift(parent,dx,dy);}
   }

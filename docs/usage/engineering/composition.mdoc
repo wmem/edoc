@@ -37,4 +37,17 @@ project 使用稳定 projectId，不是父子别名或磁盘路径。只查当�
 
 {% /section %}
 
+{% section id="use:weak-contract" title="组件引用外部合同，不扩大构建范围" %}
+
+普通 Markdown 文件链接表达本工程的阅读关系，会将目标文章纳入发布；使用 source.file 只记录本地来源时不自动发布正文，但它仍受工程根约束。独立组件引用父工程或兄弟工程合同，使用稳定 projectId、逻辑页面 ID 和可选 anchor：
+
+{% code file="docs/support/recipes/weak-contract.mdoc" language="markdoc" /%}
+
+实际效果：{% include file="docs/support/recipes/weak-contract.mdoc" /%}
+
+本手册没有接入 contract-library，点击会提示当前产物没有该内容；不会查找其配置，也不会要求合同文件存在。在已经组合目标的产物中，同一引用可直接定位。合同工程应长期保持 projectId、页面 ID 与章节 ID 稳定；当前页面 ID 是相对工程根路径去掉扩展名。
+
+如果合同已有线上发布地址，可以使用普通 https 链接，不建立源码依赖，但离线时不保证能访问。当前 Source 仍要求本地 file，不接受用 ../父工程 或 URL 充当它；跨工程正式来源模型尚未扩展。本例提供正文弱跳转，不伪装成 source 校验已经覆盖外部合同。
+
+{% /section %}
 {% /section %}

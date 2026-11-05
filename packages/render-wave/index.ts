@@ -1,6 +1,7 @@
 import WaveDrom from 'wavedrom';
 import type {Waveform} from '../core/types.ts';
 import {esc} from '../render-graph/index.ts';
+import {fitWaveText} from './bounds.ts';
 
 type Rule={selector:string;style:string;specificity:number};
 const attributes=(node:any[]):Record<string,any>=>{
@@ -45,7 +46,7 @@ export function waveform(w:Waveform,index:number):string{
  if(!Number.isSafeInteger(index)||index<0)throw new Error('波形实例序号必须为非负整数');
  // renderAny 会修改 skin；每个实例使用独立副本，避免共享 defs 与上一次输出残留。
  const tree=WaveDrom.renderAny(index,structuredClone(w.data),structuredClone(WaveDrom.waveSkin));
- const output=WaveDrom.onml.stringify(isolate(tree,index));
+ const output=WaveDrom.onml.stringify(fitWaveText(isolate(tree,index),w.data));
  if(/<script|<foreignObject|(?:href|src)=["'](?:https?:|javascript:|file:)/i.test(output))throw new Error('WaveJSON 输出包含不允许的资源或标记');
  return `<figure class="wave" data-waveform-id="${esc(w.id)}"><figcaption>${esc(w.label)} · ${w.semantic==='specification'?'规范示意':'实际仿真记录'}</figcaption>${output}</figure>`;
 }

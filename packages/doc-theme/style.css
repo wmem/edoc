@@ -30,3 +30,5 @@ pre,code{font-family:Consolas,'Noto Sans SC',monospace}
 
 /* 保留 Markdoc 原生表格对齐；主题默认值不能覆盖单元格声明。 */
 th[align=left],td[align=left]{text-align:left}th[align=center],td[align=center]{text-align:center}th[align=right],td[align=right]{text-align:right}
+
+.viewport-note{margin:0;padding:8px 12px;font-size:13px;color:#365c72;background:#edf5fa}

@@ -97,6 +97,8 @@ data 保存 WaveJSON 对象，交由时序渲染器处理。[时序教程](../re
 
 data 必需 signal，可含 edge、head、foot、config。signal 可包含信号对象或命名分组，edge 描述标注，head/foot/config 交给 WaveDrom 处理；接受这些对象不表示其中每个第三方选项都已逐项验收，也不提供独立的通用时间窗口或时序布局配置层。
 
+渲染使用随包 Noto Sans SC 度量，按信号名、分组和标题/脚注文字的变换计算完整 SVG 范围。长纯文本 head.text/foot.text 自动换行；原始 data 和时序坐标不改写。IR label 位于图外 HTML 标题，不与内部标题合并。不开放自定义字体或任意 CSS 的波形配置；字体替换后应重新生成度量并验证。
+
 {% section id="ref:waveform-example" title="最小规范波形" %}
 
 将以下完整数据保存为自己工程的 docs/ir/authoring/waveforms.json。保留空配置、默认数据目录与首页，在 docs/index.mdoc 写入下方 waveform 标签后执行 edoc。这份数据不依赖其他对象。

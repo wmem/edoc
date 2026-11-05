@@ -1,3 +1,4 @@
+import {decoratePortLeads,portAnnotation,unconnectedNote} from './ports.ts';
 // 接口视图的纯数据投影与共享布局；构建端和离线浏览器调用同一实现。
 import type {Graph,Node,Port,Interface,Connection,RelationView,Group,RecordEntry} from '../core/types.ts';
 import {layoutScene} from './scene.ts';
@@ -71,7 +72,8 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
   let row=66;
   for(const i of owned){const side=model.view.layout?.interfaceSides?.[i.id],pad=slots.get(i.id)??[],center=row+Math.max(16,(pad.length-1)*4),header:Port={id:i.id,label:i.label+(i.role?' · '+i.role:''),direction:'unknown',source:i.source};
    ports.push(header);hints.rows![i.id]=center;if(side)hints.sides![i.id]=side;
-   hints.annotations![i.id]=[i.protocol,`${i.visibleMembers.length}/${i.members.length} 个成员`,i.internalRelations.length?`${i.internalRelations.length} 条内部关系`:undefined].filter(Boolean).join(' · ');
+   const directions=i.visibleMembers.map(id=>n.ports!.find(p=>p.id===id)!.direction),incoming=directions.some(d=>d==='in'||d==='inout'),outgoing=directions.some(d=>d==='out'||d==='inout');
+   hints.annotations![i.id]=[i.protocol,incoming&&outgoing?'混合流向':incoming?'流入':outgoing?'流出':undefined,`${i.visibleMembers.length}/${i.members.length} 个成员`,i.internalRelations.length?`${i.internalRelations.length} 条内部关系`:undefined].filter(Boolean).join(' · ');
    portMeta.set(i.id,{interfaceId:i.id,interfaceHeader:true,collapsed:!i.expanded,members:i.visibleMembers,totalMembers:i.members.length,padHeight:Math.max(14,(pad.length-1)*8+12)});
    if(i.expanded){row+=50;const members=(n.ports??[]).filter(p=>i.visibleMembers.includes(p.id)),portOrder=model.view.layout?.portOrder??[];
     members.sort((a,b)=>(portOrder.includes(a.id)?portOrder.indexOf(a.id):portOrder.length)-(portOrder.includes(b.id)?portOrder.indexOf(b.id):portOrder.length));
@@ -79,7 +81,7 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
    }else{for(const [j,slot]of pad.entries()){ports.push({id:slot.id,label:'',direction:'unknown'});hints.rows![slot.id]=center-(pad.length-1)*4+j*8;if(side)hints.sides![slot.id]=side;hints.annotations![slot.id]='';portMeta.set(slot.id,{interfaceId:i.id,slot:true,members:slot.ports});}row+=Math.max(54,pad.length*8+24);}
   }
   for(const p of n.ports??[])if(visible.has(p.id)&&!byPort.has(p.id)){ports.push(p);hints.rows![p.id]=row;row+=38;}
-  hints.heights![n.id]=Math.max(90,row+14);hints.widths![n.id]=owned.some(i=>i.expanded)?340:Math.max(220,textWidth(n.label,17)+32,...ports.filter(p=>!portMeta.get(p.id)?.slot).map(p=>Math.max(textWidth(p.label,14)+56,textWidth(hints.annotations![p.id]??'',11)+30))); const {interfaces:_interfaces,...node}=n;return {...node,ports};
+  hints.heights![n.id]=Math.max(90,row+14);hints.widths![n.id]=Math.max(180,Math.min(280,textWidth(n.label,17)+32),...ports.filter(p=>!portMeta.get(p.id)?.slot).map(p=>Math.max(textWidth(p.label,14)+56,textWidth((hints.annotations![p.id]??portAnnotation(p,model.domains[p.clockDomainId??''],model.view.display?.portAttributes))+(portMeta.get(p.id)?.noConnection?unconnectedNote:''),11)+30))); const {interfaces:_interfaces,...node}=n;return {...node,ports};
  });
  for(const i of interfaces){const ids=fakeNodes.flatMap(n=>n.ports??[]).filter(p=>portMeta.get(p.id)?.interfaceId===i.id).map(p=>p.id);for(const id of ids)hints.sideGroups![id]=ids;}
  const relationHints:NonNullable<NonNullable<RelationView['layout']>['relationHints']>=Object.create(null),projectionWarnings=new Map<string,{code:string;message:string}[]>();
@@ -97,5 +99,5 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
  const result=await layoutScene(graph,view.id,hints);
  for(const n of result.nodes)for(const p of n.ports)Object.assign(p,portMeta.get(p.id));
  for(const net of result.nets){const b=projected.find(b=>b.id===net.id)!;if(projectionWarnings.has(net.id))net.layoutWarnings=[...net.layoutWarnings??[],...projectionWarnings.get(net.id)!];Object.assign(net,{bundle:b.bundle,sourceRelations:b.relations,originalEndpoints:Object.fromEntries(b.relations.map(r=>[r.id,r.endpoints])),interfaceIds:interfaces.filter(i=>b.relations.some(r=>r.endpoints.some(p=>i.members.includes(p)))).map(i=>i.id)});}
- result.interfaceModel=model;result.interfaceState={modes,classes:state.classes};result.interfaces=interfaces;result.internalRelations=internal;return result;
+ result.interfaceModel=model;result.interfaceState={modes,classes:state.classes};result.interfaces=interfaces;result.internalRelations=internal;return decoratePortLeads(result);
 }

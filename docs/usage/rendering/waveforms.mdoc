@@ -20,6 +20,16 @@
 
 {% /section %}
 
+{% section id="use:waveform-bounds" title="长名称、标题与脚注" %}
+
+信号名称无需为了避免裁切而缩短。工具使用随包字体的度量安排文字边界，保留完整名称；长 head.text/foot.text 可换行，SVG 视口包含完整内容。IR 的 label 是图外标题，与 WaveJSON 的内部标题分别显示：
+
+{% waveform id="system:pending" /%}
+
+这张图也是下方同一数据文件中的规范示意。缩窄页面后仍保留完整矢量内容；时序密集时应按阅读任务拆分，不把文字缩短或删除当作渲染修复。该行为不需要浏览器参与构建，也没有新增须手工填写的文字边界参数。
+
+{% /section %}
+
 {% section id="use:waveform-create" title="创建最小规范波形" %}
 
 保留最小配置与 docs/index.mdoc 首页时，将下面完整定义保存为 docs/ir/authoring/waveforms.json。这份数据不依赖其他对象：

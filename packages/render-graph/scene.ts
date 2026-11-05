@@ -8,14 +8,16 @@ import type {LabelBox} from './geometry.ts';
 import {prepareInterfaceModel,interfaceScene} from './interfaces.ts';
 import type {InterfaceModel,InterfaceState,SceneInterface} from './interfaces.ts';
 import {constrainNodes} from './constraints.ts';
+import {measureText,wrapText} from './text.ts';
+import {decoratePortLeads,widthRange,portAnnotation} from './ports.ts';
 export type SceneHints={sideGroups?:Record<string,string[]>;widths?:Record<string,number>;rows?:Record<string,number>;heights?:Record<string,number>;sides?:Record<string,'left'|'right'>;annotations?:Record<string,string>};
 export async function scene(graph:Graph,id:string,options:{interfaces?:'expanded'}={}):Promise<Scene>{
  const model=prepareInterfaceModel(graph,id);
  if(model)return interfaceScene(model,options.interfaces==='expanded'?{modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,'expanded' as const]))),classes:null}:undefined);
  return layoutScene(graph,id);
 }
-export type ScenePort = {padHeight?:number;interfaceId?:string;interfaceHeader?:boolean;collapsed?:boolean;members?:string[];totalMembers?:number;slot?:boolean;noConnection?:boolean;id:string;label:string;annotation:string; x:number;y:number;side:'left'|'right';source?:Source};
-export type SceneNode = {id:string;label:string;x:number;y:number;width:number;height:number;titleSize:number;parentId?:string;source?:Source;ports:ScenePort[]};
+export type ScenePort = {direction?:Port['direction'];displayLabel?:string;lead?:{points:{x:number;y:number}[];startArrow:boolean;endArrow:boolean;aggregate:boolean};padHeight?:number;interfaceId?:string;interfaceHeader?:boolean;collapsed?:boolean;members?:string[];totalMembers?:number;slot?:boolean;noConnection?:boolean;id:string;label:string;annotation:string; x:number;y:number;side:'left'|'right';source?:Source};
+export type SceneNode = {id:string;label:string;x:number;y:number;width:number;height:number;titleSize:number;titleLines?:string[];headerHeight?:number;parentId?:string;source?:Source;ports:ScenePort[]};
 export type SceneNet = {layoutWarnings?:{code:string;message:string}[];paths?:{points:{x:number;y:number}[];arrow:boolean;endArrow?:boolean;endpoint?:string}[];junctions?:{x:number;y:number}[];bundle?:boolean;sourceRelations?:Connection[];originalEndpoints?:Record<string,string[]>;interfaceIds?:string[];id:string;label:string;class:string;endpoints:string[];source?:Source;junction:boolean;labelBox:LabelBox;hub:{x:number;y:number};branches:{endpoint:string;points:{x:number;y:number}[];arrow:boolean}[]};
 export type Scene = {interfaceModel?:InterfaceModel;interfaceState?:InterfaceState;interfaces?:SceneInterface[];internalRelations?:Record<string,string[]>;id:string;label:string;kind:string;width:number;height:number;display:{showPortAttributes:boolean;showRelationLabels:boolean};visibleClasses?:string[];nodes:SceneNode[];nets:SceneNet[];collapsedGroups:string[];groups:{id:string;label:string;members:string[]}[]};
 
@@ -36,30 +38,34 @@ export async function layoutScene(graph:Graph, id:string,hints:SceneHints={}):Pr
   const rank=(id:string)=>order.includes(id)?order.indexOf(id):order.length+(node.ports??[]).findIndex(p=>p.id===id);
   return rank(a.id)-rank(b.id);
  });
- const dimensions=nodes.map(n=>({id:n.id,width:hints.widths?.[n.id]??Math.max(ports(n).length?340:160,textWidth(n.label,ports(n).length?17:15)+32),height:hints.heights?.[n.id]??(ports(n).length?Math.max(110,80+ports(n).length*38):Math.max(60,24+relations.filter(r=>r.endpoints.includes(n.id)).length*18))}));
+ const titles=new Map(nodes.map(n=>[n.id,wrapText(n.label,ports(n).length?17:15,248)]));
+ const header=(id:string)=>Math.max(42,20+titles.get(id)!.length*22);
+ const annotation=(p:Port)=>hints.annotations?.[p.id]??portAnnotation(p,p.clockDomainId?graph.index.get(p.clockDomainId)?.entity.label??p.clockDomainId:'',view.display?.portAttributes);
+ const displayLabel=(p:Port)=>p.label+(view.kind==='interface'&&widthRange(p)?' '+widthRange(p):'');
+ const dimensions=nodes.map(n=>({id:n.id,width:Math.max(hints.widths?.[n.id]??(view.layout?.positions?.length&&ports(n).length?340:160),...titles.get(n.id)!.map(line=>measureText(line,ports(n).length?17:15)+36),...ports(n).map(p=>Math.max(measureText(displayLabel(p),14),measureText(annotation(p),11))+30)),height:(hints.heights?.[n.id]??(ports(n).length?Math.max(110,80+ports(n).length*38):Math.max(60,24+relations.filter(r=>r.endpoints.includes(n.id)).length*18)))+header(n.id)-42}));
  const owner=(id:string)=>graph.index.get(id)?.ownerId??id;
  const edges=relations.flatMap(r=>r.endpoints.slice(1).filter(id=>owner(id)!==owner(r.endpoints[0])).map((id,i)=>({id:r.id+':layout:'+i,sources:[owner(r.endpoints[0])],targets:[owner(id)],...(i?{}:{labels:[{text:r.label??r.id,width:labelBox(r.label??r.id).width,height:labelBox(r.label??r.id).height}]})})));
  const ELK = ELKModule as unknown as new () => { layout: (graph: ElkNode) => Promise<ElkNode> };
  const elk=new ELK();
- const layout=await elk.layout({id:'root',layoutOptions:{'elk.algorithm':'layered','elk.direction':({LR:'RIGHT',RL:'LEFT',TB:'DOWN',BT:'UP'}[view.layout?.direction??'LR']),'elk.edgeRouting':'ORTHOGONAL','elk.spacing.nodeNode':'80','elk.layered.spacing.nodeNodeBetweenLayers':view.kind==='wiring'?'300':'120'},children:dimensions,edges});
+ const options=(direction:'LR'|'TB'|'RL'|'BT')=>({id:'root',layoutOptions:{'elk.algorithm':'layered','elk.direction':({LR:'RIGHT',RL:'LEFT',TB:'DOWN',BT:'UP'}[direction]),'elk.edgeRouting':'ORTHOGONAL','elk.spacing.nodeNode':automatic?'64':'80','elk.layered.spacing.nodeNodeBetweenLayers':view.kind==='wiring'?'300':automatic?'80':'120'},children:dimensions.map(n=>({...n})),edges:structuredClone(edges)});
+ const automatic=!view.layout?.direction&&!view.layout?.positions?.length&&!view.layout?.constraints?.length&&!Object.keys(view.layout?.relationHints??{}).length&&view.kind!=='wiring'&&nodes.length<=12&&nodes.every(n=>!n.parentId);
+ let layout=await elk.layout(options(view.layout?.direction??'LR'));
+ if(automatic&&nodes.length>1){const alternative=await elk.layout(options('TB')),score=(candidate:ElkNode)=>Math.min(760/((candidate.width??1)+120),500/((candidate.height??1)+140));if(score(alternative)>score(layout)*1.08)layout=alternative;}
  const positions=new Map<string,{x:number;y:number}>((layout.children??[]).map(n=>[n.id,{x:(n.x??0)+60,y:(n.y??0)+70}]));
  for(const pos of view.layout?.positions??[]) if(chosen.has(pos.objectId)) positions.set(pos.objectId,{x:pos.x+60,y:pos.y+70});
  const result:SceneNode[]=nodes.map(node=>{
   const pos=positions.get(node.id)!; const size=dimensions.find(n=>n.id===node.id)!;
-  return {id:node.id,label:node.label,parentId:node.parentId,source:node.source,...pos,width:size.width,height:size.height,titleSize:ports(node).length?17:15,ports:ports(node).map((p,i)=>{
+  return {id:node.id,label:node.label,parentId:node.parentId,source:node.source,...pos,width:size.width,height:size.height,titleSize:ports(node).length?17:15,titleLines:titles.get(node.id),headerHeight:header(node.id),ports:ports(node).map((p,i)=>{
    const related=hints.sideGroups?.[p.id]??[p.id];
    const neighbors=relations.filter(r=>r.endpoints.some(id=>related.includes(id))).flatMap(r=>r.endpoints.filter(id=>owner(id)!==node.id).map(id=>positions.get(owner(id))?.x??pos.x));
    const avg=neighbors.length?neighbors.reduce((a,b)=>a+b,0)/neighbors.length:pos.x;
    const side: 'left'|'right'=hints.sides?.[p.id]??(hints.sideGroups?.[p.id]?(avg<=pos.x?'left':'right'):view.kind==='interface'?(p.direction==='in'?'left':'right'):(avg===pos.x?(p.direction==='in'?'left':'right'):avg<pos.x?'left':'right'));
-   const attrs=(view.display?.portAttributes??[]).map(key=>p.attributes?.[key]===undefined||(key==='function'&&p.attributes[key]===p.label)?'':`${key} ${p.attributes[key]}`).filter(Boolean);
-   const width=p.width!==undefined?`${p.width}b`:p.widthExpr??'';
-   const domain=p.clockDomainId?`@${graph.index.get(p.clockDomainId)?.entity.label??p.clockDomainId}`:'';
-   return {id:p.id,label:p.label,source:p.source,annotation:hints.annotations?.[p.id]??[p.direction,width,domain,...attrs].filter(Boolean).join(' · '),x:pos.x+(side==='right'?size.width:0),y:pos.y+(hints.rows?.[p.id]??66+i*38),side};
+   return {id:p.id,label:p.label,displayLabel:displayLabel(p),direction:p.direction,source:p.source,annotation:annotation(p),x:pos.x+(side==='right'?size.width:0),y:pos.y+(hints.rows?.[p.id]??66+i*38)+header(node.id)-42,side};
   })};
  });
  // 父节点以包围框表达层级，逻辑 Group 不参与该层级计算。
  const resized=new Set<string>();
- const enclose=(id:string)=>{if(resized.has(id))return;const parent=result.find(n=>n.id===id)!;const children=result.filter(n=>n.parentId===id);children.forEach(c=>enclose(c.id));if(children.length){parent.x=Math.min(...children.map(n=>n.x))-60;parent.y=Math.min(...children.map(n=>n.y))-90;parent.width=Math.max(...children.map(n=>n.x+n.width))-parent.x+60;parent.height=Math.max(Math.max(...children.map(n=>n.y+n.height))-parent.y+60,hints.heights?.[parent.id]??80+parent.ports.length*38);parent.width=Math.max(parent.width,parent.ports.length?340:240);parent.ports.forEach((p,i)=>{p.x=parent.x+(p.side==='right'?parent.width:0);p.y=parent.y+(hints.rows?.[p.id]??66+i*38);});}resized.add(id);};
+ const enclose=(id:string)=>{if(resized.has(id))return;const parent=result.find(n=>n.id===id)!;const children=result.filter(n=>n.parentId===id);children.forEach(c=>enclose(c.id));if(children.length){parent.x=Math.min(...children.map(n=>n.x))-60;parent.y=Math.min(...children.map(n=>n.y))-((parent.headerHeight??42)+48);parent.width=Math.max(...children.map(n=>n.x+n.width))-parent.x+60;parent.height=Math.max(Math.max(...children.map(n=>n.y+n.height))-parent.y+60,hints.heights?.[parent.id]??80+parent.ports.length*38);parent.width=Math.max(parent.width,dimensions.find(n=>n.id===parent.id)!.width);parent.ports.forEach((p,i)=>{p.x=parent.x+(p.side==='right'?parent.width:0);p.y=parent.y+(hints.rows?.[p.id]??66+i*38)+(parent.headerHeight??42)-42;});}resized.add(id);};
  if(view.layout?.constraints?.length){
   try{constrainNodes(result,view,relations);}catch(error){failure('LAYOUT_CONFLICT',entry.location.file,entry.location.path+'/layout/constraints',String(error));}
   // 相对布局完成后再按真实邻居更新自动侧边，显式接口侧边保持不变。
@@ -82,5 +88,5 @@ export async function layoutScene(graph:Graph, id:string,hints:SceneHints={}):Pr
  nets.forEach(n=>{n.hub={x:n.hub.x+dx,y:n.hub.y+dy};n.labelBox.x+=dx;n.labelBox.y+=dy;n.branches.forEach(b=>b.points=b.points.map(p=>({x:p.x+dx,y:p.y+dy})));n.paths?.forEach(b=>b.points=b.points.map(p=>({x:p.x+dx,y:p.y+dy})));n.junctions=n.junctions?.map(p=>({x:p.x+dx,y:p.y+dy}));});
  const maxX=Math.max(400,...result.map(n=>n.x+n.width),...nets.flatMap(n=>[n.hub.x,n.labelBox.x+n.labelBox.width,...n.branches.flatMap(b=>b.points.map(p=>p.x))]));
  const maxY=Math.max(200,...result.map(n=>n.y+n.height),...nets.flatMap(n=>[n.labelBox.y+n.labelBox.height,...n.branches.flatMap(b=>b.points.map(p=>p.y))]));
- return {id,label:view.label??id,kind:view.kind,width:Math.max(maxX+70,[...new Set(nets.map(n=>n.class))].reduce((w,c)=>w+textWidth(c,11)+58,60)),height:maxY+65,display:{showPortAttributes:view.display?.showPortAttributes??false,showRelationLabels:view.display?.showRelationLabels??true},visibleClasses:view.display?.classes,nodes:result,nets,collapsedGroups:view.display?.collapsedGroups??[],groups:[...graph.index.values()].filter(e=>e.type==='group').map(e=>({id:e.id,label:e.entity.label??e.id,members:groupMembers(e.id)}))};
+ return decoratePortLeads({id,label:view.label??id,kind:view.kind,width:Math.max(maxX+70,[...new Set(nets.map(n=>n.class))].reduce((w,c)=>w+textWidth(c,11)+58,60)),height:maxY+65,display:{showPortAttributes:view.display?.showPortAttributes??false,showRelationLabels:view.display?.showRelationLabels??true},visibleClasses:view.display?.classes,nodes:result,nets,collapsedGroups:view.display?.collapsedGroups??[],groups:[...graph.index.values()].filter(e=>e.type==='group').map(e=>({id:e.id,label:e.entity.label??e.id,members:groupMembers(e.id)}))});
 }
