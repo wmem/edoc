@@ -21,4 +21,13 @@ Reference 没有独立的证据范围字段；界面保留 label 已声明的说
 tests/entity-references-browser.test.ts 使用九项关联夹具：对应行为、验证点、判据不足、运行入口及反向引用。核对 CLI 查询与网页数量一致、双向跳转及返回、说明转义、缺失标记、硬件连接仍为空，以及390px无整页溢出。正式手册另有[虚构用例入口](../../usage/rendering/references.mdoc#use:references:semantics)。类型检查、文档和安装包构建通过；未加载 Agent 反馈的实际工程。
 
 {% /section %}
+{% section id="accept:reading-references:toc-alignment" title="同级目录文字对齐" %}
+
+2026-11-05，修复左侧文档树与右侧页内目录的分支/叶子文字起点、字重与行距差异。旧夹具同级文字起点为22、27、32px；有子项的 summary 继承600字重，叶子为400，选中态还额外加缩进。
+
+共用目录行样式给分支箭头预留固定宽度，叶子保留相同空位；同级统一字号、字重及行距，选中态只改变颜色和底色。清除阅读器独有的目录缩进规则；多文档和单文档产物共用同一修复。文档树、章节树、导航与折叠语义保持原定义。
+
+tests/toc-alignment-browser.test.ts 量化比较多个层级的分支、叶子和无首页目录分组；检查文字起点、字体与普通状态颜色、选中分支/叶子、箭头开关、长标题、1440px与390px。修复前该回归失败，修复后通过；并使用 playwright-cli 与已有 Chromium 抽查正式手册左右目录和展开/折叠。
+
+{% /section %}
 {% /section %}

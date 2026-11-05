@@ -9,11 +9,24 @@ pre,code{font-family:Consolas,'Noto Sans SC',monospace}
 
 @media print{.appendix.compact{display:none}}article,header.cover p{overflow-wrap:anywhere}.canvas{max-width:100%}
 
-/* 章节树与正文共享层级，布局标题不进入书签。 */
-#toc ul{list-style:none;margin:0;padding:0}#toc ul ul{padding-left:12px;margin-left:5px;border-left:1px solid #49647a}
-#toc li{margin:2px 0}#toc li[hidden]{display:none!important}#toc details{margin:0}#toc summary{display:flex;gap:5px;align-items:baseline;list-style:none}
-#toc summary:before{content:'▸';color:#99b8cb;font-size:10px}#toc details[open]>summary:before{content:'▾'}
-#toc a{overflow-wrap:anywhere;line-height:1.55}#toc a[aria-current]{color:white;background:#284d68;border-radius:4px;padding-left:5px}
+/* 分支和叶子共用目录行；箭头占位不表达额外层级，选中态不改变缩进。 */
+:is(#toc,#page-toc) { --toc-marker: 12px; --toc-gap: 5px; --toc-inset: 4px; font-size: 12px; }
+:is(#toc,#page-toc) ul { list-style: none; margin: 0; padding: 0; }
+:is(#toc,#page-toc) ul ul { padding-left: 12px; margin-left: 5px; border-left: 1px solid var(--line); }
+#toc ul ul { border-color: #49647a; }
+:is(#toc,#page-toc) li { margin: 2px 0; }
+:is(#toc,#page-toc) li[hidden] { display: none!important; }
+:is(#toc,#page-toc) details { margin: 0; }
+:is(#toc,#page-toc) summary { display: flex; gap: var(--toc-gap); align-items: baseline; list-style: none; font-weight: 400; }
+:is(#toc,#page-toc) summary::-webkit-details-marker { display: none; }
+:is(#toc,#page-toc) summary::before { content: '▸'; flex: 0 0 var(--toc-marker); font-size: 10px; color: var(--muted); }
+#toc summary::before { color: #99b8cb; }
+:is(#toc,#page-toc) details[open] > summary::before { content: '▾'; }
+:is(#toc,#page-toc) :is(a,.nav-group) { display: block; min-width: 0; padding: 5px var(--toc-inset); font-size: 12px; font-weight: 400; line-height: 1.55; overflow-wrap: anywhere; }
+:is(#toc,#page-toc) summary > :is(a,.nav-group) { flex: 1; }
+:is(#toc,#page-toc) li > :is(a,.nav-group) { padding-left: calc(var(--toc-marker) + var(--toc-gap) + var(--toc-inset)); }
+#toc .nav-group { color: #cfe1eb; }
+#toc a[aria-current] { color: white; background: #284d68; border-radius: 4px; }
 .panel-title{font-size:18px;font-weight:700;margin:0 0 12px;color:#12354e}.heading-anchor{break-after:avoid}
 [data-heading-level]{line-height:1.45;break-after:avoid}[data-heading-level="1"]{font-size:26px}[data-heading-level="2"]{font-size:22px}[data-heading-level="3"]{font-size:19px}[data-heading-level="4"]{font-size:17px}[data-heading-level="5"]{font-size:16px}
 @media print{main details:not(.fact)>summary{display:none!important}[data-heading-level="1"]{font-size:21pt}[data-heading-level="2"]{font-size:17pt}[data-heading-level="3"]{font-size:14pt}[data-heading-level="4"]{font-size:12pt}[data-heading-level="5"]{font-size:11pt}}
