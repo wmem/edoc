@@ -1,3 +1,4 @@
+import {sidebarLayout} from './sidebar-layout.ts';
 import {readingControls} from './reading-controls.ts';
 import {nodeHeading,addPortLeads,readableViewport} from './graph-presentation.ts';
 import {portLabel} from '../render-graph/ports.ts';
@@ -12,7 +13,7 @@ export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:s
 export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
 const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
 const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
-if(!options.managed)cleanups.push(readingControls(document.querySelector<HTMLElement>('main')!));
+if(!options.managed)cleanups.push(sidebarLayout(),readingControls(document.querySelector<HTMLElement>('main')!));
 const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
 window.EdocGraphs=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;

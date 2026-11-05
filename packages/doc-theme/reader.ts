@@ -1,3 +1,4 @@
+import {sidebarLayout} from './sidebar-layout.ts';
 import {semanticReferencesHTML} from './entity-references.ts';
 import {readingControls} from './reading-controls.ts';
 import {start} from './client.ts';
@@ -18,6 +19,7 @@ const own=<T>(object:Record<string,T>,key:string):T|undefined=>Object.hasOwn(obj
 type ReadingState={headingNumbers?:boolean;outlineDetails?:boolean[];route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
 export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const data:ReaderData=JSON.parse(document.querySelector('#edoc-book')!.textContent!),reader=document.querySelector<HTMLElement>('#reader')!,toc=document.querySelector<HTMLElement>('#toc')!,pageToc=document.querySelector<HTMLElement>('#page-toc')!,notice=document.querySelector<HTMLElement>('#notice')!,breadcrumbs=document.querySelector<HTMLElement>('#breadcrumbs')!,search=document.querySelector<HTMLInputElement>('#search')!;
+ sidebarLayout();
  const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false,headingNumbers=true;
  const navigation=(nodes:Navigation[],depth=0):string=>'<ul>'+nodes.map(n=>{const link=n.page?`<a data-outline-link href="${esc(routeHash({kind:'page',project:n.project,id:n.page,...(n.anchor?{anchor:n.anchor}:{})}))}">${n.number?`<span class="heading-number" aria-hidden="true">${esc(n.number)}</span>`:''}${esc(n.label)}</a>`:`<span class="nav-group">${esc(n.label)}</span>`;return '<li>'+(n.children.length?'<details'+(depth<1?' open':'')+'><summary>'+link+'</summary>'+navigation(n.children,depth+1)+'</details>':link)+'</li>';}).join('')+'</ul>';
  toc.innerHTML=navigation(sidebarNavigation(data.navigation));
