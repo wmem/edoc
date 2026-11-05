@@ -32,10 +32,10 @@ for(const [name,change,code]of [
 test('接口必须协商必需能力，视图不能把接口当成真实 Connection 端点',t=>{
  const f=interfaceFixture(t);f.edit('manifest',d=>d.requiredFeatures=[]);expectCode(f.load,'IR_FEATURE_REQUIRED');f.edit('manifest',d=>d.requiredFeatures=['interface-groups']);f.edit('relations',d=>d.relations[0].endpoints[0]=host);expectCode(f.load,'REFERENCE_TYPE');
 });
-test('四接口全部状态组合都保留原关系/成员，单端显示槽位且两组接口独立',{timeout:20000},async t=>{
+test('分组附注显隐及四接口全部状态组合都保留原关系/成员，单端显示槽位且两组接口独立',{timeout:20000},async t=>{
  const f=interfaceFixture(t),g=f.load(),model=prepareInterfaceModel(g,'gallery:interface-buses')!,original=structuredClone(model),ids=model.nodes.flatMap(n=>n.interfaces!.map(i=>i.id));
- for(let mask=0;mask<16;mask++){
-  const s=await interfaceScene(model,{modes:Object.fromEntries(ids.map((id,i)=>[id,mask&(1<<i)?'expanded':'collapsed'])),classes:null});geometry(s);
+ for(const showInterfaceDetails of [true,false])for(let mask=0;mask<16;mask++){
+  const s=await interfaceScene(model,{modes:Object.fromEntries(ids.map((id,i)=>[id,mask&(1<<i)?'expanded':'collapsed'])),classes:null,showInterfaceDetails});geometry(s);
   const originals=s.nets.flatMap(n=>n.sourceRelations!);assert.equal(originals.length,17);assert.deepEqual(new Set(originals.map(r=>r.id)),new Set(model.relations.map(r=>r.id)));for(const r of originals)assert.deepEqual(r,model.relations.find(old=>old.id===r.id));
  }
  const collapsed=await interfaceScene(model),mixed=await interfaceScene(model,{modes:{...initialInterfaceState(model).modes,[ctrl]:'expanded'},classes:null});
@@ -64,6 +64,29 @@ test('固定位置不足时展开明确失败，当前成功场景和源数据�
 });
 test('当前 SVG 带聚合来源，完整 SVG 保留所有真实信号及关系',async t=>{
  const f=interfaceFixture(t),g=f.load(),collapsed=await scene(g,'gallery:interface-buses'),full=await scene(g,'gallery:interface-buses',{interfaces:'expanded'});assert.match(svg(collapsed,false),/data-bundle="true"/);assert.ok(!svg(full,false).includes('data-bundle="true"'));assert.equal(full.nets.length,17);assert.ok(svg(collapsed,false).includes('ifdemo:engine.ctrl_optional'));assert.ok(svg(full,false).includes('OPTION_WIDTH'));
+});
+
+test('隐藏分组附注收回宽高，保留展开/折叠槽位与完整事实',{timeout:30000},async t=>{
+ const f=interfaceFixture(t);
+ f.edit('objects',d=>{for(const n of d.objects)for(const [j,i]of (n.interfaces??[]).entries()){i.label=j?'sample':'control';i.role='very_long_interface_role_for_layout';i.protocol='很长的协议附注必须在关闭时停止参与宽度计算'.repeat(3);}});
+ const graph=f.load(),model=prepareInterfaceModel(graph,'gallery:interface-buses')!,original=structuredClone(model),initial=initialInterfaceState(model);
+ assert.equal(initial.showInterfaceDetails,true);
+ const ids=model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>i.id));
+ for(const modes of [initial.modes,Object.fromEntries(ids.map(id=>[id,'expanded' as const])),{...initial.modes,[ctrl]:'expanded' as const}]){
+  const detailed=await interfaceScene(model,{...initial,modes}),compact=await interfaceScene(model,{...initial,modes,showInterfaceDetails:false});geometry(compact);
+  assert.equal(compact.display.showInterfaceDetails,false);
+  assert.deepEqual(compact.nets.flatMap(n=>n.sourceRelations).sort((a,b)=>a!.id.localeCompare(b!.id)),detailed.nets.flatMap(n=>n.sourceRelations).sort((a,b)=>a!.id.localeCompare(b!.id)));
+  for(const n of compact.nodes){const before=detailed.nodes.find(old=>old.id===n.id)!;assert.ok(n.width<before.width,n.id+' 隐藏的角色与附注不能撑宽');assert.ok(n.height<=before.height,n.id+' 隐藏附注不能增高');
+   if(!n.ports.some(p=>p.slot))assert.ok(n.height<before.height,n.id+' 无槽位约束时应收回行高');
+   for(const p of n.ports.filter(p=>p.interfaceHeader)){assert.ok(['sample','control'].includes(p.label));assert.equal(p.annotation,'');const members=n.ports.filter(member=>member.interfaceId===p.id&&!member.interfaceHeader&&!member.slot);if(members.length)assert.ok(members[0].y-p.y<before.ports.find(member=>member.id===members[0].id)!.y-before.ports.find(header=>header.id===p.id)!.y);}
+   for(const p of n.ports.filter(p=>p.slot)){const header=n.ports.find(header=>header.id===p.interfaceId)!;assert.ok(Math.abs(p.y-header.y)<=(header.padHeight??0)/2,'所有接入槽位仍须位于接口垫片范围内');}
+  }
+  const content=svg(compact,false);assert.ok(!content.includes('data-interface-annotation='));assert.ok(!content.includes(' · very_long_interface_role_for_layout</text>'));assert.ok(content.includes('很长的协议附注'),'隐藏后元数据仍携带协议事实');
+ }
+ assert.deepEqual(model,original);assert.equal((query(graph,ctrl).target.entity as any).role,'very_long_interface_role_for_layout');
+ f.edit('views',d=>d.views[0].display.showInterfaceDetails=false);
+ const configured=f.load(),full=await scene(configured,'gallery:interface-buses',{interfaces:'expanded'});assert.equal(full.display.showInterfaceDetails,false);assert.equal(full.nets.length,17);assert.ok(!svg(full,false).includes('data-interface-annotation='));
+ const restored=await interfaceScene(prepareInterfaceModel(configured,'gallery:interface-buses')!,{...initial,showInterfaceDetails:true});assert.match(svg(restored,false),/data-interface-annotation=/);
 });
 
 for(const [name,edit,code]of [

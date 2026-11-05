@@ -16,6 +16,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
  const selection=document.createElement('div');selection.className='interface-selection';selection.hidden=true;
  const model=current.interfaceModel!,canvas=holder.querySelector<HTMLElement>('.canvas')!,status=holder.querySelector<HTMLElement>('.interface-status')!,actions=document.querySelector<HTMLElement>('#selection-actions')!;
  const attributes=holder.querySelector<HTMLInputElement>('[data-display="port-attributes"]')!,labels=holder.querySelector<HTMLInputElement>('[data-display="relation-labels"]');
+ const details=holder.querySelector<HTMLInputElement>('[data-display="interface-details"]')!;
  const relationLabelsVisible=()=>labels?.checked??current.display.showRelationLabels;
  holder.insertBefore(selection,canvas);
  const graph=new X6({container:canvas,async:false,width:holder.clientWidth,height:Math.min(680,Math.max(420,current.height)),background:{color:'#f8fafc'},panning:true,mousewheel:{enabled:true,modifiers:['ctrl','meta'],minScale:.15,maxScale:4},interacting:false});
@@ -38,7 +39,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
     if(p.interfaceHeader){
      add('toggle',p.collapsed?'▸':'▾',p.y-n.y-4,16,'#315f91',{x:left?13:n.width-13,'data-interface-toggle':p.id,role:'button',tabindex:0,'aria-label':`${p.collapsed?'展开':'合并'} ${model.nodes.flatMap(n=>n.interfaces??[]).find(i=>i.id===p.id)!.label}`,'aria-expanded':String(!p.collapsed),cursor:'pointer'});
      add('p',portLabel(p),p.y-n.y-4,14,'#315f91',{x:left?33:n.width-33,fontWeight:600,'data-source-port':p.id,cursor:'pointer'});
-     add('a',p.annotation,p.y-n.y+14,11,'#60778c',{'data-interface-annotation':p.id});
+     if(current.display.showInterfaceDetails)add('a',p.annotation,p.y-n.y+14,11,'#60778c',{'data-interface-annotation':p.id});
     }else{
      add('p',portLabel(p),p.y-n.y-4,14,p.noConnection?'#7a8794':'#17324d',{'data-source-port':p.id,cursor:'pointer'});
      add('a',p.annotation+(p.noConnection?' · 本视图未显示连接':''),p.y-n.y+11,11,'#617487',{'data-port-annotation':p.id,display:attributes.checked?'':'none'});
@@ -56,7 +57,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
    box.lines.forEach((line,i)=>{markup.push({tagName:'text',selector:'line'+i});attrs['line'+i]={refX:0,refY:0,text:line,x:box.width/2,y:18+i*20,textAnchor:'middle',fontSize:14,fill:style.color,fontFamily:'Noto Sans SC'};});
    const labelId=cellID('label:'+net.id);relationLabels.set(net.id,labelId);graph.addNode({id:labelId,zIndex:2,x:box.x,y:box.y,width:box.width,height:box.height,markup,attrs,visible:relationLabelsVisible(),data:{relationId:net.id,role:'relation-label'}});
   }
-  entry.scene=current;entry.state=state;
+  details.checked=current.display.showInterfaceDetails;entry.scene=current;entry.state=state;
  }
  async function request(next:InterfaceState,focus?:string){
   desired=structuredClone(next);desiredFocus=focus;revision++;
@@ -68,13 +69,17 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
    status.textContent='正在重新布局接口与连线…';
    try{
     const result=await interfaceScene(model,target);if(signal?.aborted)return;if(version!==revision)continue;
-    error='';current=result;state=target;draw();const node=current.nodes.find(n=>n.id===focusId);if(point&&node)graph.translate(point.x-node.x*zoom,point.y-node.y*zoom);else viewport();
+    // 完整静态图与当前图一起提交，避免失败或过期请求留下两套文字状态。
+    const full=result.display.showInterfaceDetails!==printDetails?await interfaceScene(model,{modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,'expanded' as const]))),classes:null,showInterfaceDetails:result.display.showInterfaceDetails}):undefined;
+    if(signal?.aborted)return;if(version!==revision)continue;
+    if(full){const nextSVG=new DOMParser().parseFromString(renderSVG({...full,display:{...full.display,showPortAttributes:attributes.checked,showRelationLabels:relationLabelsVisible()}},'',current.id+'-instance-'+holder.dataset.instance),'image/svg+xml').documentElement;staticSVG.replaceWith(nextSVG);staticSVG=nextSVG;printDetails=result.display.showInterfaceDetails;}
+    error='';current=result;state=result.interfaceState!;draw();const node=current.nodes.find(n=>n.id===focusId);if(point&&node)graph.translate(point.x-node.x*zoom,point.y-node.y*zoom);else viewport();
     entry.lastDurationMs=performance.now()-started;holder.dataset.layoutMs=entry.lastDurationMs.toFixed(1);committed=version;
-   }catch(e){if(signal?.aborted)return;if(version!==revision)continue;error=e instanceof Error?e.message:String(e);desired=structuredClone(state);committed=version;}
+   }catch(e){if(signal?.aborted)return;if(version!==revision)continue;error=e instanceof Error?e.message:String(e);desired=structuredClone(state);details.checked=current.display.showInterfaceDetails;committed=version;}
    await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
   }
   running=false;holder.dataset.busy='false';holder.setAttribute('aria-busy','false');
-  if(error){status.classList.add('error');status.textContent='展开未完成，保留上一个场景：'+error;}else summary();
+  if(error){status.classList.add('error');status.textContent='布局未完成，保留上一个场景：'+error;}else summary();
  }
  function toggle(id:string){const next=structuredClone(desired);next.modes[id]=next.modes[id]==='collapsed'?'expanded':'collapsed';void request(next,current.interfaces!.find(i=>i.id===id)!.ownerId);}
  function expand(ids:string[]){const next=structuredClone(desired);ids.forEach(id=>next.modes[id]='expanded');void request(next,current.interfaces!.find(i=>i.id===ids[0])?.ownerId);}
@@ -99,12 +104,13 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
  holder.querySelector('[data-action=interfaces-collapse]')!.addEventListener('click',()=>{const next=structuredClone(desired);current.interfaces!.forEach(i=>next.modes[i.id]='collapsed');void request(next,current.nodes[0]?.id);});
  holder.querySelector('[data-action=interfaces-expand]')!.addEventListener('click',()=>expand(current.interfaces!.map(i=>i.id)));
  for(const cls of new Set(model.relations.map(r=>r.class))){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.dataset.class=cls;check.checked=!state.classes||state.classes.includes(cls);label.append(check,document.createTextNode(cls));holder.querySelector('.filters')!.append(label);check.onchange=()=>{const next=structuredClone(desired);next.classes=[...holder.querySelectorAll<HTMLInputElement>('.filters input:checked')].map(c=>c.dataset.class!);void request(next,current.nodes[0]?.id);};}
- const staticSVG=holder.querySelector('.static-svg svg')!;
+ let staticSVG=holder.querySelector('.static-svg svg')!,printDetails=current.display.showInterfaceDetails;
+ details.onchange=()=>{const next=structuredClone(desired);next.showInterfaceDetails=details.checked;void request(next,current.nodes[0]?.id);};
  attributes.onchange=()=>{for(const n of current.nodes)n.ports.forEach((p,i)=>{if(!p.slot&&!p.interfaceHeader)graph.getCellById(n.id).attr('a'+i+'/display',attributes.checked?'':'none');});staticSVG.querySelectorAll('[data-port-annotation]').forEach(e=>e.setAttribute('display',attributes.checked?'':'none'));};
  if(labels)labels.onchange=()=>{for(const n of current.nets)graph.getCellById(relationLabels.get(n.id)!)?.setVisible(relationLabelsVisible());staticSVG.querySelectorAll('[data-relation-label]').forEach(e=>e.setAttribute('display',relationLabelsVisible()?'':'none'));};
  function download(svg:Element,suffix:string){const clone=svg.cloneNode(true) as SVGSVGElement,style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'})),a=document.createElement('a');a.href=url;a.download=current.id.replace(/[^\w.-]/g,'_')+suffix+'.svg';a.click();URL.revokeObjectURL(url);}
  holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>download(staticSVG,'-signals'));
- holder.querySelector('[data-action=svg-current]')!.addEventListener('click',()=>{const svg=renderSVG({...current,display:{showPortAttributes:attributes.checked,showRelationLabels:relationLabelsVisible()}},'',current.id+'-current');download(new DOMParser().parseFromString(svg,'image/svg+xml').documentElement,'-current');});
+ holder.querySelector('[data-action=svg-current]')!.addEventListener('click',()=>{const svg=renderSVG({...current,display:{...current.display,showPortAttributes:attributes.checked,showRelationLabels:relationLabelsVisible()}},'',current.id+'-current');download(new DOMParser().parseFromString(svg,'image/svg+xml').documentElement,'-current');});
  holder.querySelector('[data-action=fit]')!.addEventListener('click',fit);
  holder.querySelector('[data-action=read]')!.addEventListener('click',()=>{viewportMode='actual';viewport();});
  holder.querySelector('[data-action=plus]')!.addEventListener('click',()=>graph.zoom(.15));holder.querySelector('[data-action=minus]')!.addEventListener('click',()=>graph.zoom(-.15));

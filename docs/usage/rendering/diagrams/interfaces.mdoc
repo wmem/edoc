@@ -44,6 +44,20 @@ REQUEST [31:0] 与反向 READY 留在 CALL 组内；点击合并后，较粗的�
 
 {% /section %}
 
+{% section id="use:interface-details" title="只显示分组名称并收回附注空间" %}
+
+分组名称已足以说明用途时，在对应视图中设置 display.showInterfaceDetails: false。下面复用同一个组件，只保留 CALL 名称与展开箭头，隐藏 target 角色及流向、协议、成员数量等分组附注，并收回其额外行距与宽度：
+
+{% relation-diagram id="simple:component-compact" /%}
+
+工具栏的“分组附注”可逐图切换；切换会重新布局，展开、折叠和类别筛选继续沿用该选择。多个接入槽位仍保留连线需要的空间。端口名称中的位宽与“端口属性”开关相互独立，不会随分组附注消失。
+
+例如接口 label 为 sample、control 时，关闭后分组头部只显示这两个名称和展开箭头，无需改写原 label 或删除 role、protocol。点击分组仍可查属性；协议、角色、完整成员与关系保留在查询和 SVG 元数据中。
+
+网页下载的当前视图 SVG、完整逐信号 SVG 以及打印图都使用当前选择。完整逐信号图仍保留视图定义内的全部成员和关系；CLI 导出采用配置中的设置。未配置时默认显示分组附注，保持已有图的行为。字段定义见 {% reference id="ref:graph-display" /%}。
+
+{% /section %}
+
 {% section id="use:interface-declare" title="声明接口身份与成员" %}
 
 在已有 Node 内增加接口，members 引用它自己的真实 Port：

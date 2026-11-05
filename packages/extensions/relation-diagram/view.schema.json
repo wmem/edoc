@@ -211,6 +211,9 @@
           "display": {
             "type": "object",
             "properties": {
+              "showInterfaceDetails": {
+                "type": "boolean"
+              },
               "showPortAttributes": {
                 "type": "boolean"
               },

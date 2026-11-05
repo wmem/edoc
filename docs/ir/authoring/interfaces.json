@@ -190,6 +190,22 @@
         "interfaceMode": "expanded",
         "showPortAttributes": true
       }
+    },
+    {
+      "id": "simple:component-compact",
+      "kind": "interface",
+      "label": "单框组件 · 只显示分组名称",
+      "include": {
+        "objects": [
+          "simple:component"
+        ],
+        "relations": []
+      },
+      "display": {
+        "interfaceMode": "expanded",
+        "showInterfaceDetails": false,
+        "showPortAttributes": true
+      }
     }
   ]
 }
