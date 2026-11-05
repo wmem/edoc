@@ -10,7 +10,7 @@ import {directoryOrders,orderDirectory} from './directory-order.ts';
 
 export type ProjectNode=LoadedProject&{children:Map<string,ProjectNode>};
 export type Book={root:ProjectNode;projects:Map<string,ProjectNode>;inputs:string[]};
-export type Navigation={label:string;project:string;page:string;anchor?:string;children:Navigation[];source?:{file:string;line:number};id?:string;sectionId?:string;level?:number;depth?:number;parentId?:string;childrenOmitted?:number};
+export type Navigation={number?:string;label:string;project:string;page:string;anchor?:string;children:Navigation[];source?:{file:string;line:number};id?:string;sectionId?:string;level?:number;depth?:number;parentId?:string;childrenOmitted?:number};
 export {routeHash} from './routes.ts';
 export type {Route} from './routes.ts';
 export const pageId=(file:string)=>file.slice(0,-extname(file).length);

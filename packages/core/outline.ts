@@ -4,7 +4,7 @@ import type {Graph} from './types.ts';
 
 export type OutlineEntry={
  id:string;label:string;kind:'section'|'heading';level:number;depth:number;parentId?:string;
- local?:boolean;collapsed?:boolean;sectionId?:string;source:{file:string;line:number};children:OutlineEntry[];
+ number?:string;local?:boolean;collapsed?:boolean;sectionId?:string;source:{file:string;line:number};children:OutlineEntry[];
 };
 
 // section 表达显式包含关系；其内部 Markdown 的最浅标题从下一级开始。

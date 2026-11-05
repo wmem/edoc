@@ -122,6 +122,8 @@ signal 按行定义名称与波形。此例中 p 是时钟，0/1 是电平，点
 
 Reference 必需 id、kind='reference'、fromId、targetId、class，label、source 可选。它表达对象/条款之间的 describes、covers、contains 等显式关联，与真实连接分开；query 可查正向和反向引用。
 
+网页对象详情将 references 单列为“语义引用”，与 directRelations 的硬件连接分开；起点和目标均可跳转。class 原样显示，label 承载数据已声明的说明与证据范围，缺失显示“未声明”。当前没有独立的 scope 字段，不从类别推导验证充分性；示例见[对象语义引用](../rendering/references.mdoc#use:references:semantics)。
+
 source.file 必需，selector 和 line 可选。file 以工程根定位，selector 是稳定定位，line 只辅助。source.attachment 可补充 PDF 核对入口，不替代原数据来源。
 
 来源路径必须在工程范围内，符号链接不能绕过边界；source.file 可仅保留未随工程携带的追溯路径，这不表示已核验该文件内容。实际加载的数据、正文、图片、代码示例和 PDF 则必须存在并通过相应检查。

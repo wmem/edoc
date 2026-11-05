@@ -1,3 +1,4 @@
+import {readingOutline,headingGroups} from './reading-structure.ts';
 import {presentationGraph} from '../extensions/specification/prepare.ts';
 import {specificationHTML} from '../extensions/specification/render.ts';
 import Markdoc from '@markdoc/markdoc';
@@ -20,25 +21,36 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
  const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&node.tag==='relation-diagram')usedViews.add(node.attributes.id);
  for(const id of usedViews){scenes[id]=await scene(graph,id);printScenes[id]=scenes[id].interfaceModel?await scene(graph,id,{interfaces:'expanded'}):scenes[id];}
- const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0;
- const heading=(id:string,level:number,body:string,section=false)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${body}</${tag}>`;};
- function render(tree:any):string{
+ const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0;
+ const specIds=new Set(plan.all.filter(e=>e.sectionId&&graph.index.get(e.sectionId)?.type==='specification').map(e=>e.id));
+ const reading=readingOutline(plan.roots,title,specIds),usedIds=new Set(plan.all.map(e=>e.id));
+ for(const {ast}of plan.documents)for(const node of ast.walk())if(typeof node.attributes.id==='string')usedIds.add(node.attributes.id);
+ const codeId=()=>{let id:string;do{id='reading-code-'+(++codeCounter);}while(usedIds.has(id));usedIds.add(id);return id;};
+ const heading=(id:string,level:number,body:string,section=false)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${reading.numbers.has(id)?`<span class="heading-number" aria-hidden="true">${esc(reading.numbers.get(id))}</span>`:''}${body}</${tag}>`;};
+ function render(tree:any,fold=true):string{
   if(tree===null||tree===undefined||tree===false)return '';
-  if(Array.isArray(tree))return tree.map(render).join('');
+  if(Array.isArray(tree))return (fold?headingGroups(tree,reading.titleId):tree).map(node=>render(node,fold)).join('');
   if(typeof tree==='string'||typeof tree==='number')return esc(tree);
   if(typeof tree!=='object'||!Markdoc.Tag.isTag(tree))return '';
-  const n=tree.name,a=tree.attributes??{},children=()=>render(tree.children);
+  const n=tree.name,a=tree.attributes??{},children=()=>render(tree.children,fold&&!['pre','code'].includes(n));
   for(const key of Object.keys(a))if(/^on/i.test(key)||key.toLowerCase()==='style')throw new Error('Markdoc Schema 不允许事件或自由样式属性：'+key);
   if(typeof n!=='string')throw new Error('Markdoc 扩展标签须输出语义 HTML 标签名');
   if(n.startsWith('ed-')){
    const type=n.slice(3),id=a.id;
    if(type==='directory-order')return '';
+   if(type==='heading-group'){
+    const [caption,...content]=tree.children;if(!Markdoc.Tag.isTag(caption))throw new Error('标题分组缺少标题节点');
+    return `<details id="${esc(id)}" class="heading-section heading-anchor${a.class?' '+esc(a.class):''}" data-heading-section open><summary>${heading(id,a.outlineLevel,render(caption.children))}</summary><div class="heading-content">${render(content)}</div></details>`;
+   }
+   if(type==='code')return `<details id="${esc(a.id??codeId())}" class="code-block" data-code-block open><summary><span>代码${a.language?' · '+esc(a.language):''}</span><span class="code-lines">${a.lines} 行</span></summary>${children()}</details>`;
    if(type==='section'){const specSource=a.specification?graph.specifications!.definitions.get(a.specification)!.entity.source:undefined;if(a.specification)return specificationHTML({specification:a.specification,bodyNamespace:a.bodyNamespace,renderAnchor:a.renderAnchor,role:a.role,namespace:a.namespace,title:a.title,collapsed:a.collapsed},children(),{
     source:specSource!,evidenceHref:specSource?.attachment?routeHash({kind:'pdf',project:specSource.attachment.project??graph.manifest.projectId,id:specSource.attachment.id,...(specSource.attachment.target?{target:specSource.attachment.target}:{})}):undefined,
     canonicalHref:routeHash({kind:'entity',project:graph.manifest.projectId,id:a.specification}),
     fallback(fragment){if([...graph.index.keys()].some(id=>anchor(id)===fragment))return '#'+fragment;return esc(routeHash({kind:'page',project:graph.manifest.projectId,id:pageId(graph.specifications!.definitions.get(a.specification)!.document.file),anchor:fragment}));},
     alias(local,value){if(!aliases.has(local))aliases.set(local,value);else if(aliases.get(local)!==value)aliases.set(local,undefined);}
-   });const body=`${a.title?(a.local?`<p class="specification-heading">${esc(a.title)}</p>`:heading(a.renderAnchor??anchor(id),a.outlineLevel,esc(a.title),true)):''}${children()}`;return a.collapsed?`<details id="${a.renderAnchor??anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${a.renderAnchor??anchor(id)}"${a.class?` class="${esc(a.class)}"`:""}>${body}</section>`;}
+   });
+    if(fold&&!a.local&&a.title&&(a.renderAnchor!==reading.titleId||a.collapsed))return `<details id="${esc(a.renderAnchor)}" class="heading-section${a.class?' '+esc(a.class):''}" data-heading-section${a.collapsed?'':' open'}><summary>${heading(a.renderAnchor,a.outlineLevel,esc(a.title),true)}</summary><div class="heading-content">${children()}</div></details>`;
+    const body=`${a.title?(a.local?`<p class="specification-heading">${esc(a.title)}</p>`:heading(a.renderAnchor??anchor(id),a.outlineLevel,esc(a.title),true)):''}${children()}`;return a.collapsed?`<details id="${a.renderAnchor??anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${a.renderAnchor??anchor(id)}"${a.class?` class="${esc(a.class)}"`:""}>${body}</section>`;}
    if(type==='heading'&&a.local)return `<div id="${esc(id)}" class="specification-heading${a.class?' '+esc(a.class):''}">${children()}</div>`;
    if(type==='heading')return `<div id="${id}" class="heading-anchor${a.class?' '+esc(a.class):''}">${heading(id,a.outlineLevel,children())}</div>`;
    if(type==='columns')return `<div class="columns${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''} style="--columns:${(a.ratio??'1:1').split(':').map((v:string)=>v+'fr').join(' ')}">${children()}</div>`;
@@ -66,11 +78,11 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   tags:{...inherited.tags,'__spec-list':{transform(node:any,cfg:any){return new Markdoc.Tag('div',{'class':'spec-list','data-spec-for':node.attributes.for},node.transformChildren(cfg));}},...Object.fromEntries(Object.entries(tags).map(([k,v])=>[k,k==='section'?{...v,transform(node:any,config:any){
    const entry=headings.get(node.attributes.__edocOutlineId)!;
    const attrs=node.attributes,scoped=config;
-   return new Markdoc.Tag('ed-section',{...node.transformAttributes(scoped),outlineLevel:entry.level,renderAnchor:entry.id,specification:attrs.__edocSpecification,namespace:attrs.__edocNamespace,bodyNamespace:attrs.__edocBodyNamespace,role:attrs.__edocApplicationRole,local:entry.local},node.transformChildren(scoped));
+   return new Markdoc.Tag('ed-section',{...node.transformAttributes(scoped),outlineLevel:entry.level,renderAnchor:entry.id,specification:attrs.__edocSpecification,namespace:attrs.__edocNamespace,bodyNamespace:attrs.__edocBodyNamespace,role:attrs.__edocApplicationRole,local:entry.local,outlineParentId:entry.parentId},node.transformChildren(scoped));
   }}:{...v,render:'ed-'+k}]))},
-  nodes:{...inherited.nodes,document:{...Markdoc.nodes.document,transform(node:any,config:any){return node.transformChildren(config);}},fence:{...Markdoc.nodes.fence,transform(node:any,config:any){const attrs=node.transformAttributes(config);return new Markdoc.Tag('pre',{id:attrs.id,class:attrs.class},[new Markdoc.Tag('code',{'data-language':node.attributes.language},node.attributes.process===false||!node.children.length?[node.attributes.content]:node.transformChildren(config))]);}},link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__edocSourceFile:{type:String}},transform(node:any,config:any){const source=plan.documents.map(d=>d.locations.get(node)).find(Boolean);return new Markdoc.Tag('a',{...node.transformAttributes(config),sourceFile:node.attributes.__edocSourceFile??source?.file},node.transformChildren(config));}},heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
+  nodes:{...inherited.nodes,document:{...Markdoc.nodes.document,transform(node:any,config:any){return node.transformChildren(config);}},fence:{...Markdoc.nodes.fence,transform(node:any,config:any){const attrs=node.transformAttributes(config);const pre=new Markdoc.Tag('pre',{class:attrs.class},[new Markdoc.Tag('code',{'data-language':node.attributes.language},node.attributes.process===false||!node.children.length?[node.attributes.content]:node.transformChildren(config))]);return new Markdoc.Tag('ed-code',{id:attrs.id,language:node.attributes.language,lines:String(node.attributes.content??'').replace(/\n$/,'').split('\n').length},[pre]);}},link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__edocSourceFile:{type:String}},transform(node:any,config:any){const source=plan.documents.map(d=>d.locations.get(node)).find(Boolean);return new Markdoc.Tag('a',{...node.transformAttributes(config),sourceFile:node.attributes.__edocSourceFile??source?.file},node.transformChildren(config));}},heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
    const entry=headings.get(node.attributes.__edocOutlineId)!;
-   return new Markdoc.Tag('ed-heading',{...node.transformAttributes(config),id:entry.id,outlineLevel:entry.level,local:entry.local},node.transformChildren(config));
+   return new Markdoc.Tag('ed-heading',{...node.transformAttributes(config),id:entry.id,outlineLevel:entry.level,local:entry.local,outlineParentId:entry.parentId},node.transformChildren(config));
   }}}
  };
  // Markdoc.resolve 会克隆节点，用内部键恢复定义处的词法作用域。
@@ -88,5 +100,5 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
  const allEntities=Object.fromEntries([...graph.index].map(([id,e])=>[id,e.entity]));
  const existing=new Set([...chapters.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));
  const facts=[...graph.index.values()].filter(e=>!existing.has(anchor(e.id))).map(e=>options.compactIndex?`<span id="${anchor(e.id)}" data-entity-id="${esc(e.id)}"></span>`:`<details class="fact" id="${anchor(e.id)}" data-entity-id="${esc(e.id)}"><summary>${esc(e.entity.label??e.id)} · ${esc(e.type)}</summary><pre>${esc(JSON.stringify({...e.entity,...('ports' in e.entity?{ports:e.entity.ports?.map(p=>({id:p.id}))}:{})}))}</pre></details>`).join('');
- return {anchorAliases:Object.fromEntries([...aliases].filter((entry):entry is [string,string]=>entry[1]!==undefined)),chapters,facts:options.compactIndex?facts+'<p>全量对象可通过页面搜索查看，精确机器读取使用项目 query。详情按需显示。</p><pre id="entity-detail">选择搜索结果查看完整属性与来源。</pre>':facts,toc:plan.flat,outline:plan.roots,scenes,entities:allEntities};
+ return {anchorAliases:Object.fromEntries([...aliases].filter((entry):entry is [string,string]=>entry[1]!==undefined)),chapters,facts:options.compactIndex?facts+'<p>全量对象可通过页面搜索查看，精确机器读取使用项目 query。详情按需显示。</p><pre id="entity-detail">选择搜索结果查看完整属性与来源。</pre>':facts,toc:plan.flat.map(e=>({...e,...(reading.numbers.has(e.id)?{number:reading.numbers.get(e.id)}:{})})),outline:reading.roots,scenes,entities:allEntities};
 }

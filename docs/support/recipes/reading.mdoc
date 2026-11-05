@@ -1,0 +1,43 @@
+{% section id="reading:demo" title="标题与代码折叠（虚构示例）" %}
+这份正文不需要数据文件。页标题不编号，下面的标题由工具生成编号。
+
+## 行为说明
+点击标题左侧的箭头，收起这一节正文及子节。
+
+### 正常处理
+普通正文、代码和规范块分别保留自己的阅读状态。
+
+```js {% id="reading:snippet" process=false %}
+const result = { accepted: true };
+console.log(result);
+```
+
+### 异常处理
+需要核对输入时，可[定位到示例代码](#reading:snippet)。
+
+## 接入方法
+分栏内的标题只折叠本栏内容。
+
+{% columns %}
+{% panel title="左侧" %}
+### 参数说明
+左侧的说明。
+{% /panel %}
+{% panel title="右侧" %}
+### 使用步骤
+右侧的说明。
+{% /panel %}
+{% /columns %}
+
+{% spec-list for="reading:demo" common=["reading:rule"] /%}
+
+{% section id="reading:details" title="作者指定初始折叠" collapsed=true %}
+这一节沿用作者设置；展开正文后也可以单独收起。
+{% /section %}
+
+{% section id="reading:library" title="规范原文" %}
+{% specification id="reading:rule" title="示例约束" %}
+这是虚构的展示条款：示例只说明阅读操作，不代表真实工程已经验证。
+{% /specification %}
+{% /section %}
+{% /section %}

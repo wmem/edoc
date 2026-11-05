@@ -1,0 +1,24 @@
+{% section id="accept:reading-references" title="本页阅读控制与对象语义引用" %}
+
+2026-11-05，在用户批准的正文折叠与编号方案上，统一整理 Spec、代码和目录操作；同时修复对象详情遗漏 references 的缺陷。本记录仅证明下面的工具夹具和正式手册，不代表反馈工程的验证已充分。
+
+{% section id="accept:reading-references:controls" title="阅读控制" %}
+
+标题正文按已有 outline 的父子关系分组，保留显式 section 与分栏、Tab 的包含边界；编号是网页展示字段，不写回源标题、身份或 Agent 读取内容。代码围栏与 code.file 使用同一种折叠区域。统一操作入口见[使用教程](../../usage/rendering/reading.mdoc)。
+
+tests/reading-structure.test.ts 和 tests/reading-controls-browser.test.ts 检查跳级编号、页标题/Spec 排除、源文不变、作者初始收起、单节和批量操作、容器隔离、代码锚点、编号显隐、目录独立性、返回及刷新。既有 outline、Markdoc、read、Spec、reader、接口与正式手册回归继续验证依赖及图表状态。
+
+使用 playwright-cli 和已有 Chromium 操作正式手册的展开/折叠和编号开关；1440px 时面板固定于右侧，390px 时移入页头并默认收起，页面保持视口宽度。构建后的手册本身提供同源可操作实例。
+
+{% /section %}
+
+{% section id="accept:reading-references:semantics" title="语义引用与硬件连接分开" %}
+
+根因是网页对象详情仅渲染 query.directRelations，忽略已经打包的 query.references。现按独立列表展示关联类别、双向端点、label 原文、来源文件/行/selector 与 PDF 来源入口，窄屏按条目分字段显示。硬件连接继续独立显示，不将 Reference 转为 Connection。
+
+Reference 没有独立的证据范围字段；界面保留 label 已声明的说明与范围，缺失显示“未声明”。source.selector 明确为定位，不被解释为证据范围。类别包括 support 或 insufficient 时也不推导验证结果。
+
+tests/entity-references-browser.test.ts 使用九项关联夹具：对应行为、验证点、判据不足、运行入口及反向引用。核对 CLI 查询与网页数量一致、双向跳转及返回、说明转义、缺失标记、硬件连接仍为空，以及390px无整页溢出。正式手册另有[虚构用例入口](../../usage/rendering/references.mdoc#use:references:semantics)。类型检查、文档和安装包构建通过；未加载 Agent 反馈的实际工程。
+
+{% /section %}
+{% /section %}

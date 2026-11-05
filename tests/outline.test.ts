@@ -16,10 +16,10 @@ test('章节、Markdown 与布局共同生成父子结构和标题级别',async 
  assert.equal(root.level,1);assert.equal(group.parentId,root.id);assert.equal(module.parentId,group.id);
  assert.equal(heading.label,'职责 与边界');assert.equal(heading.level,4);assert.equal(heading.children[0].level,5);
  assert.equal(heading.depth,3);assert.equal(tree.entries,5);
- const doc=await renderDocument(g,'测试');
- assert.ok(doc.chapters.includes('<h2 data-heading-level="1" data-section-title>功能模块</h2>'));
- assert.ok(doc.chapters.includes('<h4 data-heading-level="3" data-section-title>QSPI</h4>'));
- assert.match(doc.chapters,/<h5 data-heading-level="4">职责 <strong>与边界<\/strong><\/h5>/);
+ const doc=await renderDocument(g,'测试');const headingsHTML=doc.chapters.replace(/<span class="heading-number"[^>]*>[^<]*<\/span>/g,'');
+ assert.ok(headingsHTML.includes('<h2 data-heading-level="1" data-section-title>功能模块</h2>'));
+ assert.ok(headingsHTML.includes('<h4 data-heading-level="3" data-section-title>QSPI</h4>'));
+ assert.match(headingsHTML,/<h5 data-heading-level="4">职责 <strong>与边界<\/strong><\/h5>/);
  assert.match(doc.chapters,/<p class="panel-title">布局提示<\/p>/);
  const sidebar=renderTOC(doc.outline),printed=renderTOC(doc.outline,false);
  assert.equal((sidebar.match(/<ul>/g)??[]).length,5);assert.ok(sidebar.includes('<details open>'));

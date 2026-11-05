@@ -15,7 +15,7 @@ test('原生表格、列表起始值、链接/图片 title 和全局注解属性
  const f=sample(t,'# 标题 {% #native-heading .note %}\n\n3. 三\n4. 四\n\n[链接](https://example.com "链接标题")\n\n| 左 | 右 |\n| :--- | ---: |\n| a | b |\n\n{% table %}\n- 名称 {% width="30%" %}\n- 说明\n---\n- 项目\n- 值 {% colspan=1 %}\n{% /table %}');
  const g=f.load(),html=(await renderDocument(g,'原生')).chapters;
  assert.match(html,/<ol start="3">/);assert.match(html,/title="链接标题"/);assert.match(html,/<th align="right">/);assert.match(html,/width="30%"/);assert.match(html,/colspan="1"/);
- assert.match(html,/id="native-heading" class="heading-anchor note"/);assert.equal(outline(g).chapters[0].id,'native-heading');
+ assert.match(html,/id="native-heading" class="heading-section heading-anchor note"/);assert.equal(outline(g).chapters[0].id,'native-heading');
 });
 test('原生警告不被提升为错误：跨行强调、嵌套强调、图片链接',async t=>{
  const f=sample(t,'*跨行\n说明*\n\n*(*嵌套*)*\n\n[![原图](tiny.png "图片标题")](https://example.com)');

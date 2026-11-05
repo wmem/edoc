@@ -1,4 +1,5 @@
-import {specificationControls} from './specification-controls.ts';
+import {semanticReferencesHTML} from './entity-references.ts';
+import {readingControls} from './reading-controls.ts';
 import {start} from './client.ts';
 import type {InterfaceState} from '../render-graph/interfaces.ts';
 import type {InterfaceRenderer} from './client.ts';
@@ -14,11 +15,11 @@ import {sidebarNavigation} from './navigation.ts';
 
 const esc=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const own=<T>(object:Record<string,T>,key:string):T|undefined=>Object.hasOwn(object,key)?object[key]:undefined;
-type ReadingState={route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
+type ReadingState={headingNumbers?:boolean;outlineDetails?:boolean[];route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
 export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const data:ReaderData=JSON.parse(document.querySelector('#edoc-book')!.textContent!),reader=document.querySelector<HTMLElement>('#reader')!,toc=document.querySelector<HTMLElement>('#toc')!,pageToc=document.querySelector<HTMLElement>('#page-toc')!,notice=document.querySelector<HTMLElement>('#notice')!,breadcrumbs=document.querySelector<HTMLElement>('#breadcrumbs')!,search=document.querySelector<HTMLInputElement>('#search')!;
- const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false;
- const navigation=(nodes:Navigation[],depth=0):string=>'<ul>'+nodes.map(n=>{const link=n.page?`<a data-outline-link href="${esc(routeHash({kind:'page',project:n.project,id:n.page,...(n.anchor?{anchor:n.anchor}:{})}))}">${esc(n.label)}</a>`:`<span class="nav-group">${esc(n.label)}</span>`;return '<li>'+(n.children.length?'<details'+(depth<1?' open':'')+'><summary>'+link+'</summary>'+navigation(n.children,depth+1)+'</details>':link)+'</li>';}).join('')+'</ul>';
+ const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false,headingNumbers=true;
+ const navigation=(nodes:Navigation[],depth=0):string=>'<ul>'+nodes.map(n=>{const link=n.page?`<a data-outline-link href="${esc(routeHash({kind:'page',project:n.project,id:n.page,...(n.anchor?{anchor:n.anchor}:{})}))}">${n.number?`<span class="heading-number" aria-hidden="true">${esc(n.number)}</span>`:''}${esc(n.label)}</a>`:`<span class="nav-group">${esc(n.label)}</span>`;return '<li>'+(n.children.length?'<details'+(depth<1?' open':'')+'><summary>'+link+'</summary>'+navigation(n.children,depth+1)+'</details>':link)+'</li>';}).join('')+'</ul>';
  toc.innerHTML=navigation(sidebarNavigation(data.navigation));
  const tocActions=document.createElement('div');tocActions.className='toc-actions';tocActions.setAttribute('role','group');tocActions.setAttribute('aria-label','文档目录操作');
  for(const [label,open]of [['全部展开',true],['全部折叠',false]]as const){
@@ -37,7 +38,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  function exists(route:Route){const project=projectOf(route);if(!project)return false;if(route.kind==='entity')return route.id===''||Object.hasOwn(project.entities,route.id);if(route.kind==='pdf'){const a=own(project.attachments,route.id);return !!a&&(!route.target||Object.hasOwn(a.targets,route.target));}const page=own(data.pages,targetKey(route.project,route.id));return !!page&&(!route.anchor||!!resolveAnchor(page,route.anchor));}
  function resolveAnchor(page:ReaderPage,id:string){return resolveHTMLAnchor(page.html,id,page.anchorAliases);}
  const figureIndex=(holder:Element|null)=>[...reader.querySelectorAll('[data-diagram]')].indexOf(holder!);
- function save(){if(!current||restoring)return;const state:ReadingState={route:current,scroll:window.scrollY,details:[...reader.querySelectorAll<HTMLDetailsElement>('details[id]')].filter(d=>d.open).map(d=>d.id),tabs:[...reader.querySelectorAll<HTMLElement>('.tab')].map(t=>!!t.hidden),graphs:window.EdocGraphs?.map(g=>({figure:figureIndex(g.container.closest('[data-diagram]')),zoom:g.zoom(),translation:g.translate()})),displays:[...reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]')].map(i=>i.checked),interfaces:window.EdocInterfaceViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),pdf:currentPdf};history.replaceState(state,'');}
+ function save(){if(!current||restoring)return;const state:ReadingState={route:current,headingNumbers:!document.body.classList.contains('heading-numbers-hidden'),outlineDetails:[...pageToc.querySelectorAll<HTMLDetailsElement>('details')].map(d=>d.open),scroll:window.scrollY,details:[...reader.querySelectorAll<HTMLDetailsElement>('details[id]')].filter(d=>d.open).map(d=>d.id),tabs:[...reader.querySelectorAll<HTMLElement>('.tab')].map(t=>!!t.hidden),graphs:window.EdocGraphs?.map(g=>({figure:figureIndex(g.container.closest('[data-diagram]')),zoom:g.zoom(),translation:g.translate()})),displays:[...reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]')].map(i=>i.checked),interfaces:window.EdocInterfaceViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),pdf:currentPdf};history.replaceState(state,'');}
  function reveal(page:ReaderPage,id:string){const key=resolveAnchor(page,id),target=key?document.getElementById(key):undefined;if(!target)return;for(let parent:HTMLElement|null=target;parent&&parent!==reader;parent=parent.parentElement){if(parent instanceof HTMLDetailsElement)parent.open=true;if(parent.classList.contains('tab'))parent.hidden=false;}target.scrollIntoView({block:'start'});}
  async function display(route:Route,state?:ReadingState){
   route=normalize(route);if(!exists(route)){if(!current)await display(home);showMissing(route);return;}
@@ -52,9 +53,10 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
    reader.innerHTML=`<header class="cover"><div class="eyebrow">ENGINEERING DOCUMENT</div><h1>${esc(page.title)}</h1><p>${esc(project.title)} · ${esc(page.file)}</p></header>`+page.html;
    const firstHeading=reader.querySelector<HTMLElement>('article [data-heading-level]');if(firstHeading?.textContent===page.title&&!firstHeading.closest('details'))firstHeading.remove();
    document.querySelector('#edoc-data')!.textContent=JSON.stringify({scenes:page.scenes,entities:project.entities});
-   const outline=(nodes:typeof page.outline):Navigation[]=>nodes.map(n=>({label:n.label,project:route.project,page:route.id,anchor:n.id,children:outline(n.children)}));pageToc.innerHTML='<h4>本页目录</h4>'+navigation(outline(page.outline));
-   if(state){if(state.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});}
-   const stopGraphs=start(interfaces,{managed:true,initialize:state?.graphs?.map(g=>g.figure)}),stopControls=specificationControls(reader,save);
+   const outline=(nodes:typeof page.outline):Navigation[]=>nodes.map(n=>({label:n.label,project:route.project,page:route.id,anchor:n.id,number:n.number,children:outline(n.children)}));pageToc.innerHTML='<h4>本页目录</h4>'+navigation(outline(page.outline));
+   if(state){pageToc.querySelectorAll<HTMLDetailsElement>('details').forEach((d,i)=>{if(state.outlineDetails?.[i]!==undefined)d.open=state.outlineDetails[i];});if(state.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});}
+   headingNumbers=state?.headingNumbers??headingNumbers;
+   const stopGraphs=start(interfaces,{managed:true,initialize:state?.graphs?.map(g=>g.figure)}),stopControls=readingControls(reader,{numbers:headingNumbers,onChange:()=>{headingNumbers=!document.body.classList.contains('heading-numbers-hidden');save();}});
    // 关闭的规范内图表延迟创建；返回后首次展开时再恢复其已保存状态。
    const restoredInterfaces=new Set((window.EdocInterfaceViews??[]).map(v=>v.holder)),restoredGraphs=new Set(window.EdocGraphs);
    const restoreDeferred=async(event:Event)=>{
@@ -80,7 +82,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
   }else if(route.kind==='entity'){
    if(route.id===''){reader.innerHTML='<article><h1>工程对象 · '+esc(project.title)+'</h1><div class="object-index">'+Object.entries(project.entities).map(([id,e])=>`<a href="${esc(routeHash({kind:'entity',project:route.project,id}))}">${esc(e.label??id)} · ${esc(id)}</a>`).join('')+'</div></article>';pageToc.replaceChildren();window.EdocGraphs=[];restoring=false;window.EdocReady=true;save();return;}
    const entity=project.entities[route.id],detail=facts(route.project,route.id),relations=detail.directRelations;
-   reader.innerHTML=`<article><h1>${esc(entity.label??route.id)}</h1><p>${esc(project.title)} · ${esc(route.id)}</p>${evidence(route.project,route.id)}<pre>${esc(JSON.stringify(detail.target,null,2))}</pre><h2>完整直接关系</h2><pre>${esc(JSON.stringify(relations,null,2))}</pre></article>`;pageToc.replaceChildren();window.EdocGraphs=[];window.scrollTo(0,state?.scroll??0);
+   reader.innerHTML=`<article><h1>${esc(entity.label??route.id)}</h1><p>${esc(project.title)} · ${esc(route.id)}</p>${evidence(route.project,route.id)}${semanticReferencesHTML(route.project,detail.references,project.entities)}<h2>对象信息</h2><pre>${esc(JSON.stringify(detail.target,null,2))}</pre><h2>完整直接关系（硬件连接）</h2><pre>${esc(JSON.stringify(relations,null,2))}</pre></article>`;pageToc.replaceChildren();window.EdocGraphs=[];window.scrollTo(0,state?.scroll??0);
   }else{
    const attachment=project.attachments[route.id];reader.innerHTML=`<h1>${esc(attachment.title)}</h1><div id="pdf-reader"></div>`;pageToc.replaceChildren();window.EdocGraphs=[];
    if(pdfReader)dispose=pdfReader(reader.querySelector('#pdf-reader')!,attachment,route.target?attachment.targets[route.target]:undefined,data,state?.pdf,position=>{currentPdf=position;if(!restoring)save();});window.scrollTo(0,0);

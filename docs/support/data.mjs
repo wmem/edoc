@@ -39,7 +39,7 @@ export function tutorialData({root}){
  const pipeline=json('docs/support/pipeline.json');
  for(const type of ['objects','relations'])result[type].push(...pipeline[type].map(entity=>({...entity,source:{file:'docs/support/pipeline.json',selector:entity.id}})));
  result.objects.push({id:'manual:pdf-source',kind:'node',label:'PDF 定位示例文件',source:{file:'docs/assets/location.pdf',selector:'DETAIL',attachment:{id:'location',target:'detail'}}});
- for(const file of ['objects','tables','waveforms','topology','layout','table-values','graph-options','interfaces','states','wiring']){
+ for(const file of ['objects','tables','waveforms','topology','layout','table-values','graph-options','interfaces','states','wiring','evidence']){
   const path=`docs/ir/authoring/${file}.json`,data=json(path);
   for(const type of Object.keys(result))result[type].push(...(data[type]??[]).map(entity=>({...entity,source:entity.source??{file:path,selector:entity.id}})));
  }

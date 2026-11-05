@@ -50,14 +50,14 @@ test('规范块逐条/本页折叠、目录隔离、深链接展开、历史与3
  const ready=()=>page.waitForFunction(()=>window.EdocReady);await page.goto(pathToFileURL(file).href);await ready();
  const first=page.locator('#reader details.specification').first(),expand=page.getByRole('button',{name:'展开 Spec',exact:true}),collapse=page.getByRole('button',{name:'折叠 Spec',exact:true});
  assert.equal(await collapse.isDisabled(),true);assert.equal(await first.getAttribute('open'),null);assert.equal(await first.locator('.specification-body').isVisible(),false);
- assert.deepEqual(await page.locator('#page-toc a').allTextContents(),['行为','适用要求','观察结果']);
- await first.locator(':scope > summary').focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('.specification-controls button:last-child')!.disabled);assert.ok(await first.locator('.specification-body').isVisible());assert.ok(await collapse.isEnabled());
+ assert.deepEqual(await page.locator('#page-toc a').allTextContents(),['行为','1.适用要求','2.观察结果']);
+ await first.locator(':scope > summary').focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="折叠 Spec"]')!.disabled);assert.ok(await first.locator('.specification-body').isVisible());assert.ok(await collapse.isEnabled());
  await expand.click();assert.equal(await page.locator('#reader details.specification[open]').count(),2);assert.equal(await expand.isDisabled(),true);
  await first.getByRole('link',{name:'规范原文',exact:true}).click();await ready();assert.equal(await page.locator('#page-toc').getByRole('link',{name:'例子',exact:true}).count(),0);
  await page.goBack();await ready();assert.equal(await page.locator('#reader details.specification[open]').count(),2);
  await collapse.click();assert.equal(await page.locator('#reader details.specification[open]').count(),0);
  await page.goto(pathToFileURL(file).href+routeHash({kind:'page',project,id:'docs/index',anchor:'spec-instance-1-clock-example'}));await ready();assert.ok(await first.locator('.specification-body').isVisible());assert.equal(await page.locator('#reader details.specification[open]').count(),1);
- await page.setViewportSize({width:390,height:844});await expand.click();assert.ok(await first.getByText('适用条件：时钟可运行。',{exact:true}).isVisible());
+ await page.setViewportSize({width:390,height:844});await page.locator('.reading-controls > summary').click();await expand.click();assert.ok(await first.getByText('适用条件：时钟可运行。',{exact:true}).isVisible());
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth));assert.deepEqual(errors,[]);
 });
 test('默认收起的规范内接口图展开后初始化，批量开关与返回保持交互状态',{timeout:60000},async t=>{
@@ -76,8 +76,8 @@ test('默认收起的规范内接口图展开后初始化，批量开关与返�
 test('首次加载保留原文及collapsed=false的初始展开值，控件随屏宽移动',{timeout:60000},async t=>{
  const p=specimen(t,behavior+'\n{% spec-list for="behavior" collapsed=false /%}'),book=await p.load(),file=join(p.root,'initial.html');writeFileSync(file,await bookHTML(book));
  const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1440,height:1000}});
- await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);assert.equal(await page.locator('#reader details.specification[open]').count(),2);assert.equal(await page.locator('aside.properties > .specification-controls').count(),1);
- await page.setViewportSize({width:390,height:844});await page.locator('#reader header.cover > .specification-controls').waitFor({state:'visible'});assert.equal(await page.locator('#reader header.cover > .specification-controls').count(),1);assert.ok(await page.getByRole('button',{name:'折叠 Spec',exact:true}).isVisible());
+ await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);assert.equal(await page.locator('#reader details.specification[open]').count(),2);assert.equal(await page.locator('aside.properties > .reading-controls').count(),1);
+ await page.setViewportSize({width:390,height:844});await page.locator('#reader header.cover > .reading-controls').waitFor({state:'visible'});assert.equal(await page.locator('#reader header.cover > .reading-controls').count(),1);assert.equal(await page.locator('.reading-controls').getAttribute('open'),null);await page.locator('.reading-controls > summary').click();assert.ok(await page.getByRole('button',{name:'折叠 Spec',exact:true}).isVisible());
  await page.goto(pathToFileURL(file).href+routeHash({kind:'page',project:book.root.config.projectId,id:'docs/specs'}));await page.waitForFunction(()=>window.EdocReady);assert.equal(await page.locator('#reader details.specification[open]').count(),2);
 });
 test('单文档HTML也提供本页规范展开折叠控件',{timeout:60000},async t=>{

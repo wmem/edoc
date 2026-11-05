@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {chromium} from 'playwright';
+import {specimen} from './specification-fixture.ts';
+import {repository} from './helpers.ts';
+import {bookHTML} from '../packages/pack-html/book.ts';
+import {routeHash} from '../packages/core/routes.ts';
+
+test('本页阅读分范围控制标题、Spec、代码和目录；编号、布局、深链接与历史在390px仍可用',{timeout:60000},async t=>{
+ const source=readFileSync(join(repository,'docs/support/recipes/reading.mdoc'),'utf8'),p=specimen(t,source+'\n{% code file="snippet.ts" language="typescript" /%}');p.write('snippet.ts','export const literal = "{% section %}";\n');const book=await p.load(),file=join(p.root,'reading.html');writeFileSync(file,await bookHTML(book));
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const ready=()=>page.waitForFunction(()=>window.EdocReady),button=(name:string)=>page.getByRole('button',{name,exact:true});await page.goto(pathToFileURL(file).href);await ready();
+ assert.equal(await page.locator('aside.properties > .reading-controls').count(),1);
+ const body=page.locator('#reader details[data-heading-section]'),code=page.locator('#reader details[data-code-block]').first(),spec=page.locator('#reader details.specification').first();
+ assert.equal(await page.locator('#reader details[data-code-block]').count(),2);assert.match(await page.locator('#reader details[data-code-block]').nth(1).innerText(),/export const literal/);assert.equal(await body.count(),8);assert.equal(await page.locator('#reader details[data-heading-section]:not([open])').count(),1);assert.ok(await code.getAttribute('open')!==null);assert.equal(await spec.getAttribute('open'),null);
+ const bodyNumbers=await page.locator('#reader .heading-number').allTextContents(),tocNumbers=await page.locator('#page-toc .heading-number').allTextContents();assert.deepEqual(bodyNumbers,tocNumbers);assert.ok(bodyNumbers.includes('1.1'));assert.equal(await page.locator('header.cover .heading-number,.specification .heading-number').count(),0);
+ await button('折叠正文').click();assert.equal(await page.locator('#reader details[data-heading-section][open]').count(),0);assert.ok(await code.getAttribute('open')!==null);assert.equal(await spec.getAttribute('open'),null);
+ await button('展开正文').click();assert.equal(await page.locator('#reader details[data-heading-section][open]').count(),await body.count());
+ const left=page.locator('.panel').filter({has:page.getByText('左侧的说明。',{exact:true})}),right=page.locator('.panel').filter({has:page.getByText('右侧的说明。',{exact:true})});await left.locator('summary').click();assert.equal(await left.getByText('左侧的说明。',{exact:true}).isVisible(),false);assert.ok(await right.getByText('右侧的说明。',{exact:true}).isVisible());
+ await code.locator(':scope > summary').focus();await page.keyboard.press('Enter');assert.equal(await code.locator('pre').isVisible(),false);await button('展开代码').click();assert.ok(await code.locator('pre').isVisible());
+ await button('折叠代码').click();assert.equal(await page.locator('#reader details[data-code-block][open]').count(),0);assert.equal(await code.getAttribute('open'),null);await button('折叠正文').click();
+ const project=book.root.config.projectId;await page.goto(pathToFileURL(file).href+routeHash({kind:'page',project,id:'docs/index',anchor:'reading:snippet'}));await ready();assert.ok(await code.locator('pre').isVisible());assert.ok(await code.evaluate(el=>{for(let node:Element|null=el;node;node=node.parentElement)if(node instanceof HTMLDetailsElement&&!node.open)return false;return true;}));
+ const numbers=page.getByRole('checkbox',{name:'显示标题编号',exact:true});await numbers.uncheck();assert.equal(await page.locator('#reader .heading-number').first().isVisible(),false);assert.equal(await page.locator('#page-toc .heading-number').first().isVisible(),false);
+ const leftState=await page.locator('#toc details[open]').count();await button('折叠页内目录').click();assert.equal(await page.locator('#page-toc details[open]').count(),0);assert.equal(await page.locator('#toc details[open]').count(),leftState);await button('展开页内目录').click();assert.ok(await page.locator('#page-toc details[open]').count()>0);await button('折叠页内目录').click();
+ await page.evaluate(hash=>location.hash=hash,routeHash({kind:'page',project,id:'docs/specs'}));await ready();await page.goBack();await ready();assert.equal(await numbers.isChecked(),false);assert.equal(await page.locator('#page-toc details[open]').count(),0);assert.ok(await code.locator('pre').isVisible());await page.reload();await ready();assert.equal(await numbers.isChecked(),false);
+ await page.setViewportSize({width:390,height:844});await page.locator('header.cover > .reading-controls').waitFor();assert.equal(await page.locator('.reading-controls').getAttribute('open'),null);await page.locator('.reading-controls > summary').click();await numbers.check();await button('展开正文').click();await button('展开 Spec').click();assert.ok(await spec.locator('.specification-body').isVisible());assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+});

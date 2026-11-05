@@ -20,7 +20,7 @@
 
 {% /section %}
 
-{% section id="guide:home:part-02" title="1. 先区分理解性内容与查询性内容" %}
+{% section id="guide:home:part-02" title="先区分理解性内容与查询性内容" %}
 
 
 | 内容 | 主要回答的问题 | 推荐表达 |
@@ -49,7 +49,7 @@
 
 {% /section %}
 
-{% section id="guide:home:part-03" title="2. 先安排阅读路线，再生成内容" %}
+{% section id="guide:home:part-03" title="先安排阅读路线，再生成内容" %}
 
 
 常见路线是：阅读指南 → 整体结构 → 按职责分组的模块 → 关键约束与决策 → 查询参考。章节与文档目录按读者任务和项目含义设计，不机械照搬源码目录或 IR 资源列表。
@@ -71,7 +71,7 @@
 
 {% /section %}
 
-{% section id="guide:home:part-04" title="3. 用真实结构表达目录层级" %}
+{% section id="guide:home:part-04" title="用真实结构表达目录层级" %}
 
 
 建议起步时查看 [项目正文模板](../../development/regression/sources.mdoc#regression:template)。例如：
@@ -92,11 +92,13 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 
 一篇文章保留一个主要目录归属，需要面向不同角色或任务提供阅读路线时，在专题入口链接同一篇正文；普通链接不会改变左侧主树。确实需要存储结构与导航完全分离时，再单独设计映射，不默认复制文件。跨工程仍通过显式 project include 接入，file include 只复用页内片段。工程内 section ID 保持唯一，普通同名标题不必全局重命名；组合契约见[组合工程与 PDF 附件](composition.mdoc)。
 
+标题使用语义名称，网页编号由工具生成并可隐藏，不手工维护一套序号；编号不代替稳定 ID。
+
 一般阅读目录控制在三到四层更易浏览，较深数据可以通过链接或折叠查看。这是写作建议，不是拒绝更深结构的校验规则。HTML 标题有六级限制，工具仍在 outline 中保留实际层级。
 
 {% /section %}
 
-{% section id="guide:home:part-05" title="4. 渐进式展示，但保留完整可达性" %}
+{% section id="guide:home:part-05" title="渐进式展示，但保留完整可达性" %}
 
 
 - 总览先给模块职责与关键关系；细节再进入接口或接线图。
@@ -111,7 +113,7 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 
 {% /section %}
 
-{% section id="guide:home:part-06" title="5. 数据、知识、组织分别维护" %}
+{% section id="guide:home:part-06" title="数据、知识、组织分别维护" %}
 
 
 - 工程源保存权威精确事实；Adapter 提取事实，不在代码中硬编码正常数值。
@@ -136,7 +138,7 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 
 {% /section %}
 
-{% section id="guide:home:part-07" title="6. 稳定 ID 用于定位与追溯" %}
+{% section id="guide:home:part-07" title="稳定 ID 用于定位与追溯" %}
 
 
 规范条款、需要引用的章节、接口、表格行和工程对象使用稳定 ID。不要用标题文本、行号或内容 hash 派生身份。普通临时小标题可以使用生成锚点；长期外部引用应指向显式 section。
@@ -157,7 +159,7 @@ outline 给出父子关系、级别、源 sectionId 与正文来源，不需要�
 
 {% /section %}
 
-{% section id="guide:home:part-08" title="7. 把阅读体验列入验收" %}
+{% section id="guide:home:part-08" title="把阅读体验列入验收" %}
 
 
 除了 Schema、引用和类型检查，还应按实际范围验证：
@@ -196,7 +198,7 @@ KY3134 的真实案例及检查范围见[图形渲染审查](../../development/r
 
 {% /section %}
 
-{% section id="guide:home:part-09" title="8. 在项目中验证，再沉淀到工具" %}
+{% section id="guide:home:part-09" title="在项目中验证，再沉淀到工具" %}
 
 
 发现问题时先判断归属：共用的章节/导航/渲染/查询问题修工具，项目含义和阅读分组问题修项目。二者都有问题时同步推进。

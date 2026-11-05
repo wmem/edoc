@@ -1,0 +1,10 @@
+{
+  "objects": [
+    {"id": "manual:case:events", "kind": "node", "label": "虚构用例：密集事件"},
+    {"id": "manual:checkpoint:events", "kind": "node", "label": "虚构验证点：事件不丢失"}
+  ],
+  "references": [
+    {"id": "manual:ref:behavior", "kind": "reference", "class": "observes-behavior", "fromId": "manual:case:events", "targetId": "use:references:semantics", "label": "仅为工具操作示例，不代表真实工程证据"},
+    {"id": "manual:ref:insufficient", "kind": "reference", "class": "insufficient-evidence", "fromId": "manual:case:events", "targetId": "manual:checkpoint:events", "label": "示例仅描述单次事件，不足以证明密集事件不丢失", "source": {"file": "docs/ir/authoring/evidence.json", "selector": "manual:ref:insufficient"}}
+  ]
+}

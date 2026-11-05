@@ -16,6 +16,14 @@
 
 {% /section %}
 
+{% section id="use:references:semantics" title="对象详情中的语义引用" %}
+
+打开 {% reference id="manual:case:events" label="虚构用例：密集事件" /%}。详情中的“语义引用”单独列出关联类别、起点和目标、说明与证据范围以及来源；点击对象可继续跳转，浏览器返回可回到用例。验证点也能反向查到用例。
+
+这个例子明确标为判据不足：类别与说明照数据原文展示，不推断验证已充分。硬件连接仍在独立的“完整直接关系（硬件连接）”区域。Reference 没有单独的范围字段，范围放在 label 中完整声明；未提供时显示“未声明”，source.selector 仅作来源定位。结构见[Reference 与来源](../reference/ir.mdoc#ref:references)。
+
+{% /section %}
+
 {% section id="use:pdf" title="携带 PDF 并定位" %}
 
 本手册内嵌一份两页的虚构 PDF，用来说明定位行为，不包含真实电路。

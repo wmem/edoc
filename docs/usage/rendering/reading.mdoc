@@ -1,0 +1,42 @@
+{% section id="use:reading-folding" title="折叠正文、代码与标题编号" %}
+
+长文章可先看标题，再展开需要的部分。普通标题和带标题的 section 默认支持折叠；代码块也有独立的折叠标题行，不需要增加配置或改变正文写法。
+
+{% section id="use:reading-controls" title="从本页阅读面板操作" %}
+
+桌面右侧顶部的“本页阅读”面板统一放置批量操作。窄屏时它移到页头，初始只显示标题，点击后可操作：
+
+| 一行操作 | 控制什么 |
+| --- | --- |
+| 正文：展开 / 折叠 | 本篇标题下的内容及子节；分栏、Tab 内只折叠各自容器的内容 |
+| Spec：展开 / 折叠 | 本篇规范块，包括原文和复用实例 |
+| 代码：展开 / 折叠 | 围栏代码和 code.file 显示的源码 |
+| 页内目录：展开 / 折叠 | 右侧本页目录的下级条目 |
+| 显示标题编号 | 同时显示或隐藏正文与本页目录的编号 |
+
+没有对应内容时不显示该行。左侧文档树仍用自己的“全部展开 / 全部折叠”，与本页操作分开。正文折叠会隐藏其中的 Spec 和代码，但不改写它们自身的开关；重新展开正文后，它们仍保留之前状态。
+
+编号默认显示，每篇重新从 1. 开始，再按标题树生成 1.1、1.2 等；页标题和 Spec 不参与编号。编号只用于网页阅读，不修改源标题、稳定 ID、链接或 outline/read/query 的事实内容。原始 Markdown 标题跳级时按实际父子关系编号，不补出虚构的中间层。
+
+{% /section %}
+
+{% section id="use:reading-live" title="实际操作" %}
+
+试着折叠下面的“行为说明”，再从本页阅读面板展开正文。单独折叠代码或 Spec 后，观察它们与正文开关的区别。示例源文件只维护一份：
+
+{% include file="docs/support/recipes/reading.mdoc" /%}
+
+{% /section %}
+
+{% section id="use:reading-source" title="完整写法与边界" collapsed=true %}
+
+复制到自己的 docs/index.mdoc，配置写 export default {}，执行 edoc 即可；无需 IR：
+
+{% code file="docs/support/recipes/reading.mdoc" language="markdoc" /%}
+
+普通标题和代码默认展开。作者设置的 section collapsed=true 仍决定该节的初始状态；读者可随后展开。没有标题的 section 不额外生成标题行。Spec 的初始值沿用[规范展示规则](specifications.mdoc#use:specifications-display)。
+
+点击稳定链接会展开目标所在的折叠上下文和 Tab。返回与前进恢复阅读状态，编号显隐随阅读历史保存；这些操作不写回源文件，也不改变 Agent 的 read 范围或依赖检查。键盘聚焦标题后，可用 Enter 或空格切换。
+
+{% /section %}
+{% /section %}
