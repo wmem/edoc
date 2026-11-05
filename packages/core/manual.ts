@@ -6,7 +6,7 @@ import {readDocument} from './read.ts';
 import type {ReadOptions} from './read.ts';
 import {readRange} from './read-range.ts';
 import {query} from './query.ts';
-import {failure} from './errors.ts';
+import {failure,EdocError} from './errors.ts';
 
 type Reading=Omit<ReturnType<typeof readDocument>,'range'>;
 type Project={manifest:Manifest;records:RecordEntry[];adjacency:[string,string[]][];interfaces:[string,string][];readings:Record<string,{self:Reading;subtree:Reading}>};
@@ -37,13 +37,25 @@ function project(manual:Manual,id=manual.rootProject){
  if(!Object.hasOwn(manual.projects,id))failure('QUERY_NOT_FOUND','<manual>','/project','工具手册中没有此工程：'+id);
  return manual.projects[id];
 }
-export function manualOutline(manual:Manual,options:OutlineOptions={}){return selectOutline(manual.navigation,manual.rootProject,Object.keys(manual.projects),options);}
+function navigationHint(manual:Manual,id:string,projectId?:string){
+ const walk=(nodes:Navigation[]):Navigation[]=>nodes.flatMap(node=>[node,...walk(node.children)]);
+ const matches=walk(manual.navigation).filter(n=>(!projectId||n.project===projectId)&&n.sectionId&&(n.id===id||n.anchor===id));
+ return matches.length?'。该值是导航 id/anchor，请使用 sectionId：'+[...new Set(matches.map(n=>`${n.sectionId}（--project ${n.project}）`))].join('、'):'';
+}
+export function manualOutline(manual:Manual,options:OutlineOptions={}){
+ try{return selectOutline(manual.navigation,manual.rootProject,Object.keys(manual.projects),options);}
+ catch(error){
+  const hint=options.id?navigationHint(manual,options.id,options.project):'';
+  if(hint&&error instanceof EdocError&&error.diagnostics.some(d=>d.code==='QUERY_NOT_FOUND'&&d.path==='/id'))failure('QUERY_NOT_FOUND','<outline>','/id','当前目录中没有此章节：'+options.id+hint);
+  throw error;
+ }
+}
 export function manualRead(manual:Manual,id:string,options:ReadOptions&{project?:string}={}){
  const selected=project(manual,options.project),scope=options.scope??'self';
  if(!['self','subtree'].includes(scope))failure('READ_SCOPE','<read>','/scope','scope 只接受 self/subtree');
  if(!Object.hasOwn(selected.readings,id)){
   if(selected.records.some(r=>r.id===id))failure('READ_TYPE','<read>','/id','read 只读取有稳定 ID 的 section；工程对象使用 query');
-  failure('QUERY_NOT_FOUND','<read>','/id','工具手册中没有此章节：'+id);
+  failure('QUERY_NOT_FOUND','<read>','/id','工具手册中没有此章节：'+id+navigationHint(manual,id,options.project??manual.rootProject));
  }
  const reading=selected.readings[id][scope];return {...reading,...readRange(reading.content,options.offset,options.maxChars)};
 }

@@ -11,6 +11,7 @@
 | packages/core/project.ts | JS 配置、默认值、正文优先扫描、数据函数与输入保护 |
 | packages/core/markdoc.ts | 原生配置、Schema 合并与分级校验 |
 | packages/core/documents.ts | 原生上下文投影、条件/片段展开、完整依赖与真实来源 |
+| packages/core/document-preflight.ts、media.ts | validate/build 共用的按页锚点与媒体检查；SVG XML/CSS 资源边界 |
 | packages/core/graph.ts、resource-validation.ts | 数据索引和语义校验 |
 | packages/core/book.ts、routes.ts | 同构工程组合、导航和稳定路由 |
 | packages/core/query.ts、read.ts、outline.ts | 对象查询、章节正文和目录 |
@@ -24,9 +25,13 @@
 
 CLI 的 validate/read/query 复用加载与校验，但不调用图形布局。阅读器只创建当前文章 DOM，其余正文保留在离线载荷中，不应将“按篇”解释为文件体积不增长。
 
+validate 与 compileBook 共用 preflightBook，按页面目录计划检查标准锚点，按完整源分支检查媒体格式；renderDocument 复用 ImageAsset。自定义 transform 无法静态确定的目标在 validate 显式列为延后，build 仍按最终 HTML 校验。SVG 使用 xmldom 与 css-tree 检查 XML/CSS，保留原字节，通过独立 img 内嵌，不开放任意 SVG DOM。
+
 安装包预编译浏览器脚本并携带字体子集和许可证；生产运行无需 X6/Vite/Playwright 开发包。配置加载独立使用 bundle-require/esbuild，附件校验仍使用 PDF.js。构建、安装与体积的实测范围见[安装精简验收](acceptance/html-install.mdoc)。
 
 packages/core/manual.ts 从同一 Book 生成便携查询数据，复用目录筛选、正文 Unicode 分页和事实 query；packages/cli/manual.ts 提供 docs 命令和只读本机预览。构建阶段生成完整 HTML 与压缩索引，安装后无需配置、Adapter 或样例源，交付范围见[文档修复验收](acceptance/documentation-delivery.mdoc)。
+
+安装包同时携带 docs 源文、其引用的 examples 和 templates。README/AGENTS、--help 与 docs 定位同一 docs/index.mdoc；普通使用者可直接读取，不必进入工具维护规则。手册 CLI 的默认浅层目录与显式 --all 不改变核心 projectOutline 的完整默认范围；直接源文阅读不依赖任何预构建索引，CLI 查询只依赖索引，网页预览才需要 HTML。当前交付验收见[Agent 源文入口修复](acceptance/agent-manual.mdoc)。
 
 {% /section %}
 

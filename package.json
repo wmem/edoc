@@ -18,7 +18,8 @@
     "typecheck": "tsc --noEmit",
     "test:graph": "node --test tests/graph.test.ts",
     "test:layout": "node --test tests/layout.test.ts",
-    "test:document": "node --test tests/document.test.ts tests/markdoc.test.ts tests/directory-order.test.ts",
+    "test:document": "node --test tests/document.test.ts tests/markdoc.test.ts tests/directory-order.test.ts tests/preflight.test.ts",
+    "test:media-browser": "node --test tests/media-browser.test.ts",
     "test:outline": "node --test tests/outline.test.ts",
     "test:adapter": "node --test tests/adapter.test.ts",
     "test:browser": "node --test tests/browser.test.ts",
@@ -44,8 +45,10 @@
     "@markdoc/markdoc": "0.5.11",
     "@types/markdown-it": "13.0.9",
     "@types/react": "19.3.0",
+    "@xmldom/xmldom": "0.9.12",
     "ajv": "8.20.0",
     "bundle-require": "5.1.0",
+    "css-tree": "3.2.1",
     "elkjs": "0.12.1",
     "esbuild": "0.28.2",
     "pdfjs-dist": "6.4.299",
@@ -54,6 +57,7 @@
   "devDependencies": {
     "@antv/x6": "3.1.8",
     "@fontsource/noto-sans-sc": "5.3.1",
+    "@types/css-tree": "3.2.0",
     "@types/node": "26.6.6",
     "playwright": "1.64.1",
     "tslib": "2.9.1",
@@ -65,6 +69,7 @@
     "README.md",
     "AGENTS.md",
     "docs",
+    "examples",
     "templates"
   ],
   "exports": {
@@ -73,5 +78,6 @@
       "default": "./dist/packages/core/index.js"
     }
   },
-  "types": "./dist/packages/core/index.d.ts"
+  "types": "./dist/packages/core/index.d.ts",
+  "license": "MIT"
 }

@@ -1,12 +1,10 @@
 import Markdoc from '@markdoc/markdoc';
-import {readFileSync} from 'node:fs';
-import {extname} from 'node:path';
 import {localDocumentLink,tags,documentAST} from '../core/documents.ts';
 import type {Graph,Table,Waveform} from '../core/types.ts';
 import {scene,esc,anchor} from '../render-graph/index.ts';
 import type {Scene} from '../render-graph/index.ts';
 import {waveform} from '../render-wave/index.ts';
-import {projectPath} from '../core/paths.ts';
+import {loadImageAsset} from '../core/media.ts';
 import {routeHash} from '../core/routes.ts';
 import {prepareOutline} from '../core/outline.ts';
 import {tableHTML} from '../extensions/data-table/render.ts';
@@ -45,7 +43,7 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
    if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);
    if(type==='interface-table')return interfaceTableHTML(graph,id,a.mode??'detailed');
   }
-  if(n==='img'){if(graph.documentPlan&&!graph.documentPlan.files.includes(a.src))throw new Error('Schema 图片须通过 Markdown 图片节点或 render:img 的声明式属性记录来源：'+a.src);const file=projectPath(graph.projectRoot,graph.projectRoot,a.src);const mime:Record<string,string>={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'};if(!mime[extname(file)])throw new Error('文档图片只支持 PNG/JPEG/WebP');return `<img class="doc-image${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''}${a.title?` title="${esc(a.title)}"`:''} alt="${esc(a.alt??'')}" src="data:${mime[extname(file)]};base64,${readFileSync(file).toString('base64')}"/>`;}
+  if(n==='img'){if(graph.documentPlan&&!graph.documentPlan.files.includes(a.src))throw new Error('Schema 图片须通过 Markdown 图片节点或 render:img 的声明式属性记录来源：'+a.src);const asset=graph.documentPlan?.media?.get(a.src)??loadImageAsset(graph.projectRoot,a.src);return `<img class="doc-image${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''}${a.title?` title="${esc(a.title)}"`:''} alt="${esc(a.alt??'')}" src="data:${asset.mime};base64,${asset.data}"/>`;}
   const common=()=>Object.entries(a).filter(([key,value])=>value!==undefined&&key!=='href'&&key!=='sourceFile'&&!key.startsWith('__edoc')).map(([key,value])=>{if(!/^[A-Za-z_:][A-Za-z0-9_.:-]*$/.test(key))throw new Error('HTML 属性名非法：'+key);return ` ${key.toLowerCase()}="${esc(String(value))}"`;}).join('');
   const allowed=new Set(['div','span','aside','section','article','details','summary','figure','figcaption','caption','dl','dt','dd','abbr','kbd','mark','small','sub','sup','time','q','b','i','u','h1','h2','h3','h4','h5','h6','p','a','ul','ol','li','pre','code','blockquote','table','thead','tbody','tr','th','td','strong','em','s','hr','br','del']);
   if(!allowed.has(n))throw new Error('Markdoc 扩展输出不支持的 HTML 标签：'+n);

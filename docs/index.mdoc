@@ -4,6 +4,14 @@
 
 edoc 以 Markdown 为正文基础，扩展页面编排、数据图表和原文引用，生成带导航与查询能力的离线文档。先了解它能表达什么，再按需要学习用法；普通正文和页面编排不需要工程数据。
 
+本文件也是安装包中的 .mdoc 源文主入口。Agent 可以直接读取，沿本文相对链接进入教程；不需要查阅 HTML、配置当前项目或读取工具开发规则。正文、片段、配方、引用的样例与模板随包交付，按需打开即可。
+
+普通链接相对当前文件；主手册 include/code 标签中的 file 相对安装包根，独立子工程按自己的配置根定位。路径规则见[正文文件契约](usage/reference/markdoc.mdoc#ref:markdoc-files)。
+
+## 最小工作流
+
+在自己的项目创建 docs/index.mdoc，写普通 Markdown 正文；创建 docs/edoc.config.js，内容为 export default {}；回到项目根执行 edoc，生成 output/index.html。首次使用不需要 IR、转换器或浏览器。完整步骤见[最小配置](usage/start/02-first-document.mdoc#use:first-build)。需要图表时再通过配置或 docs/ir 提供数据，按[能力索引](usage/reference/capabilities.mdoc)选择扩展。
+
 ## 选择阅读路线
 
 | 你的任务 | 从这里开始 |
@@ -25,15 +33,18 @@ edoc 以 Markdown 为正文基础，扩展页面编排、数据图表和原文�
 
 ## 给 Agent 的短路径
 
-安装后的工具手册直接运行 edoc docs 或 edoc docs serve 阅读。Agent 使用 docs 命令找到工具的章节和样例事实，无需加载当前项目配置：
+先执行 edoc --help 或 edoc docs 定位源文入口，也可使用 docs 命令按章节读取。目录默认 depth=0；text 同时显示可读取的 sectionId，JSON 的 id/anchor 是网页导航身份，不传给 read：
 
 ```sh
-edoc docs outline --depth 0 --format json
-edoc docs read --id use:start --format text
+edoc docs outline --format text
+edoc docs outline --id use:home --depth 1
+edoc docs read --id use:first-build --format text
 edoc docs read --id ref:config-data --format json
 edoc docs query --id board:net.FLASH_SCK --depth 1
 ```
 
-自己的工程使用不带 docs 的 outline/read/query，按所需范围读取正文与事实，修改源文件后重新校验。只有发布的 HTML 时，使用页面搜索、目录和对象详情；网页不会在本机提供 CLI 服务。
+read 默认只返回当前 section 正文，并列出子章节 ID；需要哪节再读取，显式 subtree 才展开，留意 range/nextOffset 分页。完整手册目录使用 edoc docs outline --all；按关键词查找时，edoc docs --format json 的 sources 指向随包源文，可用 rg/grep 搜索。
+
+自己的工程使用不带 docs 的 outline/read/query，按所需范围读取正文与事实，修改源文件后重新校验。人可用 edoc docs serve 阅读网页；只有发布的 HTML 时，使用页面搜索、目录和对象详情，网页不会在本机提供 CLI 服务。
 
 {% /section %}

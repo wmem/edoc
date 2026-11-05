@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync,rmSync,writeFileSync,readFileSync,mkdirSync,existsSync,cpSync,chmodSync} from 'node:fs';
-import {join} from 'node:path';
+import {join,dirname,resolve,delimiter} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 import {once} from 'node:events';
@@ -16,10 +16,13 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  };
  const packed=JSON.parse(run('npm',['pack','--json','--pack-destination',root]))[0];
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/cli/edoc.js'));
+ assert.ok(packed.files.some((f:any)=>f.path==='LICENSE'));
+ assert.equal(JSON.parse(readFileSync(join(repository,'package.json'),'utf8')).license,'MIT');
  assert.ok(!packed.files.some((f:any)=>f.path.endsWith('.ts')&&!f.path.endsWith('.d.ts')),'运行仅用 JS，类型声明单独交付');
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/core/index.d.ts'));
  assert.ok(packed.files.some((f:any)=>f.path==='dist/manual/index.html'));
- assert.ok(!packed.files.some((f:any)=>f.path.startsWith('docs/')&&f.path.includes('/output/')),'运行过 docs 构建也不能混入子工程 HTML');
+ assert.ok(packed.files.some((f:any)=>f.path==='examples/fpga-mac/docs/SPEC.mdoc'),'源文 include 引用的样例必须随包');
+ assert.ok(!packed.files.some((f:any)=>/^(docs|examples)\//.test(f.path)&&f.path.includes('/output/')),'运行过文档构建也不能混入子工程 HTML');
  const prefix=join(root,'prefix');run('npm',['install','--prefix',prefix,join(root,packed.filename),'--ignore-scripts','--omit=dev','--prefer-offline','--package-lock=false']);
  for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','react','typescript'])assert.ok(!existsSync(join(prefix,'node_modules',name)),name+' 不属于运行依赖');
  assert.ok(!packed.files.some((f:any)=>f.path.startsWith('dist/packages/render-pdf/')));
@@ -27,8 +30,21 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(packed.files.some((f:any)=>f.path==='dist/runtime/fonts/LICENSE'));
  const bin=join(prefix,'node_modules/.bin/edoc'),project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});
  writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'edoc.config.js'),"throw Error('不应默认读取项目根配置')");writeFileSync(join(project,'README.md'),'# 仓库介绍\n\n不进入默认正式文档。');writeFileSync(join(project,'docs/index.mdoc'),'# 安装包演示\n\n普通正文。');
- assert.match(run(bin,['--version'],project),/edoc 1/);assert.match(run(bin,['guide'],project),/edoc.config.js/);
+ assert.match(run(bin,['--version'],project),/edoc 1/);assert.match(run(bin,['guide'],project),/文档组织简略指南/);
  const location=JSON.parse(run(bin,['docs','--format','json'],project));assert.ok(existsSync(location.html));assert.ok(existsSync(location.sources));
+ assert.equal(typeof location.build.version,'string');assert.equal(typeof location.build.dirty,'boolean');assert.match(location.build.revision,/^[a-f0-9]{40,64}$/);assert.ok(location.build.builtAt);
+ assert.equal(JSON.parse(run(bin,['guide','--full','--format','json'],project)).variant,'full');
+ for(const file of [location.entry,location.readme,location.usage])assert.ok(existsSync(file));
+ assert.ok(run(bin,['--help'],project).includes(location.entry));
+ assert.match(readFileSync(location.entry,'utf8'),/最小工作流/);
+ assert.match(readFileSync(location.readme,'utf8'),/docs\/index\.mdoc/);
+ for(const cmd of ['read','outline','query','serve'])assert.match(run(bin,['docs',cmd,'--help'],project),/源文主入口/);
+ const shallow=JSON.parse(run(bin,['docs','outline'],project));assert.equal(shallow.maxDepth,0);assert.ok(shallow.chapters.every((n:any)=>!n.children.length));
+ const all=JSON.parse(run(bin,['docs','outline','--all'],project));assert.ok(all.chapters.some((n:any)=>n.children.length));assert.equal(all.maxDepth,undefined);
+ assert.match(run(bin,['docs','outline','--format','text'],project),/use:home/);
+ const wrongId=spawnSync(bin,['docs','read','--id',shallow.chapters[0].id],{cwd:project,encoding:'utf8'});assert.equal(wrongId.status,3);assert.match(wrongId.stderr,/sectionId/);
+ // 安装源文及 include/code 依赖可独立加载；不借助仓库外的 examples。
+ assert.ok(JSON.parse(run(bin,['outline','--config',join(location.sources,'edoc.config.js'),'--depth','0'],project)).chapters.length>0);
  assert.equal(JSON.parse(run(bin,['docs','read','--id','ref:config-data'],project)).id,'ref:config-data');
  assert.equal(JSON.parse(run(bin,['docs','query','--id','system:producer'],project)).target.entity.label,'生产者');
  writeFileSync(join(project,'docs/edoc.config.js'),"throw Error('工具手册不得执行当前工程配置')");
@@ -47,7 +63,22 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(JSON.parse(run(bin,['docs','outline','--depth','0'],project)).chapters.length>0);
  assert.match(JSON.parse(run(bin,['docs','read','--id','dev:environment:part-01'],project)).content,/历史 V1/);
  const missingManual=spawnSync(bin,['docs','read','--id','missing'],{cwd:project,encoding:'utf8'});assert.equal(missingManual.status,3);
- for(const args of [['docs','read'],['docs','read','--id','ref:config','--scope','invalid'],['docs','outline','--config','ignored'],['docs','query','--id','system:producer','--depth','11']])assert.equal(spawnSync(bin,args,{cwd:project,encoding:'utf8'}).status,2,args.join(' '));
+ for(const args of [['docs','read'],['docs','read','--id','ref:config','--scope','invalid'],['docs','outline','--config','ignored'],['docs','query','--id','system:producer','--depth','11'],['docs','outline','--all','--depth','1']])assert.equal(spawnSync(bin,args,{cwd:project,encoding:'utf8'}).status,2,args.join(' '));
+ const originalHTML=readFileSync(location.html);rmSync(location.html);
+ assert.equal(JSON.parse(run(bin,['docs','read','--id','use:home'],project)).id,'use:home','Agent 查询不依赖 HTML 文件');
+ assert.ok(JSON.parse(run(bin,['docs','outline'],project)).chapters.length>0);
+ assert.match(run(bin,['docs'],project),/源文主入口/);writeFileSync(location.html,originalHTML);
+ // 不依赖HTML或查询索引：从安装目录README沿.mdoc链接提取最小配方。
+ const readme=readFileSync(location.readme,'utf8'),entryLink=readme.match(/\[docs\/index\.mdoc\]\(([^)]+)\)/)!;
+ assert.ok(entryLink);const entry=readFileSync(resolve(dirname(location.readme),entryLink[1]),'utf8');
+ const tutorialLink=entry.match(/\[最小配置\]\(([^)#]+)(?:#[^)]*)?\)/)!;assert.ok(tutorialLink);
+ const tutorial=readFileSync(resolve(dirname(location.entry),tutorialLink[1]),'utf8');
+ const configRecipe=tutorial.match(/```js\n([\s\S]*?)```/)!,proseRecipe=tutorial.match(/```markdown\n([\s\S]*?)```/)!;assert.ok(configRecipe&&proseRecipe);
+ assert.match(readFileSync(join(location.root,'AGENTS.md'),'utf8'),/源文主入口/);
+ const textProject=join(root,'from-installed-mdoc');mkdirSync(join(textProject,'docs'),{recursive:true});writeFileSync(join(textProject,'docs/edoc.config.js'),configRecipe[1]);writeFileSync(join(textProject,'docs/index.mdoc'),proseRecipe[1]);
+ const indexPath=join(location.root,'dist/manual/index.json.gz'),originalIndex=readFileSync(indexPath);rmSync(indexPath);rmSync(location.html);
+ assert.ok(run(bin,['--help'],textProject).includes(location.entry));run(bin,[],textProject);assert.match(readFileSync(join(textProject,'output/index.html'),'utf8'),/工程手册/);
+ writeFileSync(indexPath,originalIndex);writeFileSync(location.html,originalHTML);
  writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');
  run(bin,[],project);assert.ok(existsSync(join(project,'output/index.html')));
  writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:read" title="安装包章节" %}原始 **说明**。{% /section %}');
@@ -91,7 +122,7 @@ test('Git 打包执行 prepare 后可全局安装，最终安装无需开发依�
  const source=join(root,'source'),prefix=join(root,'global');mkdirSync(source);
  const run=(command:string,args:string[],cwd=source,env=process.env)=>{const r=spawnSync(command,args,{cwd,env,encoding:'utf8',timeout:180000});assert.equal(r.status,0,r.stderr||r.stdout||r.error?.message||'命令未成功退出');return r.stdout;};
  // 使用当前工作树建立独立 Git 快照，覆盖与 git+ssh 相同的 prepare/打包流程，不提交实际仓库。
- for(const name of ['package.json','package-lock.json','tsconfig.json','tsconfig.package.json','README.md','AGENTS.md','packages','docs','templates','examples','scripts'])cpSync(join(repository,name),join(source,name),{recursive:true,filter:path=>!/[\/\\](?:output|node_modules|\.edoc-build)(?:[\/\\]|$)/.test(path)});
+ for(const name of ['package.json','package-lock.json','tsconfig.json','tsconfig.package.json','.gitignore','README.md','AGENTS.md','LICENSE','packages','docs','templates','examples','scripts'])cpSync(join(repository,name),join(source,name),{recursive:true,filter:path=>!/[\/\\](?:output|node_modules|\.edoc-build)(?:[\/\\]|$)/.test(path)});
  run('git',['init','--quiet']);run('git',['add','.']);run('git',['-c','user.name=edoc test','-c','user.email=edoc-test@example.invalid','commit','--quiet','-m','安装夹具']);
  const guards=join(root,'no-python');mkdirSync(guards);
  for(const name of ['python','python3','uv']){const file=join(guards,name);writeFileSync(file,'#!/bin/sh\nprintf "手册构建不能依赖 Python/uv\\n" >&2\nexit 91\n');chmodSync(file,0o755);}
@@ -101,6 +132,10 @@ test('Git 打包执行 prepare 后可全局安装，最终安装无需开发依�
  for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','typescript'])assert.ok(!existsSync(join(installed,'node_modules',name)),name+' 不应留在最终全局安装中');
  const project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'docs/index.mdoc'),'# Git 安装生成\n\n中文正文。');
  assert.match(run(bin,['--version'],project),/edoc 1/);run(bin,[],project);assert.match(readFileSync(join(project,'output/index.html'),'utf8'),/Git 安装生成/);
+ const location=JSON.parse(run(bin,['docs','--format','json'],project));assert.equal(location.entry,join(installed,'docs/index.mdoc'));
+ assert.equal(location.build.revision,run('git',['rev-parse','HEAD']).trim());assert.equal(location.build.dirty,false);assert.ok(existsSync(join(installed,'LICENSE')));
+ assert.ok(run('edoc',['--help'],project,{...process.env,PATH:join(prefix,'bin')+delimiter+process.env.PATH}).includes(location.entry));
+ assert.ok(existsSync(location.entry));assert.match(readFileSync(join(installed,'AGENTS.md'),'utf8'),/源文主入口/);
  assert.match(run(bin,['docs','read','--id','ref:config-data','--format','text'],project),/context.references/);
  const fixture=readerFixture(undefined,join(root,'with-pdf'));run(bin,['--config',join(fixture.root,'edoc.config.js')],project);assert.match(readFileSync(join(fixture.root,'output/index.html'),'utf8'),/pdfWorker/);
 });

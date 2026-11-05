@@ -7,9 +7,11 @@ import {createRequire} from 'node:module';
 import {browserScript} from '../packages/pack-html/runtime.ts';
 import {licenses} from '../packages/pack-html/licenses.ts';
 import {execFileSync} from 'node:child_process';
+import {sourceBuildInfo} from '../packages/core/build-info.ts';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),output=join(root,'dist');
 rmSync(output,{recursive:true,force:true});mkdirSync(output,{recursive:true});
+writeFileSync(join(output,'build-info.json'),JSON.stringify({...sourceBuildInfo(root),builtAt:new Date().toISOString()},null,2)+'\n');
 const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(dir,e.name)):[join(dir,e.name)]);
 let count=0;
 for(const file of walk(join(root,'packages'))){
@@ -20,9 +22,7 @@ for(const file of walk(join(root,'packages'))){
   writeFileSync(target.slice(0,-3)+'.js',code.replace(/(\bimport\s*\(\s*['"][^'"]+)\.ts(['"]\s*\))/g,'$1.js$2'));count++;
  }else cpSync(file,target);
 }
-// 文档与模板由 npm files 收录一次；CLI 的 guide 在模块相对路径保留同源正文。
-const guide='docs/usage/engineering/guide.mdoc';
-mkdirSync(dirname(join(output,guide)),{recursive:true});cpSync(join(root,guide),join(output,guide));
+// 源文与模板由 npm files 收录一次；CLI 的 guide 从包根 docs 读取。
 const runtime=join(output,'runtime');mkdirSync(runtime,{recursive:true});
 for(const pdf of [false,true])for(const interfaces of [false,true]){
  const name=`reader-${pdf}-${interfaces}`;

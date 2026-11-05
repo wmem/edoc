@@ -1,0 +1,84 @@
+{% section id="review:agent-doc-discovery" title="全局安装后的 Agent 手册发现路径" %}
+
+2026-11-05，审阅 a604dca 加本地尚未提交的 tgz 安装说明。使用真实 npm 包安装到隔离全局 prefix，在空目录中仅通过 PATH 调用 edoc，没有借助源码仓库配置。以下统计对应审阅开始时的安装包，尚不含本审阅页。
+
+审阅结论：帮助、手册目录、章节读取、字段查询和最小工程生成能够闭环；基线的首次发现与低噪声输出仍有缺口。安装携带文档，不等于自动把用法注入所有 Agent 的上下文。本页保留审阅时的发现，后续按用户要求完成的处理见[Agent 源文入口修复](../acceptance/agent-manual.mdoc)。
+
+{% section id="review:agent-doc-discovery:entry" title="Agent 如何知道入口" %}
+
+本节保留修复前的接入建议；当前包内入口见[修复验收](../acceptance/agent-manual.mdoc)。
+
+前提是 Agent 能执行终端命令、edoc 位于 PATH，并知道本项目使用 edoc。可在项目 AGENTS.md 或任务说明放一条简短约定：
+
+```markdown
+本项目用 edoc 生成工程文档。使用前运行 edoc --help、edoc docs --help，
+从 edoc docs read --id use:home --format text 进入使用说明。
+查手册目录用 edoc docs outline --depth 0，读取时使用返回的 sectionId；
+工具用法使用 docs 命令，项目正文和事实使用普通 read/query/outline。
+```
+
+这是接入建议，当前全局安装不会自动创建项目 AGENTS.md 或注册 Agent Skill。全局包内的 AGENTS.md 是工具源码维护入口，不能要求普通使用者先读工具开发规则。edoc guide 返回文档组织推荐指南，也不等价于工具使用入门。
+
+{% /section %}
+
+{% section id="review:agent-doc-discovery:verified" title="实际走通的路径与读取量" %}
+
+本表为 a604dca 加当时本地安装说明的修复前隔离包测量，不代表修复后的默认输出。
+
+| 场景 | 实测结果 |
+| --- | --- |
+| 从帮助发现手册 | edoc --help 暴露 docs；docs --help 提供目录、读取、分页和查询语法 |
+| 空项目查手册 | docs、docs outline、docs read 不需要项目配置；配置主动抛错时仍可查工具说明 |
+| 理解入口 | 从顶层目录取得 use:home，self 正文 1030 个 Unicode 字符 |
+| 第一次生成 | 按目录和 children 取得 use:start、use:first-build；最小配置正文 507 字符，直接提取其中的 JS 和 Markdown 配方，在空项目成功生成 HTML |
+| 接口信号分组 | 沿使用扩展渲染 → 关系图 → 接口合并与展开，取得 use:interface-declare；正文 385 字符，无需读取整个图形参考 |
+| 查询一个字段 | 从查询参考取得图形参考及其子节 ref:graph-display；正文 966 字符，能找到 interfaceMode |
+| 查询例子事实 | 从查询教程中的命令取得 board:U1.QSPI_CLK，docs query 返回 Port 对象 |
+| 源码检索后备路径 | docs --format json 返回 sources，安装包中的 usage/reference 可用 rg 搜索 interfaceMode |
+| 分页 | 显式 subtree 与 max-chars=64 正确返回截断及 nextOffset，可继续读取 |
+
+正文统计不含 JSON 元数据，也不等价于模型 token 数。教程 ID 由目录和正文 children 返回值逐层取得，没有预先把目标 ID 当作发现能力；ref:config-data 则验证了 CLI 帮助中现成示例的可用性。
+
+{% /section %}
+
+{% section id="review:agent-doc-discovery:full-outline" title="F01 / P2：不限制目录会产生大量输出" %}
+
+本节记录修复前的问题与建议；后续默认深度调整已在[修复验收](../acceptance/agent-manual.mdoc#acceptance:agent-manual:commands)说明。
+
+默认 edoc docs outline 返回完整组合树，本包实测 517 个条目、373566 个 Unicode 字符，包含使用、开发、历史和子工程。显式 --depth 0 只返回 3 个入口、1313 字符。CLI 的 docs 位置提示已经推荐 depth=0，但 docs --help 没有就近说明省略 depth 会返回全树。
+
+建议工具手册默认返回浅层目录，同时保留显式完整目录能力；或者至少在帮助中强调默认范围与推荐命令。改变默认深度涉及既有 CLI 语义，须单独确认，不通过本次审阅直接修改。项目 outline 与工具手册也应分别考虑，不能为了省 token 隐藏完整目录能力。
+
+{% /section %}
+
+{% section id="review:agent-doc-discovery:ids" title="F02 / P2：可读取 ID 还不够明确" %}
+
+本节为修复前的发现，当前行为见[修复验收](../acceptance/agent-manual.mdoc#acceptance:agent-manual:commands)。
+
+JSON 目录同时返回导航 id/anchor 和源 sectionId。例如“使用文档”的导航 id 是 ed-7573653a686f6d65，read 应使用 use:home。误用 id 会返回 QUERY_NOT_FOUND、退出码 3，诊断没有提醒使用 sectionId。命令参考已解释区别，初次帮助没有这条提示。
+
+text 目录仅显示标题和省略数量，不显示 ID；读者选择该格式后不能直接复制 ID 继续 outline/read。建议文本目录显示稳定 sectionId，docs 帮助和误用导航 ID 的诊断就近说明，不要求 Agent 先读详细命令参考才能开始读取。
+
+{% /section %}
+
+{% section id="review:agent-doc-discovery:help" title="F03 / P3：首次使用和错误恢复提示可以缩短路径" %}
+
+以下是修复前基线的输出，不是当前支持范围；后续处理见[修复验收](../acceptance/agent-manual.mdoc)。
+
+- edoc docs read --help 返回“未知或重复选项：--help”、退出码 2；目前需退回 edoc docs --help。
+- 空目录直接执行 edoc，CONFIG_MISSING 提示创建配置，却没有指向最小教程或手册入口。
+- edoc docs 的默认位置说明先给 HTML 地址、目录和 ref:config-data 字段例子，缺少面向普通使用者的 use:home 或最小配置入口。
+- edoc guide 输出完整组织指南，本包为 9440 字符；它不应成为查一个字段或生成第一篇文档的必读步骤。
+
+建议兼容手册子命令的 --help，在缺配置和默认手册说明中提供使用入口；首次接入文档给出简短 Agent 约定，区分“学用工具”“组织工程文档”和“维护工具源码”。无需为了发现手册要求打开 HTML 或配置当前项目。
+
+{% /section %}
+
+{% section id="review:agent-doc-discovery:limits" title="验证范围" %}
+
+本次为安装版 CLI 的自动化路径检查和人工审阅，不是另一个真实 Agent 的盲测，也没有承诺所有模型都会自主选择相同命令。未修改渲染器或网页行为，未重做浏览器视觉验收。没有向共享全局目录安装工具或改变 npm 配置。
+
+命令输出、测量和复现脚本保存在 .edoc-build/agent-doc-discovery-20261105；关键结论在本页维护。已知当前 CLI 可用路径是 docs --help → docs outline --depth 0 → 使用分支目录 → docs read --id sectionId，字段和精确细节再按需读取。
+
+{% /section %}
+{% /section %}

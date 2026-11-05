@@ -12,6 +12,8 @@ edoc validate --format json
 
 无参数按配置生成 HTML；build --format 只接受 html，--output 只接受 .html。整本 PDF 导出不再提供。validate 检查正文、数据、引用和附件，返回当前参与工程；只有 build/export 才能发现的尺寸或布局问题仍可能在后续报错。
 
+validate 与 build 共用静态正文预检：普通同页/跨页标题、section、显式 ID、表行与 page 标签的本地目标，以及图片格式和 SVG 资源边界。自定义 Markdoc transform 生成的未知 ID 留待 build 校验，validate 的 JSON 用 deferredAnchors 列出，text 给出数量提示；跨工程跳转仍为弱引用。validate 不生成图形或 HTML，不能替代最终构建与浏览器验收。
+
 {% /section %}
 
 {% section id="ref:command-docs" title="docs：工具自身手册" %}
@@ -21,12 +23,18 @@ edoc docs
 edoc docs --format json
 edoc docs serve --port 5176
 edoc docs outline --depth 0 --format json
+edoc docs outline --all
+edoc docs read --help
 edoc docs read --id ref:config-data --format text
 edoc docs read --id ref:config --scope subtree --max-chars 2000 --offset 0
 edoc docs query --id board:net.FLASH_SCK --depth 1
 ```
 
-docs 使用随当前工具版本携带的 HTML 与预构建索引，不加载工作目录的配置、Adapter 或外部文件。默认输出本地 HTML 地址；--format json 提供 html、url、sources 和 projects。serve 仅在 127.0.0.1 提供 HTML，默认端口 5176，允许 0 自动分配；Ctrl+C 结束。
+docs 默认显示随包 .mdoc 主入口、使用目录及查询方法，Agent 可直接读取源文与相对链接；不加载当前项目配置。--format json 提供 root、readme、entry、usage、sources、html、url、projects 和 build；源文入口也出现在 edoc --help 及各手册子命令的 --help/-h 中。build 的版本来源见本页最后一节。
+
+docs outline 缺省 depth=0，只返回当前入口；--depth 0–10 按分支逐层展开，--all 返回完整树，两者不能同时使用。text 目录同时显示 project 与 sectionId，JSON 的 sectionId 才可传给 read/outline，id/anchor 用于网页导航。项目 edoc outline 的默认完整范围不变。
+
+docs read 默认 self，返回当前正文及子章节身份，显式 subtree 才展开，分页见 read 参考。源文、目录、章节和事实查询不依赖 HTML 文件；serve 才需要预构建 HTML，仅在 127.0.0.1 提供本机阅读，默认端口 5176，允许 0 自动分配，Ctrl+C 结束。
 
 docs outline/read/query 与同名项目命令采用相同的 ID、范围、分页和退出码；--project 只选择手册内部工程。query 的 text/json 均输出 JSON。docs 不接受 --config：普通 edoc read/query/outline 查询当前项目，工具用法明确使用 edoc docs。
 
@@ -47,6 +55,8 @@ edoc outline --format text
 
 返回组合后的阅读树、页和章节来源。显式 section 的导航锚点是 HTML 编码身份，read/query 使用源 section ID；本轮 outline 同时提供 sectionId 便于直接读取。
 
+项目与工具手册的 text 目录采用相同格式：章节显示标题及 [project / sectionId]，可直接复制给 read；普通标题只标记 [标题 文件:行]，不能把标题当作 read ID。目录分组明确标记，没有伪造章节 ID。
+
 缺省返回完整目录。--depth 为 0–10，限制本次返回的相对深度：0 只看当前根项，1 再看一级。--id 使用源 sectionId 选择分支，--project 选择本次显式组合已有的工程；同名 section 跨工程有歧义时必须指定 project。被裁剪节点的 children 为空，并用 childrenOmitted 标记省略的直接子项数，不能把它解释成没有子章节。筛选返回内容，不加载弱跳转目标，也不修改真实文档层级。
 
 {% /section %}
@@ -65,7 +75,7 @@ id 必须是显式 section 的源 ID，普通标题或工程对象使用其他�
 
 max-chars 默认 12000，范围 1–100000；offset 默认 0，按 Unicode 字符计数。range 给出 returnedChars、totalChars、truncated 和 nextOffset。超出总长度的 offset 报错，不静默返回空内容；等于长度时允许空页。截断可能发生在代码或表格中，需按 nextOffset 接续。
 
-text 模式也明确输出来源、范围、子章节及截断提醒。希望直接解析或拼接正文时使用 JSON。未知 ID 返回退出码 3，非文档对象报 READ_TYPE。
+text 模式也明确输出来源、范围、子章节及截断提醒；self 且存在子章节时，在正文之前提醒其未展开。JSON 的 scope、children 和 range 用于同样判断。需要包含例外、适用条件时，沿子章节读取或显式选择 subtree；提示不能替代语义审阅。希望直接解析或拼接正文时使用 JSON。未知 ID 返回退出码 3，非文档对象报 READ_TYPE。
 
 {% /section %}
 
@@ -89,11 +99,14 @@ target 保留原 entity、type、location、anchor 与可选 ownerId；source �
 ```sh
 edoc export --view gallery:wiring-intent --format svg --output output/wiring.svg
 edoc guide
+edoc guide --full
 edoc --help
 edoc --version
 ```
 
-export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，读取同一份推荐指南，可使用 --format json。
+export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，默认读取源文中的[简略组织指南](../engineering/agent-guide.mdoc)，--full 读取[完整推荐指南](../engineering/guide.mdoc)。--format json 返回 content、source、variant（short/full）及 guideVersion。工具操作入门使用 docs，不要求先通读组织指南。
+
+--version 显示工具版本、IR 版本、来源提交与构建时间。docs --format json 的 build 提供 version、revision、dirty、builtAt；dirty=true 表示构建时包含未提交修改，不能仅凭提交号判定内容相同。安装版只读随包元数据，不把当前用户工程的 Git 提交当作工具来源；无 Git 信息的源码归档明确返回 revision/dirty=null，命令显示 source unknown。
 
 退出码：0 成功，1 配置/数据/构建失败，2 命令用法错误，3 目标 ID 或指定项目不存在。JSON 失败写入 stderr，stdout 不冒充成功结果。
 

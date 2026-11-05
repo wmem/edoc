@@ -93,7 +93,25 @@ code 的 file 必需，language 可选。它内联不含 NUL 的 UTF-8 文本，
 
 普通 Markdown 文件链接相对实际源文件；include 的接入规则见[文件契约](#ref:markdoc-files)。本地文件链接检查文件与锚点。跨工程跳转使用 projectId，仅查当前 HTML，未包含提示，不产生外部源依赖。
 
-图片支持项目范围内 PNG/JPEG/WebP，并内联。普通外链限 http/https/mailto；不允许外链运行资源或任意 HTML/SVG 执行入口。
+图片规则见[图片与 SVG](#ref:markdoc-images)。普通外链限 http/https/mailto；不允许外链运行资源或任意 HTML/SVG 执行入口。
+
+{% /section %}
+
+{% section id="ref:markdoc-images" title="图片与 SVG" %}
+
+Markdown 图片或声明 render:img 的自定义标签可以引用项目范围内的本地 PNG/JPEG/WebP/SVG。路径相对工程根，扩展名不区分大小写；文件内嵌为 data URL，离线 HTML 不依赖原文件。validate/build 共用媒体解析和诊断，错误包含正文文件、行号与图片路径。
+
+SVG 保留原始 UTF-8 字节，作为 img 展示，不注入阅读器 DOM，不栅格化或静默清理内容。支持静态形状、文本、defs/use、渐变、裁剪/遮罩/标记、滤镜和静态样式，以及 foreignObject 中的静态 XHTML 排版。标准外部 SVG DOCTYPE 仅保留声明，不加载 DTD。
+
+| 内容 | 范围 |
+| --- | --- |
+| 资源引用 | 内部 #ID；base64 PNG/JPEG/WebP 图片及 WOFF/WOFF2/TTF/OTF 字体 data URL |
+| 字体 | SVG 自身内嵌字体或浏览器可用字体；不继承正文字体；保证特殊字形可考虑内嵌字体或转路径 |
+| 样式 | 结构化检查 CSS；允许静态规则及 font-face/media/supports/layer，不接受 import、主动或无法解析的资源表达式 |
+| 明确拒绝 | script、事件属性、动画、处理指令、自定义实体、外部或相对资源、嵌套 SVG data URL、不支持的元素/样式 |
+| 交互 | 作为静态图片展示，内部链接不承担文档跳转；不会自动建立 IR、对象属性或图形展开交互 |
+
+遇到不支持的内容时修改源图或生成方式，再校验构建。XML/CSS 合法不能保证文字或版面可读；真实 SVG 迁移仍需抽样核对浏览器效果、字体和完整性。[Markdown 教程](../writing/markdown.mdoc)提供随包示例。
 
 {% /section %}
 

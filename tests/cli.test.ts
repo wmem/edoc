@@ -11,11 +11,19 @@ function run(args: string[], cwd = repository) {
   return result;
 }
 
-test('guide 无需项目配置，默认与 JSON 读取同一推荐指南',()=>{
+test('项目子命令帮助无需配置并指向源文入口',t=>{
+ const f=fixture(t);
+ for(const command of ['build','validate','outline','query','read','export','guide']){const r=run([command,'--help'],f.root);assert.equal(r.status,0,r.stderr);assert.match(r.stdout,/使用说明主入口：.*docs\/index\.mdoc/);}
+});
+test('guide 无需项目配置，默认简版，--full 读取同源完整版',()=>{
  const plain=run(['guide']),json=run(['guide','--format','json']);
  assert.equal(plain.status,0,plain.stderr);assert.equal(json.status,0,json.stderr);
  assert.equal(JSON.parse(json.stdout).content,plain.stdout);
- assert.match(plain.stdout,/理解性内容与查询性内容/);
+ assert.equal(JSON.parse(json.stdout).variant,'short');
+ assert.equal(plain.stdout,readFileSync(join(repository,'docs/usage/engineering/agent-guide.mdoc'),'utf8'));
+ const full=run(['guide','--full','--format','json']);assert.equal(full.status,0,full.stderr);
+ assert.equal(JSON.parse(full.stdout).variant,'full');assert.equal(JSON.parse(full.stdout).content,readFileSync(join(repository,'docs/usage/engineering/guide.mdoc'),'utf8'));
+ for(const args of [['--full','--full'],['--full','true']])assert.equal(run(['guide',...args]).status,2);
  assert.equal(run(['guide','--config','x']).status,2);
 });
 test('outline 返回章节树与源位置，不要求生成 HTML',t=>{
@@ -25,9 +33,11 @@ test('outline 返回章节树与源位置，不要求生成 HTML',t=>{
  const tree=JSON.parse(result.stdout);assert.equal(tree.chapters[0].children[0].label,'子章节');
  assert.equal(tree.chapters[0].children[0].children[0].source.file,'docs/book.mdoc');
  const plain=run(['outline','--config',join(f.root,'edoc.config.js'),'--format','text']);
- assert.equal(plain.stdout,'父章节\n  子章节\n    详情\n');
+ assert.equal(plain.stdout,'父章节 [demo-board / parent]\n  子章节 [demo-board / child]\n    详情 [标题 docs/book.mdoc:3]\n');
  const short=run(['outline','--config',join(f.root,'edoc.config.js'),'--id','parent','--depth','0']);assert.equal(short.status,0,short.stderr);assert.equal(JSON.parse(short.stdout).chapters[0].childrenOmitted,1);
- const branch=run(['outline','--config',join(f.root,'edoc.config.js'),'--id','child','--depth','0','--format','text']);assert.equal(branch.status,0,branch.stderr);assert.match(branch.stdout,/子章节（另有 1 个子项）/);
+ const branch=run(['outline','--config',join(f.root,'edoc.config.js'),'--id','child','--depth','0','--format','text']);assert.equal(branch.status,0,branch.stderr);assert.match(branch.stdout,/子章节 \[demo-board \/ child\]（另有 1 个子项）/);
+ const self=run(['read','--config',join(f.root,'edoc.config.js'),'--id','parent','--format','text']);assert.equal(self.status,0,self.stderr);assert.match(self.stdout,/仅本节正文；1 个子章节未展开/);assert.ok(self.stdout.indexOf('未展开')<self.stdout.indexOf('子章节：'));
+ const subtree=run(['read','--config',join(f.root,'edoc.config.js'),'--id','parent','--scope','subtree','--format','text']);assert.doesNotMatch(subtree.stdout,/未展开/);assert.match(subtree.stdout,/详情/);
  assert.equal(run(['outline','--config',join(f.root,'edoc.config.js'),'--id','unknown']).status,3);assert.equal(run(['outline','--depth','11']).status,2);
 });
 

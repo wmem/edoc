@@ -9,7 +9,8 @@ import {routeHash,targetKey} from '../core/routes.ts';
 import type {ReaderData} from '../core/reader-model.ts';
 import {localDocumentLink} from '../core/documents.ts';
 import {renderDocument} from '../doc-theme/render.ts';
-import {anchor} from '../core/identity.ts';
+import {anchor,anchorCandidates} from '../core/identity.ts';
+import {preflightBook} from '../core/document-preflight.ts';
 import {failure} from '../core/errors.ts';
 import {fontCSS} from '../render-graph/font.ts';
 import {esc} from '../render-graph/index.ts';
@@ -18,6 +19,7 @@ import {assertSelfContained} from './index.ts';
 const directory=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url);
 const json=(value:unknown)=>JSON.stringify(value).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 export async function compileBook(book:Book,options:{headingLevel?:(project:string,page:string,id:string,level:number)=>number}={}):Promise<ReaderData>{
+ preflightBook(book);
  const data:ReaderData={title:book.root.config.title,home:{project:book.root.config.projectId,id:pageId(book.root.documents.documents[0].file)},navigation:bookNavigation(book),pages:Object.create(null),projects:Object.create(null),pdfFiles:Object.create(null)};
  const filePayloads=new Map<string,string>();
  for(const node of book.projects.values()){
@@ -57,7 +59,7 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
  }
  return data;
 }
-export function resolvePageAnchor(html:string,id:string){for(const candidate of [id,anchor(id),'heading-'+id.toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'')])if(html.includes('id="'+esc(candidate)+'"'))return candidate;}
+export function resolvePageAnchor(html:string,id:string){for(const candidate of anchorCandidates(id))if(html.includes('id="'+esc(candidate)+'"'))return candidate;}
 export async function bookHTML(book:Book):Promise<string>{
  const data=await compileBook(book),hasPdf=Object.values(data.projects).some(p=>Object.keys(p.attachments).length),hasInterfaces=Object.values(data.pages).some(p=>Object.values(p.scenes).some(s=>s.interfaceModel));
  if(hasPdf){const root=dirname(require.resolve('pdfjs-dist/package.json'));data.pdfWorker=readFileSync(resolve(root,'build/pdf.worker.min.mjs'),'utf8');data.pdfSupport=Object.create(null);for(const name of ['cmaps','standard_fonts','wasm','iccs'])for(const file of readdirSync(resolve(root,name)))if(!file.startsWith('LICENSE')&&!file.startsWith('quickjs'))data.pdfSupport![name+'/'+file]=readFileSync(resolve(root,name,file)).toString('base64');}

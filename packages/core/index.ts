@@ -17,3 +17,5 @@ export type {AttachmentInput,PdfTargetInput} from './attachments.ts';
 
 export type {MarkdocOptions} from './markdoc.ts';
 export {default as Markdoc} from '@markdoc/markdoc';
+
+export {preflightBook} from './document-preflight.ts';

@@ -1,49 +1,49 @@
 {% section id="use:install" title="安装与运行环境" %}
 
-需要 Node.js 24 或更新版本。仓库版本推送到远程后，可通过 Git SSH 安装：
-
-当前已验证的 npm 11.12.1 有 Git 全局安装预构建问题，建议先使用下一节的两步流程。其他环境可尝试以下直接命令；它仍是目标安装方式，不代表本轮已验证该环境：
+需要 Node.js 24 或更新版本、npm、Git，以及 [GitHub 仓库](https://github.com/wmem/edoc.git)的 SSH 访问权限。当前推荐先从 Git SSH 打包 tgz，再全局安装。在同一目录依次执行：
 
 ```sh
-npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
+npm pack git+ssh://git@github.com/wmem/edoc.git
+npm install -g ./edoc-1.0.0.tgz
 edoc --version
 ```
 
-需要访问该 Git 仓库的 SSH 权限，安装后的包名和命令名为 edoc。该命令描述安装方式，不表示当前工作树已推送或已验证你的网络环境。也可在项目中安装为依赖，通过 npx edoc 或 npm script 运行。
+第一步在 npm 临时目录完成源码构建，并将 tgz 写入当前目录；打包成功后再执行第二步。文件名随版本变化，以 npm pack 输出为准。第二步仍是全局安装，安装后的包名和命令名均为 edoc，之后可从任意目录使用命令。
 
-{% section id="use:install:git-preparation" title="Git 全局安装的预构建问题" %}
+Git 打包需要下载构建依赖，不能禁用 prepare 脚本；安装已生成的 tgz 不需要再次编译前端或手册。最终安装只保留运行依赖，无需准备浏览器。团队或 CI 也可把该包安装为项目本地依赖，见[本地依赖与固定版本](#use:install:local)。
 
-本轮 Node.js 24.15.0 / npm 11.12.1 环境中，直接全局安装 Git 源时，npm 将全局设置传给 Git 预构建子进程，导致依赖安装位置错误。遇到 git dep preparation failed 或预构建缺少 vite 等依赖时，使用已验证的两步流程：
+{% section id="use:install:git-preparation" title="为什么先打包，以及如何升级" %}
 
-```sh
-npm pack git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
-npm install -g ./edoc-1.0.0.tgz
-```
+2026-11-05，在 Node.js 24.15.0 / npm 11.12.1 下复现了直接 Git 全局安装失败：npm 把外层 global/prefix 设置传入 Git 预构建子进程，临时源码没有本地 Vite 等开发依赖，构建报 git dep preparation failed 或 ERR_MODULE_NOT_FOUND。该问题尚未修复，当前不推荐直接将 Git 地址交给 npm install -g。
 
-第一步在临时目录完成源码构建，第二步全局安装生成的包；无需调整 npm 全局配置。文件名随包版本变化，以 npm pack 输出为准。不要在 Git 打包阶段禁用脚本，否则没有预编译产物。验证使用本地 Git 传输覆盖同一构建流程，SSH 权限和远程新版本仍需实际环境确认。
+先 npm pack Git 源，再全局安装 tgz，分开了源码预构建与全局部署，无需调整 npm 全局配置。单条 Git 全局安装仍是后续目标；目前没有建立预编译发布分支。
+
+升级时重新打包目标版本，再安装新生成的 tgz；需要固定版本时，在 npm pack 的 Git 地址后增加 #提交号。不要在打包失败后把旧 tgz 当作本次新产物。构建流程已用本地 Git 传输和隔离全局 prefix 验证；远程仓库及目标版本能否访问仍取决于实际环境。诊断及验证边界见[Git 全局安装复核](../../development/reviews/git-install.mdoc)。
 
 {% /section %}
 
 {% section id="use:install:manual" title="安装后直接读工具手册" %}
 
-安装包自带预构建的完整 HTML 和章节/事实索引，无需克隆仓库或准备 Python。从任意目录运行：
+安装包自带 .mdoc 源文、所引用的样例和模板，以及完整 HTML 和章节/事实索引，无需克隆仓库或准备 Python。从任意目录运行：
 
 ```sh
+edoc --help
 edoc docs
 edoc docs serve
 ```
 
-第一条输出可打开的离线 HTML 地址；第二条在 http://127.0.0.1:5176/ 提供同一份手册，Ctrl+C 结束，--port 可换端口。手册也可复制成单个 HTML 文件离线阅读。
+--help 和 docs 都输出安装目录中的 docs/index.mdoc 源文主入口。Agent 可以直接读取它，沿相对链接学习用法，不用查 HTML；包根 README 与 AGENTS.md 也指向同一入口。docs serve 供人在 http://127.0.0.1:5176/ 阅读网页，Ctrl+C 结束，--port 可换端口。
 
 Agent 直接查询工具用法，不读取当前项目配置：
 
 ```sh
 edoc docs outline --depth 0
-edoc docs read --id ref:config-data --format text
+edoc docs read --id use:home --format text
+edoc docs read --id use:first-build --format text
 edoc docs query --id system:producer
 ```
 
-普通 edoc read/query/outline 仍读取自己的项目。edoc guide 返回推荐指南；完整工具手册使用 docs 命令。源文目录可通过 edoc docs --format json 的 sources 字段取得，供 rg 搜索；源文不需要在安装目录再次构建。
+普通 edoc read/query/outline 仍读取自己的项目。edoc guide 返回简略文档组织指南，edoc guide --full 返回完整方法，按需查阅；使用入门从 .mdoc 主入口开始。目录默认浅层，读取使用 sectionId，完整目录显式指定 --all。源文路径可通过 edoc docs --format json 的 entry、usage、sources 字段取得，供直接打开或 rg 搜索；不需要在安装目录再次构建。
 
 {% /section %}
 
@@ -52,7 +52,7 @@ edoc docs query --id system:producer
 普通正文可只使用全局 CLI。配置需要 import {Markdoc} from 'edoc'、使用 TypeScript API，或团队希望固定同一版本时，将工具安装到项目开发依赖。在工程根执行：
 
 ```sh
-npm install --save-dev git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
+npm install --save-dev git+ssh://git@github.com/wmem/edoc.git
 npx edoc --version
 npx edoc
 ```

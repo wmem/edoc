@@ -22,7 +22,7 @@
 
 {% section id="use:markdown:boundaries" title="链接、图片与扩展边界" %}
 
-普通文档链接相对写下链接的源文件，点击后切换阅读页；图片路径相对工程根，只接受本地 PNG、JPEG 或 WebP，并内联到 HTML：
+普通文档链接相对写下链接的源文件，点击后切换阅读页；图片路径相对工程根，接受本地 PNG、JPEG、WebP 或静态 SVG，并内联到 HTML：
 
 ```markdown
 [模块说明](modules/acquisition.mdoc)
@@ -30,6 +30,16 @@
 ```
 
 上面是路径写法，复制时需要准备对应文件。本地链接会检查目标是否参与文档及锚点是否存在；普通外链支持 http、https 和 mailto。
+
+已有 SVG 可以沿用 Markdown 图片写法，保留矢量和内部排版。下面这张图来自同一个 SVG 源文件：
+
+![数据、说明与阅读页](docs/assets/static-overview.svg)
+
+```markdown
+![数据、说明与阅读页](docs/assets/static-overview.svg)
+```
+
+SVG 以独立图片内嵌，静态展示不自动获得对象查询或端口展开能力。脚本、外置图片/字体/样式等不受支持的内容会明确报错；它不继承正文的内嵌字体。需要离线保持特殊字形时，在 SVG 内嵌字体或将字形转为路径。完整范围见[图片与 SVG 参考](../reference/markdoc.mdoc#ref:markdoc-images)。
 
 Markdown 表格适合少量说明；需要从对象取字段、查询一行或在图表间复用事实时，改用[数据表格](../rendering/tables.mdoc)。需要稳定章节、分栏、Tabs 或折叠时，使用[章节组织](documents.mdoc)及[页面编排](../rendering/page-layout.mdoc)。
 

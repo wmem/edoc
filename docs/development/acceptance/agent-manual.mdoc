@@ -1,0 +1,38 @@
+{% section id="acceptance:agent-manual" title="Agent 源文入口与手册发现修复" %}
+
+2026-11-05，用户明确要求 Agent 能从全局安装目录或 --help 找到 .mdoc 主入口，直接了解用法，不读取 HTML；同时批准修复[发现路径审阅](../reviews/agent-doc-discovery.mdoc)中的问题。本页记录本批实现及验证范围。
+
+{% section id="acceptance:agent-manual:delivery" title="安装内容和入口" %}
+
+- 包根 README 与 AGENTS.md 指向 docs/index.mdoc，区分调用工具与维护工具源码。主入口提供用途、最小工作流、使用路线及精确查询入口；源文按相对链接直接阅读。
+- edoc --help、docs 和手册子命令 --help/-h 显示实际安装的 .mdoc 路径。docs --format json 增加 root/readme/entry/usage，保留 sources、HTML 地址及工程信息。
+- 修复原 docs 的 include 指向未交付 examples 的缺口，随包携带样例与已有模板；两者仍与仓库手册同源，不复制另一套解释。docs/examples 的 output、node_modules、临时目录和 tgz 不混入安装包，运行依赖不增加。
+- 直接读取源文不依赖 HTML 或压缩索引；docs outline/read/query 不再要求 HTML 存在，serve 仍检查其 HTML 产物。源文不要求在安装目录重新构建。
+
+{% /section %}
+
+{% section id="acceptance:agent-manual:commands" title="目录、ID 与帮助" %}
+
+此前手册 CLI 目录缺省返回完整树，约 37 万字符。按本次修复要求改为 depth=0，显式 --all 保留完整树，--all 不可与 --depth 同用。项目 edoc outline 和核心目录 API 的完整默认范围不变。
+
+text 目录显示 project/sectionId；误传导航 id/anchor 给手册 outline/read 时，保留退出码 3，并提示正确的 sectionId。JSON 原有导航字段不改名，也不把未知 ID 自动改成其他对象。
+
+手册和项目各子命令支持 --help/-h，不要求配置、ID 或预构建产物。缺省项目配置不存在时，提示可运行的最小教程及 --help 源文入口；默认 docs 输出先介绍源文与入门，HTML 地址保留供人阅读。组织推荐指南按需使用，不作为首次上手的前置长文。
+
+{% /section %}
+
+{% section id="acceptance:agent-manual:verification" title="验证范围" %}
+
+本批 TypeScript 类型检查、73 项手册/目录/查询/配置/章节读取相关回归，以及 2 项实际 npm/Git 安装回归通过。补充的全局 PATH 检查也通过：从用户项目调用 edoc --help，得到本次安装包内实际存在的 .mdoc 路径。
+
+实际包消费方检查包括：
+
+- 安装目录 README → docs/index.mdoc → 最小教程，全程直接读取文件。移除手册 HTML 和压缩查询索引后，从源教程提取 Markdown/JS 配方，仍成功生成第一份工程文档；入口不依赖预计算的章节 ID。
+- 仅移除 HTML 后，docs、目录与章节查询仍正常；当前项目配置即使主动抛错，也不影响手册。手册各子命令 --help、默认浅层/显式全量、text 身份、导航 ID 提示及冲突参数均检查。
+- 使用安装包自身 docs 配置加载完整文档树，确认源文 include/code、配方、子工程、样例数据与模板可达，不借助源码仓库 examples。打包清单检查排除生成目录与开发运行依赖。
+- 保留原有 JavaScript/CommonJS、严格 NodeNext/Bundler 类型消费方、原生 Markdoc 独立配方、HTML/SVG 与 PDF 附件构建检查。Git 回归仍使用先 pack、再隔离全局安装 tgz；没有修复直接 Git 全局预构建问题。
+
+日志与复现缓存位于 .edoc-build/agent-manual-fixes-20261105。本轮没有改渲染器或网页交互，没有重新进行视觉验收，也不是独立 Agent 模型的盲测。安装验证使用 Linux x64 的隔离 prefix，不改共享全局安装或 npm 配置；Windows/macOS 和用户实际全局目录未验证。
+
+{% /section %}
+{% /section %}

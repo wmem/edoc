@@ -10,7 +10,7 @@ import {builtinTags,referenceTargets,targetChecks} from './extension-contracts.t
 import {directoryOrders} from './directory-order.ts';
 export const tags=builtinTags;
 export type DocumentReference={id:string;tag:string;file:string;line:number;project?:string;target?:string};
-export type DocumentPlan={documents:{file:string;ast:any;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config};
+export type DocumentPlan={media?:Map<string,import('./media.ts').ImageAsset>;documents:{file:string;ast:any;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config};
 // 正文解析不再要求先建立工程数据图；先完整展开 include，再收集所有 Tabs/折叠中的引用。
 export function scanDocuments(projectRoot:string,entryDocuments:string[],options:{projectRoots?:string[];markdoc?:MarkdocOptions;configFile?:string}={}):DocumentPlan{
  const roots=(options.projectRoots??[]).filter(p=>resolve(p)!==resolve(projectRoot)).map(p=>existsSync(p)?realpathSync(p):resolve(p));

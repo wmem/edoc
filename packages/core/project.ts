@@ -30,7 +30,7 @@ const configProjectRoot=(file:string)=>{const physical=existsSync(file)?realpath
 
 export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):Promise<ResolvedConfig>{
  const selected=resolve(cwd,requested??'docs/edoc.config.js');
- if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前项目没有 docs/edoc.config.js；可在该文件写 export default {}，或使用 --config 指定其他配置');
+ if(!existsSync(selected))failure('CONFIG_MISSING',selected,'',requested?'指定的配置文件不存在':'当前项目没有 docs/edoc.config.js；可在该文件写 export default {}，或使用 --config 指定其他配置。最小教程：edoc docs read --id use:first-build --format text；.mdoc 源文入口见 edoc --help');
  requireFile(selected);const file=realpathSync(selected),root=configProjectRoot(file);
  if(!['.js','.mjs','.cjs'].includes(extname(file)))failure('CONFIG_FORMAT',file,'','配置使用 .js/.mjs/.cjs，直接导出配置内容');
  let loaded:{config:unknown;dependencies:string[]};

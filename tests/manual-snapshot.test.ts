@@ -33,6 +33,9 @@ test('手册查询拒绝未知身份、错误类型、范围与跨工程歧义',
  assert.throws(()=>manualOutline(packed,{project:'missing'}),/QUERY_NOT_FOUND/);
  assert.throws(()=>manualQuery(packed,'missing'),/QUERY_NOT_FOUND/);
  assert.throws(()=>manualOutline(packed,{id:'module'}),/OUTLINE_AMBIGUOUS/);
+ const nav=manualOutline(packed,{depth:0}).chapters.find(n=>n.sectionId)!;
+ assert.throws(()=>manualRead(packed,nav.id!),/sectionId/);
+ assert.throws(()=>manualOutline(packed,{id:nav.id}),/sectionId/);
  assert.equal(manualOutline(packed,{project:'fpga',id:'module'}).chapters[0].label,'FPGA 概览');
  const node=[...book.projects.values()].find(p=>[...p.graph.index.values()].some(r=>r.type==='node'))!;
  const id=[...node.graph.index.values()].find(r=>r.type==='node')!.id;

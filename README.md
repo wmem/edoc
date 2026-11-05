@@ -2,22 +2,43 @@
 
 以 Markdown/Markdoc 为正文基础，保留 Markdoc 原生能力，扩展页面编排、数据图表和原文引用，生成可导航、可查询的离线工程文档。作者和 Agent 维护源数据与说明，工具负责渲染，不手工维护生成的 HTML/SVG。
 
-## 全局安装
+## 使用说明与 Agent 入口
 
-需要 Node.js 24+、npm，以及该 Git 仓库的 SSH 访问权限：
+文档主入口是 [docs/index.mdoc](docs/index.mdoc)，安装包也携带同一份源文。Agent 可以从安装目录直接读取它，沿相对链接进入[使用文档](docs/usage/index.mdoc)、教程与字段参考，无需读取 HTML，也无需先克隆仓库或配置当前项目。
+
+`edoc --help` 和 `edoc docs` 会显示实际安装目录中的 .mdoc 入口；`edoc docs --format json` 返回 root、readme、entry、usage 和 sources 路径。全局包通常位于 `npm root -g` 输出目录下的 edoc 文件夹。
+
+按章节查阅也可以：
 
 ```sh
-npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
+edoc docs read --id use:home --format text
+edoc docs read --id use:first-build --format text
+edoc docs outline --format text
+```
+
+手册目录默认只显示浅层，继续按 sectionId 和 --depth 展开；--all 显式返回完整目录。查工具用法使用 docs，查自己的工程使用普通 read/query/outline。文档组织原则按需读[简略指南](docs/usage/engineering/agent-guide.mdoc)；工具源码维护才进入开发文档。
+
+`edoc guide` 直接输出简略组织指南，`edoc guide --full` 获取完整方法。工具用法从上述文档入口进入。
+
+## 全局安装
+
+需要 Node.js 24+、npm、Git，以及 [GitHub 仓库](https://github.com/wmem/edoc.git)的 SSH 访问权限：
+
+```sh
+npm pack git+ssh://git@github.com/wmem/edoc.git
+npm install -g ./edoc-1.0.0.tgz
 edoc --version
 ```
 
-安装后运行 `edoc docs` 获取自带 HTML 手册地址，或用 `edoc docs serve` 在本机阅读。Agent 可运行 `edoc docs outline --depth 0`、`edoc docs read --id ref:config-data` 查询工具用法，无需克隆仓库。
+先打包成功，再在同一目录安装生成的 tgz；文件名随版本变化，以 npm pack 输出为准。第一步完成源码构建，第二步全局安装，之后直接使用 edoc。
 
-npm 11.12.1 存在 Git 全局安装的预构建问题；遇到安装失败时，按[安装说明](docs/usage/start/01-install.mdoc#use:install:git-preparation)先打包再安装，无需修改 npm 全局配置。
+安装后运行 `edoc docs` 定位随包源文；人在浏览器中阅读可用 `edoc docs serve`。Agent 从 docs/index.mdoc 或 `edoc docs read --id use:home --format text` 入门，无需克隆仓库。
 
-## 环境与编译
+当前使用上述两步流程绕过 npm 11.12.1 的 Git 全局预构建问题，无需修改 npm 全局配置。原因与升级方式见[安装说明](docs/usage/start/01-install.mdoc#use:install:git-preparation)。
 
-需要 Node.js 24+ 和 npm。在仓库根目录执行：
+## 源码开发：环境与编译
+
+以下操作用于克隆的源码仓库，安装用户直接运行 edoc。需要 Node.js 24+ 和 npm，在源码仓库根目录执行：
 
 ```sh
 npm ci
@@ -51,6 +72,10 @@ npm run docs:dev
 - [认识 edoc](docs/usage/overview.mdoc)：Markdown 基础、扩展渲染及各类输入的整体关系。
 - [使用文档](docs/usage/index.mdoc)：上手、正文组织、功能教程和查询参考。
 - [开发文档](docs/development/index.mdoc)：实现、构建与验证、设计依据。
-- [Agent 维护入口](AGENTS.md)和[文档组织简略指南](docs/usage/engineering/agent-guide.mdoc)：维护规则、理解路线与按需查询。
+- [源码维护规则](AGENTS.md)和[文档组织简略指南](docs/usage/engineering/agent-guide.mdoc)：分别面向维护工具与组织工程文档。
 
 修改工具后按[开发与验证](docs/development/contributing.mdoc)选择相关检查，先确认类型与行为，再检查网页、SVG 和 PDF 附件的实际阅读效果。
+
+## 许可证
+
+采用与 Markdoc 相同的 [MIT 许可证](LICENSE)。第三方依赖保留各自许可证。

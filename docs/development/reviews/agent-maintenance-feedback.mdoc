@@ -1,0 +1,67 @@
+{% section id="review:agent-maintenance-feedback" title="Agent 维护成本反馈评估" %}
+
+2026-11-05，评估用户转来的全局安装反馈。安装包的具体提交未知；本次核对当前 a604dca 加未提交的 Agent 源文入口修复，并用临时工程复现问题。以下是评估与建议，没有实现新的 SVG 支持、预检或 guide/read 行为。
+
+本页保留评估时的事实与建议，后续实现及验证范围见[维护成本优化验收](../acceptance/agent-feedback.mdoc)，不将以下旧状态当作当前支持范围。
+
+{% section id="review:agent-maintenance-feedback:status" title="哪些仍是问题" %}
+
+| 反馈 | 当前工作区核查 | 判断 |
+| --- | --- | --- |
+| guide 默认输出长 | 实测 9440 个 Unicode 字符，返回完整组织指南，简版另在 guide:agent | 首次入口值得缩短，但工具快速入门与文档组织原则应分清 |
+| text 目录没有 ID | 手册 docs outline 已在未提交修复中显示 project/sectionId；项目 outline 仍只显示标题 | 不能一概当作旧包问题，项目输出仍需补齐 |
+| read 默认不含子节 | self 返回本节、scope 和 children；显式 subtree 可展开。例外子节确实不会出现在 self 的 content 中 | 保留渐进默认，强化范围提示和写作约定 |
+| 错锚点、SVG validate 通过 | 同页/跨页错锚点、简单自包含 SVG 均复现 validate=0、build=1 | 是应前移的确定性校验缺口 |
+| 大量 SVG 带来迁移成本 | 当前图片渲染只接受 PNG/JPEG/WebP，SVG 仅作为工具生成输出已支持 | 静态输入能力仍缺失，不能据现有导出能力声称已能直接迁移 |
+
+当前未提交修复范围见[Agent 源文入口验收](../acceptance/agent-manual.mdoc)。评估已安装版本时应区分手册命令与项目命令；建议后续让 --version/安装元数据带来源提交，避免仅凭同一个 1.0.0 判断修复是否已交付。
+
+{% /section %}
+
+{% section id="review:agent-maintenance-feedback:reading" title="低成本的阅读入口优化" %}
+
+帮助同时给出两条明确路线：工具用法从 docs/index.mdoc 开始，组织原则直达现有简略指南。复用已维护的 .mdoc，不再复制另一份 Agent 知识。建议 guide 缺省返回简版、--full 返回完整版，并明确它是组织指南；这改变现有默认输出，实施前须确认。
+
+手册与项目目录应共享 text 格式器，有稳定 sectionId 的节点展示 project/sectionId；普通 Markdown 标题无可读取 ID 时显示来源或明确类型，不伪装成 read 可接受的章节。保持已有 JSON 完整结构，不为减少字符删去机器查询所需信息。
+
+read 保留 self，避免默认展开大量细节；在正文前提示“有 N 个子节未展开”，与 range.truncated 的分页含义区分。继续保留 children、来源及显式 subtree。不要按“异常/条件”等标题关键词自动推断语义、隐式附加正文。
+
+写作建议补充：会改变结论的适用范围与重要例外，在父节简述或明确指向条件章节；完整细节保持在单一参考。子章节可独立解释其对象和范围，Agent 作结论前需沿这些引用读取必要上下文。工具不能仅凭文本结构保证规范语义完整。
+
+{% /section %}
+
+{% section id="review:agent-maintenance-feedback:validation" title="将确定性错误移到 validate" %}
+
+根因已经定位：core/documents.ts 记录图片文件和路径，图片格式到 doc-theme/render.ts 才检查；普通锚点则在 pack-html/book.ts 得到页面 HTML 后检查。增加一条使用者约定“必须 build”不能替代工具提前发现可确定错误。
+
+建议建立 validate/build 共用的正文预检：
+
+- 媒体解析统一项目路径、类型/格式检查与来源诊断，渲染复用结果，避免两套支持列表漂移。批量报告文件、行号、目标和格式。
+- 标准 Markdown/section 的同页和跨页锚点，由同一页面目录计划与身份规则校验，按页处理重复标题、中文、显式 ID、include/partial 和条件分支；不为校验调用图形布局或打包 HTML。
+- 跨工程弱引用仍遵循已有边界，目标未包含不能因此要求加载外部工程或改成构建硬依赖。
+- 自定义 transform 运行后才能确定的 ID、布局、SVG 实际版面、字体与浏览器结果仍由 build 和浏览器检查。validate 通过不能承诺所有发布行为都正确。
+
+先为本次三个失败样例增加共享回归，要求 validate 提前失败、build 给出一致诊断；再覆盖正常片段、Unicode、重复标题、隐藏内容与弱引用，避免通过更严格但错误的规则“修好”检查。
+
+{% /section %}
+
+{% section id="review:agent-maintenance-feedback:svg" title="SVG 接入建议" %}
+
+优先支持现有 Markdown 图片写法引用本地静态 SVG，并以 img/data URL 携带，保留矢量和原始素材，不要求全部转 PNG 或重写成关系图 IR。SVG 在图像上下文不执行脚本，也不能加载外置资源；文档模式的 iframe/object/直接内联 SVG 具有不同边界，见 [MDN SVG as an image](https://developer.mozilla.org/en-US/docs/Web/SVG/Guides/SVG_as_an_image) 和 [W3C SVG Integration](https://www.w3.org/TR/svg-integration/)。
+
+这仍需独立设计媒体处理：用结构化解析检查 SVG 与资源引用，明确脚本、外部资源、自包含数据和离线字体策略，不只在后缀白名单增加 .svg；遇到不支持的内容明确诊断，不静默丢图、丢字或栅格化。受控图片入口不等于放开任意 SVG DOM/脚本执行。
+
+先对目标仓库盘点代表样例：普通形状/文本、defs/use、渐变/裁剪、foreignObject、内嵌图片、字体与外置资源、交互链接，明确第一批支持及仍需处理的部分。本轮未获该仓库路径，不据其反馈推断所有 SVG 都是可直接保留的静态图。
+
+浏览器验收应检查离线无额外请求、脚本不执行、缩放与中文标签、原图版面以及代表性复杂样例，使用已有 Chromium 与 playwright-cli。SVG 作为图片只提供静态展示，需对象查询、端口展开和原文定位交互的图，再按任务逐步转为 edoc 数据；图片导入不自动产生工程事实。
+
+{% /section %}
+
+{% section id="review:agent-maintenance-feedback:priority" title="实施顺序与验证边界" %}
+
+建议先完成短入口和两种 text 目录的一致性，再将标准锚点/媒体检查移到共享预检；若目标是整体迁移大量 SVG 的仓库，静态 SVG 支持属于迁移前置项，应紧接处理。read 的 self 默认保持，只改提示和组织指南。
+
+本次临时工程复现和代码检查均通过预期断言，日志位于 .edoc-build/agent-feedback-review-20261105。没有修改 CLI/渲染器，没有做目标仓库全量接入、真实 Agent 盲测或 SVG 浏览器展示验证；不把本评估写成新能力已经实现。
+
+{% /section %}
+{% /section %}

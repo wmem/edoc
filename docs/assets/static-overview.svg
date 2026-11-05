@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220" role="img" aria-labelledby="title">
+  <title id="title">本地静态 SVG 示例：数据、说明与阅读页</title>
+  <defs>
+    <linearGradient id="surface" x2="0" y2="1"><stop stop-color="#edf7ff"/><stop offset="1" stop-color="#fff"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#227ca1"/></marker>
+    <g id="card"><rect width="170" height="92" rx="12" fill="url(#surface)" stroke="#82a8bb" stroke-width="2"/></g>
+  </defs>
+  <style>
+    text { font-family: sans-serif; fill: #183c50; text-anchor: middle; }
+    .route { fill: none; stroke: #227ca1; stroke-width: 2.5; marker-end: url(#arrow); }
+    .caption { font-size: 14px; fill: #56717f; }
+  </style>
+  <rect width="720" height="220" rx="16" fill="#f5f9fc"/>
+  <use href="#card" x="30" y="60"/><use href="#card" x="275" y="60"/><use href="#card" x="520" y="60"/>
+  <text x="115" y="100" font-size="20">源数据</text><text x="115" y="128" class="caption">结构化事实</text>
+  <text x="360" y="100" font-size="20">工程说明</text><text x="360" y="128" class="caption">解释与引用</text>
+  <foreignObject x="530" y="80" width="150" height="65"><div xmlns="http://www.w3.org/1999/xhtml" style="font:20px sans-serif;color:#183c50;text-align:center">离线 HTML<div style="font-size:14px;color:#56717f;margin-top:8px">面向阅读与查询</div></div></foreignObject>
+  <path class="route" d="M 201 106 H 270"/><path class="route" d="M 446 106 H 515"/>
+  <text x="360" y="193" class="caption">保留矢量、内部引用与静态排版</text>
+</svg>

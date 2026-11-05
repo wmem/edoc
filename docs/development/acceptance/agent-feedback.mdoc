@@ -1,0 +1,35 @@
+{% section id="acceptance:agent-feedback" title="Agent 维护成本优化验收" %}
+
+2026-11-05，落实[维护成本评估](../reviews/agent-maintenance-feedback.mdoc)。本记录对应工作区实现；包的实际来源以 --version 或 docs --format json 的 build 为准。
+
+{% section id="acceptance:agent-feedback:changes" title="本次交付" %}
+
+| 反馈 | 当前处理与契约 |
+| --- | --- |
+| guide 入口过长 | 默认简版，--full 完整版；均读取同一份正式源文，工具入门仍从 docs 开始 |
+| 项目 text 目录缺少 ID | 与手册共用格式，显示 project/sectionId；普通标题标记文件与行号 |
+| self 容易遗漏子节条件 | 不改变渐进默认；正文前提示未展开子节，指南补充父节条件摘要和必要上下文读取 |
+| 确定性错误到 build 才发现 | validate/build 共用 preflightBook，检查标准本地锚点与图片；自定义动态 ID 明确留待 build |
+| 已有 SVG 迁移成本 | Markdown 图片入口支持受控本地静态 SVG，保留原字节与矢量；XML/CSS 检查不替代浏览器验收 |
+| 同版本包难以区分 | 包携带版本、提交、dirty 与构建时间，无 Git 来源明确标记未知 |
+
+图片范围集中在[资源参考](../../usage/reference/markdoc.mdoc#ref:markdoc-images)，命令契约集中在[命令参考](../../usage/reference/commands.mdoc)。未放开任意内联 SVG、脚本或外部资源。PNG/JPEG/WebP 沿用原图片行为，本次不新增栅格解码器。
+
+本轮另按用户要求将现行仓库安装地址同步为 git+ssh://git@github.com/wmem/edoc.git，并采用与 Markdoc 相同的 MIT 许可证。LICENSE 随 npm 包交付，第三方许可证保持各自归属。
+
+{% /section %}
+
+{% section id="acceptance:agent-feedback:checks" title="验证与边界" %}
+
+类型检查通过；相关源码回归 156 项通过，涵盖正文/目录/read/手册/CLI/组合阅读、合法与错误锚点、动态转换、SVG 原字节与主动/外部资源拒绝。test:document 已接入新增的 preflight.test.ts。
+
+实际 npm 包安装、Git 打包后隔离全局安装两项回归通过：--help 定位 .mdoc、源文最小配方可执行、完整/简版指南正确、类型声明可用、版本来源与 Git 夹具提交一致，且最终安装没有开发依赖。LICENSE 已在 tarball 和安装目录中检查存在。
+
+正式手册构建通过。使用已有 Chromium 与 playwright-cli 检查实际 Markdown 教程：离线切页后图像解码为 720×220，中文、内部 use/渐变、箭头和静态 foreignObject 排版可见；390px 窄屏图像缩至约 320px，无横向溢出，没有页面错误或额外 HTTP 请求。截图已人工观察。独立 file:// 离线浏览器回归也通过，增加内嵌 WOFF2、PNG、clipPath 等代表内容的解码及原字节保留检查。该用例可通过 test:media-browser 运行。
+
+过程日志和截图在 .edoc-build/feedback-implementation-20261105，不作为分发资料。Git 流程验证使用本地 Git 传输覆盖 prepare/打包，全局 prefix 隔离；没有以本次未提交修改验证远程 GitHub SSH 安装，也未修改机器全局 npm 配置或安装浏览器。
+
+未取得反馈中的真实 SVG 仓库路径，本轮不能证明其全部 SVG 已迁移。自定义 transform 的未知锚点、最终布局、特殊字体和真实工程阅读效果仍需 build 与浏览器验证。静态 SVG 图片不会自动提供 IR 对象查询、信号展开或 PDF 定位交互。
+
+{% /section %}
+{% /section %}
