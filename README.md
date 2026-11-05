@@ -2,6 +2,19 @@
 
 以 Markdown/Markdoc 为正文基础，保留 Markdoc 原生能力，扩展页面编排、数据图表和原文引用，生成可导航、可查询的离线工程文档。作者和 Agent 维护源数据与说明，工具负责渲染，不手工维护生成的 HTML/SVG。
 
+## 全局安装
+
+需要 Node.js 24+、npm，以及该 Git 仓库的 SSH 访问权限：
+
+```sh
+npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
+edoc --version
+```
+
+安装后运行 `edoc docs` 获取自带 HTML 手册地址，或用 `edoc docs serve` 在本机阅读。Agent 可运行 `edoc docs outline --depth 0`、`edoc docs read --id ref:config-data` 查询工具用法，无需克隆仓库。
+
+npm 11.12.1 存在 Git 全局安装的预构建问题；遇到安装失败时，按[安装说明](docs/usage/start/01-install.mdoc#use:install:git-preparation)先打包再安装，无需修改 npm 全局配置。
+
 ## 环境与编译
 
 需要 Node.js 24+ 和 npm。在仓库根目录执行：
@@ -12,8 +25,6 @@ npm run build:package
 ```
 
 编译结果在 dist/。源码开发可用 npm run edoc -- --help 查看命令；安装到其他工程的方法见[安装说明](docs/usage/start/01-install.mdoc)。
-
-安装后的用户运行 `edoc docs` 获取自带 HTML 手册地址，或用 `edoc docs serve` 在本机阅读。Agent 可运行 `edoc docs outline --depth 0`、`edoc docs read --id ref:config-data` 查询工具用法，无需克隆仓库。
 
 ## 生成和阅读正式文档
 

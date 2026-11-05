@@ -5,18 +5,18 @@
 当前已验证的 npm 11.12.1 有 Git 全局安装预构建问题，建议先使用下一节的两步流程。其他环境可尝试以下直接命令；它仍是目标安装方式，不代表本轮已验证该环境：
 
 ```sh
-npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+npm install -g git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
 edoc --version
 ```
 
-需要访问该 Git 仓库的 SSH 权限。远程地址暂沿用历史路径，安装后的包名和命令名为 edoc。该命令描述安装方式，不表示当前工作树已推送或已验证你的网络环境。也可在项目中安装为依赖，通过 npx edoc 或 npm script 运行。
+需要访问该 Git 仓库的 SSH 权限，安装后的包名和命令名为 edoc。该命令描述安装方式，不表示当前工作树已推送或已验证你的网络环境。也可在项目中安装为依赖，通过 npx edoc 或 npm script 运行。
 
 {% section id="use:install:git-preparation" title="Git 全局安装的预构建问题" %}
 
 本轮 Node.js 24.15.0 / npm 11.12.1 环境中，直接全局安装 Git 源时，npm 将全局设置传给 Git 预构建子进程，导致依赖安装位置错误。遇到 git dep preparation failed 或预构建缺少 vite 等依赖时，使用已验证的两步流程：
 
 ```sh
-npm pack git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+npm pack git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
 npm install -g ./edoc-1.0.0.tgz
 ```
 
@@ -52,7 +52,7 @@ edoc docs query --id system:producer
 普通正文可只使用全局 CLI。配置需要 import {Markdoc} from 'edoc'、使用 TypeScript API，或团队希望固定同一版本时，将工具安装到项目开发依赖。在工程根执行：
 
 ```sh
-npm install --save-dev git+ssh://git@gitlab.kunyi.local/mem-tools/engdoc.git
+npm install --save-dev git+ssh://git@gitlab.kunyi.local/mem-tools/edoc.git
 npx edoc --version
 npx edoc
 ```
