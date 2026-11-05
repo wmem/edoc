@@ -20,7 +20,7 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
  const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&node.tag==='relation-diagram')usedViews.add(node.attributes.id);
  for(const id of usedViews){scenes[id]=await scene(graph,id);printScenes[id]=scenes[id].interfaceModel?await scene(graph,id,{interfaces:'expanded'}):scenes[id];}
- const plan=prepareOutline(graph),headings=new Map(plan.flat.map(e=>[e.id,e]));let counter=0,wave=0;
+ const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0;
  const heading=(id:string,level:number,body:string,section=false)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${body}</${tag}>`;};
  function render(tree:any):string{
   if(tree===null||tree===undefined||tree===false)return '';
@@ -33,12 +33,13 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   if(n.startsWith('ed-')){
    const type=n.slice(3),id=a.id;
    if(type==='directory-order')return '';
-   if(type==='section'){const specSource=a.specification?graph.specifications!.definitions.get(a.specification)!.entity.source:undefined;if(a.specification)return specificationHTML({specification:a.specification,bodyNamespace:a.bodyNamespace,renderAnchor:a.renderAnchor,role:a.role,namespace:a.namespace},`${a.title?heading(a.renderAnchor,a.outlineLevel,esc(a.title),true):''}${children()}`,{
+   if(type==='section'){const specSource=a.specification?graph.specifications!.definitions.get(a.specification)!.entity.source:undefined;if(a.specification)return specificationHTML({specification:a.specification,bodyNamespace:a.bodyNamespace,renderAnchor:a.renderAnchor,role:a.role,namespace:a.namespace,title:a.title,collapsed:a.collapsed},children(),{
     source:specSource!,evidenceHref:specSource?.attachment?routeHash({kind:'pdf',project:specSource.attachment.project??graph.manifest.projectId,id:specSource.attachment.id,...(specSource.attachment.target?{target:specSource.attachment.target}:{})}):undefined,
     canonicalHref:routeHash({kind:'entity',project:graph.manifest.projectId,id:a.specification}),
     fallback(fragment){if([...graph.index.keys()].some(id=>anchor(id)===fragment))return '#'+fragment;return esc(routeHash({kind:'page',project:graph.manifest.projectId,id:pageId(graph.specifications!.definitions.get(a.specification)!.document.file),anchor:fragment}));},
     alias(local,value){if(!aliases.has(local))aliases.set(local,value);else if(aliases.get(local)!==value)aliases.set(local,undefined);}
-   });const body=`${a.title?heading(a.renderAnchor??anchor(id),a.outlineLevel,esc(a.title),true):''}${children()}`;return a.collapsed?`<details id="${a.renderAnchor??anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${a.renderAnchor??anchor(id)}"${a.class?` class="${esc(a.class)}"`:""}>${body}</section>`;}
+   });const body=`${a.title?(a.local?`<p class="specification-heading">${esc(a.title)}</p>`:heading(a.renderAnchor??anchor(id),a.outlineLevel,esc(a.title),true)):''}${children()}`;return a.collapsed?`<details id="${a.renderAnchor??anchor(id)}"><summary>${esc(a.title??id)}</summary>${body}</details>`:`<section id="${a.renderAnchor??anchor(id)}"${a.class?` class="${esc(a.class)}"`:""}>${body}</section>`;}
+   if(type==='heading'&&a.local)return `<div id="${esc(id)}" class="specification-heading${a.class?' '+esc(a.class):''}">${children()}</div>`;
    if(type==='heading')return `<div id="${id}" class="heading-anchor${a.class?' '+esc(a.class):''}">${heading(id,a.outlineLevel,children())}</div>`;
    if(type==='columns')return `<div class="columns${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''} style="--columns:${(a.ratio??'1:1').split(':').map((v:string)=>v+'fr').join(' ')}">${children()}</div>`;
    if(type==='panel')return `<div class="panel${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''}>${a.title?`<p class="panel-title">${esc(a.title)}</p>`:''}${children()}</div>`;
@@ -65,11 +66,11 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   tags:{...inherited.tags,'__spec-list':{transform(node:any,cfg:any){return new Markdoc.Tag('div',{'class':'spec-list','data-spec-for':node.attributes.for},node.transformChildren(cfg));}},...Object.fromEntries(Object.entries(tags).map(([k,v])=>[k,k==='section'?{...v,transform(node:any,config:any){
    const entry=headings.get(node.attributes.__edocOutlineId)!;
    const attrs=node.attributes,scoped=config;
-   return new Markdoc.Tag('ed-section',{...node.transformAttributes(scoped),outlineLevel:entry.level,renderAnchor:entry.id,specification:attrs.__edocSpecification,namespace:attrs.__edocNamespace,bodyNamespace:attrs.__edocBodyNamespace,role:attrs.__edocApplicationRole},node.transformChildren(scoped));
+   return new Markdoc.Tag('ed-section',{...node.transformAttributes(scoped),outlineLevel:entry.level,renderAnchor:entry.id,specification:attrs.__edocSpecification,namespace:attrs.__edocNamespace,bodyNamespace:attrs.__edocBodyNamespace,role:attrs.__edocApplicationRole,local:entry.local},node.transformChildren(scoped));
   }}:{...v,render:'ed-'+k}]))},
   nodes:{...inherited.nodes,document:{...Markdoc.nodes.document,transform(node:any,config:any){return node.transformChildren(config);}},fence:{...Markdoc.nodes.fence,transform(node:any,config:any){const attrs=node.transformAttributes(config);return new Markdoc.Tag('pre',{id:attrs.id,class:attrs.class},[new Markdoc.Tag('code',{'data-language':node.attributes.language},node.attributes.process===false||!node.children.length?[node.attributes.content]:node.transformChildren(config))]);}},link:{...Markdoc.nodes.link,attributes:{...Markdoc.nodes.link.attributes,__edocSourceFile:{type:String}},transform(node:any,config:any){const source=plan.documents.map(d=>d.locations.get(node)).find(Boolean);return new Markdoc.Tag('a',{...node.transformAttributes(config),sourceFile:node.attributes.__edocSourceFile??source?.file},node.transformChildren(config));}},heading:{...Markdoc.nodes.heading,transform(node:any,config:any){
    const entry=headings.get(node.attributes.__edocOutlineId)!;
-   return new Markdoc.Tag('ed-heading',{...node.transformAttributes(config),id:entry.id,outlineLevel:entry.level},node.transformChildren(config));
+   return new Markdoc.Tag('ed-heading',{...node.transformAttributes(config),id:entry.id,outlineLevel:entry.level,local:entry.local},node.transformChildren(config));
   }}}
  };
  // Markdoc.resolve 会克隆节点，用内部键恢复定义处的词法作用域。

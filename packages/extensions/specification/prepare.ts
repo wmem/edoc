@@ -102,7 +102,7 @@ export function presentationGraph(graph:Graph):Graph{
     for(const role of ['common','specific'] as const)for(const id of set[role]){
      const definition=graph.specifications!.definitions.get(id)!,ns='spec-instance-'+(++occurrence)+'-';
      const child=copy(definition.node,definition.document,ns);
-     child.attributes.__edocApplicationRole=role;child.attributes.__edocBehavior=set.for;result.children.push(child);
+     child.attributes.collapsed=node.attributes.collapsed??true;child.attributes.__edocApplicationRole=role;child.attributes.__edocBehavior=set.for;result.children.push(child);
     }
     return result;
    }

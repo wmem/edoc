@@ -37,7 +37,7 @@ export function bookNavigation(book:Book):Navigation[]{
  const build=(node:ProjectNode):Navigation[]=>{const visible=node.documents.documents.filter(d=>!d.hidden),pages=visible.map(document=>{
   const graph=pageGraph(node,document),plan=prepareOutline(graph),id=pageId(document.file),label=pageTitle(document),root:Navigation={label,project:node.config.projectId,page:id,children:[]},entries=new Map<string,Navigation>();
   const walk=(ast:any,section:Navigation)=>{
-   const outline=plan.entries.get(ast);let context=section;
+   const candidate=plan.entries.get(ast),outline=candidate?.local?undefined:candidate;let context=section;
    if(outline&&outline===plan.flat[0]&&outline.label===label){Object.assign(root,{source:outline.source,anchor:outline.id,id:outline.id,...(outline.sectionId?{sectionId:outline.sectionId}:{}),level:outline.level,depth:0});entries.set(outline.id,root);context=root;}else if(outline){const entry:Navigation={...outline,label:outline.label,project:root.project,page:id,anchor:outline.id,children:[]};entries.set(outline.id,entry);(outline.parentId?entries.get(outline.parentId)?.children:root.children)?.push(entry);if(outline.kind==='section')context=entry;}
    if(ast.type==='tag'&&ast.tag==='include'&&ast.attributes.project){const child=node.children.get(ast.attributes.project)!;const pages=build(child);context.children.push({label:child.config.title,project:child.config.projectId,page:pageId(child.documents.documents[0].file),children:pages});}
    for(const child of [...Object.values(ast.slots??{}),...ast.children??[]])walk(child,context);
@@ -58,8 +58,8 @@ export function bookNavigation(book:Book):Navigation[]{
 export function pageTitle(document:LoadedProject['documents']['documents'][number]):string{
  const plain=(v:any):string=>typeof v==='string'||typeof v==='number'?String(v):Array.isArray(v)?v.map(plain).join(''):'';
  const text=(node:any):string=>node.type==='text'||node.type==='code'?plain(node.attributes.content):[...Object.values(node.slots??{}),...node.children??[]].map(text).join('');
- const nodes=[...document.ast.walk()],heading=nodes.find(n=>n.type==='heading'),section=nodes.find(n=>n.type==='tag'&&n.tag==='section');
- const first=nodes.find(n=>n.type==='heading'||n.type==='tag'&&n.tag==='section'&&n.attributes.title);return first?.type==='heading'?text(first).trim():first?.attributes.title??(heading?text(heading).trim():undefined)??section?.attributes.title??document.file;
+ const nodes=[...document.ast.walk()],heading=nodes.find(n=>n.type==='heading'),section=nodes.find(n=>n.type==='tag'&&['section','specification'].includes(n.tag));
+ const first=nodes.find(n=>n.type==='heading'||n.type==='tag'&&['section','specification'].includes(n.tag)&&n.attributes.title);return first?.type==='heading'?text(first).trim():first?.attributes.title??(heading?text(heading).trim():undefined)??section?.attributes.title??document.file;
 }
 export type OutlineOptions={project?:string;id?:string;depth?:number};
 export function projectOutline(book:Book,options:OutlineOptions={}){

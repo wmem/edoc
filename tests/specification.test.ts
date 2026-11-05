@@ -109,3 +109,15 @@ test('Markdoc 条件只选择当前适用集合，未选择的规范依赖仍严
  assert.match(readDocument(book.root.graph,'b',{withSpecs:true}).content,/有效时钟/);await compileBook(book);
  p.write('docs/index.mdoc',body.replace('specific=["REQUEST"]','specific=["MISSING"]'));await assert.rejects(p.load(),/SPECIFICATION_REFERENCE/);
 });
+test('规范展示不增加行为目录层级，内部锚点与读取保留，折叠只影响引用位置',async t=>{
+ const p=specimen(t,'{% section id="behavior" title="行为" %}\n## 适用要求\n{% spec-list for="behavior" common=["CLOCK"] specific=["REQUEST"] /%}\n## 观察结果\n{% spec-list for="behavior" collapsed=false /%}\n{% /section %}');
+ const book=await p.load(),graph=book.root.graph,data=await compileBook(book),page=Object.values(data.pages).find(p=>p.id==='docs/index')!;
+ const flatten=(entries:typeof page.outline):string[]=>entries.flatMap(e=>[e.label,...flatten(e.children)]);
+ assert.deepEqual(flatten(page.outline),['行为','适用要求','观察结果']);assert.equal(page.outline[0].children[1].level,2);
+ const tags=[...page.html.matchAll(/<details class="specification"[^>]*>/g)].map(m=>m[0]);assert.equal(tags.length,4);assert.equal(tags.filter(t=>/\sopen(?:\s|>)/.test(t)).length,2);
+ assert.ok(page.html.includes('id="spec-instance-1-clock-example"'));assert.match(page.html,/class="specification-heading">例子/);
+ const source=Object.values(data.pages).find(p=>p.id==='docs/specs')!;assert.deepEqual(flatten(source.outline),['规范库','时钟条件','清零请求']);
+ assert.match(readDocument(graph,'behavior',{withSpecs:true}).content,/必须携带的子章节/);assert.match(readDocument(graph,'CLOCK-DETAIL').content,/必须携带的子章节/);
+ assert.equal(query(graph,'CLOCK').references.length,1);
+ p.write('docs/index.mdoc','{% section id="b" %}{% spec-list for="b" common=["CLOCK"] collapsed="true" /%}{% /section %}');await assert.rejects(p.load(),/DOCUMENT_TAG/);
+});

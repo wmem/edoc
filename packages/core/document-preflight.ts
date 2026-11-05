@@ -35,7 +35,7 @@ function checkAnchors(node:ProjectNode,errors:Diagnostic[],deferred:Diagnostic[]
  for(const document of node.documents.documents){
   const id=pageId(document.file);
   if(pages.has(id)){errors.push({code:'PAGE_DUPLICATE',file:document.file,path:'',message:'文档路由重复：'+id});continue;}
-  const graph=pageGraph(node,document),outline=prepareOutline(graph),page={ids:new Set(outline.flat.map(entry=>entry.id)),opaque:false};
+  const graph=pageGraph(node,document),outline=prepareOutline(graph),page={ids:new Set(outline.all.map(entry=>entry.id)),opaque:false};
   pages.set(id,page);
   walk(document.ast,element=>{
    const {type,tag,attributes:a={}}=element;

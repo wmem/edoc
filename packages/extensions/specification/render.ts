@@ -21,14 +21,14 @@ export function namespaceHTML(html:string,namespace:string,fallback?:(id:string)
   .replace(/(?<![\w:-])(aria-labelledby|aria-describedby|aria-controls|for)="([^"]+)"/g,(all,key,value)=>`${key}="${value.split(' ').map((id:string)=>ids.get(id)??id).join(' ')}"`);
 }
 
-type Presentation={specification:string;namespace?:string;bodyNamespace:string;renderAnchor:string;role?:string};
+type Presentation={specification:string;namespace?:string;bodyNamespace:string;renderAnchor:string;role?:string;title:string;collapsed?:boolean};
 export function specificationHTML(a:Presentation,html:string,context:{canonicalHref:string;source:Source;evidenceHref?:string;fallback:(id:string)=>string;alias:(local:string,id:string)=>void}){
  const content=namespaceHTML(html,a.bodyNamespace,context.fallback);
  if(!a.namespace)for(const match of content.matchAll(/(?<![\w:-])id="([^"]+)"/g)){
   const id=match[1],local=id.startsWith(a.bodyNamespace)?id.slice(a.bodyNamespace.length):id;context.alias(local,id);
  }
- const role=a.role?esc(a.role==='common'?'公共约束':'专属约束')+' · ':'';
+ const role=a.role?' · '+esc(a.role==='common'?'公共约束':'专属约束'):'';
  const originalFile=esc(context.source.file)+(context.source.line?':'+context.source.line:'');
- const origin=a.namespace?` · <a href="${esc(context.canonicalHref)}">规范原文</a>`:` · ${originalFile}${context.evidenceHref?` · <a href="${esc(context.evidenceHref)}">原始 PDF</a>`:''}`;
- return `<section class="specification" id="${esc(a.renderAnchor)}" data-specification="${esc(a.specification)}"${a.role?` data-spec-role="${esc(a.role)}"`:''}><p class="specification-meta">${role}<code>${esc(a.specification)}</code>${origin}</p>${content}</section>`;
+ const origin=a.namespace?`<a class="specification-origin" href="${esc(context.canonicalHref)}">规范原文</a>`:context.evidenceHref?`<a class="specification-origin" href="${esc(context.evidenceHref)}">原始 PDF</a>`:'';
+ return `<details class="specification" id="${esc(a.renderAnchor)}" data-specification="${esc(a.specification)}"${a.collapsed?'':' open'}${a.role?` data-spec-role="${esc(a.role)}"`:''}><summary><span class="specification-caption"><span class="specification-kind">SPEC${role}</span><strong class="specification-title">${esc(a.title)}</strong><code class="specification-id">${esc(a.specification)}</code></span>${origin}</summary><div class="specification-body"><p class="specification-meta">来源：${originalFile}</p>${content}</div></details>`;
 }

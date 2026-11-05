@@ -9,7 +9,7 @@ import {renderSVG} from '../render-graph/svg.ts';
 import {styles} from '../render-graph/styles.ts';
 import {anchor} from '../core/identity.ts';
 import type {InterfaceRenderer} from './client.ts';
-declare global{interface Window{EdocInterfaceViews:{holder:HTMLElement;scene:Scene;state:InterfaceState;lastDurationMs:number}[];}}
+declare global{interface Window{EdocInterfaceViews:{holder:HTMLElement;scene:Scene;state:InterfaceState;lastDurationMs:number;restore:(next:InterfaceState)=>Promise<void>}[];}}
 export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,cleanup})=>{
  holder.dataset.initialized='true';holder.dataset.busy='false';
  let current:Scene=data.scenes[holder.dataset.diagram!],state=initialInterfaceState(current.interfaceModel!),desired=structuredClone(state),revision=0,committed=0,running=false,desiredFocus:string|undefined;

@@ -1,6 +1,6 @@
 {% section id="use:specifications" title="在行为页完整阅读适用规范" %}
 
-行为页描述“发生什么”，规范保存“必须满足什么”。同一条规范只维护一份，在需要它的行为页直接显示全文，读者可以一次读完现象、要求、条件和例外。
+行为页描述“发生什么”，规范保存“必须满足什么”。同一条规范只维护一份，在需要它的行为页直接嵌入完整正文，读者展开后可以一次读完现象、要求、条件和例外。
 
 普通共享说明仍可用 include/partial；需要稳定条款身份、适用关系及反向查询时，用 specification 与 spec-list。公共/专属表示这次应用的角色，两类都生效，没有隐含覆盖或优先级。
 
@@ -33,6 +33,24 @@ specification 定义条款，工具自动提取标准 specifications 资源。�
 
 {% spec-list for="example:clear" /%}
 {% /section %}
+{% /section %}
+
+{% section id="use:specifications-display" title="规范块与本页展开控制" %}
+
+Spec 使用独立底色、边框与等宽正文，外观接近代码块；里面仍是可操作的正文，列表、代码、图表和原文链接都保留。点击每条规范的标题行可单独展开或收起。
+
+页面右上方的“展开 Spec / 折叠 Spec”控制本页全部规范块，不影响普通折叠章节。桌面位于右侧面板顶部，滚动正文时仍可操作；窄屏移到页头。行为页中的复用条款默认收起，规范原文默认展开；内部标题只在块内显示，不增加行为页目录层级。规范库仍保留条款级入口。点击条款内部的稳定链接会自动展开，浏览器返回保留本页状态。
+
+需要某个出现位置初始展开时，设置 spec-list 的 collapsed=false；这个属性只控制该处显示，不重新定义适用集合。下面是可复制写法与同源实际效果：
+
+```markdoc {% process=false %}
+{% spec-list for="example:clear" collapsed=false /%}
+```
+
+{% spec-list for="example:clear" collapsed=false /%}
+
+折叠只改变浏览器显示；完整条款仍打包到 HTML，条件、例外与依赖校验不会被省略。Agent 一次读完整行为及规范仍用 --with-specs，不受页面开关影响。
+
 {% /section %}
 
 {% section id="use:specifications-read" title="Agent 读取与查询" %}

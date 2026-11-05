@@ -19,4 +19,11 @@
 本次使用独立夹具验证同类缺陷，未直接加载反馈工程。使用playwright-cli及已有Chromium复核窄屏与常规宽度；已生成HTML须重新构建才能应用样式。
 
 {% /section %}
+{% section id="accept:specifications:fold" title="规范块、目录隔离与本页折叠" %}
+
+2026-11-05，按用户新要求调整初版默认全文可见的展示：复用条款默认收起，原文默认展开，以代码阅读风格的独立规范块区分于行为正文。Spec 内部标题与复用实例不加入行为页目录；规范库保留条款入口。使用文档的[实际效果与控制](../../usage/rendering/specifications.mdoc#use:specifications-display)可直接操作本页展开/折叠与单条标题。
+
+新增回归覆盖宿主标题恢复、内部锚点仍有效、collapsed 属性按位置生效、正文读取不变、逐条及批量开关、键盘操作、深链接自动展开、来源跳转与返回、390px，以及折叠中图表按需初始化、接口状态恢复。普通 section 的包含语义不变。测试入口仍是 tests/specification.test.ts 与 tests/specification-browser.test.ts；已验证已有阅读与接口回归；单文档 HTML 也共用同一批量控制。实际 playwright-cli 检查了本页八个实例的全部展开/折叠，右侧目录没有条款内部标题；390px下控件移入页头，页面无横向溢出。
+
+{% /section %}
 {% /section %}

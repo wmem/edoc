@@ -1,3 +1,4 @@
+import {specificationControls} from './specification-controls.ts';
 import {nodeHeading,addPortLeads,readableViewport} from './graph-presentation.ts';
 import {portLabel} from '../render-graph/ports.ts';
 import {drawnPaths} from '../render-graph/net-tree.ts';
@@ -11,6 +12,7 @@ export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:s
 export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
 const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
 const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
+if(!options.managed)cleanups.push(specificationControls(document.querySelector<HTMLElement>('main')!));
 const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
 window.EdocGraphs=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;
@@ -22,7 +24,7 @@ function select(id:string,detail?:unknown,origin?:HTMLElement){
  document.dispatchEvent(new CustomEvent('edoc-selection',{detail:{id,holder:candidate}}));
 }
 function initialize(holder:HTMLElement){
- if(holder.dataset.initialized)return;
+ if(stopped||holder.dataset.initialized||holder.closest('details:not([open])'))return;
  if(data.scenes[holder.dataset.diagram!].interfaceModel&&interfaceRenderer){interfaceRenderer(holder,{data,select:(id,detail)=>select(id,detail,holder),signal:abort.signal,cleanup:fn=>cleanups.push(fn)});return;}
  holder.dataset.initialized='true';
  const s:Scene=data.scenes[holder.dataset.diagram!];
@@ -106,7 +108,9 @@ function initialize(holder:HTMLElement){
 const holders=[...document.querySelectorAll<HTMLElement>('[data-diagram]')];
 const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){initialize(entry.target as HTMLElement);observer.unobserve(entry.target);}},{rootMargin:'600px'});
 cleanups.push(()=>observer.disconnect());
-holders.forEach((holder,i)=>{if(i<2||options.initialize?.includes(i))initialize(holder);else observer.observe(holder);});
+holders.forEach((holder,i)=>{if(i<2||options.initialize?.includes(i))initialize(holder);if(!holder.dataset.initialized)observer.observe(holder);});
+const opened=(event:Event)=>{if(event.target instanceof HTMLDetailsElement&&event.target.open)for(const holder of holders)if(event.target.contains(holder)){initialize(holder);if(holder.dataset.initialized)observer.unobserve(holder);}};
+document.addEventListener('toggle',opened,true);cleanups.push(()=>document.removeEventListener('toggle',opened,true));
 for(const tabs of document.querySelectorAll<HTMLElement>('.tabs')){
  const children=[...tabs.children].filter(e=>e.classList.contains('tab')) as HTMLElement[];
  const nav=document.createElement('div');nav.className='tab-nav';tabs.prepend(nav);

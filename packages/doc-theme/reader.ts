@@ -1,4 +1,6 @@
+import {specificationControls} from './specification-controls.ts';
 import {start} from './client.ts';
+import type {InterfaceState} from '../render-graph/interfaces.ts';
 import type {InterfaceRenderer} from './client.ts';
 import type {PdfReader,PdfPosition} from './pdf-reader.ts';
 import type {ReaderData,ReaderPage} from '../core/reader-model.ts';
@@ -12,7 +14,7 @@ import {sidebarNavigation} from './navigation.ts';
 
 const esc=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const own=<T>(object:Record<string,T>,key:string):T|undefined=>Object.hasOwn(object,key)?object[key]:undefined;
-type ReadingState={route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:unknown}[];pdf?:PdfPosition};
+type ReadingState={route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
 export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const data:ReaderData=JSON.parse(document.querySelector('#edoc-book')!.textContent!),reader=document.querySelector<HTMLElement>('#reader')!,toc=document.querySelector<HTMLElement>('#toc')!,pageToc=document.querySelector<HTMLElement>('#page-toc')!,notice=document.querySelector<HTMLElement>('#notice')!,breadcrumbs=document.querySelector<HTMLElement>('#breadcrumbs')!,search=document.querySelector<HTMLInputElement>('#search')!;
  const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false;
@@ -51,8 +53,22 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
    const firstHeading=reader.querySelector<HTMLElement>('article [data-heading-level]');if(firstHeading?.textContent===page.title&&!firstHeading.closest('details'))firstHeading.remove();
    document.querySelector('#edoc-data')!.textContent=JSON.stringify({scenes:page.scenes,entities:project.entities});
    const outline=(nodes:typeof page.outline):Navigation[]=>nodes.map(n=>({label:n.label,project:route.project,page:route.id,anchor:n.id,children:outline(n.children)}));pageToc.innerHTML='<h4>本页目录</h4>'+navigation(outline(page.outline));
-   dispose=start(interfaces,{managed:true,initialize:state?.graphs?.map(g=>g.figure)});
-   if(state){reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});
+   if(state){if(state.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});}
+   const stopGraphs=start(interfaces,{managed:true,initialize:state?.graphs?.map(g=>g.figure)}),stopControls=specificationControls(reader,save);
+   // 关闭的规范内图表延迟创建；返回后首次展开时再恢复其已保存状态。
+   const restoredInterfaces=new Set((window.EdocInterfaceViews??[]).map(v=>v.holder)),restoredGraphs=new Set(window.EdocGraphs);
+   const restoreDeferred=async(event:Event)=>{
+    if(!state||!(event.target instanceof HTMLDetailsElement)||!event.target.open)return;
+    for(const view of window.EdocInterfaceViews??[])if(!restoredInterfaces.has(view.holder)){
+     restoredInterfaces.add(view.holder);const previous=state.interfaces?.find(saved=>saved.figure===figureIndex(view.holder));if(previous)await view.restore?.(previous.state);
+    }
+    await document.fonts.ready;await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));if(version!==generation)return;
+    for(const graph of window.EdocGraphs)if(!restoredGraphs.has(graph)){restoredGraphs.add(graph);const previous=state.graphs?.find(saved=>saved.figure===figureIndex(graph.container.closest('[data-diagram]')));if(previous){graph.zoomTo(previous.zoom);graph.translate(previous.translation.tx,previous.translation.ty);}}
+    save();
+   };
+   reader.addEventListener('toggle',restoreDeferred,true);
+   dispose=()=>{reader.removeEventListener('toggle',restoreDeferred,true);stopControls();stopGraphs();};
+   if(state){
     if(state.interfaces)await Promise.all((window.EdocInterfaceViews??[]).map((v:any)=>{const previous=state.interfaces?.find(saved=>saved.figure===figureIndex(v.holder));return previous?v.restore?.(previous.state):undefined;}));
     if(version!==generation)return;
     reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]').forEach((input,i)=>{if(state.displays?.[i]!==undefined&&input.checked!==state.displays[i]){input.checked=state.displays[i];input.dispatchEvent(new Event('change'));}});

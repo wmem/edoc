@@ -33,8 +33,28 @@ th[align=left],td[align=left]{text-align:left}th[align=center],td[align=center]{
 
 .viewport-note{margin:0;padding:8px 12px;font-size:13px;color:#365c72;background:#edf5fa}
 
-/* 规范随正文阅读，元信息轻量显示，短条款不使用大卡片。 */
+/* 规范块使用代码阅读的视觉边界，内部富文本与图表仍可操作。 */
 .spec-list { margin-block: 1em; }
-.specification { margin-block: 1.2em; padding-left: 1em; border-left: 2px solid #cbd9e5; min-width: 0; }
-.specification-meta { color: #52677a; font-size: .85em; margin-bottom: .3em; overflow-wrap: anywhere; }
-.specification-meta code { white-space: normal; }
+details.specification { margin: 14px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #f7f9fc; min-width: 0; overflow-wrap: anywhere; }
+.specification > summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; background: #edf2f7; list-style: none; font-weight: 400; }
+.specification > summary::-webkit-details-marker { display: none; }
+.specification > summary::before { content: '›'; font: 20px/1 monospace; color: #52677a; flex: 0 0 auto; }
+.specification[open] > summary { border-bottom: 1px solid #d8e1eb; border-radius: 8px 8px 0 0; }
+.specification[open] > summary::before { transform: rotate(90deg); }
+.specification-caption { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 10px; row-gap: 2px; flex: 1; min-width: 0; }
+.specification-kind { color: #52677a; font: 11px/1.6 Consolas, 'Noto Sans SC', monospace; letter-spacing: .02em; }
+.specification-title { font-size: 14px; color: #23405c; }
+.specification-id { color: #60778c; background: transparent; padding: 0; white-space: normal; }
+.specification-origin { flex: 0 0 auto; font-size: 12px; font-weight: 400; }
+.specification-body { padding: 4px 18px 12px; font: 13px/1.85 ui-monospace, Consolas, 'Noto Sans SC', monospace; min-width: 0; }
+.specification-meta { color: #60778c; font-size: 11px; margin: 8px 0 14px; overflow-wrap: anywhere; }
+.specification-heading { font-size: 13px; font-weight: 700; margin: 18px 0 8px; color: #284c69; }
+.specification-body > :last-child { margin-bottom: 0; }
+.specification-controls { float: right; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px 14px; }
+aside.properties > .specification-controls { float: none; margin: 0 0 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.specification-controls button { font-size: 12px; padding: 4px 10px; background: #f7fafc; }
+.specification-controls button:disabled { color: #8394a4; cursor: default; }
+header.cover.has-specifications { display: flow-root; }
+header.cover.has-specifications h1 { clear: both; }
+@media(max-width:750px) { .specification > summary { padding: 10px; gap: 8px; } .specification-caption { display: block; } .specification-caption > * { display: block; } .specification-body { padding-inline: 12px; } .specification-controls { float: none; justify-content: flex-end; margin: 0 0 12px; } }
+@media print { .specification-controls { display: none; } details.specification > .specification-body { display: block!important; } }
