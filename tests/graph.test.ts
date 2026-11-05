@@ -63,7 +63,7 @@ test('四个布局方向的扇出与跨层关系从正确框边连接，路径�
 
 test('显示配置只隐藏文字，保留端口、完整关系与可查询属性，重复功能名不重复显示',async t=>{
  const f=fixture(t),before=f.load(),s=await scene(before,'board:flash-wiring');
- assert.deepEqual(s.display,{showPortAttributes:false,showRelationLabels:true});
+ assert.deepEqual(s.display,{showPortAttributes:false,showRelationLabels:true,showInterfaceDetails:true});
  const p=s.nodes.flatMap(n=>n.ports).find(p=>p.id==='board:U1.QSPI_CLK')!;
  assert.match(p.annotation,/ball A12/);assert.ok(!p.annotation.includes('function QSPI_CLK'));
  assert.match(svg(s,false),/data-port-annotation="board:U1.QSPI_CLK" display="none"/);

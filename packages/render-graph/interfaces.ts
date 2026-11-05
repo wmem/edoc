@@ -4,7 +4,7 @@ import type {Graph,Node,Port,Interface,Connection,RelationView,Group,RecordEntry
 import {layoutScene} from './scene.ts';
 import {textWidth} from './geometry.ts';
 import type {Scene,SceneHints,ScenePort} from './scene.ts';
-export type InterfaceState={modes:Record<string,'collapsed'|'expanded'>;classes:string[]|null};
+export type InterfaceState={modes:Record<string,'collapsed'|'expanded'>;classes:string[]|null;showInterfaceDetails?:boolean};
 export type InterfaceModel={view:RelationView;nodes:Node[];visiblePorts:string[];relations:Connection[];domains:Record<string,string>};
 export type SceneInterface=Interface&{ownerId:string;expanded:boolean;visibleMembers:string[];connectedMembers:number;relationCount:number;visibleRelationCount:number;internalRelations:string[]};
 
@@ -26,10 +26,11 @@ export function prepareInterfaceModel(graph:Graph,id:string):InterfaceModel|unde
  return structuredClone({view,nodes,visiblePorts:nodes.flatMap(n=>(n.ports??[]).filter(p=>full.has(n.id)||ports.has(p.id)).map(p=>p.id)),relations,domains:Object.fromEntries([...new Set(nodes.flatMap(n=>(n.ports??[]).map(p=>p.clockDomainId).filter((id):id is string=>!!id)))].map(id=>[id,graph.index.get(id)?.entity.label??id]))});
 }
 export function initialInterfaceState(model:InterfaceModel):InterfaceState{
- return {modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,model.view.display?.interfaceOverrides?.[i.id]??model.view.display?.interfaceMode??'expanded']))),classes:model.view.display?.classes??null};
+ return {modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,model.view.display?.interfaceOverrides?.[i.id]??model.view.display?.interfaceMode??'expanded']))),classes:model.view.display?.classes??null,showInterfaceDetails:model.view.display?.showInterfaceDetails??true};
 }
 
 export async function interfaceScene(model:InterfaceModel,state=initialInterfaceState(model)):Promise<Scene>{
+ const showInterfaceDetails=state.showInterfaceDetails??model.view.display?.showInterfaceDetails??true;
  const hintFor=(id:string)=>Object.hasOwn(model.view.layout?.relationHints??{},id)?model.view.layout!.relationHints![id]:undefined;
  const visible=new Set(model.visiblePorts),interfaces:SceneInterface[]=[],byPort=new Map<string,SceneInterface>();
  const modes={...initialInterfaceState(model).modes,...state.modes};
@@ -70,15 +71,16 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
   const ports:Port[]=[],owned=interfaces.filter(i=>i.ownerId===n.id),order=model.view.layout?.interfaceOrder??[];
   owned.sort((a,b)=>(order.includes(a.id)?order.indexOf(a.id):order.length)-(order.includes(b.id)?order.indexOf(b.id):order.length));
   let row=66;
-  for(const i of owned){const side=model.view.layout?.interfaceSides?.[i.id],pad=slots.get(i.id)??[],center=row+Math.max(16,(pad.length-1)*4),header:Port={id:i.id,label:i.label+(i.role?' · '+i.role:''),direction:'unknown',source:i.source};
+  for(const i of owned){const side=model.view.layout?.interfaceSides?.[i.id],pad=slots.get(i.id)??[],center=row+Math.max(16,(pad.length-1)*4),header:Port={id:i.id,label:i.label+(showInterfaceDetails&&i.role?' · '+i.role:''),direction:'unknown',source:i.source};
    ports.push(header);hints.rows![i.id]=center;if(side)hints.sides![i.id]=side;
    const directions=i.visibleMembers.map(id=>n.ports!.find(p=>p.id===id)!.direction),incoming=directions.some(d=>d==='in'||d==='inout'),outgoing=directions.some(d=>d==='out'||d==='inout');
-   hints.annotations![i.id]=[i.protocol,incoming&&outgoing?'混合流向':incoming?'流入':outgoing?'流出':undefined,`${i.visibleMembers.length}/${i.members.length} 个成员`,i.internalRelations.length?`${i.internalRelations.length} 条内部关系`:undefined].filter(Boolean).join(' · ');
+   hints.annotations![i.id]=showInterfaceDetails?[i.protocol,incoming&&outgoing?'混合流向':incoming?'流入':outgoing?'流出':undefined,`${i.visibleMembers.length}/${i.members.length} 个成员`,i.internalRelations.length?`${i.internalRelations.length} 条内部关系`:undefined].filter(Boolean).join(' · '):'';
    portMeta.set(i.id,{interfaceId:i.id,interfaceHeader:true,collapsed:!i.expanded,members:i.visibleMembers,totalMembers:i.members.length,padHeight:Math.max(14,(pad.length-1)*8+12)});
-   if(i.expanded){row+=50;const members=(n.ports??[]).filter(p=>i.visibleMembers.includes(p.id)),portOrder=model.view.layout?.portOrder??[];
+   // 附注关闭后移除整行占位；折叠组仍按实际接入槽位保留高度。
+   if(i.expanded){row+=showInterfaceDetails?50:38;const members=(n.ports??[]).filter(p=>i.visibleMembers.includes(p.id)),portOrder=model.view.layout?.portOrder??[];
     members.sort((a,b)=>(portOrder.includes(a.id)?portOrder.indexOf(a.id):portOrder.length)-(portOrder.includes(b.id)?portOrder.indexOf(b.id):portOrder.length));
     for(const p of members){ports.push(p);hints.rows![p.id]=row;if(side)hints.sides![p.id]=side;portMeta.set(p.id,{interfaceId:i.id,noConnection:!model.relations.some(r=>r.endpoints.includes(p.id))});row+=38;}
-   }else{for(const [j,slot]of pad.entries()){ports.push({id:slot.id,label:'',direction:'unknown'});hints.rows![slot.id]=center-(pad.length-1)*4+j*8;if(side)hints.sides![slot.id]=side;hints.annotations![slot.id]='';portMeta.set(slot.id,{interfaceId:i.id,slot:true,members:slot.ports});}row+=Math.max(54,pad.length*8+24);}
+   }else{for(const [j,slot]of pad.entries()){ports.push({id:slot.id,label:'',direction:'unknown'});hints.rows![slot.id]=center-(pad.length-1)*4+j*8;if(side)hints.sides![slot.id]=side;hints.annotations![slot.id]='';portMeta.set(slot.id,{interfaceId:i.id,slot:true,members:slot.ports});}row+=Math.max(showInterfaceDetails?54:38,pad.length*8+24);}
   }
   for(const p of n.ports??[])if(visible.has(p.id)&&!byPort.has(p.id)){ports.push(p);hints.rows![p.id]=row;row+=38;}
   hints.heights![n.id]=Math.max(90,row+14);hints.widths![n.id]=Math.max(180,Math.min(280,textWidth(n.label,17)+32),...ports.filter(p=>!portMeta.get(p.id)?.slot).map(p=>Math.max(textWidth(p.label,14)+56,textWidth((hints.annotations![p.id]??portAnnotation(p,model.domains[p.clockDomainId??''],model.view.display?.portAttributes))+(portMeta.get(p.id)?.noConnection?unconnectedNote:''),11)+30))); const {interfaces:_interfaces,...node}=n;return {...node,ports};
@@ -90,7 +92,7 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
   if(hint.backbone){const pair=hint.backbone.map(id=>b.slots.get(endpoint(id))??endpoint(id));if(pair[0]===pair[1]){delete projectedHint.backbone;projectionWarnings.set(b.id,[{code:'LAYOUT_BACKBONE_FOLDED',message:`${original.label??original.id} 的主干两端折叠到同一接口，展开后恢复原主干提示。`}]);}else projectedHint.backbone=pair as [string,string];}
   relationHints[b.id]=projectedHint;
  }
- const view:RelationView={...model.view,include:{objects:fakeNodes.map(n=>n.id),relations:connections.map(r=>r.id)},layout:{...model.view.layout,...(model.view.layout?.relationHints?{relationHints}:{}),portOrder:fakeNodes.flatMap(n=>n.ports!.map(p=>p.id))}};
+ const view:RelationView={...model.view,display:{...model.view.display,showInterfaceDetails},include:{objects:fakeNodes.map(n=>n.id),relations:connections.map(r=>r.id)},layout:{...model.view.layout,...(model.view.layout?.relationHints?{relationHints}:{}),portOrder:fakeNodes.flatMap(n=>n.ports!.map(p=>p.id))}};
  const index=new Map<string,RecordEntry>();const add=(id:string,entity:RecordEntry['entity'],type:RecordEntry['type'],ownerId?:string)=>index.set(id,{id,entity,type,ownerId,location:{file:'<display>',path:''}});
  fakeNodes.forEach(n=>{add(n.id,n,'node');n.ports!.forEach(p=>add(p.id,p,'port',n.id));});connections.forEach(r=>add(r.id,r,'connection'));add(view.id,view,'view');
  // 时钟域名称不由显示投影推断，沿用构建时收集的标签。
@@ -99,5 +101,5 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
  const result=await layoutScene(graph,view.id,hints);
  for(const n of result.nodes)for(const p of n.ports)Object.assign(p,portMeta.get(p.id));
  for(const net of result.nets){const b=projected.find(b=>b.id===net.id)!;if(projectionWarnings.has(net.id))net.layoutWarnings=[...net.layoutWarnings??[],...projectionWarnings.get(net.id)!];Object.assign(net,{bundle:b.bundle,sourceRelations:b.relations,originalEndpoints:Object.fromEntries(b.relations.map(r=>[r.id,r.endpoints])),interfaceIds:interfaces.filter(i=>b.relations.some(r=>r.endpoints.some(p=>i.members.includes(p)))).map(i=>i.id)});}
- result.interfaceModel=model;result.interfaceState={modes,classes:state.classes};result.interfaces=interfaces;result.internalRelations=internal;return decoratePortLeads(result);
+ result.interfaceModel=model;result.interfaceState={modes,classes:state.classes,showInterfaceDetails};result.interfaces=interfaces;result.internalRelations=internal;return decoratePortLeads(result);
 }

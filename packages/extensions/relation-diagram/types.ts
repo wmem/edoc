@@ -29,6 +29,6 @@ export type RelationView = {
   layout?: { direction?: 'LR' | 'RL' | 'TB' | 'BT'; routing?: 'orthogonal' | 'polyline';
     portOrder?: string[]; interfaceOrder?:string[];interfaceSides?:Record<string,'left'|'right'>;positions?: { objectId: string; x: number; y: number }[];
     constraints?:LayoutConstraint[];relationHints?:Record<string,RelationLayoutHint> };
-  display?: { interfaceMode?:'collapsed'|'expanded';interfaceOverrides?:Record<string,'collapsed'|'expanded'>;portAttributes?: string[]; showPortAttributes?: boolean; showRelationLabels?: boolean; collapsedGroups?: string[]; classes?: string[] };
+  display?: { interfaceMode?:'collapsed'|'expanded';interfaceOverrides?:Record<string,'collapsed'|'expanded'>;showInterfaceDetails?:boolean;portAttributes?: string[]; showPortAttributes?: boolean; showRelationLabels?: boolean; collapsedGroups?: string[]; classes?: string[] };
   source?: Source;
 };

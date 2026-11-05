@@ -48,7 +48,7 @@ test('视图 include 中的 ID 不得重复', () => {
   assert.ok(validateSchema('view', { views: [{ id: 'v', kind: 'wiring', include: { objects: ['a', 'a'], relations: [] } }] }).length > 0);
 });
 test('视图文字显示开关只接受布尔值，与属性字段选择相互独立',()=>{
- const view={id:'v',kind:'wiring',include:{objects:[],relations:[]},display:{portAttributes:['ball'],showPortAttributes:false,showRelationLabels:true}};
+ const view={id:'v',kind:'wiring',include:{objects:[],relations:[]},display:{portAttributes:['ball'],showPortAttributes:false,showRelationLabels:true,showInterfaceDetails:false}};
  assert.deepEqual(validateSchema('view',{views:[view]}),[]);
- for(const key of ['showPortAttributes','showRelationLabels'])assert.ok(validateSchema('view',{views:[{...view,display:{[key]:'false'}}]}).some(e=>e.path===`/views/0/display/${key}`));
+ for(const key of ['showPortAttributes','showRelationLabels','showInterfaceDetails'])assert.ok(validateSchema('view',{views:[{...view,display:{[key]:'false'}}]}).some(e=>e.path===`/views/0/display/${key}`));
 });
