@@ -71,3 +71,28 @@ test('PDF 返回时恢复第三张延迟初始化图的独立接口状态',{time
  await page.getByText('打开源图',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');await page.goBack();await page.waitForFunction(()=>window.EdocReady);
  const states=await page.evaluate(()=>window.EdocInterfaceViews.map(v=>({figure:[...document.querySelectorAll('[data-diagram]')].indexOf(v.holder),mode:v.state.modes.bus})));assert.equal(states.find(v=>v.figure===2)?.mode,'expanded');assert.equal(states.find(v=>v.figure===0)?.mode,'collapsed');
 });
+
+test('390px页头完整来源路径自动折行，正文与桌面阅读不被撑宽',{timeout:60000},async t=>{
+ const p=readerFixture(t),source='docs/components/acquisition/behaviors/sampling_publication_exception_guarantees.mdoc';
+ p.write('docs/edoc.config.js',"export default {projectId:'wrap',title:'来源路径回归',documents:'docs/index.mdoc'};");
+ p.write('docs/index.mdoc','# 阅读入口\n\n[采样、发布与异常保证](components/acquisition/behaviors/sampling_publication_exception_guarantees.mdoc)');
+ p.write(source,'{% section id="sampling" title="采样、发布与异常保证" %}\n{% specification id="sampling:guarantee" title="保证" %}\n采样与发布保持完整约束，异常情况明确报告。\n{% /specification %}\n\n[返回入口](../../../index.mdoc)\n{% /section %}');
+ const config=await resolveProjectConfig(join(p.root,'docs/edoc.config.js')),book=await loadBook(config);
+ const file=join(p.root,'wrap.html');writeFileSync(file,await bookHTML(book));
+ const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());
+ const context=await browser.newContext({offline:true,viewport:{width:390,height:844}}),page=await context.newPage(),errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ const ready=()=>page.waitForFunction(()=>window.EdocReady);
+ await page.goto(pathToFileURL(file).href);await ready();await page.locator('#reader').getByRole('link',{name:'采样、发布与异常保证',exact:true}).click();await ready();
+ const dimensions=()=>page.evaluate(()=>{
+  const metadata=document.querySelector<HTMLElement>('#reader header.cover p')!,spec=document.querySelector<HTMLElement>('#reader .specification')!;
+  const range=document.createRange();range.selectNodeContents(metadata);const lines=[...range.getClientRects()];
+  return {page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth,text:metadata.textContent,lines:lines.length,
+   sourceRight:Math.max(...lines.map(rect=>rect.right)),paragraphRight:metadata.getBoundingClientRect().right,
+   specOverflow:spec.scrollWidth>spec.clientWidth,overflowX:getComputedStyle(document.documentElement).overflowX};
+ });
+ const narrow=await dimensions();assert.equal(narrow.text,'来源路径回归 · '+source);assert.equal(narrow.specOverflow,false);
+ assert.ok(narrow.page<=390,JSON.stringify(narrow));assert.ok(narrow.lines>1);assert.ok(narrow.sourceRight<=narrow.paragraphRight+1,JSON.stringify(narrow));assert.notEqual(narrow.overflowX,'hidden');
+ await page.setViewportSize({width:1440,height:1000});const wide=await dimensions();assert.equal(wide.text,narrow.text);assert.equal(wide.lines,1,JSON.stringify(wide));assert.ok(wide.page<=wide.viewport);
+ await page.locator('#reader').getByRole('link',{name:'返回入口',exact:true}).click();await ready();assert.equal(await page.locator('#reader header.cover h1').textContent(),'阅读入口');
+ await page.goBack();await ready();await page.setViewportSize({width:390,height:844});assert.equal((await dimensions()).text,narrow.text);assert.ok((await dimensions()).page<=390);assert.deepEqual(errors,[]);
+});

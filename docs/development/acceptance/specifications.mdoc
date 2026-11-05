@@ -10,4 +10,13 @@
 
 这些是工具语义与虚构样例验收，不表示任何 FPGA 合同已经迁移或逐条审阅。接入真实组件时，还需由该工程提供有效规范及一个行为，核对完整前提、例外、强度和可观察现象；不能把本页示例替代为真实合同。
 
+{% section id="accept:specifications:source-wrap" title="补验：窄屏页头来源路径" %}
+
+2026-11-05，Agent反馈390px下长来源路径撑宽页头，Spec正文没有溢出。初轮窄屏验收未覆盖此类长页头文本；原因是article已有长文本折行，独立的header.cover p未覆盖。
+
+补充tests/reader-browser.test.ts中的长文件路径夹具：修复前390px视口整页宽689px，Spec自身无溢出；页头采用同一overflow-wrap:anywhere规则后整页恢复390px，来源文本完整、所有文本行落在容器内。1440px时该路径保持单行，页面跳转与返回正常。修复不截断路径，也不通过隐藏整页横向溢出掩盖问题。
+
+本次使用独立夹具验证同类缺陷，未直接加载反馈工程。使用playwright-cli及已有Chromium复核窄屏与常规宽度；已生成HTML须重新构建才能应用样式。
+
+{% /section %}
 {% /section %}
