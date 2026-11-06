@@ -65,6 +65,12 @@
                     },
                     "objectId": {
                       "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "common.schema.json#/$defs/linkTarget"
+                      }
                     }
                   },
                   "required": [
@@ -81,6 +87,12 @@
                     },
                     "values": {
                       "type": "object"
+                    },
+                    "links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "common.schema.json#/$defs/linkTarget"
+                      }
                     }
                   },
                   "required": [

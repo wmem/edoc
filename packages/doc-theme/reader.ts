@@ -1,3 +1,8 @@
+import {registerControls} from './register-client.ts';
+import {registerDiagramHTML,registerFieldTable,registerFieldDetails,registerSourceHTML} from '../extensions/register/render.ts';
+import type {Register} from '../extensions/register/types.ts';
+import {tableHTML} from '../extensions/data-table/render.ts';
+import {esc as escapeHTML} from '../core/html.ts';
 import {tableControls} from './table-controls.ts';
 import type {TableControls,TableSnapshot} from './table-controls.ts';
 import {sidebarLayout} from './sidebar-layout.ts';
@@ -33,7 +38,8 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  toc.before(tocActions);
  const queryGraphs=new Map<string,Graph>();
  function evidence(projectId:string,id:string){const source=data.projects[projectId].entities[id]?.source?.attachment;if(!source)return '';return `<a class="source-attachment" href="${esc(routeHash({kind:'pdf',project:source.project??projectId,id:source.id,...(source.target?{target:source.target}:{})}))}">查看原始 PDF${source.target?' · '+esc(source.target):''}</a>`;}
- function facts(projectId:string,id:string){let graph=queryGraphs.get(projectId);if(!graph){const project=data.projects[projectId],index=new Map<string,RecordEntry>(Object.entries(project.entities).map(([key,entity])=>[key,{id:key,entity,...project.records[key]} as RecordEntry])),connections=new Map(Object.entries(project.relations)),interfaceByPort=new Map<string,string>(),adjacency=new Map<string,Set<string>>();for(const entry of index.values())if(entry.type==='interface')for(const port of (entry.entity as any).members)interfaceByPort.set(port,entry.id);for(const relation of connections.values())for(const endpoint of relation.endpoints)for(const key of [endpoint,index.get(endpoint)?.ownerId,interfaceByPort.get(endpoint)])if(key){if(!adjacency.has(key))adjacency.set(key,new Set());adjacency.get(key)!.add(relation.id);}graph={manifest:{projectId,irVersion:project.irVersion,resources:[],entryDocuments:[]},projectRoot:'',irDirectory:'',index,connections,interfaceByPort,adjacency};queryGraphs.set(projectId,graph);}return query(graph,id);}
+ function graphFor(projectId:string){let graph=queryGraphs.get(projectId);if(!graph){const project=data.projects[projectId],index=new Map<string,RecordEntry>(Object.entries(project.entities).map(([key,entity])=>[key,{id:key,entity,...project.records[key]} as RecordEntry])),connections=new Map(Object.entries(project.relations)),interfaceByPort=new Map<string,string>(),adjacency=new Map<string,Set<string>>();for(const entry of index.values())if(entry.type==='interface')for(const port of (entry.entity as any).members)interfaceByPort.set(port,entry.id);for(const relation of connections.values())for(const endpoint of relation.endpoints)for(const key of [endpoint,index.get(endpoint)?.ownerId,interfaceByPort.get(endpoint)])if(key){if(!adjacency.has(key))adjacency.set(key,new Set());adjacency.get(key)!.add(relation.id);}graph={manifest:{projectId,irVersion:project.irVersion,resources:[],entryDocuments:[]},projectRoot:'',irDirectory:'',index,connections,interfaceByPort,adjacency};queryGraphs.set(projectId,graph);}return graph;}
+ const facts=(projectId:string,id:string)=>query(graphFor(projectId),id);
  document.addEventListener('edoc-selection',event=>{const id=(event as CustomEvent).detail?.id;if(current&&id&&Object.hasOwn(data.projects[current.project].entities,id)){document.querySelector('#properties')!.textContent=JSON.stringify(facts(current.project,id),null,2);document.querySelector('#selection-actions')!.insertAdjacentHTML('beforeend',evidence(current.project,id));}});
 
  function showMissing(route:Route){notice.replaceChildren(document.createTextNode(`当前生成的页面中没有此内容（${route.project} / ${route.id}${route.target?' / '+route.target:''}）`));const close=document.createElement('button');close.textContent='关闭';close.onclick=()=>notice.hidden=true;notice.append(close);notice.hidden=false;}
@@ -59,6 +65,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
    document.querySelector('#edoc-data')!.textContent=JSON.stringify({scenes:page.scenes,entities:project.entities});
    const outline=(nodes:typeof page.outline):Navigation[]=>nodes.map(n=>({label:n.label,project:route.project,page:route.id,anchor:n.id,number:n.number,children:outline(n.children)}));pageToc.innerHTML='<h4>本页目录</h4>'+navigation(outline(page.outline));
    if(state){pageToc.querySelectorAll<HTMLDetailsElement>('details').forEach((d,i)=>{if(state.outlineDetails?.[i]!==undefined)d.open=state.outlineDetails[i];});if(state.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});}
+   const stopRegisters=registerControls(reader,graphFor(route.project));
    tables=tableControls(reader,{state:state?.tables,onChange:save});
    headingNumbers=state?.headingNumbers??headingNumbers;
    const stopGraphs=start(interfaces,{managed:true,initialize:state?.graphs?.map(g=>g.figure)}),stopControls=readingControls(reader,{numbers:headingNumbers,onChange:()=>{headingNumbers=!document.body.classList.contains('heading-numbers-hidden');save();}});
@@ -74,7 +81,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
     save();
    };
    reader.addEventListener('toggle',restoreDeferred,true);
-   dispose=()=>{reader.removeEventListener('toggle',restoreDeferred,true);stopControls();stopGraphs();tables?.dispose();};
+   dispose=()=>{reader.removeEventListener('toggle',restoreDeferred,true);stopControls();stopGraphs();stopRegisters();tables?.dispose();};
    if(state){
     if(state.interfaces)await Promise.all((window.EdocInterfaceViews??[]).map((v:any)=>{const previous=state.interfaces?.find(saved=>saved.figure===figureIndex(v.holder));return previous?v.restore?.(previous.state):undefined;}));
     if(version!==generation)return;
@@ -87,7 +94,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
   }else if(route.kind==='entity'){
    if(route.id===''){reader.innerHTML='<article><h1>工程对象 · '+esc(project.title)+'</h1><div class="object-index">'+Object.entries(project.entities).map(([id,e])=>`<a href="${esc(routeHash({kind:'entity',project:route.project,id}))}">${esc(e.label??id)} · ${esc(id)}</a>`).join('')+'</div></article>';pageToc.replaceChildren();window.EdocGraphs=[];restoring=false;window.EdocReady=true;save();return;}
    const entity=project.entities[route.id],detail=facts(route.project,route.id),relations=detail.directRelations;
-   reader.innerHTML=`<article><h1>${esc(entity.label??route.id)}</h1><p>${esc(project.title)} · ${esc(route.id)}</p>${evidence(route.project,route.id)}${semanticReferencesHTML(route.project,detail.references,project.entities)}<h2>对象信息</h2><pre>${esc(JSON.stringify(detail.target,null,2))}</pre><h2>完整直接关系（硬件连接）</h2><pre>${esc(JSON.stringify(relations,null,2))}</pre></article>`;pageToc.replaceChildren();window.EdocGraphs=[];window.scrollTo(0,state?.scroll??0);
+   reader.innerHTML=`<article><h1>${esc(entity.label??route.id)}</h1><p>${esc(project.title)} · ${esc(route.id)}</p>${evidence(route.project,route.id)}${detail.target.type==='register'?`<p class="register-description">${escapeHTML((entity as Register).description??'')}</p>${registerSourceHTML(graphFor(route.project),route.id)}${registerDiagramHTML(entity as Register,route.project)}${tableHTML(graphFor(route.project),registerFieldTable(entity as Register,graphFor(route.project)))}`:detail.target.type==='register-field'?registerFieldDetails(graphFor(route.project),route.id):''}${semanticReferencesHTML(route.project,detail.references,project.entities)}${['register','register-field'].includes(detail.target.type)?`<details><summary>原始定义与身份</summary><pre>${esc(JSON.stringify(detail.target,null,2))}</pre></details>`:`<h2>对象信息</h2><pre>${esc(JSON.stringify(detail.target,null,2))}</pre><h2>完整直接关系（硬件连接）</h2><pre>${esc(JSON.stringify(relations,null,2))}</pre>`}</article>`;pageToc.replaceChildren();window.EdocGraphs=[];tables=tableControls(reader,{state:state?.tables,onChange:save});const stopRegisters=registerControls(reader,graphFor(route.project));dispose=()=>{tables?.dispose();stopRegisters();};window.scrollTo(0,state?.scroll??0);
   }else{
    const attachment=project.attachments[route.id];reader.innerHTML=`<h1>${esc(attachment.title)}</h1><div id="pdf-reader"></div>`;pageToc.replaceChildren();window.EdocGraphs=[];
    if(pdfReader)dispose=pdfReader(reader.querySelector('#pdf-reader')!,attachment,route.target?attachment.targets[route.target]:undefined,data,state?.pdf,position=>{currentPdf=position;if(!restoring)save();});window.scrollTo(0,0);

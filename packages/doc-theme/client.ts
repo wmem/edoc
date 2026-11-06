@@ -1,3 +1,4 @@
+import {registerControls} from './register-client.ts';
 import {tableControls} from './table-controls.ts';
 import {sidebarLayout} from './sidebar-layout.ts';
 import {readingControls} from './reading-controls.ts';
@@ -17,6 +18,7 @@ const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.
 const tables=options.managed?undefined:tableControls(document.querySelector<HTMLElement>('main')!);
 if(!options.managed)cleanups.push(sidebarLayout(),readingControls(document.querySelector<HTMLElement>('main')!),()=>tables?.dispose());
 const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
+if(!options.managed)cleanups.push(registerControls(document.querySelector<HTMLElement>('main')!,{manifest:{projectId:data.projectId??document.title},index:new Map(Object.entries(data.entities).map(([id,entity])=>[id,{id,entity}]))} as any));
 window.EdocGraphs=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;
 function select(id:string,detail?:unknown,origin?:HTMLElement){

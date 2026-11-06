@@ -101,13 +101,14 @@ target 保留原 entity、type、location、anchor 与可选 ownerId；source �
 
 ```sh
 edoc export --view gallery:wiring-intent --format svg --output output/wiring.svg
+edoc export --id manual:ctrl --format svg --output output/ctrl.svg
 edoc guide
 edoc guide --full
 edoc --help
 edoc --version
 ```
 
-export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，默认读取源文中的[简略组织指南](../engineering/agent-guide.mdoc)，--full 读取[完整推荐指南](../engineering/guide.mdoc)。--format json 返回 content、source、variant（short/full）及 guideVersion。工具操作入门使用 docs，不要求先通读组织指南。
+export 的 --view 导出关系图，--id 导出寄存器位域图（每带 16 位），两者必须二选一。export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，默认读取源文中的[简略组织指南](../engineering/agent-guide.mdoc)，--full 读取[完整推荐指南](../engineering/guide.mdoc)。--format json 返回 content、source、variant（short/full）及 guideVersion。工具操作入门使用 docs，不要求先通读组织指南。
 
 --version 显示工具版本、IR 版本、来源提交与构建时间。docs --format json 的 build 提供 version、revision、dirty、builtAt；dirty=true 表示构建时包含未提交修改，不能仅凭提交号判定内容相同。安装版只读随包元数据，不把当前用户工程的 Git 提交当作工具来源；无 Git 信息的源码归档明确返回 revision/dirty=null，命令显示 source unknown。
 

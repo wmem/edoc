@@ -40,6 +40,7 @@ function checkAnchors(node:ProjectNode,errors:Diagnostic[],deferred:Diagnostic[]
   walk(document.ast,element=>{
    const {type,tag,attributes:a={}}=element;
    if(type==='tag'&&['section','specification'].includes(tag)){sections.add(a.id);return;}
+   if(type==='tag'&&tag==='register-field-table'){const register=graph.index.get(a.id)?.entity;if(register&&'fields' in register)for(const field of register.fields)page.ids.add(anchor(field.id));return;}
    if(type==='tag'&&tag==='data-table'){
     const table=graph.index.get(a.id)?.entity;if(table&&'rows' in table)for(const row of table.rows??[])page.ids.add(anchor(row.id));return;
    }
@@ -58,6 +59,7 @@ function checkAnchors(node:ProjectNode,errors:Diagnostic[],deferred:Diagnostic[]
   if(!fragment||anchorCandidates(fragment).some(id=>page.ids.has(id)))return;
   if(page.opaque)deferred.push({...diagnostic,code:'DOCUMENT_ANCHOR_DEFERRED',message:`目标页含自定义转换，锚点留待 build 校验：${fragment}（${pageId}）`});else errors.push(diagnostic);
  };
+ for(const entry of node.graph.index.values())if(entry.type==='row'&&'links' in entry.entity)for(const target of Object.values(entry.entity.links??{}))if(target.kind==='page'&&(!target.project||target.project===project))check(target.id,target.anchor??'',entry.location.file,0);
  for(const document of node.documents.documents)walk(document.ast,element=>{
   const a=element.attributes??{},location=document.locations.get(element)??{file:document.file,line:1};
   const file=a.__edocSourceFile??location.file;

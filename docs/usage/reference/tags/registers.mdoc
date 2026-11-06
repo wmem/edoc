@@ -1,0 +1,36 @@
+{% section id="ref:registers" title="寄存器与字段契约" %}
+
+IR 1.4 增加 registers 和必需能力 registers；Table 的行链接能力为 table-cell-links。配置自动处理版本与能力。寄存器、嵌套字段和其他实体共用工程内唯一 ID 空间，具有独立 register/register-field 类型。
+
+{% section id="ref:tag-register-diagram" title="register-diagram：位域图" %}
+
+自闭合标签，id 必需，只接受本工程 Register，不接受关系图 View 或普通 Node。按位编号和实际位范围绘图；窄字段用编号加完整图例。响应式每带 32/16/8 位，导出当前可见位带宽度的独立 SVG，包含字体、来源与精确原始定义。相同字段跨带仍是同一实体，图不创建新字段。
+
+{% /section %}
+{% section id="ref:tag-register-field-table" title="register-field-table：字段表" %}
+
+自闭合标签，id 必需，只接受 Register。显示字段、位范围、访问、定义复位、说明与声明来源；按高位到低位排序，字段名可跳详情，来源可沿 PDF 附件定位。复用 data-table 的筛选/排序操作，当前不开放 sortable/filterable 标签属性。每处展示有独立状态；同页重复呈现会隔离显示锚点。
+
+表从 Register 投影，不登记第二份 Table/Row 事实；query 寄存器取得同一字段与空洞分段。自动补齐的空洞没有字段实体与来源，不冒充原文定义。
+
+{% /section %}
+{% section id="ref:register-shape" title="Register 与 RegisterField" %}
+
+Register 必需 id、kind="register"、label、width、fields；width 为 1–64 的整数。可选 gapPolicy="unspecified"（默认）或 "reserved"、description、source。fields 可以为空，整个位宽按 gapPolicy 展示；不能因为没写字段就认定为保留位。
+
+字段必需 id、label、msb、lsb，范围 0 ≤ lsb ≤ msb < width；可选 kind="register-field"、access、reset、description、source。access 按原文字符串展示，不根据 RO/RW 推断合法写入或复位行为。相邻字段不能重叠；名称可以重复，ID 不行。source 沿现有来源契约，字段未声明时继承所属寄存器来源，查询和详情明确标明来源归属，不伪造字段定位。
+
+reset 缺省是未声明；声明时严格选择以下一种，不接受 JSON 数字：
+
+| 写法 | 含义 |
+| --- | --- |
+| {value:"0x0"} | 定义复位常量，支持无符号十进制、0x 十六进制或 0b 二进制字符串；按字段位宽校验，不截断 |
+| {expression:"DEFAULT_MODE"} | 原样保留非空表达式，不求值 |
+| {unknown:true} | 明确声明复位未知 |
+
+64 位常量用字符串保留精度。当前没有绑定值、实测值或部分有效掩码模型，不把它们写进 reset。gapPolicy 只决定空洞名称，不给空洞补访问属性、复位或来源。
+
+同一数据用于图、字段表及 query。query 寄存器的 register 属性返回排序字段与 segments（field/reserved/unspecified），query 字段的 registerField 返回 width、resetState、resetText 和可选来源归属；原始 target.entity 保留精确声明。详细 Schema 在 packages/extensions/register/register.schema.json；[教程与实际演示](../../rendering/registers.mdoc)提供完整例子。
+
+{% /section %}
+{% /section %}

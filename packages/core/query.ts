@@ -1,3 +1,6 @@
+import {registerProjection,resetText,resetState} from '../extensions/register/model.ts';
+import {entitySource,resolveLinkTarget} from './link-target.ts';
+import type {Register,RegisterField,Row} from './types.ts';
 import {anchor} from './identity.ts';
 import type { Graph, RecordEntry } from './types.ts';
 import {dataLinkResolvers} from './extension-links.ts';
@@ -41,6 +44,9 @@ export function query(graph: Graph, id: string, options: { depth?: number; maxIt
   return {
     irVersion: graph.manifest.irVersion, projectId: graph.manifest.projectId,
     target: {...item(target),anchor:anchor(id)}, directRelations,
+    ...(target.type==='row'&&(target.entity as Row).links?{cellLinks:Object.fromEntries(Object.entries((target.entity as Row).links!).map(([field,link])=>[field,resolveLinkTarget(graph,link)]))}:{}),
+    ...(target.type==='register'?{register:registerProjection(target.entity as Register)}:{}),
+    ...(target.type==='register-field'?{registerField:{width:(target.entity as RegisterField).msb-(target.entity as RegisterField).lsb+1,resetState:resetState((target.entity as RegisterField).reset),resetText:resetText((target.entity as RegisterField).reset),...entitySource(graph,id)}}:{}),
     references:[...graph.index.values()].filter(e=>e.type==='reference'&&((e.entity as any).fromId===id||(e.entity as any).targetId===id)).map(item),
     expansion: { depth, maxItems, truncated, items: expanded },
   };

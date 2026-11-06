@@ -24,6 +24,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
    const path=`${part.prefix??''}/${part.type}/${i}`;
    add(entity,part.type==='views'?'view':entity.kind,part.file,path);
    if(entity.kind==='table')entity.rows.forEach((row:Entity,p:number)=>add(row,'row',part.file,`${path}/rows/${p}`,entity.id));
+   if(entity.kind==='register')entity.fields.forEach((field:Entity,p:number)=>add(field,'register-field',part.file,`${path}/fields/${p}`,entity.id));
    if(entity.kind==='node'){
     entity.ports?.forEach((port:Entity,p:number)=>add(port,'port',part.file,`${path}/ports/${p}`,entity.id));
     entity.interfaces?.forEach((item:Entity,p:number)=>add(item,'interface',part.file,`${path}/interfaces/${p}`,entity.id));

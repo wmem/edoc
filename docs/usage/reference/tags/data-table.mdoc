@@ -12,6 +12,8 @@ id 必需，只接受当前工程的 Table。筛选与排序只增强此标签�
 
 排序支持单列升序、降序、原始顺序，同值稳定、缺失值始终在后；json 不参与大小排序。筛选支持文本/JSON包含、数字闭区间、布尔选择及是否提供字段，多列条件为且。新定位被筛掉的行时清空本实例筛选并提示，保留排序；同表各实例独立，阅读器历史恢复条件。大表在表内滚动并固定表头；无分页、虚拟滚动、多列排序。实际操作与条件细节见[表格阅读](../../rendering/table-reading.mdoc)。
 
+行还可附 links，按列 field 将显示值与 entity/page/pdf/source 跳转目标分开维护；不从字符串解析 Markdown。目标参与校验，query 返回同一目标，详见[单元格链接](../ir.mdoc#ref:cell-links)和[可操作示例](../../rendering/registers.mdoc#use:registers:links)。
+
 表与行均可 query，引用 objectId 时仍保留原事实身份。行 ID 可以定位或链接，具体做法见[表格教程](../../rendering/tables.mdoc)。此标签不绘制柱状图、折线图或占比图；未来统计图表另定义输入契约，不复用关系图的 Node/Port。
 
 {% /section %}

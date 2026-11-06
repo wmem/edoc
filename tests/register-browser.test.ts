@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {writeFileSync,readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {spawnSync} from 'node:child_process';
+import {chromium} from 'playwright';
+import {registerFixture} from './register-fixture.ts';
+import {bookHTML} from '../packages/pack-html/book.ts';
+import {query} from '../packages/core/query.ts';
+import {anchor} from '../packages/core/identity.ts';
+import {repository} from './helpers.ts';
+const executablePath=process.env.EDOC_CHROMIUM;
+test('寄存器离线阅读、单元格导航返回、PDF来源、精确值、窄屏位号与SVG导出',{timeout:120000},async t=>{
+ const p=registerFixture(t),book=await p.load(),file=join(p.root,'manual.html');writeFileSync(file,await bookHTML(book));
+ const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000},acceptDownloads:true}),page=await context.newPage(),errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
+ const ready=()=>page.waitForFunction(()=>window.EdocReady);await page.goto(pathToFileURL(file).href);await ready();
+ const table=()=>page.locator('.data-table').first();assert.equal(await table().getByRole('link',{name:'**CTRL**',exact:true}).count(),1);
+ await table().getByRole('link',{name:'UART0',exact:true}).click();await ready();assert.match(await page.locator('h1').innerText(),/寄存器手册/);await page.goBack();await ready();
+ await table().locator('th').first().locator('.table-sort').click();await table().locator('th').first().locator('.table-sort').click();await table().getByRole('button',{name:/^筛选 寄存器/}).click();await table().getByLabel('包含文字',{exact:true}).fill('**CTRL**');await table().getByRole('button',{name:'应用筛选',exact:true}).click();
+ await table().getByRole('link',{name:'**CTRL**',exact:true}).click();await ready();assert.equal(await page.locator('h1').innerText(),'CTRL');assert.equal(await page.locator('[data-register="reg:CTRL"]').count(),1);
+ await page.locator('[data-register-field="reg:CTRL.MODE"]:visible').first().click();await ready();assert.match(await page.locator('.register-field-detail').innerText(),/DEFAULT_MODE/);assert.match(await page.locator('.register-field-detail').innerText(),/寄存器来源/);
+ await page.getByRole('link',{name:'查看原始 PDF',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pdf-reader')?.getAttribute('data-pdf-ready')==='true');assert.match(page.url(),/detail/);await page.goBack();await ready();assert.equal(await page.locator('[data-reset-state=expression]').count(),1);await page.goBack();await ready();await page.goBack();await ready();
+ assert.equal(await table().locator('tbody tr:not([hidden])').count(),1);assert.equal(await table().locator('th').first().getAttribute('aria-sort'),'descending');await table().getByRole('button',{name:'清空筛选',exact:true}).click();
+ await table().getByRole('link',{name:'字段定义',exact:true}).click();await ready();assert.ok(await page.locator('[id="'+anchor('reg:CTRL.MODE')+'"]').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=-1&&r.bottom<=innerHeight+1;}));await page.goBack();await ready();
+ await table().getByRole('link',{name:'外部工程',exact:true}).click();assert.match(await page.locator('#notice').innerText(),/当前生成的页面中没有此内容/);await page.locator('#notice button').click();
+ const links=query(book.root.graph,'instance:UART0').cellLinks!;assert.equal(links.name.route.id,'reg:CTRL');assert.equal(links.origin.route.target,'detail');
+ for(const width of [1920,1440,390]){await page.setViewportSize({width,height:1000});const diagram=page.locator('[data-register="reg:STAT"]');await diagram.scrollIntoViewIfNeeded();const bits=Number(await diagram.locator('[data-register-bits]:visible').getAttribute('data-register-bits'));assert.equal(bits,width===390?8:width===1920?32:16);
+  const info=await diagram.locator('svg:visible').evaluate(svg=>{const size=svg.getBoundingClientRect(),labels=[...svg.querySelectorAll('text')].map(e=>({text:e.textContent,box:e.getBoundingClientRect()}));return {bits:labels.filter(l=>/^\d+$/.test(l.text??'')).map(l=>Number(l.text)),clipped:labels.filter(l=>l.box.left<size.left-.5||l.box.right>size.right+.5).map(l=>l.text)};});assert.equal(new Set(info.bits).size,64);assert.deepEqual(info.clipped,[]);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.ok(await diagram.locator('.register-legend').getByRole('link',{name:/完整字段定义/}).isVisible());
+ }
+ const downloadPromise=page.waitForEvent('download');await page.locator('[data-register="reg:STAT"] [data-register-export]').click();const download=await downloadPromise,path=await download.path();const svg=readFileSync(path!,'utf8');assert.match(svg,/width="272"/);assert.match(svg,/@font-face/);assert.match(svg,/data:font/);assert.match(svg,/reg:STAT/);
+ await page.locator('[data-register="reg:FULL"] [data-register-field="reg:FULL.DATA"]:visible').first().click();await ready();assert.equal(await page.locator('[data-reset-state=value]').innerText(),'0xFEDCBA9876543210');
+ assert.deepEqual(errors,[]);assert.deepEqual(requests,[]);
+});
+test('CLI按寄存器ID导出含字体的SVG',{timeout:60000},async t=>{const p=registerFixture(t),output=join(p.root,'ctrl.svg'),r=spawnSync(process.execPath,['packages/cli/edoc.ts','export','--config',join(p.root,'docs/edoc.config.js'),'--id','reg:CTRL','--format','svg','--output',output],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(r.status,0,r.stderr);const svg=readFileSync(output,'utf8');assert.match(svg,/@font-face/);assert.match(svg,/reg:CTRL/);assert.match(svg,/width="528"/);});

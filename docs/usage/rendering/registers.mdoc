@@ -1,0 +1,68 @@
+{% section id="use:registers" title="寄存器手册：位域图与字段表" %}
+
+需要介绍寄存器定义时，用 register-diagram 看位分布，用 register-field-table 查访问属性、定义复位和说明。两者读取同一个寄存器 ID，不需要自己维护绘图数据，也不把字段伪装成端口。
+
+{% section id="use:registers:links" title="先从实例进入定义" %}
+
+下面是真实可操作的结构化表格。点击“采样器”进入本文模板章节，点击寄存器或字段进入对象详情；“本文中的字段表”定位到表内一行。浏览器返回可回到原位置。筛选、排序后链接仍保留。
+
+{% data-table id="manual:register-instances" /%}
+
+显示文字在 values 中，跳转在 links 中分别声明。**不会把字符串重新解释成 Markdown**。单元格链接也适用于普通 Table，不限于寄存器；objectId 投影行同样可以加 links。
+
+```json
+{"id":"instance:0","values":{"name":"CTRL"},"links":{"name":{"kind":"entity","id":"manual:ctrl"}}}
+```
+
+links 的键是 columns.field。entity 跳到章节或对象，page 定位文章与行，pdf 定位附件，source 跟随目标的声明来源。精确字段、同工程校验和跨工程弱跳转见[单元格目标契约](../reference/ir.mdoc#ref:cell-links)。
+
+{% /section %}
+
+{% section id="use:registers:template" title="32 位控制寄存器模板" %}
+
+此例是虚构定义。高位在左，位编号保持可读尺寸；窄字段用 F 编号并在图例显示完整名称。点击图中字段或表中字段名可查看详情。SVG 按钮导出当前宽度的矢量图，包含字体和原始定义。
+
+{% register-diagram id="manual:ctrl" /%}
+{% register-field-table id="manual:ctrl" /%}
+
+COUNT 没有 reset，表示“未声明”；EVENT 用 unknown 显式声明未知；MODE 保留表达式；ENABLE 声明常量 0x0。这四种状态不会互相填补。空洞因本例明确声明 gapPolicy="reserved" 才标为保留位，不补访问或复位属性。
+
+{% /section %}
+
+{% section id="use:registers:wide" title="64 位与窄屏" %}
+
+工具按容器宽度自动切为每带 32、16 或 8 位，不把整幅图缩小到文字无法阅读。↔ 表示同一字段跨带，各片段指向同一身份。下面省略 gapPolicy，因此空洞是“未声明位”。
+
+{% register-diagram id="manual:status64" /%}
+{% register-field-table id="manual:status64" /%}
+
+全宽 64 位字段也保留原始精确字面值，不经过 JavaScript Number：{% reference id="manual:full64.data" label="查看 DATA 的 0xFEDCBA9876543210 定义" /%}。
+
+{% register-diagram id="manual:full64" /%}
+
+{% /section %}
+
+{% section id="use:registers:create" title="如何创建" %}
+
+最小步骤：在 docs/edoc.config.js 的 data.registers 内写定义，在 docs/index.mdoc 用两个标签引用同一 ID，然后执行 edoc。已有配置时把数据合入 data，也可以放到默认扫描的 docs/ir/*.json。表格单元格链接单独定义在 data.tables 中。
+
+```javascript
+export default {data:{registers:[{
+  id:'ctrl',kind:'register',label:'CTRL',width:32,
+  fields:[{id:'ctrl.en',label:'EN',msb:0,lsb:0,access:'RW',reset:{value:'0x0'},description:'使能采样'}]
+}]}};
+```
+
+```text {% process=false %}
+{% register-diagram id="ctrl" /%}
+{% register-field-table id="ctrl" /%}
+```
+
+字段必须有唯一 ID、名称和 msb/lsb，不能重叠或越界。access、reset、description、source 按实际定义填写，未提供不推断。寄存器完整契约见[位域数据参考](../reference/tags/registers.mdoc)。上面的最小配置可独立构建；下方完整演示配置还引用本手册的模板章节、文章路径和 location PDF，复制到其他工程时须一并替换这些目标。
+
+{% code file="docs/support/recipes/registers.config.js" language="javascript" /%}
+
+Agent 用 query --id ctrl 查看字段与空洞投影；query --id ctrl.en 读精确字段及继承来源；query --id 表格行ID 返回 cellLinks 的原目标与解析后的路由。CLI 导出示例：edoc export --id ctrl --format svg --output output/ctrl.svg（默认每带 16 位）。这不是 RTL 提取器，也不推断硬件绑定值、观测值、地址步长或复位表达式的计算结果。
+
+{% /section %}
+{% /section %}

@@ -24,7 +24,7 @@ export type DataSource=string|string[]|Dataset;
 export type ProjectConfig={markdoc?:MarkdocOptions;title?:string;projectId?:string;documents?:string|string[];data?:DataSource|((context:DataContext)=>DataSource|Promise<DataSource>);views?:RelationView[];tables?:Table[];waveforms?:Waveform[];references?:Reference[];output?:{html?:string|false};children?:Record<string,string>;attachments?:Record<string,AttachmentInput>};
 export type ResolvedConfig={markdoc:MarkdocOptions;file:string;root:string;title:string;projectId:string;documents:string[];data:ProjectConfig['data'];views:RelationView[];tables:Table[];waveforms:Waveform[];references:Reference[];outputs:{format:'html';file:string}[];configInputs:string[];defaultData:boolean;children:Record<string,string>;attachments:Record<string,AttachmentInput>};
 export type LoadedProject={config:ResolvedConfig;graph:Graph;documents:DocumentPlan;inputs:string[];dataFiles:string[]};
-const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments','specifications'];
+const features=['graph','documents','tables','wavejson','references','interface-groups','layout-intent','pdf-attachments','specifications','registers','table-cell-links'];
 const pointer=(key:string)=>key.replace(/~/g,'~0').replace(/\//g,'~1');
 const plain=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.prototype.toString.call(v)==='[object Object]';
 // 标准 docs 配置属于上一级工程；其他显式配置保留配置目录作为工程根。
@@ -83,6 +83,8 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
   if(raw.projectId!==undefined&&raw.projectId!==config.projectId)failure('PROJECT_ID',file,prefix+'/projectId','数据 projectId 与配置不一致');
   if(raw.requiredFeatures!==undefined){if(!Array.isArray(raw.requiredFeatures)||raw.requiredFeatures.some((f:unknown)=>typeof f!=='string'||!features.includes(f)))failure('IR_FEATURE',file,prefix+'/requiredFeatures','数据要求了未知或不支持的能力');raw.requiredFeatures.forEach((f:string)=>required.add(f));}
   if(raw.attachments!==undefined){if(!record(raw.attachments))failure('DATA_FORMAT',file,prefix+'/attachments','附件定义需要对象');for(const [id,attachment]of Object.entries(raw.attachments)){if(Object.hasOwn(attachmentDefinitions,id))failure('DUPLICATE_ID',file,prefix+'/attachments/'+id,'附件重复定义：'+id);attachmentDefinitions[id]=attachment;}}
+  if(keys.includes('registers'))required.add('registers');
+  if(Array.isArray(raw.tables)&&raw.tables.some((t:any)=>t?.rows?.some((r:any)=>r?.links)))required.add('table-cell-links');
   for(const type of keys){
    let data:any;try{data=JSON.parse(JSON.stringify({[type]:raw[type]},(_key,value)=>{if(['function','symbol','bigint'].includes(typeof value)||typeof value==='number'&&!Number.isFinite(value))throw new Error('数据必须是有限且可序列化的 JSON 值');return value;}));}catch(error){failure('DATA_VALUE',file,prefix+'/'+type,String(error));}
    parts.push({type,data,file,prefix});

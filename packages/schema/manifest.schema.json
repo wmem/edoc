@@ -23,7 +23,8 @@
               "tables",
               "waveforms",
               "references",
-              "specifications"
+              "specifications",
+              "registers"
             ]
           },
           "path": {

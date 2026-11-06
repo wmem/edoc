@@ -1,6 +1,6 @@
 {% section id="use:rendering" title="使用扩展渲染" %}
 
-{% directory-order items=["page-layout.mdoc","reading.mdoc","tables.mdoc","table-reading.mdoc","diagrams/","waveforms.mdoc","references.mdoc","specifications.mdoc"] /%}
+{% directory-order items=["page-layout.mdoc","reading.mdoc","tables.mdoc","table-reading.mdoc","registers.mdoc","diagrams/","waveforms.mdoc","references.mdoc","specifications.mdoc"] /%}
 
 Markdown 负责常规说明；下面的扩展分别解决编排、数据呈现和证据跳转。选一种能回答当前问题的表达，不需要先学习全部数据格式。
 
@@ -11,6 +11,7 @@ Markdown 负责常规说明；下面的扩展分别解决编排、数据呈现�
 | 参数、对象字段或可查询的行 | [数据表格](tables.mdoc) | 表定义及行数据，或已有对象引用 |
 | 从大量记录中筛选、排序和定位 | [筛选与排序数据表](table-reading.mdoc) | 同一批 Table 数据，无需新增 IR 字段 |
 | 模块协作、端口连接与分组展开、状态迁移 | [关系图](diagrams/index.mdoc) | 对象、端口、接口成员、关系和视图 |
+| 寄存器位分布、访问属性和定义复位 | [寄存器手册](registers.mdoc) | 同一份寄存器与字段定义 |
 | 信号电平与总线随时间变化 | [时序图](waveforms.mdoc) | WaveJSON 与规范/仿真来源 |
 | 行为页直接读到完整适用条款，一处维护多处呈现 | [规范聚合](specifications.mdoc) | 源文中的规范定义与行为适用列表 |
 | 从解释跳到对象、文章或原文证据 | [引用与 PDF 原文定位](references.mdoc) | 稳定 ID；PDF 还需要原文件与位置 |

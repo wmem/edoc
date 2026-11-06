@@ -1,6 +1,6 @@
 {% section id="ref:ir" title="数据契约" %}
 
-当前支持 IR 1.3。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Waveform、Specification 分属不同数据模型；[标签职责](tags/index.mdoc)说明各自如何展示。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+当前支持 IR 1.4。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Register、RegisterField、Waveform、Specification 分属不同数据模型；[标签职责](tags/index.mdoc)说明各自如何展示。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
 
 | 外层字段 | 内容 | 本页条目 |
 | --- | --- | --- |
@@ -8,6 +8,7 @@
 | relations | 真实连接 | ref:connections |
 | views | 引用范围和展示 | 图形参考 |
 | tables | 投影或权威表格行 | ref:tables |
+| registers | 寄存器及嵌套字段 | [位域契约](tags/registers.mdoc) |
 | waveforms | WaveJSON 与语义来源 | ref:waveforms |
 | references | 有身份的语义关联 | ref:references |
 | specifications | 富文本规范条款 | [Specification](tags/specification.mdoc#ref:specifications) |
@@ -42,9 +43,9 @@ sources/targets 若声明则各自非空、不重复、互不相交，且均属�
 
 Table 必需 id、kind='table'、label、columns、rows。列必需 field、label、type，type 支持 string/number/boolean/json，可选 unit。field 可用 attributes.ball 这样的点路径。
 
-可选 source 标记表的知识来源。投影字段仍从原对象读取，objectId 可指向 Node、Port、Connection、Document、Group 或 Interface，不指向另一个表、行或视图。
+可选 source 标记表的知识来源。投影字段仍从原对象读取，objectId 可指向 Node、Port、Connection、Document、Group 、Interface、Register 或 RegisterField，不指向另一个表、行或视图。
 
-行二选一：{id, objectId} 从原对象投影，或 {id, values} 表达项目自身的权威表格事实。投影行不能同时复制 values。不存在的字段显示 unknown，存在值须符合列类型。
+行二选一：{id, objectId} 从原对象投影，或 {id, values} 表达项目自身的权威表格事实。投影行不能同时复制 values。两种行都可附 links 保存独立单元格目标。不存在的字段显示 unknown，存在值须符合列类型。
 
 [样例查询](examples.mdoc)中的引脚表与 RTL 表直接投影原对象。完整结构见 packages/extensions/data-table/table.schema.json。
 
@@ -81,6 +82,23 @@ unit 只追加到列标题，如“频率 (Hz)”，不修改数值或提供单�
 同一页重复展示一张表时，首处使用稳定行锚点，后续实例使用独立显示锚点；Spec 中仍按条款局部命名空间定位。排序或筛选不重复注册行实体。
 
 投影行详情保存 objectId；values 行详情保存自身字段。不要用显示序号或当前位置代替稳定 ID。对照实际跳转见[行事实与行位置](../rendering/tables.mdoc#use:table-row-links)。
+
+{% /section %}
+
+{% section id="ref:cell-links" title="单元格链接 LinkTarget" %}
+
+行可声明 links 对象，键为 columns 中存在的 field，值为以下 LinkTarget。显示文字仍来自原 values 或 objectId 投影；不重解析字符串。未声明链接的单元格保持普通文本。
+
+| kind | 必需字段 | 可选字段与目标 |
+| --- | --- | --- |
+| entity | id | project；对象或显式章节 ID |
+| page | id | anchor、project；逻辑文章 ID 是工程相对路径去扩展名，anchor 是该页已呈现的稳定 ID |
+| pdf | id | target、project；附件 ID 及可选命名位置 |
+| source | id | project；实体声明来源，字段可继承所属寄存器来源 |
+
+source 有 attachment 时跳 PDF；否则打开来源所属实体详情，展示完整路径与 selector/line，不假装提供任意原文件阅读器。未声明来源的本工程目标报错。同工程实体、文章、锚点、PDF 与位置参与 validate/build 校验；显式其他 project 的目标沿现有弱跳转，只查当前产物，没有时提示，不加载外部工程。
+
+query 表格行返回 cellLinks：每列含 target 原声明和 route 解析目标，source 还含来源及 sourceOwnerId。它是导航元数据，不自动生成语义 Reference 或硬件 Connection。效果见[实例、寄存器与字段跳转](../rendering/registers.mdoc#use:registers:links)。
 
 {% /section %}
 
@@ -130,7 +148,7 @@ source.file 必需，selector 和 line 可选。file 以工程根定位，select
 
 来源路径必须在工程范围内，符号链接不能绕过边界；source.file 可仅保留未随工程携带的追溯路径，这不表示已核验该文件内容。实际加载的数据、正文、图片、代码示例和 PDF 则必须存在并通过相应检查。
 
-数据可声明 irVersion 和 requiredFeatures。当前已知能力为 graph、documents、tables、wavejson、references、interface-groups、layout-intent、pdf-attachments；未知必需能力明确失败。工具会识别已知结构需要的能力，普通配置无需手填版本清单。
+数据可声明 irVersion 和 requiredFeatures。当前已知能力为 graph、documents、tables、wavejson、references、interface-groups、layout-intent、pdf-attachments、specifications、registers、table-cell-links；未知必需能力明确失败。工具会识别已知结构需要的能力，普通配置无需手填版本清单。
 
 {% /section %}
 {% /section %}

@@ -1,3 +1,6 @@
+import {registerSVG} from '../extensions/register/render.ts';
+import type {Register} from '../extensions/register/types.ts';
+import {fontCSS} from '../render-graph/font.ts';
 import {resolve,dirname,join} from 'node:path';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -6,7 +9,7 @@ import type {ResolvedConfig} from '../core/project.ts';
 import {query,summary} from '../core/query.ts';
 import {readDocument} from '../core/read.ts';
 import {outline} from '../core/outline.ts';
-import {EdocError} from '../core/errors.ts';
+import {EdocError,failure} from '../core/errors.ts';
 import {SUPPORTED_IR_VERSION} from '../core/load.ts';
 import type {Diagnostic} from '../core/types.ts';
 import {scene,svg} from '../render-graph/index.ts';
@@ -29,7 +32,7 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
  edoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
  edoc query [--project PROJECT_ID] --id ID [--depth 0..10] [--max-items 1..10000] [--format json|text]
  edoc read [--project PROJECT_ID] --id ID [--scope self|subtree] [--with-specs] [--offset 0] [--max-chars 12000] [--format json|text]
- edoc export [--project PROJECT_ID] --view ID --format svg --output FILE
+ edoc export [--project PROJECT_ID] (--view ID | --id REGISTER_ID) --format svg --output FILE
  edoc guide [--full] [--format text|json]    文档组织指南，默认简版；--full 完整版
  edoc docs [serve|outline|read|query]        定位 .mdoc 源文或按需查询工具手册
 项目命令均可使用 --config；省略时只查找当前目录下的 docs/edoc.config.js。
@@ -52,7 +55,7 @@ export async function main(argv:string[]):Promise<number>{
   if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
-  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-specs']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view']:[])]);
+  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-specs']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view','--id']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'||key==='--with-specs'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
@@ -64,7 +67,7 @@ export async function main(argv:string[]):Promise<number>{
   if(command==='outline'&&args['--id']!==undefined&&!args['--id'].trim())throw new UsageError('outline 的 --id 必须是非空章节 ID');
   if(args['--project']!==undefined&&!args['--project'].trim())throw new UsageError('--project 必须是非空工程 ID');
   if(command==='read'&&args['--scope']!==undefined&&!['self','subtree'].includes(args['--scope']))throw new UsageError('--scope 只接受 self/subtree');
-  if(command==='export'&&(!args['--view']||!args['--output']||!args['--output'].endsWith('.svg')))throw new UsageError('export 需要 --view、--format svg 和 .svg 的 --output');
+  if(command==='export'&&((!!args['--view']===!!args['--id'])||!args['--output']||!args['--output'].endsWith('.svg')))throw new UsageError('export 需要 --view 或 --id、--format svg 和 .svg 的 --output');
   const number=(key:string,fallback:number,min:number,max:number)=>{const value=args[key];if(value===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(value)||+value<min||+value>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +value;};
   const depth=number('--depth',0,0,10),maxItems=number('--max-items',1000,1,10000);
   const readOffset=number('--offset',0,0,Number.MAX_SAFE_INTEGER),readLimit=number('--max-chars',12000,1,100000);
@@ -97,7 +100,7 @@ export async function main(argv:string[]):Promise<number>{
    const content=command==='build'&&targets.some(t=>t.format==='html')?await bookHTML(book):undefined;
    for(const [i,target]of targets.entries()){
     mkdirSync(dirname(target.file),{recursive:true});const pending=join(temporary,`document-${i}.`+target.format);
-    if(target.format==='svg')writeFileSync(pending,svg(await scene(graph,args['--view'],{interfaces:'expanded'})));
+    if(target.format==='svg'){const id=args['--id']??args['--view'],entry=graph.index.get(id);if(args['--id']&&entry?.type!=='register')failure(entry?'EXPORT_TYPE':'QUERY_NOT_FOUND',config.file,'/id','--id 必须指向寄存器定义：'+id);writeFileSync(pending,args['--id']&&entry?.type==='register'?registerSVG(entry.entity as Register,{project:graph.manifest.projectId,fontCSS:fontCSS()}):svg(await scene(graph,id,{interfaces:'expanded'})));}
     else if(target.format==='html')writeFileSync(pending,content!);
     generated.push({pending,target});
    }

@@ -13,6 +13,7 @@
     "edoc": "node packages/cli/edoc.ts",
     "test:schema": "node --test tests/schema.test.ts",
     "test:core": "node --test tests/core.test.ts",
+    "test:register": "node --test tests/register.test.ts tests/register-browser.test.ts",
     "test:query": "node --test tests/query.test.ts",
     "test:cli": "node --test tests/cli.test.ts",
     "typecheck": "tsc --noEmit",

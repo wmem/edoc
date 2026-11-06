@@ -1,3 +1,5 @@
+import {registerDiagramHTML,registerFieldTable} from '../extensions/register/render.ts';
+import type {Register} from '../extensions/register/types.ts';
 import {readingOutline,headingGroups} from './reading-structure.ts';
 import {presentationGraph} from '../extensions/specification/prepare.ts';
 import {specificationHTML} from '../extensions/specification/render.ts';
@@ -27,6 +29,12 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
  for(const {ast}of plan.documents)for(const node of ast.walk())if(typeof node.attributes.id==='string')usedIds.add(node.attributes.id);
  const codeId=()=>{let id:string;do{id='reading-code-'+(++codeCounter);}while(usedIds.has(id));usedIds.add(id);return id;};
  const heading=(id:string,level:number,body:string,section=false)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${reading.numbers.has(id)?`<span class="heading-number" aria-hidden="true">${esc(reading.numbers.get(id))}</span>`:''}${body}</${tag}>`;};
+ function renderTable(table:Table,scope:string,a:{sortable?:boolean;filterable?:boolean}){
+  const key=JSON.stringify([scope,table.id]),instance=tableInstances.get(key)??0;tableInstances.set(key,instance+1);let rowNamespace='';
+  if(instance)do{rowNamespace='table-instance-'+(++tableCounter)+'-';}while(table.rows.some(row=>usedIds.has(scope+rowNamespace+anchor(row.id))));
+  for(const row of table.rows)usedIds.add(scope+rowNamespace+anchor(row.id));
+  return tableHTML(graph,table,{sortable:a.sortable,filterable:a.filterable,rowNamespace});
+ }
  function render(tree:any,fold=true,scope=''):string{
   if(tree===null||tree===undefined||tree===false)return '';
   if(Array.isArray(tree))return (fold?headingGroups(tree,reading.titleId):tree).map(node=>render(node,fold,scope)).join('');
@@ -61,12 +69,9 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
    if(type==='page')return `<a href="${esc(routeHash({kind:'page',project:a.project??graph.manifest.projectId,id,...(a.anchor?{anchor:a.anchor}:{})}))}">${esc(a.label??id)}</a>`;
    if(type==='attachment')return `<a class="attachment-link" href="${esc(routeHash({kind:'pdf',project:a.project??graph.manifest.projectId,id,...(a.target?{target:a.target}:{})}))}">${esc(a.label??(!a.project||a.project===graph.manifest.projectId?graph.attachments?.[id]?.title:undefined)??id)}</a>`;
    if(type==='include'&&a.project){const link=options.projectLink?.(a.project);return link?`<a class="project-entry" href="${esc(routeHash({kind:'page',project:link.project,id:link.page}))}">进入 ${esc(link.title)}</a>`:'';}
-   if(type==='data-table'){
-    const table=graph.index.get(id)!.entity as Table,key=JSON.stringify([scope,id]),instance=tableInstances.get(key)??0;tableInstances.set(key,instance+1);let rowNamespace='';
-    if(instance)do{rowNamespace='table-instance-'+(++tableCounter)+'-';}while(table.rows.some(row=>usedIds.has(scope+rowNamespace+anchor(row.id))));
-    for(const row of table.rows)usedIds.add(scope+rowNamespace+anchor(row.id));
-    return tableHTML(graph,table,{sortable:a.sortable,filterable:a.filterable,rowNamespace});
-   }
+   if(type==='data-table')return renderTable(graph.index.get(id)!.entity as Table,scope,a);
+   if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId);
+   if(type==='register-field-table')return renderTable(registerFieldTable(graph.index.get(id)!.entity as Register,graph),scope,{});
    if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
    if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);
    if(type==='interface-table')return interfaceTableHTML(graph,id,a.mode??'detailed');

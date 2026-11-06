@@ -10,7 +10,7 @@ import { projectPath, requireFile } from './paths.ts';
 import {runAdapter} from './adapter.ts';
 
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
-export const SUPPORTED_IR_VERSION = '1.3';
+export const SUPPORTED_IR_VERSION = '1.4';
 
 function finiteJson(value: unknown): boolean {
   if (typeof value === 'number') return Number.isFinite(value);
@@ -47,7 +47,7 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
   const ir = projectPath(root, root, relative(root, requested) || '.');
   const manifestFile = projectPath(root, ir, 'manifest.json');
   const manifest = readJson(manifestFile, 'manifest') as Manifest;
-  for(const feature of manifest.requiredFeatures??[])if(!['graph','documents','tables','wavejson','references','interface-groups','layout-intent','specifications'].includes(feature))failure('IR_FEATURE',manifestFile,'/requiredFeatures',`未支持的必需能力：${feature}`);
+  for(const feature of manifest.requiredFeatures??[])if(!['graph','documents','tables','wavejson','references','interface-groups','layout-intent','specifications','registers','table-cell-links'].includes(feature))failure('IR_FEATURE',manifestFile,'/requiredFeatures',`未支持的必需能力：${feature}`);
   // 同 major 的 minor 接受兼容新增的可选字段；必需能力逐项协商，未知类型仍失败。
   if (manifest.irVersion.split('.')[0] !== '1')
     failure('IR_VERSION', manifestFile, '/irVersion', `当前仅支持 IR ${SUPPORTED_IR_VERSION}，收到 ${manifest.irVersion}`);
@@ -62,7 +62,7 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
   }
   const parts:ResourcePart[]=[];
   const diagnostics:Diagnostic[]=[];
-  const schemas: Record<ResourceType, SchemaName> = { objects: 'object', relations: 'relation', views: 'view', tables:'table', waveforms:'waveform', references:'reference', specifications:'specification' };
+  const schemas: Record<ResourceType, SchemaName> = { objects: 'object', relations: 'relation', views: 'view', tables:'table', waveforms:'waveform', references:'reference', specifications:'specification',registers:'register' };
   const loaded = new Set<string>();
   for (const [resourceIndex, resource] of manifest.resources.entries()) {
     const file = projectPath(root, ir, resource.path);

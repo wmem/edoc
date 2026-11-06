@@ -19,3 +19,6 @@ export type {MarkdocOptions} from './markdoc.ts';
 export {default as Markdoc} from '@markdoc/markdoc';
 
 export {preflightBook} from './document-preflight.ts';
+
+export {resolveLinkTarget,entitySource} from './link-target.ts';
+export {registerProjection,resetText} from '../extensions/register/model.ts';

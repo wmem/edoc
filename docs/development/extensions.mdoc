@@ -18,11 +18,14 @@
 | --- | --- |
 | 关系图及接口表 | packages/extensions/relation-diagram：types.ts、contract.ts、object/relation/view.schema.json、validate.ts、query.ts、render.ts、interface-table.ts |
 | 数据表 | packages/extensions/data-table：types.ts、contract.ts、table.schema.json、validate.ts、query.ts、render.ts |
+| 寄存器定义与位域图 | packages/extensions/register：types.ts、contract.ts、register.schema.json、validate.ts、model.ts、query.ts、render.ts；浏览器 register-client.ts |
 | 数字波形 | packages/extensions/waveform：types.ts、contract.ts、waveform.schema.json、validate.ts；绘制后端 packages/render-wave |
 | 正文编排与跳转 | packages/extensions/document/contract.ts；解析 packages/core/documents.ts，正文呈现 packages/doc-theme/render.ts |
 | 共用能力 | packages/core：common-types.ts、types.ts、schema.ts、graph.ts、resource-validation.ts、query.ts |
 
-packages/core/extension-contracts.ts 组合内置标签、资源 Schema、引用目标类型与语义校验；纯数据查询邻接独立在 extension-links.ts，供浏览器与 CLI 共用，不引入文件系统和构建校验。各领域声明自己的契约；正文扫描与校验共用这一份目标类型定义。关系图的 Scene、布局、接口投影和 SVG 后端仍在 packages/render-graph，不搬动几何实现来改变事实语义。
+packages/core/extension-contracts.ts 组合内置标签、资源 Schema、引用目标类型与语义校验；表格链接共用 core/link-target.ts 与 link-validation.ts，不与语义 Reference 或硬件连接合并。
+
+纯数据查询邻接独立在 extension-links.ts，供浏览器与 CLI 共用，不引入文件系统和构建校验。各领域声明自己的契约；正文扫描与校验共用这一份目标类型定义。关系图的 Scene、布局、接口投影和 SVG 后端仍在 packages/render-graph，不搬动几何实现来改变事实语义。
 
 类型可以从 npm 包根导入，如 RelationView、Node、Table、Waveform；它们在实现上按领域分别定义。共用 ID 索引和 source 用于定位与追溯，不强迫不同领域具有同样的载荷结构。
 

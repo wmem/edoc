@@ -51,6 +51,12 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.match(specs.content,/上一笔请求未确认完成/);assert.match(specs.content,/例外/);assert.equal(specs.specifications.length,2);
  assert.equal(JSON.parse(run(bin,['docs','query','--id','example:clock'],project)).references[0].entity.class,'applies-common');
  assert.equal(JSON.parse(run(bin,['docs','query','--id','system:producer'],project)).target.entity.label,'生产者');
+ assert.match(JSON.parse(run(bin,['docs','read','--id','use:registers:create'],project)).content,/register-diagram/);
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:full64.data'],project)).registerField.resetText,'0xFEDCBA9876543210');
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:instance1'],project)).cellLinks.source.route.target,'detail');
+ assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/register/register.schema.json'));
+ assert.ok(packed.files.some((f:any)=>f.path==='docs/usage/rendering/registers.mdoc'));
+
  writeFileSync(join(project,'docs/edoc.config.js'),"throw Error('工具手册不得执行当前工程配置')");
  const server=spawn(bin,['docs','serve','--port','0'],{cwd:project,stdio:['ignore','pipe','pipe']});
  const exited=once(server,'exit');

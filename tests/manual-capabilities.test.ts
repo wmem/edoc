@@ -33,6 +33,8 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
  const table=json('packages/extensions/data-table/table.schema.json').properties.tables.items.properties;
  check(Object.keys(table),'ref:tables');check(Object.keys(table.columns.items.properties),'ref:tables');
  for(const row of table.rows.items.oneOf)check(Object.keys(row.properties),'ref:tables');
+ const register=json('packages/extensions/register/register.schema.json').properties.registers.items.properties;
+ check(Object.keys(register),'ref:register-shape');check(Object.keys(register.fields.items.properties),'ref:register-shape');
  for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment'].includes(name)?'ref:markdoc-links':['include','code'].includes(name)?'ref:markdoc-files':'ref:tag-'+name);
  const document=book.root.documents.documents.find(d=>d.file==='docs/usage/reference/capabilities.mdoc')!;
  let rows=0;
@@ -82,6 +84,7 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
   if(name==='states')assert.equal(sample.page.scenes[view].nets.length,2);
  }
  const wave=await create('waveform',minimal,one('use:waveform-create','json'),one('use:waveform-create','text'));assert.match(wave.page.html,/最小握手示意/);
+ const registers=await create('registers',blocks('use:registers:create','javascript')[0],undefined,one('use:registers:create','text'));assert.match(registers.page.html,/data-register="ctrl"/);assert.equal(query(registers.book.root.graph,'ctrl.en').registerField!.resetText,'0x0');
  const native=await create('native',one('use:markdoc:variables','javascript'),undefined,one('use:markdoc:variables','text'));assert.match(native.page.html,/我的工程/);assert.match(native.page.html,/展示完整说明/);assert.ok(!native.page.html.includes('展示简略说明'));
  const partial=await create('native-partial',one('use:markdoc:partials','javascript'),undefined,one('use:markdoc:partials','text'),{'docs/_partials/card.mdoc':readFileSync(join(repository,'docs/support/recipes/_partials/markdoc-card.mdoc'))});assert.match(readDocument(partial.book.root.graph,'term:shared').content,/共享术语/);assert.match(partial.page.html,/我的工程/);
  const functions=await create('native-functions',one('use:markdoc:functions','javascript'),undefined,one('use:markdoc:functions','text'));assert.match(functions.page.html,/EDOC/);

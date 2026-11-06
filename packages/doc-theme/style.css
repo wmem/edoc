@@ -153,3 +153,24 @@ nav.sidebar > * { flex-shrink: 0; }
  .table-column-label { white-space: normal; }
  .table-sort { background: transparent; }
 }
+
+/* 寄存器位带按容器换行，不缩小字号；各分段始终指向同一字段实体。 */
+.register-diagram { container-type: inline-size; margin: 18px 0; min-width: 0; width: 100%; }
+.register-actions { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.register-actions span { flex: 1; }
+.register-actions button { font-size: 12px; padding: 3px 8px; }
+.register-scroll { overflow: auto; max-width: 100%; margin-top: 10px; }
+.register-scroll svg { display: block; max-width: none; }
+.register-scroll a:focus-visible { outline: 2px solid var(--accent); }
+.register-variant { display: none; }
+.register-8 { display: block; }
+@container (min-width:528px) { .register-8 { display: none; } .register-16 { display: block; } }
+@container (min-width:1040px) { .register-16 { display: none; } .register-32 { display: block; } }
+.register-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 4px 0; padding: 0; font-size: 12px; }
+.register-legend li { min-width: 0; overflow-wrap: anywhere; }
+.register-legend span,.register-gap-note,.register-source,.register-value-note { color: var(--muted); font-size: 12px; }
+.register-gap-note { margin: 8px 0; }
+.register-description { white-space: pre-wrap; }
+.register-field-detail dl { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px 18px; }
+.register-field-detail dd { margin: 0; overflow-wrap: anywhere; }
+@media print { .register-actions { display: none; } .register-scroll { overflow: visible; } }
