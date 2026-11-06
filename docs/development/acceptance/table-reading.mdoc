@@ -1,0 +1,24 @@
+{% section id="accept:table-reading" title="data-table 筛选与排序" %}
+
+2026-11-06，按用户批准方案增加网页表格阅读能力。仅 data-table 提供交互，不改变 IR 版本、Table/Row 事实或普通 Markdown、Markdoc table、interface-table 的行为。使用入口为[筛选与排序数据表](../../usage/rendering/table-reading.mdoc)，字段边界集中在[data-table 契约](../../usage/reference/tags/data-table.mdoc)。
+
+{% section id="accept:table-reading:scope" title="实现与边界" %}
+
+默认保留声明顺序；表头单列升序、降序、恢复原序，数值/文本/布尔按类型比较，缺失值始终在后，同值稳定。JSON仅提供文本筛选。多列筛选为且，文本不区分大小写包含、数值范围含边界、布尔选择，以及独立的已提供/未提供条件；有效空字符串、0、false、null、真实unknown字符串不冒充缺失。
+
+条件面板位于表内滚动区域上方，显式应用并校验范围，避免弹层被横向滚动或窄屏裁切。长表自身滚动且表头固定；所有行仍在DOM，无分页/虚拟滚动/多列排序，不以当前千行结果承诺任意规模性能。sortable/filterable仅为出现位置的标签属性，IR不保存阅读状态。
+
+排序移动已有行节点，筛选使用hidden；同页同表重复展示的行锚点隔离，Spec保留局部链接语义，不重复注册事实。阅读器历史按表ID与实例保存状态；新的同页锚点定位携带状态，仅在目标行被隐藏时清空本表筛选并提示、保留排序，返回恢复原条件。单文档客户端也复用同一显示模块及行揭示逻辑。
+
+{% /section %}
+
+{% section id="accept:table-reading:checks" title="验证与规模样例" %}
+
+tests/table-controls.test.ts 检查类型比较、缺失与有效空值、数值闭区间、JSON文本、渲染元数据、非法属性、重复行锚点和IR/read不变。tests/table-controls-browser.test.ts 使用真实离线HTML，检查排序三态、稳定同值、多列AND、无结果、错误范围、实例独立、显隐开关、转义、原生表边界、历史/刷新、隐藏行定位、Spec局部链接及390px。
+
+千行样例与教程共用 docs/support/recipes/table-reading.config.js，含1000行、5列及布尔/JSON/缺失值。当前已有Chromium环境一次回归测得排序92.8ms、范围筛选30.6ms，均从操作开始计至两帧后；完整1000行仍在DOM。回归设置3秒交互门槛以捕获严重退化，这些数值不是其他设备、更多列或任意规模的性能保证。另检查表内滚动、固定表头、末行在表头下可见；实际390px视觉检查发现表头被逐字挤成竖排，随后增加默认可读列宽及不换行表头，以表内横向滚动展示，并补几何回归。
+
+既有Markdoc/read/Spec、手册字段覆盖、阅读器/PDF返回、规范浏览器与手册交互回归通过。表头的重复文字按钮随后按用户反馈改为无边框漏斗图标，保留ARIA名称、键盘焦点、悬停提示及激活标记；未排序箭头在悬停/焦点时提示。正式手册使用playwright-cli与已有Chromium检查实际表头、条件面板、筛后计数、内滚动和窄屏；类型、正式文档与安装包构建通过。
+
+{% /section %}
+{% /section %}

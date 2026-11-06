@@ -60,6 +60,7 @@
 | file 片段与源码内联 | [片段](../writing/documents.mdoc#use:sections) | [文件契约](markdoc.mdoc#ref:markdoc-files) | [同源正文和代码](../rendering/page-layout.mdoc#use:page-layout-live) |
 | 本地 PNG/JPEG/WebP/SVG 图片与普通链接 | [图片](../writing/markdown.mdoc#use:markdown:boundaries) | [图片与 SVG](markdoc.mdoc#ref:markdoc-images) | [正文图片](../writing/markdown.mdoc#use:markdown:boundaries) |
 | 单框接口边界与方向引线 | [单框组件](../rendering/diagrams/interfaces.mdoc#use:interface-boundary) | [图形阅读](graph.mdoc#ref:graph-operations) | [单框实例](../rendering/diagrams/interfaces.mdoc#use:interface-boundary) |
+| 表头排序、多列筛选与恢复 | [操作方法](../rendering/table-reading.mdoc#use:table-reading-controls) | [展示开关](tags/data-table.mdoc#ref:tag-data-table) | [千行样例](../rendering/table-reading.mdoc#use:table-reading-live) |
 | 标题/代码折叠与编号 | [操作范围](../rendering/reading.mdoc#use:reading-controls) | [阅读控制](markdoc.mdoc#ref:reading-controls) | [可操作实例](../rendering/reading.mdoc#use:reading-live) |
 | 规范块、批量折叠与局部标题 | [规范展示](../rendering/specifications.mdoc#use:specifications-display) | [折叠属性](tags/specification.mdoc#ref:tag-spec-list) | [可操作实例](../rendering/specifications.mdoc#use:specifications-display) |
 | 同源规范、行为聚合与完整读取 | [规范聚合](../rendering/specifications.mdoc#use:specifications) | [spec-list](tags/specification.mdoc#ref:tag-spec-list) | [同源实例](../rendering/specifications.mdoc#use:specifications-live) |
@@ -81,7 +82,7 @@
 {% section id="use:capabilities:gaps" title="已知缺口与未提供的能力" %}
 
 - [polyline 组合差异](graph.mdoc#ref:graph-routing)：枚举仍接受，专用路由尚未统一处理；这是实现缺口，不是本次收缩契约。
-- [表格展示边界](ir.mdoc#ref:table-limits)：没有公开的交互排序/表内分页/任意列宽/合并单元格/格式化函数。
+- [表格展示边界](ir.mdoc#ref:table-limits)：没有公开的表内分页/虚拟滚动/多列排序/任意列宽/合并单元格/格式化函数。
 - [页面编排边界](markdoc.mdoc#ref:markdoc-fold-tabs)：不是任意 CSS 排版，没有 Tab 默认选中名称或手工分页字段。
 - [展示与发布规划](../../development/design/presentation.mdoc#design:presentation:part-02)：纸张、方向、边距、主题和完整覆盖链尚无统一公开设置。
 - [其他限制](errors.mdoc#ref:limits)：无常驻查询服务、持久增量索引或任意 EDA/RTL 行为推断。

@@ -1,3 +1,5 @@
+import {tableControls} from './table-controls.ts';
+import type {TableControls,TableSnapshot} from './table-controls.ts';
 import {sidebarLayout} from './sidebar-layout.ts';
 import {semanticReferencesHTML} from './entity-references.ts';
 import {readingControls} from './reading-controls.ts';
@@ -16,11 +18,11 @@ import {sidebarNavigation} from './navigation.ts';
 
 const esc=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const own=<T>(object:Record<string,T>,key:string):T|undefined=>Object.hasOwn(object,key)?object[key]:undefined;
-type ReadingState={headingNumbers?:boolean;outlineDetails?:boolean[];route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
+type ReadingState={tables?:TableSnapshot[];headingNumbers?:boolean;outlineDetails?:boolean[];route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
 export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const data:ReaderData=JSON.parse(document.querySelector('#edoc-book')!.textContent!),reader=document.querySelector<HTMLElement>('#reader')!,toc=document.querySelector<HTMLElement>('#toc')!,pageToc=document.querySelector<HTMLElement>('#page-toc')!,notice=document.querySelector<HTMLElement>('#notice')!,breadcrumbs=document.querySelector<HTMLElement>('#breadcrumbs')!,search=document.querySelector<HTMLInputElement>('#search')!;
  sidebarLayout();
- const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false,headingNumbers=true;
+ const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false,headingNumbers=true,tables:TableControls|undefined;
  const navigation=(nodes:Navigation[],depth=0):string=>'<ul>'+nodes.map(n=>{const link=n.page?`<a data-outline-link href="${esc(routeHash({kind:'page',project:n.project,id:n.page,...(n.anchor?{anchor:n.anchor}:{})}))}">${n.number?`<span class="heading-number" aria-hidden="true">${esc(n.number)}</span>`:''}${esc(n.label)}</a>`:`<span class="nav-group">${esc(n.label)}</span>`;return '<li>'+(n.children.length?'<details'+(depth<1?' open':'')+'><summary>'+link+'</summary>'+navigation(n.children,depth+1)+'</details>':link)+'</li>';}).join('')+'</ul>';
  toc.innerHTML=navigation(sidebarNavigation(data.navigation));
  const tocActions=document.createElement('div');tocActions.className='toc-actions';tocActions.setAttribute('role','group');tocActions.setAttribute('aria-label','文档目录操作');
@@ -40,11 +42,11 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  function exists(route:Route){const project=projectOf(route);if(!project)return false;if(route.kind==='entity')return route.id===''||Object.hasOwn(project.entities,route.id);if(route.kind==='pdf'){const a=own(project.attachments,route.id);return !!a&&(!route.target||Object.hasOwn(a.targets,route.target));}const page=own(data.pages,targetKey(route.project,route.id));return !!page&&(!route.anchor||!!resolveAnchor(page,route.anchor));}
  function resolveAnchor(page:ReaderPage,id:string){return resolveHTMLAnchor(page.html,id,page.anchorAliases);}
  const figureIndex=(holder:Element|null)=>[...reader.querySelectorAll('[data-diagram]')].indexOf(holder!);
- function save(){if(!current||restoring)return;const state:ReadingState={route:current,headingNumbers:!document.body.classList.contains('heading-numbers-hidden'),outlineDetails:[...pageToc.querySelectorAll<HTMLDetailsElement>('details')].map(d=>d.open),scroll:window.scrollY,details:[...reader.querySelectorAll<HTMLDetailsElement>('details[id]')].filter(d=>d.open).map(d=>d.id),tabs:[...reader.querySelectorAll<HTMLElement>('.tab')].map(t=>!!t.hidden),graphs:window.EdocGraphs?.map(g=>({figure:figureIndex(g.container.closest('[data-diagram]')),zoom:g.zoom(),translation:g.translate()})),displays:[...reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]')].map(i=>i.checked),interfaces:window.EdocInterfaceViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),pdf:currentPdf};history.replaceState(state,'');}
- function reveal(page:ReaderPage,id:string){const key=resolveAnchor(page,id),target=key?document.getElementById(key):undefined;if(!target)return;for(let parent:HTMLElement|null=target;parent&&parent!==reader;parent=parent.parentElement){if(parent instanceof HTMLDetailsElement)parent.open=true;if(parent.classList.contains('tab'))parent.hidden=false;}target.scrollIntoView({block:'start'});}
+ function save(){if(!current||restoring)return;const state:ReadingState={route:current,tables:tables?.snapshot(),headingNumbers:!document.body.classList.contains('heading-numbers-hidden'),outlineDetails:[...pageToc.querySelectorAll<HTMLDetailsElement>('details')].map(d=>d.open),scroll:window.scrollY,details:[...reader.querySelectorAll<HTMLDetailsElement>('details[id]')].filter(d=>d.open).map(d=>d.id),tabs:[...reader.querySelectorAll<HTMLElement>('.tab')].map(t=>!!t.hidden),graphs:window.EdocGraphs?.map(g=>({figure:figureIndex(g.container.closest('[data-diagram]')),zoom:g.zoom(),translation:g.translate()})),displays:[...reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]')].map(i=>i.checked),interfaces:window.EdocInterfaceViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),pdf:currentPdf};history.replaceState(state,'');}
+ function reveal(page:ReaderPage,id:string){const key=resolveAnchor(page,id),target=key?document.getElementById(key):undefined;if(!target)return;for(let parent:HTMLElement|null=target;parent&&parent!==reader;parent=parent.parentElement){if(parent instanceof HTMLDetailsElement)parent.open=true;if(parent.classList.contains('tab'))parent.hidden=false;}tables?.reveal(target);target.scrollIntoView({block:'start'});}
  async function display(route:Route,state?:ReadingState){
   route=normalize(route);if(!exists(route)){if(!current)await display(home);showMissing(route);return;}
-  const version=++generation;dispose?.();dispose=undefined;current=route;currentPdf=state?.pdf;window.EdocReady=false;notice.hidden=true;restoring=true;
+  const version=++generation;dispose?.();dispose=undefined;tables=undefined;current=route;currentPdf=state?.pdf;window.EdocReady=false;notice.hidden=true;restoring=true;
   document.querySelector('#properties')!.textContent='点击图中对象查看来源与完整关系。';document.querySelector('#selection-actions')!.replaceChildren();document.querySelector<HTMLAnchorElement>('#object-link')!.hidden=true;
   const project=projectOf(route)!;document.body.dataset.readerKind=route.kind;if(route.kind==='pdf')document.title=project.attachments[route.id].title+' · '+data.title;else if(route.kind==='entity')document.title=(project.entities[route.id]?.label??'工程对象')+' · '+data.title;
   breadcrumbs.innerHTML=`<button data-reader-back>返回</button><a href="${esc(routeHash(home))}">${esc(data.title)}</a>${project.id===data.home.project?'':'<span>'+esc(project.title)+'</span>'}<a href="${esc(routeHash({kind:'entity',project:route.project,id:''}))}" data-object-index>工程对象</a>`;
@@ -57,6 +59,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
    document.querySelector('#edoc-data')!.textContent=JSON.stringify({scenes:page.scenes,entities:project.entities});
    const outline=(nodes:typeof page.outline):Navigation[]=>nodes.map(n=>({label:n.label,project:route.project,page:route.id,anchor:n.id,number:n.number,children:outline(n.children)}));pageToc.innerHTML='<h4>本页目录</h4>'+navigation(outline(page.outline));
    if(state){pageToc.querySelectorAll<HTMLDetailsElement>('details').forEach((d,i)=>{if(state.outlineDetails?.[i]!==undefined)d.open=state.outlineDetails[i];});if(state.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});}
+   tables=tableControls(reader,{state:state?.tables,onChange:save});
    headingNumbers=state?.headingNumbers??headingNumbers;
    const stopGraphs=start(interfaces,{managed:true,initialize:state?.graphs?.map(g=>g.figure)}),stopControls=readingControls(reader,{numbers:headingNumbers,onChange:()=>{headingNumbers=!document.body.classList.contains('heading-numbers-hidden');save();}});
    // 关闭的规范内图表延迟创建；返回后首次展开时再恢复其已保存状态。
@@ -71,7 +74,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
     save();
    };
    reader.addEventListener('toggle',restoreDeferred,true);
-   dispose=()=>{reader.removeEventListener('toggle',restoreDeferred,true);stopControls();stopGraphs();};
+   dispose=()=>{reader.removeEventListener('toggle',restoreDeferred,true);stopControls();stopGraphs();tables?.dispose();};
    if(state){
     if(state.interfaces)await Promise.all((window.EdocInterfaceViews??[]).map((v:any)=>{const previous=state.interfaces?.find(saved=>saved.figure===figureIndex(v.holder));return previous?v.restore?.(previous.state):undefined;}));
     if(version!==generation)return;
@@ -92,7 +95,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
   if(version!==generation)return;restoring=false;window.EdocReady=true;save();
   document.querySelectorAll<HTMLAnchorElement>('#toc a').forEach(a=>{const dest=parseRoute(a.hash),inPage=route.kind==='page'&&dest?.project===route.project&&dest?.id===route.id;if(inPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');if(inPage)for(let parent=a.parentElement;parent&&parent!==toc;parent=parent.parentElement)if(parent instanceof HTMLDetailsElement)parent.open=true;});
  }
- function navigate(route:Route){route=normalize(route);if(!exists(route)){showMissing(route);return;}save();history.pushState({route},'',routeHash(route));void display(route);}
+ function navigate(route:Route){route=normalize(route);if(!exists(route)){showMissing(route);return;}save();const state:ReadingState={route,...(route.kind==='page'&&current?.kind==='page'&&route.project===current.project&&route.id===current.id?{tables:tables?.snapshot()}:{})};history.pushState(state,'',routeHash(route));void display(route,state);}
  document.addEventListener('click',event=>{const a=(event.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');if(!a||event.defaultPrevented||event instanceof MouseEvent&&(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey))return;const href=a.getAttribute('href')!,route=parseRoute(href);if(route){event.preventDefault();navigate(route);}else if(current?.kind==='page'){event.preventDefault();const project=data.projects[current.project],fragment=decodeURIComponent(href.slice(1)),id=Object.keys(project.entities).find(id=>anchor(id)===fragment);navigate(id?{kind:'entity',project:current.project,id}:{...current,anchor:fragment});}});
  window.addEventListener('popstate',()=>{const route=parseRoute(location.hash)??home;void display(route,history.state??undefined);});
  window.addEventListener('hashchange',()=>{const route=parseRoute(location.hash);if(route&&JSON.stringify(route)!==JSON.stringify(current))void display(route,history.state??undefined);});

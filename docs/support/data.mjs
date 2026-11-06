@@ -5,6 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import authoringConfig from './recipes/edoc.config.js';
 import graphOptionsConfig from './recipes/graph-options.config.js';
+import tableReadingConfig from './recipes/table-reading.config.js';
 
 export function tutorialData({root}){
  const result={objects:[],relations:[],views:[],tables:[],waveforms:[],references:[]};
@@ -43,6 +44,7 @@ export function tutorialData({root}){
   const path=`docs/ir/authoring/${file}.json`,data=json(path);
   for(const type of Object.keys(result))result[type].push(...(data[type]??[]).map(entity=>({...entity,source:entity.source??{file:path,selector:entity.id}})));
  }
+ result.tables.push(...tableReadingConfig.data.tables.map(table=>({...table,source:{file:'docs/support/recipes/table-reading.config.js',selector:table.id}})));
  result.views.push(...authoringConfig.views.map(view=>({...view,source:{file:'docs/support/recipes/edoc.config.js',selector:view.id}})));
  result.views.push(...graphOptionsConfig.views.map(view=>({...view,source:{file:'docs/support/recipes/graph-options.config.js',selector:view.id}})));
  return result;

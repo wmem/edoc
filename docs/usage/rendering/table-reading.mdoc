@@ -1,0 +1,51 @@
+{% section id="use:table-reading" title="筛选与排序数据表" %}
+
+data-table 默认保留声明顺序，读者可以在列标题上排序或筛选。操作只改变当前表的显示，完整数据仍在 HTML 中，行 ID 和 query 的事实不变。普通 Markdown/Markdoc 表不增加这些控件。
+
+{% section id="use:table-reading-controls" title="先缩小范围，再核对记录" %}
+
+点击列标题，在升序、降序、原始顺序之间切换；一次按一列排序。数值按数值比较，文本按中文及自然数字顺序比较，布尔值升序为 false 在前；同值保留原顺序，缺失值始终在后。JSON 不提供大小排序。
+
+点击列标题旁的漏斗图标打开筛选条件，填写后按“应用筛选”；图标悬停时显示提示，有条件时以颜色和小圆点标记。文本和 JSON 按不区分大小写的包含文字匹配，数值最小/最大值均包含边界，布尔列选择 true/false；多列条件同时满足才显示。条件入口高亮，状态栏显示当前行数与全部行数。
+
+“字段提供情况”区分已提供和未提供；真实字符串 unknown、空字符串、0、false 和 JSON null 都是已提供的值。“清除此列”只移除当前列条件，“清空筛选”清除整张表的条件，“恢复顺序”保留筛选并恢复声明顺序。没有结果时仍保留表头和筛选入口。
+
+大表在表内滚动，表头保持可见。窄屏保留可读列宽并在表内横向滚动，避免标题挤成竖排。完整 DOM 行仍在，第一版没有分页、虚拟滚动或多列排序；千行示例不代表任意规模均已验证。
+
+{% /section %}
+
+{% section id="use:table-reading-live" title="实际操作千行样例" %}
+
+以下均为虚构参数。试着将“采样率”限制在 10–100 Hz，再将“启用”设为 true；也可按“说明”的未提供情况筛选，比较真实 unknown 字符串与缺失值。
+
+{% data-table id="author:channels" /%}
+
+{% page id="docs/usage/rendering/table-reading" anchor="author:channel:1000" label="定位到第 1000 个原始通道" /%}
+
+行链接使用稳定 ID，和当前排序位置无关。如果新的定位请求指向被隐藏的行，阅读器清空本表筛选并提示，排序保持；浏览器返回恢复之前的条件。同一表的不同展示位置独立操作，切换文章后返回或刷新也保留各实例的筛选与排序。
+
+{% /section %}
+
+{% section id="use:table-reading-create" title="复制样例或关闭操作" collapsed=true %}
+
+把以下完整配置保存为自己的 docs/edoc.config.js，在 docs/index.mdoc 中引用 author:channels，执行 edoc 即可。手册和这份配置使用同一批数据：
+
+{% code file="docs/support/recipes/table-reading.config.js" language="javascript" /%}
+
+```markdoc {% process=false %}
+{% data-table id="author:channels" /%}
+```
+
+只想提供筛选或静态表时，在该出现位置关闭对应操作：
+
+```markdoc {% process=false %}
+{% data-table id="author:channels" sortable=false /%}
+{% data-table id="author:channels" sortable=false filterable=false /%}
+```
+
+浏览器打印保留当前筛选与顺序，并保留状态行的范围提示；它不是全量数据导出。
+
+字段的权威来源和数据类型见[表格创建](tables.mdoc)，两个展示开关与完整边界见[data-table 契约](../reference/tags/data-table.mdoc)。
+
+{% /section %}
+{% /section %}

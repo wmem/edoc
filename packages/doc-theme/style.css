@@ -1,8 +1,8 @@
 :root{--sidebar-width:244px;color-scheme:light;--ink:#18334c;--muted:#60778c;--line:#dbe5ed;--accent:#076d8c}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:#edf2f6;color:var(--ink);font:15px/1.8 'Noto Sans SC',Arial,sans-serif}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}button,input{font:inherit}button{border:1px solid #c7d8e3;border-radius:6px;background:white;color:var(--ink);padding:5px 12px;cursor:pointer}button:hover{background:#e7f1f7}input[type=search]{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px}nav.sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar-width);padding:28px 22px;background:#13324b;color:#e2edf4;overflow:auto}.brand{font:700 23px Arial;letter-spacing:1px}.version{font-size:12px;color:#a8c6d8;margin:6px 0 22px}#toc a,#results a{display:block;color:#cfe1eb;font-size:12px;padding:5px 0}#toc a[hidden]{display:none}main{margin:30px 330px 60px calc(var(--sidebar-width) + 30px);max-width:1350px}header.cover{padding:28px;background:linear-gradient(110deg,#e1eff3,#fff);border:1px solid var(--line);border-top:5px solid #0c7b95;border-radius:10px;margin-bottom:24px}header.cover h1{font-size:30px;margin:5px 0 12px}.eyebrow{font:600 12px Arial;letter-spacing:2px;color:var(--accent)}article,.appendix{background:white;border:1px solid var(--line);border-radius:10px;padding:28px;margin:24px 0}h1,h2,h3,h4{line-height:1.4;color:#12354e}h1{font-size:27px}h2{font-size:22px;border-bottom:1px solid var(--line);padding-bottom:10px;margin:30px 0 15px}h3{font-size:18px}p{margin:12px 0}table{width:100%;border-collapse:collapse;font-size:12px;margin:16px 0;table-layout:auto}th{background:#e9f2f7;font-weight:600;text-align:left}th,td{padding:9px 10px;border:1px solid var(--line);overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}code{font:12px/1.6 Consolas,monospace;background:#eef3f6;border-radius:3px;padding:2px 4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f0f5f8;padding:15px;font-size:12px}pre code{padding:0}blockquote{border-left:3px solid #1785a2;padding:5px 15px;margin:16px 0;background:#f1f8fa}.columns{display:grid;gap:18px;grid-template-columns:var(--columns)}.panel{border:1px solid var(--line);border-radius:7px;padding:18px;min-width:0}.tab-nav{display:flex;gap:6px;padding:10px 0}.tab{border:1px solid var(--line);padding:16px;border-radius:6px}.tab[hidden]{display:none}.graph-box{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:18px 0}.toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f0f6f9}.filters,.groups{display:flex;gap:12px;flex-wrap:wrap;padding:5px 12px;font-size:12px}.filters label{display:flex;gap:4px;align-items:center}.canvas{width:100%;min-height:420px;position:relative;overflow:hidden}.static-svg{display:none}.static-svg svg{width:100%;height:auto}.wave{overflow:auto;margin:20px 0;border:1px solid var(--line);padding:14px}.wave svg{max-width:100%;height:auto}.wave text{font-family:'Noto Sans SC',Arial,sans-serif}figcaption{color:var(--muted);font-size:12px;margin-bottom:10px}aside.properties{position:fixed;right:16px;top:30px;bottom:30px;width:286px;border:1px solid var(--line);border-radius:10px;padding:18px;background:white;overflow:auto}aside pre{font-size:11px}.fact{padding:8px 0;border-bottom:1px solid var(--line)}details{margin:14px 0}summary{cursor:pointer;font-weight:600}[id]{scroll-margin-top:20px}.doc-image{max-width:100%}.print-toc{display:none}@media(max-width:1250px){aside.properties{position:static;width:auto;margin:24px 20px 30px calc(var(--sidebar-width) + 26px)}main{margin-right:24px}}@media(max-width:750px){nav.sidebar{position:static;width:auto;max-height:330px}main{margin:16px}article,.appendix{padding:18px}aside.properties{margin:16px}.columns{grid-template-columns:1fr!important}.canvas{min-height:350px}header.cover h1{font-size:24px}}@page{size:A4 landscape;margin:17mm 14mm 18mm} @media print{body{background:white;font-size:10px;color:#111}.sidebar,aside.properties,.toolbar,.filters,.groups,.canvas,.tab-nav{display:none!important}main{margin:0;max-width:none}header.cover{break-after:page;background:white;padding:30px;border:0}header.cover h1{font-size:32px}.print-toc{display:block;break-after:page}.print-toc a{display:block;padding:4px}article,.appendix{border:0;padding:0;margin:0 0 18px;break-before:page}h1,h2,h3{break-after:avoid}h2{font-size:19px}.columns{display:block}.panel{margin:12px 0}.tab,.tab[hidden]{display:block!important;break-inside:avoid}.tab:before{content:attr(data-name);font-weight:600}details>*{display:block!important}.static-svg{display:block}.graph-box{break-inside:avoid}.static-svg svg{max-height:125mm}.wave{break-inside:avoid}.wave svg{max-height:90mm}table{font-size:9px}th,td{padding:5px}.appendix .fact pre{font-size:8px}a{color:#163e58;text-decoration:none}.fact{break-inside:avoid}pre{background:#f4f6f7}footer{display:none}}
 @media print{body{font-size:10pt;line-height:1.5}table{font-size:8pt;line-height:1.4}th,td{padding:4px 5px}h2{margin-top:14px}article .panel{padding:12px}.tab{padding:10px;break-inside:auto}.tab+.tab{break-before:page}.graph-box[data-kind="interface"] .static-svg svg{max-height:80mm}.appendix .fact{padding:4px 0;margin:4px 0}.appendix .fact pre{font-size:9px;line-height:1.4;margin:4px 0;padding:6px}.appendix summary{font-size:9pt}}
-@media print{.tab,.tab[hidden]{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;align-items:start;break-inside:avoid}.tab:before{grid-column:1/-1}.tab>:not(figure):not(table){grid-column:1/-1}.tab>.graph-box{grid-column:1;margin:8px 0}.tab>table{grid-column:2;margin:8px 0}.tab>p{margin:4px 0}}
+@media print{.tab,.tab[hidden]{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;align-items:start;break-inside:avoid}.tab:before{grid-column:1/-1}.tab>:not(figure):not(table):not(.data-table){grid-column:1/-1}.tab>.graph-box{grid-column:1;margin:8px 0}.tab>:is(table,.data-table){grid-column:2;margin:8px 0}.tab>p{margin:4px 0}}
 /* 单图不预留表格栏，图表同时存在时仍按原比例并排。 */
-@media print{.tab:not(:has(>table))>.graph-box{grid-column:1/-1}}
+@media print{.tab:not(:has(>table,>.data-table))>.graph-box{grid-column:1/-1}}
 /* 简短面板整体分页，避免说明标题留在页底、内容落到下一页。 */
 @media print{.panel{break-inside:avoid}.panel-title{break-after:avoid}}
 pre,code{font-family:Consolas,'Noto Sans SC',monospace}
@@ -106,3 +106,50 @@ nav.sidebar > * { flex-shrink: 0; }
 .sidebar-resizing,.sidebar-resizing * { cursor: col-resize!important; user-select: none!important; }
 @media(max-width:750px) { .sidebar-resizer { display: none; } }
 @media print { nav.sidebar,.sidebar-resizer { display: none!important; } }
+
+/* data-table独立显示状态；不改写普通Markdown/Markdoc表格。 */
+.data-table { margin: 16px 0; min-width: 0; }
+.data-table-scroll { overflow: auto; max-width: 100%; max-height: min(65vh,720px); }
+.data-table th { min-width: 120px; }
+.data-table th[data-column-type="json"] { min-width: 180px; }
+.data-table thead th { position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 0 var(--line); }
+.data-table table { margin: 0; }
+.data-table caption { text-align: left; color: var(--muted); padding: 8px 0; }
+.table-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.table-status { margin-right: auto; color: var(--muted); }
+.table-tools button,.table-filter-actions button { font-size: 12px; padding: 3px 8px; }
+.table-tools button:disabled { color: #91a1af; border-color: #e0e7ed; background: #f5f7f9; cursor: default; }
+.table-column-heading { display: flex; min-width: max-content; align-items: center; gap: 6px; }
+.table-column-label { min-width: 0; white-space: nowrap; flex: 1; }
+.table-sort { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; text-align: left; border: 0; border-radius: 2px; background: transparent; padding: 0; font: inherit; color: inherit; }
+.table-sort-arrow { color: var(--muted); flex: 0 0 auto; }
+.table-sort:disabled { cursor: default; }
+.table-filter-button { display: inline-flex; position: relative; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 4px; border: 0; background: transparent; color: #526c82; opacity: .85; flex: 0 0 auto; }
+.table-filter-button svg { display: block; flex: 0 0 auto; }
+.table-filter-button:hover,.table-filter-button:focus-visible,.table-filter-button[aria-expanded=true] { color: var(--accent); background: #dceaf2; opacity: 1; }
+.table-filter-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.table-filter-button.is-active { color: var(--accent); opacity: 1; }
+.table-filter-button.is-active::after { content: ''; position: absolute; width: 4px; height: 4px; border-radius: 50%; top: 1px; right: 1px; background: currentColor; }
+.data-table th[aria-sort=none] .table-sort-arrow { opacity: 0; }
+.data-table th:hover .table-sort-arrow,.data-table th:focus-within .table-sort-arrow { opacity: 1; }
+@media(max-width:750px),(hover:none) { .table-filter-button { width: 28px; height: 28px; } }
+.table-filter-panel { margin: 10px 0; border: 1px solid #b9d4df; border-radius: 6px; padding: 12px; background: #f3f8fb; font-size: 12px; }
+.table-filter-title { font-weight: 600; margin: 0 0 8px; }
+.table-filter-fields { display: flex; flex-wrap: wrap; gap: 10px; }
+.table-filter-field { display: flex; flex: 1 1 130px; flex-direction: column; min-width: 0; gap: 4px; }
+.table-filter-fields input,.table-filter-fields select { width: 100%; min-width: 0; padding: 6px; border: 1px solid #bdcfdb; border-radius: 4px; background: white; color: var(--ink); font: inherit; }
+.table-filter-fields :disabled { background: #e9eef2; color: var(--muted); }
+.table-filter-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.table-filter-error { color: #9d2525; margin: 8px 0 0; }
+.table-filter-error:empty { display: none; }
+.table-note,.table-empty { color: var(--muted); font-size: 12px; margin: 8px 0; }
+.table-filter-panel[hidden],.table-empty[hidden],.table-note[hidden],.data-table tr[hidden] { display: none!important; }
+@media print {
+ .table-filter-panel,.table-tools button,.table-filter-button { display: none!important; }
+ .data-table-scroll { overflow: visible; max-height: none; }
+ .data-table thead th { position: static; }
+ .data-table th,.data-table th[data-column-type] { min-width: 0; }
+ .table-column-heading { min-width: 0; }
+ .table-column-label { white-space: normal; }
+ .table-sort { background: transparent; }
+}

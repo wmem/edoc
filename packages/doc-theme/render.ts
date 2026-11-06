@@ -21,18 +21,18 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
  const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&node.tag==='relation-diagram')usedViews.add(node.attributes.id);
  for(const id of usedViews){scenes[id]=await scene(graph,id);printScenes[id]=scenes[id].interfaceModel?await scene(graph,id,{interfaces:'expanded'}):scenes[id];}
- const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0;
+ const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0,tableCounter=0;const tableInstances=new Map<string,number>();
  const specIds=new Set(plan.all.filter(e=>e.sectionId&&graph.index.get(e.sectionId)?.type==='specification').map(e=>e.id));
  const reading=readingOutline(plan.roots,title,specIds),usedIds=new Set(plan.all.map(e=>e.id));
  for(const {ast}of plan.documents)for(const node of ast.walk())if(typeof node.attributes.id==='string')usedIds.add(node.attributes.id);
  const codeId=()=>{let id:string;do{id='reading-code-'+(++codeCounter);}while(usedIds.has(id));usedIds.add(id);return id;};
  const heading=(id:string,level:number,body:string,section=false)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${reading.numbers.has(id)?`<span class="heading-number" aria-hidden="true">${esc(reading.numbers.get(id))}</span>`:''}${body}</${tag}>`;};
- function render(tree:any,fold=true):string{
+ function render(tree:any,fold=true,scope=''):string{
   if(tree===null||tree===undefined||tree===false)return '';
-  if(Array.isArray(tree))return (fold?headingGroups(tree,reading.titleId):tree).map(node=>render(node,fold)).join('');
+  if(Array.isArray(tree))return (fold?headingGroups(tree,reading.titleId):tree).map(node=>render(node,fold,scope)).join('');
   if(typeof tree==='string'||typeof tree==='number')return esc(tree);
   if(typeof tree!=='object'||!Markdoc.Tag.isTag(tree))return '';
-  const n=tree.name,a=tree.attributes??{},children=()=>render(tree.children,fold&&!['pre','code'].includes(n));
+  const n=tree.name,a=tree.attributes??{},children=()=>render(tree.children,fold&&!['pre','code'].includes(n),a.specification?a.bodyNamespace:scope);
   for(const key of Object.keys(a))if(/^on/i.test(key)||key.toLowerCase()==='style')throw new Error('Markdoc Schema 不允许事件或自由样式属性：'+key);
   if(typeof n!=='string')throw new Error('Markdoc 扩展标签须输出语义 HTML 标签名');
   if(n.startsWith('ed-')){
@@ -40,7 +40,7 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
    if(type==='directory-order')return '';
    if(type==='heading-group'){
     const [caption,...content]=tree.children;if(!Markdoc.Tag.isTag(caption))throw new Error('标题分组缺少标题节点');
-    return `<details id="${esc(id)}" class="heading-section heading-anchor${a.class?' '+esc(a.class):''}" data-heading-section open><summary>${heading(id,a.outlineLevel,render(caption.children))}</summary><div class="heading-content">${render(content)}</div></details>`;
+    return `<details id="${esc(id)}" class="heading-section heading-anchor${a.class?' '+esc(a.class):''}" data-heading-section open><summary>${heading(id,a.outlineLevel,render(caption.children,true,scope))}</summary><div class="heading-content">${render(content,true,scope)}</div></details>`;
    }
    if(type==='code')return `<details id="${esc(a.id??codeId())}" class="code-block" data-code-block open><summary><span>代码${a.language?' · '+esc(a.language):''}</span><span class="code-lines">${a.lines} 行</span></summary>${children()}</details>`;
    if(type==='section'){const specSource=a.specification?graph.specifications!.definitions.get(a.specification)!.entity.source:undefined;if(a.specification)return specificationHTML({specification:a.specification,bodyNamespace:a.bodyNamespace,renderAnchor:a.renderAnchor,role:a.role,namespace:a.namespace,title:a.title,collapsed:a.collapsed},children(),{
@@ -61,7 +61,12 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
    if(type==='page')return `<a href="${esc(routeHash({kind:'page',project:a.project??graph.manifest.projectId,id,...(a.anchor?{anchor:a.anchor}:{})}))}">${esc(a.label??id)}</a>`;
    if(type==='attachment')return `<a class="attachment-link" href="${esc(routeHash({kind:'pdf',project:a.project??graph.manifest.projectId,id,...(a.target?{target:a.target}:{})}))}">${esc(a.label??(!a.project||a.project===graph.manifest.projectId?graph.attachments?.[id]?.title:undefined)??id)}</a>`;
    if(type==='include'&&a.project){const link=options.projectLink?.(a.project);return link?`<a class="project-entry" href="${esc(routeHash({kind:'page',project:link.project,id:link.page}))}">进入 ${esc(link.title)}</a>`:'';}
-   if(type==='data-table')return tableHTML(graph,graph.index.get(id)!.entity as Table);
+   if(type==='data-table'){
+    const table=graph.index.get(id)!.entity as Table,key=JSON.stringify([scope,id]),instance=tableInstances.get(key)??0;tableInstances.set(key,instance+1);let rowNamespace='';
+    if(instance)do{rowNamespace='table-instance-'+(++tableCounter)+'-';}while(table.rows.some(row=>usedIds.has(scope+rowNamespace+anchor(row.id))));
+    for(const row of table.rows)usedIds.add(scope+rowNamespace+anchor(row.id));
+    return tableHTML(graph,table,{sortable:a.sortable,filterable:a.filterable,rowNamespace});
+   }
    if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
    if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);
    if(type==='interface-table')return interfaceTableHTML(graph,id,a.mode??'detailed');
@@ -96,7 +101,9 @@ export async function renderDocument(graph:Graph,title:string,options:{compactIn
   if(Markdoc.Tag.isTag(tree))return new Markdoc.Tag(tree.name,tree.attributes,await settled(tree.children));
   return tree;
  };
- const chapters=(await Promise.all(plan.documents.map(async({file,ast})=>`<article data-source="${esc(file)}">${render(await settled(await Markdoc.transform(ast,config)))}</article>`))).join('');
+ // 先并行完成转换，再按源文顺序渲染，避免异步Schema改变重复表的首处锚点。
+ const trees=await Promise.all(plan.documents.map(async({ast})=>settled(await Markdoc.transform(ast,config))));
+ const chapters=plan.documents.map(({file},index)=>`<article data-source="${esc(file)}">${render(trees[index])}</article>`).join('');
  const allEntities=Object.fromEntries([...graph.index].map(([id,e])=>[id,e.entity]));
  const existing=new Set([...chapters.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));
  const facts=[...graph.index.values()].filter(e=>!existing.has(anchor(e.id))).map(e=>options.compactIndex?`<span id="${anchor(e.id)}" data-entity-id="${esc(e.id)}"></span>`:`<details class="fact" id="${anchor(e.id)}" data-entity-id="${esc(e.id)}"><summary>${esc(e.entity.label??e.id)} · ${esc(e.type)}</summary><pre>${esc(JSON.stringify({...e.entity,...('ports' in e.entity?{ports:e.entity.ports?.map(p=>({id:p.id}))}:{})}))}</pre></details>`).join('');

@@ -1,3 +1,4 @@
+import {tableControls} from './table-controls.ts';
 import {sidebarLayout} from './sidebar-layout.ts';
 import {readingControls} from './reading-controls.ts';
 import {nodeHeading,addPortLeads,readableViewport} from './graph-presentation.ts';
@@ -13,7 +14,8 @@ export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:s
 export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
 const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
 const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
-if(!options.managed)cleanups.push(sidebarLayout(),readingControls(document.querySelector<HTMLElement>('main')!));
+const tables=options.managed?undefined:tableControls(document.querySelector<HTMLElement>('main')!);
+if(!options.managed)cleanups.push(sidebarLayout(),readingControls(document.querySelector<HTMLElement>('main')!),()=>tables?.dispose());
 const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
 window.EdocGraphs=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;
@@ -157,6 +159,7 @@ function revealTarget(id:string){
  const target=document.getElementById(id);
  if(target?.dataset.entityId)select(target.dataset.entityId);
  for(let p=target;p;p=p.parentElement){if(p instanceof HTMLDetailsElement)p.open=true;if(p.classList.contains('tab'))p.hidden=false;}
+ if(target)tables?.reveal(target);
  revealTOC(id);
 }
 document.addEventListener('click',e=>{const a=(e.target as Element).closest('a[href^="#"]');if(a)revealTarget(a.getAttribute('href')!.slice(1));},{signal:abort.signal});
