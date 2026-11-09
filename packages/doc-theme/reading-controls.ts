@@ -11,12 +11,12 @@ export function readingControls(root:HTMLElement,options:Options={}){
   const row=document.createElement('div');row.className='reading-control-row';row.dataset.readingScope=scope;row.setAttribute('role','group');row.setAttribute('aria-label',label+'显示');
   const name=document.createElement('span');name.textContent=label;row.append(name);
   const expand=document.createElement('button'),collapse=document.createElement('button');expand.type=collapse.type='button';expand.textContent='展开';collapse.textContent='折叠';
-  expand.setAttribute('aria-label','展开'+(scope==='spec'?' Spec':label));collapse.setAttribute('aria-label','折叠'+(scope==='spec'?' Spec':label));
+  expand.setAttribute('aria-label','展开'+(scope==='spec'&&label==='Spec'?' Spec':label));collapse.setAttribute('aria-label','折叠'+(scope==='spec'&&label==='Spec'?' Spec':label));
   const change=(open:boolean)=>{elements().forEach(element=>element.open=open);update();options.onChange?.();};
   expand.onclick=()=>change(true);collapse.onclick=()=>change(false);row.append(expand,collapse);controls.append(row);groups.push({elements,expand,collapse});
  };
  add('正文','body',()=>[...root.querySelectorAll<HTMLDetailsElement>('details[data-heading-section]')]);
- add('Spec','spec',()=>[...root.querySelectorAll<HTMLDetailsElement>('details.specification')]);
+ add(root.querySelector('details[data-clause]')?'条款':'Spec','spec',()=>[...root.querySelectorAll<HTMLDetailsElement>('details.specification')]);
  add('代码','code',()=>[...root.querySelectorAll<HTMLDetailsElement>('details[data-code-block]')]);
  const toc=document.querySelector<HTMLElement>('#page-toc');
  add('页内目录','outline',()=>[...toc?.querySelectorAll<HTMLDetailsElement>('details')??[]]);

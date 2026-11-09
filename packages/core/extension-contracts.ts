@@ -3,6 +3,7 @@ import {validateRegisterData} from '../extensions/register/validate.ts';
 import {validateSpecificationData} from '../extensions/specification/validate.ts';
 import {specificationTags} from '../extensions/specification/contract.ts';
 import {documentTags} from '../extensions/document/contract.ts';
+import {semanticContentTags} from '../extensions/semantic-content/contract.ts';
 import {relationDiagramTags,relationDiagramTargets,relationDiagramResources,interfaceTableTargetError} from '../extensions/relation-diagram/contract.ts';
 import {dataTableTags,dataTableTargets,dataTableResources} from '../extensions/data-table/contract.ts';
 import {waveformTags,waveformTargets,waveformResources} from '../extensions/waveform/contract.ts';
@@ -13,7 +14,7 @@ import {validateTableData} from '../extensions/data-table/validate.ts';
 import {validateWaveformData} from '../extensions/waveform/validate.ts';
 
 // 内置能力按领域声明；这里只组合已定义的契约，不开放任意 IR 插件注册。
-export const builtinTags={...documentTags,...specificationTags,...relationDiagramTags,...dataTableTags,...waveformTags,...registerTags};
+export const builtinTags={...documentTags,...specificationTags,...semanticContentTags,...relationDiagramTags,...dataTableTags,...waveformTags,...registerTags};
 export const referenceTargets:Record<string,readonly RecordEntry['type'][]>={
  ...relationDiagramTargets,...dataTableTargets,...waveformTargets,...registerTargets,
 };

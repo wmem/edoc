@@ -109,7 +109,7 @@ section 的嵌套决定章节关系。该 section 内最浅的 Markdown 标题�
 
 “理解性”和“查询性”指阅读任务，不等同于“人”和“Agent”的硬分工。人也需要查精确值，Agent 也需要理解语义与约束。
 
-会改变结论的适用条件与重要例外，在父节简述或明确链接到对应小节，避免只读父节得到无条件结论；详细条款仍维护一份。read 默认 self，存在 children 表示还有未展开正文。作结论前读取相关条件，必要时显式 subtree 并检查 range 分页，不能将未读内容当作没有限制。
+会改变结论的适用条件与重要例外，在父节简述或明确链接到对应小节，避免只读父节得到无条件结论；详细条款仍维护一份。普通章节与 capability 的 read 默认 self，behavior 默认 subtree 并聚合引用条款；存在 children 时仍须核对读取范围。作结论前读取相关条件，必要时显式 subtree 并检查 range 分页，不能将未读内容当作没有限制。
 
 {% /section %}
 
@@ -151,7 +151,7 @@ edoc query --config docs/edoc.config.js --id project:object --depth 1 --format j
 edoc read --config docs/edoc.config.js --id stable:section --format json
 ```
 
-outline 给出父子关系、级别、源 sectionId 与正文来源，不需要读取生成网页。query 用于工程事实与引用；read 按稳定 section ID 返回规范化 Markdown，默认 self 不附带子章节正文，显式 subtree 才展开。返回来源、子章节和字符截断/nextOffset，按需继续读取。不要为查一个 pin 或一项配置读取整份 HTML。
+outline 给出父子关系、级别、源 sectionId 与正文来源，不需要读取生成网页。query 用于工程事实与引用；read 按稳定章节或语义 ID 返回格式化 Markdown；普通章节与 capability 默认 self，behavior 默认 subtree 并追加引用条款。返回来源、子章节和字符截断/nextOffset，按需继续读取。不要为查一个 pin 或一项配置读取整份 HTML。
 
 网页折叠只改善阅读密度，不会自动减少 Agent 读取源文件的 token。需要精确读取的内容应有清楚的稳定小节，细节多时拆成参考页。展示标签源写法的围栏显式设置 process=false，或通过 code.file 展示真实文件，避免样例触发 include 或图形依赖。
 

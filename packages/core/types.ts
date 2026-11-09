@@ -21,6 +21,7 @@ export type Diagnostic = { code: string; file: string; path: string; message: st
 export type RecordEntry = {
   id: string; type: 'node' | 'interface' | 'port' | 'group' | 'connection' | 'view' | 'table' | 'waveform' | 'reference' | 'document' | 'specification' | 'row' | 'register' | 'register-field'; entity: Entity;
   location: { file: string; path: string }; ownerId?: string;
+  semanticKind?:import('../extensions/semantic-content/contract.ts').SemanticKind;
 };
 export type Graph = {
   attachments?:Record<string,import('./attachments.ts').PdfAttachment>;

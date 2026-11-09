@@ -38,6 +38,8 @@
     "docs:build": "node packages/cli/edoc.ts",
     "docs:dev": "node scripts/docs.ts",
     "test:specification": "node --test tests/specification.test.ts tests/specification-browser.test.ts",
+    "test:semantic-content": "node --test tests/semantic-content.test.ts tests/semantic-content-browser.test.ts",
+    "demo:contracts": "node packages/cli/edoc.ts build --config examples/behavior-contract/docs/edoc.config.js",
     "test:read": "node --test tests/read.test.ts",
     "test:manual": "node --test tests/manual.test.ts tests/manual-capabilities.test.ts",
     "test:manual-browser": "node --test tests/manual-browser.test.ts tests/manual-capabilities-browser.test.ts",

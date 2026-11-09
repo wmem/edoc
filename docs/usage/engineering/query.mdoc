@@ -9,11 +9,11 @@ edoc docs outline --depth 0 --format json
 edoc docs read --id ref:config-data --format text
 ```
 
-上面查询工具自身手册，不读取当前项目。查自己的工程时去掉 docs，将 ID 换成项目的稳定章节。outline 给出目录和来源，read 按显式 section ID 返回规范化 Markdown。默认 scope=self，不附带子 section 正文；返回子章节身份供继续选择，不包含 HTML、字体或图形载荷。
+上面查询工具自身手册，不读取当前项目。查自己的工程时去掉 docs，将 ID 换成项目的稳定章节。outline 给出目录和来源，read 按章节或语义 ID 返回格式化 Markdown。普通 section / capability 默认 scope=self，不附带子 section 正文；返回子章节身份供继续选择，不包含 HTML、字体或图形载荷。
 
 需要完整子树时显式指定 --scope subtree。默认最多返回 12000 个 Unicode 字符，JSON 的 range 说明总数、是否截断和 nextOffset；使用 --offset 继续读取。代码和表格可能跨分页，精确自动处理推荐 JSON。
 
-行为需要一次读取完整规范时使用 --with-specs；条款可直接按规范 ID read，query 可反查使用行为。实际例子见[规范聚合](../rendering/specifications.mdoc#use:specifications-read)。
+behavior 标签默认读取完整子树并追加引用条款；普通章节需要聚合时使用 --with-clauses，旧 --with-specs 继续兼容。条款可直接按 ID read，query 可查询已声明的适用关系，不保证所有普通链接的反查。实际例子见[能力、行为与条款](../rendering/semantic-content.mdoc#use:semantic-content-query)。
 
 read 保留图表引用标签，不把关系数据或 PDF 展开为正文。需要哪个对象再 query 哪个对象。
 

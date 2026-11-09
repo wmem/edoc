@@ -11,7 +11,7 @@ import {EdocError} from '../../core/errors.ts';
 export const specificationNamespace=(id:string)=>'spec-definition-'+anchor(id)+'-';
 type Document=DocumentPlan['documents'][number];
 export type Definition={entity:Specification;node:any;document:Document};
-export type Application={for:string;common:string[];specific:string[];source:Source};
+export type Application={for:string;common:string[];specific:string[];source:Source;presentation?:'clauses'};
 export type SpecificationPlan={definitions:Map<string,Definition>;applications:Map<string,Application>};
 
 // 机器源正文也经过同一 Markdoc 扫描器；不回调 data，不执行另一个工程配置。
@@ -52,7 +52,7 @@ export function registerSpecifications(graph:Graph){
     if(definitions.has(id)||!document.hidden&&graph.index.has(id))failure('DUPLICATE_ID',source.file,`#L${source.line}`,'规范 ID 已定义：'+id);
     const entity:Specification=document.hidden?graph.index.get(id)!.entity as Specification:{id,kind:'specification',label:node.attributes.title,body:{format:'markdoc',content:formatContent(node.children)},source:{...source,selector:id}};
     const errors=validateSchema('specification',{specifications:[entity]},source.file);if(errors.length)throw new EdocError(errors);
-    if(!document.hidden)graph.index.set(id,{id,type:'specification',entity,location:{file:source.file,path:`#L${source.line}`}});
+    if(!document.hidden)graph.index.set(id,{id,type:'specification',entity,location:{file:source.file,path:`#L${source.line}`},...(node.attributes.__edocSemanticKind?{semanticKind:'clause',ownerId:node.attributes.__edocOwnerId}:{})});
     definitions.set(id,{entity,node,document});
    }
    for(const child of [...Object.values(node.slots??{}),...node.children??[]])visit(child,inside||isSpec);
@@ -73,14 +73,15 @@ export function registerSpecifications(graph:Graph){
   }
   if(active.has(node)){
    if(applications.has(id))failure('SPECIFICATION_APPLICATION',file,`#L${line}`,'行为只能定义一次适用集合：'+id);
-   applications.set(id,{for:id,common:[...a.common??[]],specific:[...a.specific??[]],source:{file,line}});
+   applications.set(id,{for:id,common:[...a.common??[]],specific:[...a.specific??[]],source:{file,line},...(a.__edocClauseList?{presentation:'clauses'}:{})});
   }
  }
  for(const {node,file,line}of lists)if(node.attributes.common===undefined&&node.attributes.specific===undefined&&!applications.has(node.attributes.for))failure('SPECIFICATION_APPLICATION',file,`#L${line}`,'复用的行为尚未定义约束集合：'+node.attributes.for);
  for(const set of applications.values())for(const role of ['common','specific'] as const)for(const id of set[role]){
+  if(set.presentation==='clauses'&&graph.index.get(id)?.ownerId===set.for)failure('CLAUSE_APPLICATION',set.source.file,'','本地条款已在行为正文中，不应再次列入引用集合：'+id);
   const referenceId='spec-application:'+JSON.stringify([set.for,role,id]);
   if(graph.index.has(referenceId))failure('DUPLICATE_ID',set.source.file,'','派生适用关系 ID 冲突：'+referenceId);
-  const reference:Reference={id:referenceId,kind:'reference',fromId:set.for,targetId:id,class:'applies-'+role,source:set.source};
+  const reference:Reference={id:referenceId,kind:'reference',fromId:set.for,targetId:id,class:set.presentation==='clauses'?'applies-clause':'applies-'+role,source:set.source};
   graph.index.set(referenceId,{id:referenceId,type:'reference',entity:reference,location:{file:set.source.file,path:`#L${set.source.line}`}});
  }
 }
@@ -102,7 +103,9 @@ export function presentationGraph(graph:Graph):Graph{
     for(const role of ['common','specific'] as const)for(const id of set[role]){
      const definition=graph.specifications!.definitions.get(id)!,ns='spec-instance-'+(++occurrence)+'-';
      const child=copy(definition.node,definition.document,ns);
-     child.attributes.collapsed=node.attributes.collapsed??true;child.attributes.__edocApplicationRole=role;child.attributes.__edocBehavior=set.for;result.children.push(child);
+     child.attributes.collapsed=node.attributes.collapsed??true;child.attributes.__edocApplicationRole=role;child.attributes.__edocBehavior=set.for;
+     if(node.attributes.__edocClauseList||set.presentation==='clauses'){child.attributes.__edocSemanticKind='clause';child.attributes.__edocApplicationRole=undefined;}
+     result.children.push(child);
     }
     return result;
    }

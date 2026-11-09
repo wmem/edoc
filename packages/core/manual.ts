@@ -24,8 +24,8 @@ export function compileManual(book:Book):Manual{
   for(const record of records)if(record.type==='document'||record.type==='specification'){
    const values={} as Project['readings'][string];
    for(const scope of (record.type==='specification'?['subtree']:['self','subtree']) as ('self'|'subtree')[]){
-    let result=readDocument(node.graph,record.id,{scope,maxChars:100000}),content=result.content;
-    while(result.range.truncated){result=readDocument(node.graph,record.id,{scope,maxChars:100000,offset:result.range.nextOffset!});content+=result.content;}
+    let result=readDocument(node.graph,record.id,{scope,withClauses:false,maxChars:100000}),content=result.content;
+    while(result.range.truncated){result=readDocument(node.graph,record.id,{scope,withClauses:false,maxChars:100000,offset:result.range.nextOffset!});content+=result.content;}
     const {range,applications,specifications,...reading}=result;
     values[scope]={...reading,content,source:{...reading.source,file:local(reading.source.file)},sources:reading.sources.map(s=>({...s,file:local(s.file)})),children:reading.children.map(c=>({...c,source:{...c.source,file:local(c.source.file)}}))};
    }
@@ -53,15 +53,17 @@ export function manualOutline(manual:Manual,options:OutlineOptions={}){
  }
 }
 export function manualRead(manual:Manual,id:string,options:ReadOptions&{project?:string}={}){
- const selected=project(manual,options.project),scope=options.scope??'self';
+ const selected=project(manual,options.project),semanticKind=selected.readings[id]?.subtree.semanticKind,scope=options.scope??(semanticKind==='behavior'?'subtree':'self');
  if(!['self','subtree'].includes(scope))failure('READ_SCOPE','<read>','/scope','scope 只接受 self/subtree');
  if(!Object.hasOwn(selected.readings,id)){
   if(selected.records.some(r=>r.id===id))failure('READ_TYPE','<read>','/id','read 读取 section 或 specification；其他工程对象使用 query');
   failure('QUERY_NOT_FOUND','<read>','/id','工具手册中没有此章节：'+id+navigationHint(manual,id,options.project??manual.rootProject));
  }
- const reading=selected.readings[id][scope]??selected.readings[id].subtree;
- if(!options.withSpecs)return {...reading,specifications:[],applications:selectedApplications(reading.specFor??[],selected.applications??[]),...readRange(reading.content,options.offset,options.maxChars)};
- const expanded=composeSpecifications(reading.content,selectedApplications(reading.specFor??[],selected.applications??[]),specId=>selected.readings[specId].subtree);
+ const stored=selected.readings[id][scope]??selected.readings[id].subtree;
+ const {clauses:storedClauses,...baseReading}=stored;
+ const reading={...baseReading,...(semanticKind||options.withClauses!==undefined?{clauses:storedClauses}:{})};
+ if(!(options.withClauses??options.withSpecs??semanticKind==='behavior'))return {...reading,specifications:[],applications:selectedApplications(reading.specFor??[],selected.applications??[]),...readRange(reading.content,options.offset,options.maxChars)};
+ const expanded=composeSpecifications(reading.content,selectedApplications(reading.specFor??[],selected.applications??[]),specId=>selected.readings[specId].subtree,{clauses:!!semanticKind||options.withClauses,inlineIds:reading.clauses?.filter(item=>item.origin==='local').map(item=>item.id)});
  return {...reading,sources:[...reading.sources,...expanded.sources.filter(s=>!reading.sources.some(source=>source.file===s.file))],specifications:expanded.specifications,applications:expanded.applications,...readRange(expanded.content,options.offset,options.maxChars)};
 }
 export function manualQuery(manual:Manual,id:string,options:{project?:string;depth?:number;maxItems?:number}={}){

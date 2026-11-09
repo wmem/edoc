@@ -1,0 +1,19 @@
+{% section id="demo:home" title="异步发送的行为合同" %}
+
+一次异步发送从接收请求开始，随后得到一个确定结果。这份虚构工程文档用它说明：如何先理解能力和行为，再在同一阅读路径中核对本地条款与共享接口约定。
+
+从[异步发送能力](capabilities/send.mdoc)开始，连贯阅读提交、完成与超时；需要核对错误编码、时间边界和通知规则时，进入[发送接口约定](interface.mdoc)。[审阅路径](review.mdoc)提供从行为到条款、从条款回到适用行为的入口。
+
+{% columns ratio="2:1" %}
+{% panel title="先理解系统怎样表现" %}
+发送可以暂时等待，也可能成功或超时。阅读重点是请求何时被接受、等待中允许发生什么，以及最终结果如何保持确定。
+{% /panel %}
+{% panel title="再核对精确要求" %}
+条款可就地展开，引用条款能跳转到唯一原文。正文与条款各自折叠，返回时保留阅读位置。
+{% /panel %}
+{% /columns %}
+
+本例只定义一个虚构的单通道异步接口，用于检查文档组织；不代表执行了实际 CAN 发送、驱动或硬件验证。文章的源写法见[查看正文写法](authoring.mdoc)。
+
+{% directory-order items=["capabilities/","interface.mdoc","review.mdoc","authoring.mdoc"] /%}
+{% /section %}

@@ -21,6 +21,7 @@
 | 寄存器定义与位域图 | packages/extensions/register：types.ts、contract.ts、register.schema.json、validate.ts、model.ts、query.ts、render.ts；浏览器 register-client.ts |
 | 数字波形 | packages/extensions/waveform：types.ts、contract.ts、waveform.schema.json、validate.ts；绘制后端 packages/render-wave |
 | 正文编排与跳转 | packages/extensions/document/contract.ts；解析 packages/core/documents.ts，正文呈现 packages/doc-theme/render.ts |
+| 能力、行为与条款 | packages/extensions/semantic-content/contract.ts；原文归属/读取在 core/documents.ts、read.ts、query.ts，条款聚合与兼容格式复用 extensions/specification |
 | 共用能力 | packages/core：common-types.ts、types.ts、schema.ts、graph.ts、resource-validation.ts、query.ts |
 
 packages/core/extension-contracts.ts 组合内置标签、资源 Schema、引用目标类型与语义校验；表格链接共用 core/link-target.ts 与 link-validation.ts，不与语义 Reference 或硬件连接合并。

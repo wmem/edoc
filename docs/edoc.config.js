@@ -27,7 +27,7 @@ export default {
     tags: readerNote.markdoc.tags
   },
   data: tutorialData,
-  children: {component: 'docs/component/docs/edoc.config.js', documentFirst: 'examples/document-first/docs/edoc.config.js'},
+  children: {component: 'docs/component/docs/edoc.config.js', documentFirst: 'examples/document-first/docs/edoc.config.js', behaviorContract: 'examples/behavior-contract/docs/edoc.config.js'},
   attachments: {
     location: {
       type: 'pdf', file: 'docs/assets/location.pdf', title: 'PDF 定位示例（虚构）',

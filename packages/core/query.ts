@@ -8,11 +8,12 @@ import { failure } from './errors.ts';
 
 function item(entry: RecordEntry) {
   return { id: entry.id, type: entry.type, entity: entry.entity, location: entry.location,
-    ...(entry.ownerId ? { ownerId: entry.ownerId } : {}) };
+    ...(entry.ownerId ? { ownerId: entry.ownerId } : {}),...(entry.semanticKind?{semanticKind:entry.semanticKind}:{}) };
 }
 
 function links(graph:Graph,entry:RecordEntry):string[]{
  if(entry.type==='reference'){const e=entry.entity as import('./types.ts').Reference;return [e.fromId,e.targetId];}
+ if(entry.semanticKind)return [entry.ownerId,...[...graph.index.values()].filter(child=>child.ownerId===entry.id&&child.semanticKind).map(child=>child.id)].filter((id):id is string=>!!id);
  for(const resolve of dataLinkResolvers){const links=resolve(graph,entry);if(links!==undefined)return links;}
  return [];
 }
@@ -44,6 +45,7 @@ export function query(graph: Graph, id: string, options: { depth?: number; maxIt
   return {
     irVersion: graph.manifest.irVersion, projectId: graph.manifest.projectId,
     target: {...item(target),anchor:anchor(id)}, directRelations,
+    ...(target.semanticKind==='capability'||target.semanticKind==='behavior'?{children:[...graph.index.values()].filter(entry=>entry.ownerId===id&&entry.semanticKind).map(item)}:{}),
     ...(target.type==='row'&&(target.entity as Row).links?{cellLinks:Object.fromEntries(Object.entries((target.entity as Row).links!).map(([field,link])=>[field,resolveLinkTarget(graph,link)]))}:{}),
     ...(target.type==='register'?{register:registerProjection(target.entity as Register)}:{}),
     ...(target.type==='register-field'?{registerField:{width:(target.entity as RegisterField).msb-(target.entity as RegisterField).lsb+1,resetState:resetState((target.entity as RegisterField).reset),resetText:resetText((target.entity as RegisterField).reset),...entitySource(graph,id)}}:{}),

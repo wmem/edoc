@@ -66,11 +66,14 @@ edoc outline --format text
 ```sh
 edoc read --id ref:config-data
 edoc read --id example:clear --with-specs
+edoc read --id demo:timeout --with-clauses
 edoc read --id ref:config --scope subtree --max-chars 4000 --offset 0
 edoc read --project manual-component --id component:home --format text
 ```
 
-id 接受显式 section 或 specification 的源 ID，普通标题和其他工程对象使用导航/query。section 的 scope 默认 self，只返回本节正文，不包括子 section；subtree 显式包括后代。两种模式均保留子章节的身份与来源，project include 仍只是引用，不展开外部工程。
+id 接受 section、capability、behavior、clause 和兼容的 specification 源 ID，普通标题和其他工程对象使用导航/query。section 与 capability 的 scope 默认 self，只返回本节正文；behavior 默认 subtree，包含折叠子节里的本地条款，并聚合显式引用的条款。显式 scope=self 只裁剪子章节，behavior 默认仍追加引用条款，不能当作完整读取；API 可用 withClauses:false 关闭聚合，CLI 没有对应开关。两种模式均保留子章节的身份与来源，project include 仍只是引用，不展开外部工程。
+
+--with-clauses 可为普通章节显式聚合所展示的引用条款，docs read 同样支持。JSON 的 semanticKind 标识语义类型，clauses 列出本地与引用条款的身份、来源及归属，完整内容仍进入 content 统一分页。见[语义正文契约](tags/semantic-content.mdoc)。
 
 直接 read specification 总是返回完整条款子树。行为轻量读取保留 spec-list 标签、specFor 与 applications（有序公共/专属 ID）；--with-specs 追加完整条款，按 ID 去重，在 specifications 中保留身份、来源与各行为角色。它不展开任意图表或链接，docs read 也支持此参数。先聚合再统一分页，不把完整条款放进 JSON 侧字段绕过预算。详见[规范契约](tags/specification.mdoc)。
 
@@ -91,7 +94,7 @@ edoc query --project manual-component --id component:home
 
 depth 默认 0，范围 0–10。max-items 默认 1000，范围 1–10000，只限制递归展开，直接关系与每条 Net 的真实端点完整保留。结果包含 target、directRelations、references 和 expansion，truncated 明确表示展开限额。
 
-target 保留原 entity、type、location、anchor 与可选 ownerId；source 指向权威数据来源。query 不返回章节正文，正文使用 read。
+target 保留原 entity、type、location、anchor 与可选 ownerId；source 指向权威数据来源。新语义标签还返回 semanticKind，能力/行为的 children 列出直属语义对象。query 不返回章节正文，正文使用 read；references 包含已建模关系（包括条款适用），不保证普通正文链接的完整反查，也不自动推导实现或测试覆盖。当前按 ID 查询，没有按 semanticKind 列出所有同类对象的筛选参数。
 
 --project 只选择本次显式组合包含的 projectId，不搜索父/兄弟工程。当前 query 的 text/json 选项均输出结构化 JSON，适合机器读取。
 

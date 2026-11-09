@@ -65,6 +65,8 @@ details.specification { margin: 14px 0; border: 1px solid #cbd5e1; border-radius
 .specification-body > :last-child { margin-bottom: 0; }
 /* 本页阅读设置与标题分组；编号不写入源标题。 */
 .heading-number { color: #607b90; font-weight: 500; margin-right: .5em; white-space: nowrap; }
+.content-kind-label { display: inline-block; margin-right: .7em; padding: 1px 7px; border: 1px solid #bfd5df; border-radius: 4px; color: #35677b; background: #edf6f8; font: 12px/1.6 'Noto Sans SC', sans-serif; vertical-align: middle; }
+[data-content-kind="behavior"] > .heading-content { padding-left: 18px; border-left: 2px solid #e3edf2; margin-top: 12px; }
 .heading-numbers-hidden .heading-number { display: none; }
 details.heading-section { margin: 20px 0; min-width: 0; }
 .heading-section > summary { display: flex; align-items: baseline; gap: 8px; list-style: none; }

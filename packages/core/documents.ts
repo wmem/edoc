@@ -44,11 +44,25 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  }
  function capture(node:any,cfg:any):any{
   engineAttributes(node,cfg);
-  if(cfg.__edocSpecificationDepth&&node.type==='tag'&&['specification','spec-list'].includes(node.tag)){const source=location(node,cfg);failure('SPECIFICATION_NESTING',source.file,`#L${source.line}`,'规范正文不能嵌套 specification 或 spec-list');}
-  const childConfig=node.type==='tag'&&node.tag==='specification'?{...cfg,__edocSpecificationDepth:(cfg.__edocSpecificationDepth??0)+1}:cfg;
+  const semantic=node.type==='tag'&&['capability','behavior','clause'].includes(node.tag)?node.tag:undefined;
+  if(semantic&&(['id','title'].some(key=>typeof node.attributes[key]!=='string'||!node.attributes[key].trim()))){const source=location(node,cfg);failure('CONTENT_ID',source.file,`#L${source.line}`,'语义正文需要非空 id 和 title');}
+  if(cfg.__edocSpecificationDepth&&node.type==='tag'&&['specification','spec-list','clause','clause-list','capability','behavior'].includes(node.tag)){const source=location(node,cfg);failure('SPECIFICATION_NESTING',source.file,`#L${source.line}`,'条款正文不能嵌套规范、行为、能力或适用列表');}
+  let childConfig=cfg;
+  if(node.type==='tag'&&['section','capability','behavior'].includes(node.tag))childConfig={...childConfig,__edocSectionOwner:node.attributes.id};
+  if(semantic==='capability'||semantic==='behavior')childConfig={...childConfig,__edocSemanticOwner:node.attributes.id,...(semantic==='behavior'?{__edocBehavior:node.attributes.id}:{})};
+  if(node.type==='tag'&&['specification','clause'].includes(node.tag))childConfig={...childConfig,__edocSpecificationDepth:(cfg.__edocSpecificationDepth??0)+1};
   const children=node.type==='fence'&&node.attributes.process===false?[]:node.transformChildren(childConfig);
   const slots=Object.fromEntries(Object.entries(node.slots).map(([key,slot]:[string,any])=>[key,slot.transform(childConfig)]));
-  const copy=Object.assign(new Markdoc.Ast.Node(),node,{children,slots});
+  const copy=Object.assign(new Markdoc.Ast.Node(),node,{children,slots,attributes:{...node.attributes}});
+  if(semantic){
+   copy.tag=semantic==='clause'?'specification':'section';
+   copy.attributes={...copy.attributes,__edocSemanticKind:semantic,__edocSourceTag:node.tag,__edocOriginalAttributes:{...node.attributes},__edocOwnerId:cfg.__edocSemanticOwner??cfg.__edocSectionOwner};
+  }
+  if(node.type==='tag'&&node.tag==='clause-list'){
+   const target=node.attributes.for??cfg.__edocBehavior,source=location(node,cfg);
+   if(typeof target!=='string'||!target.trim())failure('CLAUSE_APPLICATION',source.file,`#L${source.line}`,'clause-list 需要所在 behavior 或显式 for');
+   copy.tag='spec-list';copy.attributes={for:target,...(node.attributes.ids!==undefined?{common:node.attributes.ids,specific:[]}:{}),collapsed:node.attributes.collapsed,__edocClauseList:true,__edocSourceTag:node.tag,__edocOriginalAttributes:{...node.attributes}};
+  }
   if(node.type==='link')copy.attributes={...copy.attributes,__edocSourceFile:location(node,cfg).file};
   if(copy.type==='text'&&copy.attributes.content&&typeof copy.attributes.content.then==='function')enqueue(Promise.resolve(copy.attributes.content).then(value=>{copy.attributes={...copy.attributes,content:value};}));
   scopes.set(copy,cfg.variables);track(copy,cfg);return copy;
@@ -124,7 +138,8 @@ export function registerDocuments(graph:Graph){
   const location=locations.get(node)!;
   if(graph.index.has(id))failure('DUPLICATE_ID',location.file,`#L${location.line}`,`章节 ID 已定义：${id}`);
   const entity:DocumentEntity={id,kind:'document',label:node.attributes.title??id,source:{...location,selector:id}};
-  graph.index.set(id,{id,type:'document',entity,location:{file:location.file,path:`#L${entity.source.line}`}});
+  const semanticKind=node.attributes.__edocSemanticKind;
+  graph.index.set(id,{id,type:'document',entity,location:{file:location.file,path:`#L${entity.source.line}`},...(semanticKind?{semanticKind,ownerId:node.attributes.__edocOwnerId}:{})});
  }
 }
 export function validateDocuments(graph:Graph){

@@ -1,0 +1,26 @@
+{% section id="demo:interface" title="发送接口约定" %}
+
+本页维护提交、完成与超时共同采用的接口规则。每个条款保留完整的适用范围与边界，引用它的行为可以直接展示原文；需要各行为独有的条件时，回到[异步发送](capabilities/send.mdoc)。
+
+{% clause id="demo:result-codes" title="结果编码" %}
+
+接口以 0 表示成功，以负 errno 表示失败。-EINVAL 表示参数无效，-EAGAIN 表示本次提交暂时无法接收，-ETIMEDOUT 表示已接收请求超出完成时限。提交返回值与后续完成通知的状态分别表示各自阶段的结果，不能混为一次重复通知。
+
+{% /clause %}
+
+{% clause id="demo:deadline" title="完成时限" %}
+
+计时从提交返回 0 所代表的接收时刻开始，包含后续等待与发送时间。超时参数 T 使用毫秒，必须为正整数；完成时限为接收时刻加 T。只有时间戳严格早于完成时限的完成结果有效，恰在时限到达的结果按超时处理。
+
+{% /clause %}
+
+{% clause id="demo:one-result" title="最终通知唯一" %}
+
+本条款适用于已经接受的请求。每个请求只能产生一次最终通知；成功、发送失败与超时相互排斥。发送失败包括接口报告的底层失败状态，本例不枚举具体硬件错误码。提交未被接受时不产生最终通知。
+
+### 关联行为
+
+可以回到 {% reference id="demo:complete" label="发送完成" /%} 或 {% reference id="demo:timeout" label="发送超时" /%}，查看这项共同要求在各情境中的作用。
+
+{% /clause %}
+{% /section %}

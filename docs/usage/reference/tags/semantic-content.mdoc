@@ -1,0 +1,106 @@
+{% section id="ref:semantic-content" title="能力、行为与条款标签" %}
+
+capability、behavior、clause 为原文增加语义身份与归属；clause-list 声明并展示引用条款。它们复用正文、章节和富文本条款能力，不要求另写 IR 或维护 Catalog。完整写法和实际效果见[教程](../../rendering/semantic-content.mdoc)。
+
+{% section id="ref:semantic-content-attributes" title="属性与正文" %}
+
+{% section id="ref:tag-capability" title="capability：能力章节" %}
+
+id、title 为必需非空字符串；collapsed 为可选 boolean，默认 false。能力组织相关行为并说明整体目标、范围与承诺，章节默认展开，不自动创建独立页面。
+
+{% /section %}
+
+{% section id="ref:tag-behavior" title="behavior：完整行为合同" %}
+
+id、title 为必需非空字符串；collapsed 为可选 boolean，默认 false。正文定义条件、响应、结果和边界，可以就地包含条款及适用引用；默认 read 包含子树并聚合引用条款。
+
+{% /section %}
+
+{% section id="ref:tag-clause" title="clause：有身份的条款" %}
+
+id、title 为必需非空字符串。条款具有唯一来源和可查询身份，定义处默认展开，可放在行为中或独立主题规范中。自身不接受 collapsed；引用处的初始折叠通过 clause-list 设置，页面上仍可逐条开关。
+
+{% /section %}
+
+{% section id="ref:tag-clause-list" title="clause-list：适用集合与展示" %}
+
+自闭合标签。ids 为可选有序 ID 数组；for 为可选目标 ID，缺省取最近 behavior；collapsed 为可选 boolean，默认 true，false 表示引用条款初始展开。标签在当前位置完整展示引用条款；定义集合与只读复用的区别见[适用集合](#ref:semantic-content-applications)。
+
+{% /section %}
+
+Specification 是规范总称；Capability / Behavior 组织合同，Clause 是要求的表达单位。普通段落中的正式承诺同样有效，不要求每句要求都建立 clause 或 ID。协议、接口、格式等可以按独立主题组织，不必包装成能力。
+
+capability / behavior 复用 section 的章节布局，支持普通段落、小节、列表、表格和图。clause 沿用 Markdoc 富文本及定义侧变量/片段上下文；条款内可有普通小节，但不能嵌套能力、行为、条款或适用列表。字面标签围栏必须显式 process=false，避免被解析成真实定义。
+
+定义处的本地条款可单独折叠；“本页阅读”的条款开关操作本页全部条款块，与正文、代码和目录折叠分别控制。collapsed 不是 clause 的输入属性；引用处的初始折叠通过 clause-list 设置。
+
+{% /section %}
+
+{% section id="ref:semantic-content-identity" title="身份、归属与页面" %}
+
+同一工程内，这些 ID 与普通 section、旧 specification 及 IR 中的 Node、Port、Table、Row 等实体共享唯一命名空间。不同类型、不同文件或不同父 Behavior 使用相同 ID 均报 DUPLICATE_ID；父级不会自动添加前缀。推荐项目约定 cap:、behavior:、clause: 等可辨识前缀，工具不强制编码；demo: 也只是示例约定。
+
+query 的 semanticKind 表示 capability / behavior / clause；ownerId 取定义处最近的能力或行为容器，没有时取最近普通 section，没有容器则省略。归属与适用分开：其他行为可以引用此条款，原定义归属不变，也不继承原行为的其他要求。
+
+独立阅读页按源文件组织。capability 不自动创建新页；同一文件可以有多个能力或行为，均可独立定位。移动原文或改标题应保留仍然连续的稳定 ID，并更新实际文件引用。
+
+跨工程身份由 projectId + id 区分。reference 可指定 project；目标须在当前阅读产物中，缺失时提示，不读取其他工程配置或自动加载外部原文。clause-list 只接受本工程已加载的定义。
+
+{% /section %}
+
+{% section id="ref:semantic-content-applications" title="适用集合与普通引用" %}
+
+for 缺省取最近的 behavior；不在行为内时必须显式提供。显式 for 接受本工程已加载的 section、capability 或 behavior ID，通常用于行为或复用该行为的审阅入口。
+
+| 形式 | 含义 |
+| --- | --- |
+| ids=[...] | 声明目标的唯一引用集合，保留数组顺序；显式 [] 合法 |
+| 省略 ids | 只读复用已经声明的集合，不增加适用关系；for 可从所在 behavior 推断 |
+
+同一目标只能声明一次生效集合，不能把多份列表静默合并；新旧列表也共用这一限制。集合随 Markdoc 当前条件选择，未显示分支仍检查依赖。缺失/错类型 ID、重复条款、未声明的复用集合均报错。
+
+本地条款已经在行为正文中，不能再列进该行为自己的 ids。其他行为中的条款可以被引用；引用不改变原文条件、范围和例外。Capability 下的条款不会自动适用于所有 Behavior，不存在继承、覆盖或优先级推断。
+
+普通 reference 提供到能力、行为或条款的跳转，不声明适用关系，也不嵌入目标全文。clause-list 定义的适用关系可由 query 正反向查询，class 为 applies-clause；普通正文链接不自动成为这些机器关系，更不表示实现或测试覆盖。
+
+引用实例保留完整正文与来源，并有独立 DOM 锚点；“条款原文”定位唯一定义，自动展开必要祖先，浏览器返回恢复阅读状态。复用列表只展示引用条款，不包括目标行为的正文和本地条款，不能代替完整行为合同。
+
+{% /section %}
+
+{% section id="ref:semantic-content-reading" title="命令读取与返回字段" %}
+
+| 目标 | 默认 scope | 默认追加引用条款 |
+| --- | --- | --- |
+| capability、普通 section | self | 否 |
+| behavior | subtree，包括折叠子节 | 是 |
+| clause、兼容 specification | 始终 subtree | 无自动外部展开 |
+
+--with-clauses 为普通章节或能力显式追加已选正文中的引用集合。读取整个能力及其行为的完整要求时，使用 --scope subtree --with-clauses。Behavior 的 --scope self 只裁剪子章节，默认仍追加引用条款，不能当作完整读取。API 可以用 withClauses:false 关闭聚合；CLI 没有对应的关闭开关。
+
+read 的 content 保存格式化后的原文与追加正文，先组装再统一按 range 分页。children 表示子章节；range.truncated / nextOffset 表示必须接续的正文。网页折叠不减少读取内容，ID 清单不替代合同。
+
+| 字段 | 含义与边界 |
+| --- | --- |
+| semanticKind | 新语义标签的类型；底层资源 type 仍保持兼容格式 |
+| query.target.ownerId | 定义归属；query 能力/行为时的 children 列出直属语义对象 |
+| read.clauses | 所选正文内本地条款与引用集合的条款摘要，包含 id、title、source、origin 和可选 ownerId；没有完整条款正文 |
+| origin | local 表示条款在所选正文中，reference 表示从适用集合引入；不是独立的公共/私有分类 |
+| applications | 保留目标与有序适用集合；新集合带 presentation=clauses |
+| query.references | 已建模关系，包括条款适用；不是所有普通 Markdown/reference 跳转的完整反查 |
+
+直接读取 Clause 时，以结果的 id、title、source 和 content 为该条款自身信息，clauses 可能为空。Capability 级目标与范围不自动注入 Behavior 的聚合正文，需按当前任务读取。query --id 定位单个对象，目前没有按 semanticKind 列出全部同类对象的专用筛选参数。
+
+{% /section %}
+
+{% section id="ref:semantic-content-compatibility" title="旧 spec 标签与资源兼容" %}
+
+新内容优先采用 clause / clause-list。旧 specification / spec-list、--with-specs 及 common/specific 输入继续按原规则工作，见[旧标签契约](specification.mdoc)。新旧写法共享同一定义索引与适用目标，不能重复定义同一 ID 或集合。
+
+新标签暂时复用底层 document / specification 资源格式和 specifications 能力声明，保留已有接口消费者；这不意味着 Specification 仍是与 Behavior 并列的条款类别。新查询用 semanticKind 辨认源文语义，新适用集合将 ids 保存在兼容的 common 字段，specific 为空；common 在这里不额外产生公共角色含义。
+
+迁移时保留稳定 ID 与唯一原文，再核对适用目标、顺序和旧角色含义。不能只做无条件文本替换，也不批量重写历史记录。正式移除旧入口或改变 IR 属于后续兼容迁移。全局旧安装版需要更新后才支持新标签，不能用源码版手册推断旧安装能力。
+
+工具检查身份、结构和引用，不证明条款正确、彼此无冲突、组件已实现行为或测试充分。领域定义、文档组织和工程工作流由项目约定。
+
+{% /section %}
+{% /section %}

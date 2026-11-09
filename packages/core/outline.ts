@@ -5,6 +5,7 @@ import type {Graph} from './types.ts';
 export type OutlineEntry={
  id:string;label:string;kind:'section'|'heading';level:number;depth:number;parentId?:string;
  number?:string;local?:boolean;collapsed?:boolean;sectionId?:string;source:{file:string;line:number};children:OutlineEntry[];
+ semanticKind?:import('../extensions/semantic-content/contract.ts').SemanticKind;
 };
 
 // section 表达显式包含关系；其内部 Markdown 的最浅标题从下一级开始。
@@ -40,6 +41,7 @@ export function prepareOutline(graph:Graph){
     const entry=add(node,node.attributes.title??node.attributes.id,anchor(node.attributes.id),'section',(parent?.level??0)+1,parent);
     if(scope.specification||spec&&node.attributes.__edocNamespace)entry.local=true;
     entry.sectionId=node.attributes.id;
+    if(node.attributes.__edocSemanticKind)entry.semanticKind=node.attributes.__edocSemanticKind;
     entry.collapsed=node.attributes.collapsed===true;
     const child:Scope={section:entry,rawBase:minimum(node),headings:[],specification:scope.specification||spec};
     nodes(node).forEach((n:any)=>walk(n,child));return;

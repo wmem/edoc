@@ -13,7 +13,7 @@ import {repository} from './helpers.ts';
 
 test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读取可用',{timeout:60000},async()=>{
  const book=await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js'))),graph=book.root.graph;
- assert.equal(book.projects.size,3);assert.equal(book.projects.get('manual-component')?.documents.documents.length,1);assert.ok(book.projects.has('document-first-demo'));
+ assert.equal(book.projects.size,4);assert.equal(book.projects.get('manual-component')?.documents.documents.length,1);assert.ok(book.projects.has('document-first-demo'));assert.ok(book.projects.has('behavior-contract-demo'));
  const navigation=projectOutline(book),flatten=(entries:any[]):any[]=>entries.flatMap(e=>[e,...flatten(e.children)]),all=flatten(navigation.chapters);
  for(const label of ['使用文档','查询参考','开发文档','生成第一份文档','接口合并与展开'])assert.ok(all.some(n=>n.label===label),label);
  const usage=all.find(n=>n.sectionId==='use:home')!,branches=usage.children.filter((n:any)=>n.page!==usage.page);
