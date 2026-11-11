@@ -1,3 +1,4 @@
+import {registerMapPresentationErrors} from '../extensions/register-map/contract.ts';
 import {readFileSync,realpathSync,statSync,readdirSync,existsSync} from 'node:fs';
 import {extname,relative,resolve,dirname,sep,isAbsolute} from 'node:path';
 import Markdoc from '@markdoc/markdoc';
@@ -124,6 +125,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  for(const {node,file,line}of checks){
   if(node.type==='tag'&&(Object.hasOwn(referenceTargets,node.tag??'')||['reference','page','attachment'].includes(node.tag??'')))references.push({id:node.attributes.id,tag:node.tag!,file,line,...(node.attributes.project!==undefined?{project:node.attributes.project}:{}),...(node.attributes.target!==undefined?{target:node.attributes.target}:{})});
   if(node.type==='tag'&&['state-diagram','flowchart','sequence-diagram','binary-diagram','binary-field-table'].includes(node.tag)&&node.attributes.view)references.push({id:node.attributes.view,tag:'relation-diagram',file,line});
+  if(node.type==='tag'&&node.tag==='register-map'){if(node.attributes.register)references.push({id:node.attributes.register,tag:'register-diagram',file,line});for(const [id,target]of Object.entries(node.attributes.definitions??{})){references.push({id,tag:'register-diagram',file,line});if(typeof target==='string')references.push({id:target,tag:'reference',file,line});}}
   if(node.type==='tag'&&node.tag==='clause-list'){for(const id of [node.attributes.for,...node.attributes.ids??[]])references.push({id,tag:node.tag,file,line});}
   if(node.type==='image'||node.type==='tag'&&base.tags?.[node.tag!]?.render==='img'){
    const src=node.type==='image'?node.attributes.src:node.transformAttributes(base).src;
@@ -156,6 +158,7 @@ export function validateDocuments(graph:Graph){
    const file=locations.get(node)?.file??entryFile;
    if(node.type==='tag'&&Object.hasOwn(tags,node.tag??'')){
     const id=node.attributes.id;
+    if(node.tag==='register-map')for(const message of registerMapPresentationErrors(graph,id,node.attributes))errors.push({code:'DOCUMENT_REFERENCE',file,path:`#L${locations.get(node)?.line??1}`,id,message});
     if(['state-diagram','flowchart','sequence-diagram','binary-diagram','binary-field-table'].includes(node.tag)&&node.attributes.view){const v=graph.index.get(node.attributes.view);if(v?.type!=='view'||!('model'in v.entity)||v.entity.model!==id||v.entity.kind!==({'state-diagram':'state-machine',flowchart:'flowchart','sequence-diagram':'sequence','binary-diagram':'binary-layout','binary-field-table':'binary-layout'} as Record<string,string>)[node.tag])errors.push({code:'DOCUMENT_REFERENCE',file,path:`#L${locations.get(node)?.line??1}`,id:node.attributes.view,message:'显示视图必须引用标签指定的同种模型'});}
     if(node.attributes.project!==undefined&&(typeof node.attributes.project!=='string'||!node.attributes.project.trim()))errors.push({code:'DOCUMENT_PROJECT',file,path:`#L${locations.get(node)?.line??1}`,message:'project 必须是非空稳定项目 ID'});
     if(['reference','page','attachment'].includes(node.tag??'')&&typeof id==='string'&&!id.trim())errors.push({code:'DOCUMENT_REFERENCE_ID',file,path:`#L${locations.get(node)?.line??1}`,message:'跳转目标 ID 不能空白'});

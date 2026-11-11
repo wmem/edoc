@@ -92,7 +92,8 @@ async function solveAttempt(input: Drawing,autoEndpoints=false): Promise<Drawing
     const own = terminalSets.get(c.id)!;
     return [...terminalSets].filter(([id]) => id !== c.id).flatMap(([, ends]) => ends.filter(e => !own.some(o => same(o, e))).map(e => {
       const p = lead(e);
-      return {x: Math.min(e.x, p.x) - 6, y: Math.min(e.y, p.y) - 6, width: Math.abs(e.x - p.x) + 12, height: Math.abs(e.y - p.y) + 12};
+      // 预留区须与后续布线的实际间距一致，避免先布路线的折角封死其他外引点。
+      return {x: Math.min(e.x, p.x) - edgeGap, y: Math.min(e.y, p.y) - edgeGap, width: Math.abs(e.x - p.x) + edgeGap * 2, height: Math.abs(e.y - p.y) + edgeGap * 2};
     }));
   }
   const primary = drawing.layout?.hints?.main ?? [];
@@ -117,7 +118,9 @@ async function solveAttempt(input: Drawing,autoEndpoints=false): Promise<Drawing
       const future = ends.filter(e => e !== a && e !== b).map(e => { const p = lead(e); return {x: Math.min(e.x, p.x) - edgeGap, y: Math.min(e.y, p.y) - edgeGap, width: Math.abs(e.x - p.x) + edgeGap * 2, height: Math.abs(e.y - p.y) + edgeGap * 2}; });
       const pathThrough = (via: Point[]) => {
         const targets = [from, ...via, to]; let path: Point[] = [{x: a.x, y: a.y}, from];
-        for (let i = 1; i < targets.length; i++) path.push(...orthogonal(targets[i - 1], targets[i], [...blocked, ...future], [...used, path], {contacts: targets, clearance: edgeGap}).slice(1));
+        // 目标引线稍后才拼接，也须参与避让，防止从端口内侧绕回外引点后折返自交。
+        const targetLead = [to, {x: b.x, y: b.y}];
+        for (let i = 1; i < targets.length; i++) path.push(...orthogonal(targets[i - 1], targets[i], [...blocked, ...future], [...used, path, targetLead], {contacts: targets, clearance: edgeGap}).slice(1));
         path.push({x: b.x, y: b.y}); return simplify(path);
       };
       const channel = drawing.layout?.hints?.channels?.find(h => h.connection === c.id);

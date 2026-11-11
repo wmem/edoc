@@ -74,7 +74,7 @@
     {
       "id": "seq:upgrade",
       "kind": "sequence",
-      "label": "固件升级：鉴权、重试与并发状态通知",
+      "label": "固件升级：逐块确认、有限重试与明确结局",
       "participants": [
         {
           "id": "host",
@@ -99,7 +99,8 @@
           "from": "host",
           "to": "mcu",
           "label": "请求升级",
-          "mode": "call"
+          "mode": "call",
+          "protocol": "binary:packet"
         },
         {
           "id": "authenticate",
@@ -113,105 +114,160 @@
         {
           "id": "write-loop",
           "kind": "loop",
-          "guard": "仍有数据块，且重试未超限",
-          "max": 3,
-          "label": "分块写入",
+          "guard": "仍有待写数据块，且升级尚未失败",
+          "label": "逐块推进：确认后才取下一块",
           "steps": [
             {
-              "id": "block",
-              "from": "host",
-              "to": "mcu",
-              "label": "写入数据块",
-              "protocol": "binary:packet"
-            },
-            {
-              "id": "write",
-              "from": "mcu",
-              "to": "flash",
-              "label": "编程 Flash",
-              "mode": "call"
-            },
-            {
-              "id": "result",
-              "kind": "alt",
-              "branches": [
+              "id": "attempt-loop",
+              "kind": "loop",
+              "label": "当前数据块：最多 3 次尝试",
+              "guard": "当前块尚未确认，且尝试次数小于 3；收到块确认即退出",
+              "min": 1,
+              "max": 3,
+              "steps": [
                 {
-                  "id": "ok",
-                  "guard": "校验通过",
-                  "steps": [
-                    {
-                      "id": "ack",
-                      "from": "mcu",
-                      "to": "host",
-                      "label": "块确认",
-                      "mode": "signal"
-                    }
-                  ]
+                  "id": "block",
+                  "from": "host",
+                  "to": "mcu",
+                  "label": "写入数据块",
+                  "protocol": "binary:packet"
                 },
                 {
-                  "id": "retry",
-                  "otherwise": true,
-                  "steps": [
-                    {
-                      "id": "nack",
-                      "from": "mcu",
-                      "to": "host",
-                      "label": "请求重传",
-                      "mode": "signal"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "background",
-          "kind": "par",
-          "branches": [
-            {
-              "id": "notify",
-              "label": "升级进度",
-              "steps": [
-                {
-                  "id": "progress",
+                  "id": "write",
                   "from": "mcu",
-                  "to": "host",
-                  "label": "上报进度",
-                  "mode": "signal"
-                }
-              ]
-            },
-            {
-              "id": "telemetry",
-              "label": "独立监测",
-              "steps": [
-                {
-                  "id": "poll",
-                  "from": "monitor",
                   "to": "flash",
-                  "label": "读取温度",
+                  "label": "编程 Flash",
                   "mode": "call"
                 },
                 {
-                  "id": "temperature",
-                  "from": "flash",
-                  "to": "monitor",
-                  "label": "温度采样",
-                  "mode": "return",
-                  "replyTo": "poll"
+                  "id": "result",
+                  "kind": "alt",
+                  "branches": [
+                    {
+                      "id": "ok",
+                      "guard": "校验通过",
+                      "steps": [
+                        {
+                          "id": "ack",
+                          "from": "mcu",
+                          "to": "host",
+                          "label": "块确认，结束本块重试",
+                          "mode": "signal",
+                          "replyTo": "block"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "retry",
+                      "otherwise": true,
+                      "steps": [
+                        {
+                          "id": "nack",
+                          "from": "mcu",
+                          "to": "host",
+                          "label": "校验失败，按剩余次数重传",
+                          "mode": "signal",
+                          "replyTo": "block"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "block-failure",
+              "kind": "opt",
+              "guard": "3 次尝试结束后，当前块仍未确认",
+              "steps": [
+                {
+                  "id": "stop-upgrade",
+                  "kind": "note",
+                  "on": [
+                    "mcu"
+                  ],
+                  "text": "标记升级失败并停止分块，不再发送下一块。"
                 }
               ]
             }
           ]
         },
         {
-          "id": "done",
-          "from": "mcu",
-          "to": "host",
-          "label": "升级完成",
-          "mode": "return",
-          "replyTo": "begin"
+          "id": "outcome",
+          "kind": "alt",
+          "label": "升级结局",
+          "branches": [
+            {
+              "id": "success",
+              "guard": "所有数据块均已确认，且没有升级失败",
+              "steps": [
+                {
+                  "id": "background",
+                  "kind": "par",
+                  "label": "进度通知与温度监测",
+                  "branches": [
+                    {
+                      "id": "notify",
+                      "label": "升级进度",
+                      "steps": [
+                        {
+                          "id": "progress",
+                          "from": "mcu",
+                          "to": "host",
+                          "label": "上报进度",
+                          "mode": "signal"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "telemetry",
+                      "label": "独立监测",
+                      "steps": [
+                        {
+                          "id": "poll",
+                          "from": "monitor",
+                          "to": "flash",
+                          "label": "读取温度",
+                          "mode": "call"
+                        },
+                        {
+                          "id": "temperature",
+                          "from": "flash",
+                          "to": "monitor",
+                          "label": "温度采样",
+                          "mode": "return",
+                          "replyTo": "poll"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "done",
+                  "from": "mcu",
+                  "to": "host",
+                  "label": "升级成功",
+                  "mode": "return",
+                  "replyTo": "begin"
+                }
+              ]
+            },
+            {
+              "id": "failure",
+              "otherwise": true,
+              "label": "当前块尝试耗尽",
+              "steps": [
+                {
+                  "id": "failed",
+                  "from": "mcu",
+                  "to": "host",
+                  "label": "升级失败：停止写入",
+                  "mode": "return",
+                  "replyTo": "begin"
+                }
+              ]
+            }
+          ]
         }
       ],
       "constraints": [
@@ -228,7 +284,7 @@
           },
           "max": 5,
           "unit": "s",
-          "label": "升级时限"
+          "label": "成功升级总时限（规范约束）"
         }
       ],
       "source": {
@@ -248,6 +304,19 @@
       "source": {
         "file": "docs/ir/authoring/sequences.json",
         "selector": "view:upgrade"
+      }
+    },
+    {
+      "id": "view:upgrade-overview",
+      "kind": "sequence",
+      "model": "seq:upgrade",
+      "collapsed": [
+        "write-loop",
+        "background"
+      ],
+      "source": {
+        "file": "docs/ir/authoring/sequences.json",
+        "selector": "view:upgrade-overview"
       }
     }
   ]

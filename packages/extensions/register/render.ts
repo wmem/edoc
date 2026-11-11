@@ -20,7 +20,7 @@ export function registerSVG(register:Register,options:{project?:string;bitsPerRo
    parts.push(field?`<a href="${fieldHref(options.project??'',field.id)}" data-register-field="${esc(field.id)}" aria-label="${esc(field.label)} [${fieldRange(field)}]">${body}</a>`:`<g data-register-gap="${segment.kind}">${body}</g>`);
   }
  }
- return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(register.label)} ${register.width}位寄存器位域图"><style>${options.fontCSS??''}text{font-family:'Noto Sans SC',Arial,sans-serif}</style><metadata>${esc(JSON.stringify({register,projection,...(options.licenses?{licenses:options.licenses}:{})}))}</metadata>${parts.join('')}</svg>`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(register.label)} ${register.width}位寄存器位域图"><style>${esc(options.fontCSS??'')}text{font-family:'Noto Sans SC',Arial,sans-serif}</style><metadata>${esc(JSON.stringify({register,projection,...(options.licenses?{licenses:options.licenses}:{})}))}</metadata>${parts.join('')}</svg>`;
 }
 export function registerDiagramHTML(register:Register,project:string){
  const projection=registerProjection(register);

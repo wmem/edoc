@@ -1,6 +1,6 @@
 {% section id="ref:engineering-charts" title="消息、协议、统计与地址图契约" %}
 
-2026-11-11 用户批准按模型方案实施。本页维护当前契约；未开放的组合明确诊断，不静默忽略。四领域共用稳定身份、来源、查询与离线 SVG 阅读，不改变原 Register、Table 或电气连接。
+按需要直接进入[消息交互](engineering-charts.mdoc#ref:tag-sequence-diagram)、[协议布局](engineering-charts.mdoc#ref:tag-binary-diagram)、[地址映射](engineering-charts.mdoc#ref:tag-register-map)或[测量统计](engineering-charts.mdoc#ref:tag-plot)。这些模型共用稳定身份、来源、查询与离线 SVG 阅读；各自的字段与语义独立，未开放的组合明确诊断。
 
 {% section id="ref:tag-sequence-diagram" title="sequence-diagram：消息交互" %}
 
@@ -43,12 +43,12 @@ kind 默认 field，也可 padding/reserved/align/ref/repeat/optional/choice。r
 | 长度 | 整数表示模型单位；field 引用的数值按其 unit 或模型单位解释；op/args 的数字操作数按模型单位运算。使用精确有理数中间值，最终必须为非负整数 bit，不能依靠浮点舍入 |
 | 视图 | id、kind=binary-layout、model 必需；label/source 可选；bitsPerRow 默认 32，collapsed 折叠结构，focus 聚焦局部元素，values 为取值场景 |
 
-子结构引用中的场景值用 JSON 路径键，例如 values 中的 `"[\"items\",\"descriptor\",\"length\"]"`；它不会与父模型的同名字段混用。根模型直接使用字段 id。展开字段的 query --element 也接受 JSON 路径。未知偏移以 end(字段路径) 表示，query 返回 symbols 对应的 offset、size、end 计算定义，避免长表达式淹没图面。展开计算上限为 20000 项，超限明确失败。
+子结构引用中的场景值用 JSON 路径键，例如 values 中的 `"[\"items\",\"descriptor\",\"length\"]"`；它不会与父模型的同名字段混用。根模型直接使用字段 id 或 optional.condition 的原文键；子模型的条件也使用实例路径，例如 `"[\"left\",\"has_extension\"]"`。条件键不要求另有同名字段，只有布尔 true/false 求值，其他合法场景值仍保留符号；未声明的字段或条件键报 BINARY_VIEW。展开字段的 query --element 也接受 JSON 路径。未知偏移以 end(字段路径) 表示，query 返回 symbols 对应的 offset、size、end 计算定义，避免长表达式淹没图面。展开计算上限为 20000 项，超限明确失败。
 
 {% /section %}
 {% section id="ref:tag-binary-field-table" title="binary-field-table：字段表入口" %}
 
-id 引用 BinaryLayout，可选 view 引用同模型的 BinaryView。它与 binary-diagram 投影同一份数据，返回完整分支条件、偏移和大小表达式；不另建 Table。类型和计算规则见[协议模型](engineering-charts.mdoc#ref:tag-binary-diagram)。
+id 引用 BinaryLayout，可选 view 引用同模型的 BinaryView。它与 binary-diagram 投影同一份数据，呈现字段 label 与路径、偏移和大小表达式、声明值 value、枚举 enums、分支条件和 description；不另建 Table。字节序与位序优先采用字段声明，否则继承该字段所属 BinaryLayout；引用子模型保留子模型自己的声明，不从外层引用者推断。两者均未声明时显示未声明。query 行追加 value、enums、byteOrderSource、bitOrderSource；来源标记为 field 或 model，未声明时省略。声明值与视图 values 的取值场景分别保留，不把场景值写回模型。类型和计算规则见[协议模型](engineering-charts.mdoc#ref:tag-binary-diagram)。
 
 {% /section %}
 {% section id="ref:tag-plot" title="plot：Table 的统计视图" %}
@@ -56,6 +56,8 @@ id 引用 BinaryLayout，可选 view 引用同模型的 BinaryView。它与 bina
 id 指向 views 中 kind=plot 的 PlotView，data 引用已有 Table。mark 与 encoding 定义图元和字段映射，transform 为有序声明式处理；不新增采样资源，不直接接受远程 URL 或自由 JS。字段名、类型与单位沿用原表，objectId 行仍投影原对象，原始记录和统计结果分别返回。单位不兼容、错误字段、非法方法或无效值明确失败；原 Table 的缺测使用省略字段，不改变 Table 的列类型；转换产生的 null 继续表示缺测，不补零。
 
 mark 支持 line/point/bar/area/rule/errorbar/boxplot，encoding 包括 x/y/x2/y2/color/detail/tooltip/order；映射可声明 field/type/aggregate/bin/sort/title。支持的 transform 是结构化 filter、aggregate、bin、quantile；窗口、分位数、分箱和误差须有明确口径。layer/facet 用于组合，源表仍维护一份。时间字段的解析需显式时区或自带时区的 ISO 字符串，不能依赖机器本地时区。
+
+坐标与图例的默认标题采用列 label（省略时用 field）并附单位，显式 encoding.title 优先；分面名称采用列 label（省略时用 field）。派生字段没有另行声明名称时保留其字段名，可用 title 说明统计含义。
 
 连续 x 的折线默认按 x 排序，同值保留原记录顺序；显式 order 可选择原序或其他字段。聚合、过滤、缺测处理、样本数和分位数方法在查询中可见。当前界面提供空间缩放与定位，不执行临时数据筛选；声明式 filter 进入处理记录。统计渲染使用 Vega-Lite 支持子集，不把后端所有选项直接暴露为当前契约；后端与 HTML/SVG 输出均需离线验证。
 
@@ -67,30 +69,38 @@ mark 支持 line/point/bar/area/rule/errorbar/boxplot，encoding 包括 x/y/x2/y
 | 映射统计 | aggregate 为 count/sum/mean/median/min/max；bin 可为 true 或带正数 step 的对象。count 计记录数，其他数值统计忽略缺测；不自动填充空分箱 |
 | 筛选 | transform 中 filter 使用 field，并在 equal/range/oneOf 中选择一个；range 含两端，不能反向 |
 | 聚合 | aggregate 是 op/field/as 数组，groupby 可选；count 可省略 field，其他操作必须有数值 field |
-| 分箱 | bin 指定 step、field、as=[起点字段,终点字段]，以 floor(value/step)×step 为起点；缺测输出 null |
+| 分箱 | bin 指定 step、field、as=[起点字段,终点字段]，以 floor(value/step)×step 为起点；缺测输出 null；起止字段配对在分组后仍保留，映射到 x/x2 或 y/y2 时按已分箱区间绘制，不重复分箱 |
 | 分位数 | quantile 指定字段，probs 在 0～1，as=[概率字段,分位字段]，groupby 可选，method 必须 linear，采用 R-7 |
 | 组合 | layer 叠加子图；facet 以 field 分面，columns 默认为 2，spec 提供子图。每个组合层最多一种结构，总计最多 100 个子视图 |
 
-query 分别返回 sourceRecords、转换后的 rows、audit、statistics 及 rowIds。statistics 是按分组字段给出的数值摘要，含有效/缺测数、均值、分位数、标准误差和箱线界限；编码中的自动 bin 边界由固定版本后端决定，不能把未分箱的摘要当作分箱结果。需要精确、可查询的分箱口径时使用显式 bin transform。__edoc_ 前缀为后端保留字段，用户表列不使用该前缀。时间轴使用 UTC 呈现；单位不做隐式换算。
+显式 transform 由 edoc 投影执行一次，渲染直接读取这些派生行，不再交给后端重新执行。组合层先完成自己的转换，再传入各图层；facet 的子转换按面分别执行，聚合不会跨面混合，过滤后的空集合 count 仍保留所属面。
+
+query 分别返回 sourceRecords、转换后的 rows、audit、statistics 及 rowIds；分面内的行、处理记录和摘要另带 facets 作用域，原表行身份不变。statistics 是按分组字段给出的数值摘要，含有效/缺测数、均值、分位数、标准误差和箱线界限；编码中的自动 bin 边界由固定版本后端决定，不能把未分箱的摘要当作分箱结果。需要精确、可查询的分箱口径时使用显式 bin transform。__edoc_ 前缀为后端保留字段，用户表列不使用该前缀。时间轴使用 UTC 呈现；单位不做隐式换算。
 
 {% /section %}
 {% section id="ref:tag-register-map" title="register-map：寄存器块与地址空间" %}
 
-id 指向 registerBlocks 中 kind=register-block 或 addressSpaces 中 kind=address-space。Register 仍按原契约保存 width/fields/access/reset；新组织只引用它，不覆盖或复制 fields。
+id 指向 registerBlocks 中 kind=register-block 或 addressSpaces 中 kind=address-space。正文可用 mode=all（默认，图加列表）、regions（区域划分表）、registers（寄存器列表）选择同源呈现，不另建 Table；纯表模式不计算 SVG。
 
-RegisterBlock 的 entries 各有局部 id，register 或 block 二选一，offset 必需，可选 count/stride/span；size 是显式块范围。AddressSpace 的 mappings 各有 id/block/base，可选 count/stride；addressUnitBits 默认 8，可选 addressWidth。所有地址量用十进制或十六进制整数字符串，精确计算；count 省略表示 1，数组必须显式给 stride。地址单位、寄存器位宽和总线事务宽度互不推断。
+可选 definitions 是 {寄存器ID:本工程章节ID}，只改变列表名称的跳转。键必须是当前地址模型实际使用的 Register，值必须是已参与发布的章节/文档；隐藏内容中的错误同样诊断。漏项仍进入原实体详情，不猜测首次出现的位图。register 属性只用于 registers 模式，选择该模型内某个 Register 的全部实例，适合在定义旁显示同源实例位置；空值、错误类型或未使用的 ID 必须失败。
+
+Register 仍按原契约保存 width/fields/access/reset；新组织只引用它，不覆盖或复制 fields。
+
+RegisterBlock 的 entries 各有局部 id，register 或 block 二选一，offset 必需，可选 count/stride/span；size 是显式块范围，可选 description 说明块用途。AddressSpace 的 mappings 各有 id/block/base，可选 count/stride；addressUnitBits 默认 8，可选 addressWidth。所有地址量用十进制或十六进制整数字符串，精确计算；count 省略表示 1，数组必须显式给 stride。地址单位、寄存器位宽和总线事务宽度互不推断。
 
 缺少基址时只展示块内相对地址；size 缺省只计算最小覆盖，不认定硬件 aperture 或保留地址。检查范围、循环、跨度和重叠，不能用 allowOverlap 放行；别名/窗口须有专门选择语义，尚未定义的形式明确拒绝。重复实例有独立路径，原 Register ID 保持定义身份。
 
-query --id SPACE --element '["ports",2,"ctrl"]' 查询映射、索引与块内路径；块内路径也使用 JSON 数组，避免拼接名称产生歧义。根查询不枚举海量数组；网页列表按声明范围给出汇总和按需定位，点击定义进入原位域图与字段表。模型及局部条目来源可追溯，地址值不得经 JavaScript Number 损失精度。块独立阅读时按 8 bit 地址单位计算，放入 AddressSpace 时继承它的 addressUnitBits；寄存器跨度按位宽向上取整。当前冲突检查以条目分配范围为单位，包括子块最小覆盖范围中的间隙；需要交错布置时应将真实条目放到同一层，不把子块间隙当作可独立分配范围。根查询与图表默认展示前 120 个叶寄存器并返回总数/truncated，任意实例可直接路径定位；count 为安全正整数，不枚举后再裁剪。
+query --id SPACE --element '["ports",2,"ctrl"]' 查询映射、索引与块内路径；块内路径也使用 JSON 数组，避免拼接名称产生歧义。根查询不枚举海量数组；网页列表按声明范围给出汇总和按需定位，点击定义进入原位域图与字段表。模型及局部条目来源可追溯，地址值不得经 JavaScript Number 损失精度。块独立阅读时按 8 bit 地址单位计算，放入 AddressSpace 时继承它的 addressUnitBits；寄存器跨度按位宽向上取整。校验沿每个实际地址空间递归，复用块在不同单位的空间中分别检查；未映射块使用 8 bit 默认。仅在 32 bit 等空间合法的块可以随该空间构建，但独立 query/图表仍按 8 bit 检查，若冲突则明确诊断，应从有效地址空间进入。当前冲突检查以条目分配范围为单位，包括子块最小覆盖范围中的间隙；需要交错布置时应将真实条目放到同一层，不把子块间隙当作可独立分配范围。根查询与图表默认展示前 120 个叶寄存器并返回总数/truncated，任意实例可直接路径定位；count 为安全正整数，不枚举后再裁剪。
 
 | 对象 | 字段与含义 |
 | --- | --- |
 | 通用身份 | id、kind 必需；label、source 可选 |
-| 块 | kind=register-block，entries 必需，size 可选 |
+| 块 | kind=register-block，entries 必需，size、description 可选 |
 | 块内条目 | id、offset 必需，register/block 二选一；label、source、count、stride、span 可选。span 不得小于被引用定义所需范围 |
 | 地址空间 | kind=address-space，mappings 必需；addressUnitBits 默认 8，addressWidth 可选，范围 1～4096 |
 | 映射 | id、block、base 必需；label、source、count、stride 可选 |
+
+可读实例名优先使用 entry.label，再使用 Register.label，最后保留 ID；上层路径沿 mapping/entry/block 的 label 派生并保留数组索引，精确 path/definition 不变。列表用途读取 Register.description，区域用途读取 RegisterBlock.description。query 投影追加 label、description、pathLabels、region 和 regionOffset；regionOffset 是地址减去当前区域实例的基址，包含嵌套偏移和寄存器数组步长，按同一地址单位计算。现有 offset 字段含义不变：地址空间投影中仍是累计绝对值，独立块投影中是相对块起点的偏移。区域数组用 count/stride 汇总，不枚举后再裁剪；区域起止是分配范围，不把空洞当作寄存器。
 
 块引用最多嵌套 64 层。网页按叶寄存器行汇总；完整 SVG 保留该汇总范围与截断说明，不声称枚举了海量实例。精确实例查询独立于展示限额。
 

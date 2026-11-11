@@ -22,12 +22,12 @@
 | 能力 | 教程 | 字段参考 | 实际例子 |
 | --- | --- | --- | --- |
 | 模块框图、自动布局与精确路线 | [模块框图](../charts/diagrams/drawing.mdoc#use:drawing) | [Drawing](graph.mdoc#ref:drawing) | [两板模块地图](../charts/diagrams/drawing.mdoc#use:drawing.board-map) |
-| 架构与父子层级 | [结构](../charts/diagrams/architecture.mdoc#use:architecture) | [Node / parentId](ir.mdoc#ref:objects) | [父子框](../charts/diagrams/graph-options.mdoc#use:graph-groups) |
+| 架构与父子层级 | [结构](../charts/diagrams/architecture.mdoc#use:architecture) | [Node / parentId](ir.mdoc#ref:objects) | [父子框](../charts/diagrams/architecture.mdoc#use:graph-groups) |
 | 接线与完整多端点 | [接线](../charts/diagrams/wiring.mdoc#use:wiring) | [Connection](ir.mdoc#ref:connections) | [三端点](../charts/diagrams/wiring.mdoc#use:wiring) |
 | 接口独立合并与展开 | [接口](../charts/diagrams/interfaces.mdoc#use:interface-overview) | [接口身份](graph.mdoc#ref:interfaces) | [多接口](../charts/diagrams/graph-options.mdoc#use:interface-multiple) |
 | 接口排序、侧边与局部覆盖 | [进阶](../charts/diagrams/graph-options.mdoc#use:graph-interface-options) | [layout](graph.mdoc#ref:graph-layout) | [默认/覆盖对照](../charts/diagrams/graph-options.mdoc#use:graph-interface-options) |
-| 接口汇总表与逐信号表 | [接口表](../charts/diagrams/graph-options.mdoc#use:interface-tables) | [interface-table 标签](tags/interface-table.mdoc#ref:tag-interface-table) | [汇总/明细](../charts/diagrams/graph-options.mdoc#use:interface-tables) |
-| Group 临时总览 | [选集](../charts/diagrams/graph-options.mdoc#use:graph-groups) | [初始显示](graph.mdoc#ref:graph-display) | [展开/总览](../charts/diagrams/graph-options.mdoc#use:graph-groups) |
+| 接口汇总表与逐信号表 | [接口表](../charts/diagrams/interfaces.mdoc#use:interface-tables) | [interface-table 标签](tags/interface-table.mdoc#ref:tag-interface-table) | [汇总/明细](../charts/diagrams/interfaces.mdoc#use:interface-tables) |
+| Group 临时总览 | [选集](../charts/diagrams/architecture.mdoc#use:graph-groups) | [初始显示](graph.mdoc#ref:graph-display) | [展开/总览](../charts/diagrams/architecture.mdoc#use:graph-groups) |
 | 相对顺序、对齐、主干与通道 | [布局](../charts/diagrams/layout.mdoc#use:layout-constraints) | [提示字段](graph.mdoc#ref:relation-hints) | [完整配方](graph.mdoc#ref:layout-example) |
 | 方向、固定位置与路由选择 | [布局对照](../charts/diagrams/layout.mdoc#use:layout-comparison) | [layout](graph.mdoc#ref:graph-layout) | [同数据对照](../charts/diagrams/layout.mdoc#use:layout-comparison) |
 | 类别、文字显隐与图内操作 | [显示](../charts/diagrams/display.mdoc#use:diagram-details) | [操作与线型](graph.mdoc#ref:graph-operations) | [端口/连线开关](../charts/diagrams/wiring.mdoc#use:wiring) |
@@ -41,7 +41,8 @@
 
 | 能力 | 教程 | 字段参考 | 实际例子 |
 | --- | --- | --- | --- |
-| 状态、触发、动作与正交区域 | [状态](../charts/behavior/state.mdoc#use:state) | [状态模型](tags/control-diagrams.mdoc#ref:state-machine) | [FPGA 四状态](../charts/behavior/state.mdoc#use:state-simple) |
+| 状态、触发与动作 | [状态](../charts/behavior/state.mdoc#use:state) | [状态模型](tags/control-diagrams.mdoc#ref:state-machine) | [FPGA 四状态](../charts/behavior/state.mdoc#use:state-simple) |
+| 层级、并行区域与历史状态 | [进阶状态图](../charts/behavior/state-advanced.mdoc#use:state-advanced) | [状态模型](tags/control-diagrams.mdoc#ref:state-machine) | [并行设备](../charts/behavior/state-advanced.mdoc#use:state-advanced:create) |
 | 步骤、判断、循环、并行与泳道 | [流程](../charts/behavior/flowchart.mdoc#use:flowchart) | [流程模型](tags/control-diagrams.mdoc#ref:flowchart) | [订单履约](../charts/behavior/flowchart.mdoc#use:flowchart-complex) |
 
 {% /section %}
@@ -51,6 +52,7 @@
 | 能力 | 教程 | 字段参考 | 实际例子 |
 | --- | --- | --- | --- |
 | 规范/仿真语义的 WaveJSON | [时序](../charts/timing/waveforms.mdoc#use:waveform) | [Waveform](ir.mdoc#ref:waveforms) | [独立配方](ir.mdoc#ref:waveform-example) |
+| 请求应答、片段、子交互与事件约束 | [创建与使用](../charts/timing/sequences.mdoc#use:sequences) | [Sequence](tags/engineering-charts.mdoc#ref:tag-sequence-diagram) | [复杂实例](../charts/timing/sequences.mdoc#use:sequence-complex) |
 
 {% /section %}
 
@@ -59,6 +61,8 @@
 | 能力 | 教程 | 字段参考 | 实际例子 |
 | --- | --- | --- | --- |
 | 寄存器位域图与字段表 | [寄存器手册](../charts/data-layout/registers.mdoc#use:registers) | [位域契约](tags/registers.mdoc#ref:register-shape) | [32/64 位](../charts/data-layout/registers.mdoc#use:registers:template) |
+| 块、地址空间与数组实例定位 | [寄存器手册](../charts/data-layout/registers.mdoc#handbook:fpga:regions) | [地址模型](tags/engineering-charts.mdoc#ref:tag-register-map) | [复杂实例](../charts/data-layout/registers.mdoc#use:register-map-complex) |
+| 固定/动态/条件/重复/嵌套数据 | [创建与使用](../charts/data-layout/binary-layouts.mdoc#use:binary-layouts) | [BinaryLayout](tags/engineering-charts.mdoc#ref:tag-binary-diagram) | [复杂实例](../charts/data-layout/binary-layouts.mdoc#use:binary-complex) |
 
 {% /section %}
 
@@ -69,19 +73,16 @@
 | Markdown 正文表 | [选择表格](../charts/records/tables.mdoc#use:table-choices) | [原生表格](markdoc-native.mdoc#ref:markdoc-native-nodes) | [选择说明](../charts/records/tables.mdoc#use:table-choices) |
 | objectId 对象投影 | [数据表](../charts/records/tables.mdoc#use:table) | [Table](ir.mdoc#ref:tables) | [投影配方](ir.mdoc#ref:table-example) |
 | values、多类型、单位与缺失值 | [参数表](../charts/records/tables.mdoc#use:table-values) | [单元格](ir.mdoc#ref:table-values) | [虚构参数](../charts/records/tables.mdoc#use:table-values) |
-| 单元格独立跳转目标 | [链接](../charts/data-layout/registers.mdoc#use:registers:links) | [LinkTarget](ir.mdoc#ref:cell-links) | [实例导航](../charts/data-layout/registers.mdoc#use:registers:links) |
+| 单元格独立跳转目标 | [链接](../charts/records/tables.mdoc#use:registers:links) | [LinkTarget](ir.mdoc#ref:cell-links) | [实例导航](../charts/records/tables.mdoc#use:registers:links) |
 | 稳定行 ID、事实与位置引用 | [行跳转](../charts/records/tables.mdoc#use:table-row-links) | [行身份](ir.mdoc#ref:table-rows) | [两种跳转](../charts/records/tables.mdoc#use:table-row-links) |
+| 曲线、分布、统计与原始记录 | [创建与使用](../charts/records/plots.mdoc#use:plots) | [PlotView](tags/engineering-charts.mdoc#ref:tag-plot) | [复杂实例](../charts/records/plots.mdoc#use:plot-complex) |
 
 {% /section %}
 
-{% section id="use:capabilities:engineering-charts" title="消息、布局、地址与统计" %}
 
-| 能力 | 教程 | 字段参考 | 实际例子 |
-| --- | --- | --- | --- |
-| 请求应答、片段、子交互与事件约束 | [创建与使用](../charts/timing/sequences.mdoc#use:sequences) | [Sequence](tags/engineering-charts.mdoc#ref:tag-sequence-diagram) | [复杂实例](../charts/timing/sequences.mdoc#use:sequence-complex) |
-| 固定/动态/条件/重复/嵌套数据 | [创建与使用](../charts/data-layout/binary-layouts.mdoc#use:binary-layouts) | [BinaryLayout](tags/engineering-charts.mdoc#ref:tag-binary-diagram) | [复杂实例](../charts/data-layout/binary-layouts.mdoc#use:binary-complex) |
-| 块、地址空间与数组实例定位 | [创建与使用](../charts/data-layout/register-maps.mdoc#use:register-maps) | [地址模型](tags/engineering-charts.mdoc#ref:tag-register-map) | [复杂实例](../charts/data-layout/register-maps.mdoc#use:register-map-complex) |
-| 曲线、分布、统计与原始记录 | [创建与使用](../charts/records/plots.mdoc#use:plots) | [PlotView](tags/engineering-charts.mdoc#ref:tag-plot) | [复杂实例](../charts/records/plots.mdoc#use:plot-complex) |
+{% section id="use:capabilities:engineering-charts" title="消息、协议、地址与统计的快速定位" %}
+
+消息见[时间与交互](capabilities.mdoc#use:capabilities:timing)，协议与地址见[数据布局](capabilities.mdoc#use:capabilities:data-layout)，统计见[记录与结果](capabilities.mdoc#use:capabilities:tables)。各能力统一归入所属领域，本节仅保留原稳定入口。
 
 {% /section %}
 

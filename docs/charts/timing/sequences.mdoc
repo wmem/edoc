@@ -1,35 +1,131 @@
-{% section id="use:sequences" title="消息交互图" %}
+{% section id="use:sequences" title="消息交互：一次固件升级" %}
 
-消息交互图回答“谁向谁发送了什么，哪些事件必须先发生”。主机与设备协议、驱动初始化、固件升级、跨模块请求应答适合使用 Sequence；逐拍电平变化使用[波形](waveforms.mdoc)，单个模块的状态迁移使用[状态图](../behavior/state.mdoc)。
+本页用虚构固件升级说明“谁发送什么、收到什么之后才能继续、失败时停在哪里”。先沿成功路径理解一次交互，再检查每块重试和最终失败，最后把消息链接到它承载的报文。电平随时钟变化进入[波形](waveforms.mdoc)，模块自己的状态迁移进入[状态图](../behavior/state.mdoc)。
 
-{% section id="use:sequence-simple" title="简单：请求与应答" %}
+{% section id="use:sequence-participants" title="先确定参与者与交互边界" %}
 
-最少只需 participants 和 steps。参与者与消息的 id 在本模型内唯一，不必先建立 Node 或 Connection。默认箭头不声明调用同步性；确实需要表达调用、异步通知或返回时再加 mode。
+| 参与者 | 在这次升级中负责什么 |
+| --- | --- |
+| 主机驱动 | 发起升级、发送当前数据块、处理块确认或重传请求 |
+| 管理 MCU | 鉴权、编程 Flash、校验当前块，并返回最终结果 |
+| Flash | 接收编程操作；不直接向主机报告整个升级结果 |
+| 监测服务 | 独立读取温度，不充当升级完成的同步屏障 |
 
-{% sequence-diagram id="seq:request" /%}
-
-replyTo 将应答与请求明确关联，不靠箭头颜色或文字猜测。点击消息可查局部身份与来源；工具栏可缩放、适配、按 ID 定位，并分别下载当前视口和完整图的 SVG。
+生命线从上往下阅读。这里展示鉴权通过的子交互，拒绝鉴权、断电恢复和引导切换另行约定；下面的失败结局专门覆盖当前数据块尝试耗尽。
 
 {% /section %}
-{% section id="use:sequence-complex" title="复杂：片段、子交互与时间约束" %}
+{% section id="use:sequence-success" title="先沿正常成功路径读完整生命周期" %}
 
-下面是构造的固件升级规范示例：先鉴权，再分块写入；每块有成功或重传分支，随后有两个并行活动。ref 引用另一 Sequence 并映射参与者，鉴权在此视图中展开。loop、alt、par 保留各自含义，不将它们都压成普通消息。
+从“请求升级”开始，鉴权通过后进入逐块写入。每一块都收到确认，才推进下一块；全部块确认后返回“升级成功”。下图先折叠鉴权、分块细节与并行活动，末尾仍保留明确的成功/失败分支，避免把概览误读为无条件成功。
+
+{% sequence-diagram id="seq:upgrade" view="view:upgrade-overview" /%}
+
+鉴权框复用 seq:auth，并将子交互的请求方、服务方映射到这里的主机与 MCU。进度通知与温度读取是并行活动；par 中上下摆放不产生全局屏障，也不能仅凭温度响应就判断升级完成。
+
+{% /section %}
+{% section id="use:sequence-complex" title="逐块确认：每块最多三次尝试" %}
+
+现在展开分块。外层循环处理“下一块”，没有三块上限；内层循环只处理“当前块”，最多三次尝试，即首次发送加最多两次重传。收到块确认即退出当前块的内层循环，不能确认后继续写同一块。
 
 {% sequence-diagram id="seq:upgrade" view="view:upgrade" /%}
 
-纵向距离不代表真实耗时。par 分支之间没有隐式全局屏障；图中上下排列仅方便阅读，精确事件偏序由 query 返回。右侧约束说明升级时限，不表示已经进行计时或仿真。选择片段后可折叠/展开，双击 ref 可展开子交互。
+| 当前块结果 | 接下来的操作 |
+| --- | --- |
+| 校验通过，收到块确认 | 结束本块重试，若仍有数据块才前进到下一块 |
+| 校验失败，仍有尝试次数 | 重发当前块；块序号不变，不提前推进 |
+| 三次尝试均未确认 | 标记升级失败，停止外层分块，不再取下一块 |
+
+原请求、块确认和重传请求通过 replyTo 保留关联。纵向距离不表示真实耗时；右侧时限是成功分支的规范约束，不代表已经计时或仿真。点击消息或按局部 ID 定位，可查到同一条消息与来源；需要局部阅读时折叠循环，完整 SVG 仍提供定义范围。
 
 {% /section %}
-{% section id="use:sequence-data" title="数据与查询" collapsed=true %}
+{% section id="use:sequence-outcome" title="明确区分成功与尝试耗尽的结局" %}
 
-以下文件就是本页的数据来源。普通场景只写参与者、from/to 和消息文字；复杂场景再加片段、生命周期或约束。完整字段与实现边界见[消息契约](../../reference/tags/engineering-charts.mdoc#ref:tag-sequence-diagram)。
+末尾 outcome 只有两种互斥结局：所有块已确认且未失败，才发送 done“升级成功”；否则发送 failed“升级失败：停止写入”。两条最终响应都关联最初的 begin，请求方不会在失败后又收到无条件成功。
+
+图中守卫表达规范条件，不执行计数器或证明升级程序正确。实现时应独立验证“确认即退出当前块”“耗尽即停止分块”和“仅一个最终结局”，不能用图构建成功替代这些工程检查。
+
+{% /section %}
+{% section id="use:sequence-packet" title="从消息进入它使用的报文" %}
+
+升级请求 begin 和数据块 block 都通过 protocol 显式引用 binary:packet。控制消息使用控制类型头，数据块使用序号头；重传时保留同一块序号。继续[升级报文布局](../data-layout/binary-layouts.mdoc#use:binary-format)查看公共头、负载长度和条件字段。
+
+不复制数据也可查询手册中的关联：
+
+```sh
+edoc docs query --id seq:upgrade --element block
+edoc docs query --id binary:packet
+```
+
+消息图说明发送者、接收者和先后约定，协议图说明消息内部的字段；两者用稳定 ID 连接，不根据相同文字猜引用。
+
+{% /section %}
+{% section id="use:sequence-data" title="创建完整升级交互" collapsed=true %}
+
+准备[最小配置与首页](../../start/02-first-document.mdoc#use:first-build)，保留 docs/edoc.config.js 为 export default {}。先复制[协议教程的完整资源](../data-layout/binary-layouts.mdoc#use:binary-data)到 docs/ir/authoring/binary-layouts.json，再把下面资源保存为 docs/ir/authoring/sequences.json；消息的 protocol 引用需要这份报文定义。
 
 {% code file="docs/ir/authoring/sequences.json" language="json" /%}
 
+在 docs/index.mdoc 写入，回到项目根执行 edoc：
+
+```text {% process=false %}
+{% section id="example:upgrade" title="固件升级交互" %}
+{% sequence-diagram id="seq:upgrade" view="view:upgrade-overview" /%}
+{% sequence-diagram id="seq:upgrade" view="view:upgrade" /%}
+{% /section %}
+{% section id="example:upgrade-packet" title="升级报文" %}
+{% binary-diagram id="binary:packet" view="view:packet-overview" /%}
+{% /section %}
+```
+
+应看到同一模型的概览与完整分块流程，以及消息所引用的协议布局。模型直接生成默认图；view 只选择参与者顺序、初始折叠和子交互展开。复制后在自己的项目中查询和导出：
+
 ```sh
-edoc query --id seq:upgrade --element write
+edoc query --id seq:upgrade --element failed
 edoc read --id seq:upgrade
 edoc export --view view:upgrade --format svg --output upgrade.svg
+```
+
+只查随包例子时用 edoc docs query/read；字段、事件约束和当前实现边界见[消息契约](../../reference/tags/engineering-charts.mdoc#ref:tag-sequence-diagram)。
+
+{% /section %}
+{% section id="use:sequence-simple" title="进阶起点：创建最小请求应答图" collapsed=true %}
+
+新项目先创建 docs/ir/，并在 docs/edoc.config.js 保存最小配置；已有项目保留自己的配置，将数据合入当前数据入口。以下步骤使用默认自动扫描的 docs/ir/：
+
+```javascript
+export default {};
+```
+
+将下面完整 JSON 保存为 docs/ir/sequence-minimal.json：
+
+{% code file="docs/ir/authoring/sequence-minimal.json" language="json" /%}
+
+在 docs/index.mdoc 写入下面的正文标签：
+
+```text {% process=false %}
+{% sequence-diagram id="recipe:sequence" /%}
+```
+
+回到项目根运行：
+
+```sh
+edoc
+```
+
+打开 output/index.html。应看到“主机”和“设备”两条生命线，以及方向相反的“读取状态”“状态应答”两条消息。replyTo 将应答关联到 request；未写 mode，仍不声明调用同步性。参与者和消息 id 在本模型内唯一，不必先建立 Node 或 Connection。
+
+{% sequence-diagram id="recipe:sequence" /%}
+
+模型本身就能生成默认图，不需要另建视图。需要改变参与者顺序、片段初始折叠或子交互展开时，再在 views 中声明 kind=sequence、model 指向模型 ID，并在标签上用 view 选择它。上方升级主例使用这种视图选择。
+
+点击消息可查局部身份与来源；工具栏可缩放、适配、按 ID 定位，并分别下载当前视口和完整 SVG。
+
+复制上面数据后，可在自己的项目根查询、读取或导出：
+
+```sh
+edoc query --id recipe:sequence --element reply
+edoc read --id recipe:sequence
+edoc export --id recipe:sequence --format svg --output request.svg
 ```
 
 {% /section %}

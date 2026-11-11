@@ -186,5 +186,22 @@ nav.sidebar > * { flex-shrink: 0; }
 .engineering-viewport > svg { width:100%; height:100%; display:block; }
 .engineering-figure > pre { max-height:250px; overflow:auto; margin:0; padding:12px; font-size:12px; }
 .engineering-figure > table,.engineering-figure > p { margin:12px; }
-.binary-field-table { overflow:auto; }
+.binary-field-table { max-width:100%; }
+.binary-field-table th:first-child { min-width:150px; }
+.binary-field-table th:nth-child(2) { min-width:80px; }
+.binary-field-table th:nth-child(3), .binary-field-table th:nth-child(4) { min-width:80px; }
+.binary-field-table th:nth-child(5) { min-width:160px; }
+.binary-field-table th:nth-child(6) { min-width:180px; }
+.binary-field-table th:last-child { min-width:220px; }
 @media print { .engineering-toolbar,.engineering-figure > pre {display:none} .engineering-viewport {height:auto!important} .engineering-viewport > svg {height:auto} }
+
+/* 地址与寄存器表由同源地址投影生成，窄屏仅在表内滚动。 */
+.register-map-scroll{max-width:100%;overflow:auto}
+.register-map-table th{min-width:100px}
+.register-map-table td code{white-space:nowrap}
+.register-map-table caption{text-align:left;color:var(--muted)}
+.register-map-table details{margin:4px 0;font-size:11px}
+
+.register-map-table[data-map-mode="registers"] th:nth-last-child(2){min-width:160px}
+.register-map-table th:last-child{min-width:260px}
+.register-map-table[data-map-mode="regions"] th:first-child{min-width:140px}

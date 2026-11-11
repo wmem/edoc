@@ -14,7 +14,7 @@ import {pathPosition} from '../packages/drawing/bezier.ts';
 test('两类专用图离线阅读、折叠返回、标题、缩放、来源、当前SVG和文章返回',{timeout:90000},async t=>{
  const root=mkdtempSync(join(tmpdir(),'edoc-control-reader-'));t.after(()=>rmSync(root,{recursive:true,force:true}));mkdirSync(join(root,'docs/ir'),{recursive:true});
  writeFileSync(join(root,'docs/edoc.config.js'),"export default {projectId:'controls'};");
- for(const name of ['states','flows','control-complex'])writeFileSync(join(root,'docs/ir',name+'.json'),readFileSync(new URL('../docs/ir/authoring/'+name+'.json',import.meta.url)));
+ for(const name of ['states','flows','control-complex','state-hierarchy'])writeFileSync(join(root,'docs/ir',name+'.json'),readFileSync(new URL('../docs/ir/authoring/'+name+'.json',import.meta.url)));
  writeFileSync(join(root,'docs/index.mdoc'),'{% section id="home" title="图形阅读" %}\n[其他页](other.mdoc)\n{% state-diagram id="author:state" /%}\n{% code file="docs/ir/states.json" language="json" /%}\n{% state-diagram id="example:microwave" /%}\n{% flowchart id="author:init" /%}\n{% flowchart id="example:fulfillment" /%}\n{% /section %}');
  writeFileSync(join(root,'docs/other.mdoc'),'{% section id="other" title="其他页" %}正文{% /section %}');
  const book=await loadBook(await resolveProjectConfig(join(root,'docs/edoc.config.js'))),file=join(root,'review.html');writeFileSync(file,await bookHTML(book));

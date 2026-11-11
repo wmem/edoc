@@ -15,7 +15,10 @@
 | 结构化记录 | [data-table](data-table.mdoc) | Table 的列与行，不承担统计绘图 |
 | 寄存器位分布与字段定义表 | [register-diagram、register-field-table](registers.mdoc) | 同一 Register，不依赖关系图模型 |
 | 状态机与控制流程 | [state-diagram、flowchart](control-diagrams.mdoc) | 专用语义模型，共用原生布局与阅读 |
-| 消息、协议布局、统计与地址组织 | [sequence-diagram、binary-diagram、binary-field-table、plot、register-map](engineering-charts.mdoc) | 各自语义独立；复用 Table 和 Register |
+| 多方消息与事件顺序 | [sequence-diagram](engineering-charts.mdoc#ref:tag-sequence-diagram) | Sequence 参与者、消息和片段 |
+| 协议布局与字段表 | [binary-diagram、binary-field-table](engineering-charts.mdoc#ref:tag-binary-diagram) | 同一 BinaryLayout 的图与表 |
+| 寄存器块与地址空间 | [register-map](engineering-charts.mdoc#ref:tag-register-map) | 引用 Register 的块及地址实例 |
+| 测量趋势与统计分布 | [plot](engineering-charts.mdoc#ref:tag-plot) | PlotView 引用 Table 的记录 |
 | 数字信号时序 | [waveform](waveform.mdoc) | Waveform / WaveJSON，不执行仿真 |
 | 对象、文章、原始 PDF 跳转 | reference、page、attachment | [跳转契约](../markdoc.mdoc#ref:markdoc-links) |
 | 能力、完整行为合同与条款 | [capability、behavior、clause、clause-list](semantic-content.mdoc) | 原文身份、定义归属与适用引用；复用章节和规范块能力 |

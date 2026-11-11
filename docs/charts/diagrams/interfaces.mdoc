@@ -1,18 +1,30 @@
 {% section id="use:interfaces" title="接口合并与展开" %}
 
+先确定模块边界，再看它有哪些接口、接口包含哪些真实信号。只查端口清单时直接进入[同源接口表](interfaces.mdoc#use:interface-tables)，不必展开整张图。
+
 一个模块有多组信号时，先展示接口身份，再按需展开真实端口。接口是模块内部的端口分组，不是另一套连接数据；图与查询仍使用同一批逐信号关系。
 
-{% section id="use:interface-overview" title="从总览进入逐信号" %}
+{% section id="use:interface-overview" title="主例：从控制接口总览进入逐信号" %}
 
-下面只用两个模块、两个信号演示接口。点击 STREAM 旁的三角，观察从总览到逐信号连接的变化。这是虚构数据，不是完整标准协议。
+先问“记录模块接收什么、输出什么”。下面的单模块边界图来自[架构主例](architecture.mdoc#use:architecture-system)同一个 study:recorder；它有输入启动、输出状态和样本接口。没有对端的短引线表达方向，不表示工程中未连接。
 
-{% relation-diagram id="simple:stream" /%}
+{% relation-diagram id="study:boundary" /%}
 
-点击接口名称旁的三角，只展开这一端；另一组接口保持原状态。点击聚合线查看组成关系，再选择“展开两端接口”。也可用工具栏切换接口总览和全部展开。
+再看任务控制与记录模块之间的控制接口。本视图只选择 study:host.control 与 study:recorder.control，不含样本接口；真实关系仍是 study:start 和 study:status。
 
-展开后需要查看完整范围时点击“适配画布”；“清晰阅读”恢复原始比例，较宽的图可拖动查看。网页会保留阅读位置，展开状态与整张图的适配是两项操作。
+{% relation-diagram id="study:control" /%}
 
-聚合线是显示投影。Connection 仍保存逐信号的真实端点，不会写回接口 ID。某个成员在当前视图没有显示连接，不代表真实工程没有使用它。
+这个教学视图用一条横向顺序约束保持任务控制在左、记录模块在右，避免展开后阅读方向改变；没有改变信号流向。
+
+按顺序操作：点击一个接口旁的三角，只展开这一端；点击聚合线，核对启动与状态，再选择“展开两端接口”；观察启动和状态流向相反，但接口没有被改成 RTL inout。需要全图时用“适配画布”，恢复文字比例用“清晰阅读”，两项操作不改变接口状态。
+
+这只是两信号控制摘录，没有声明总线事务、时钟或背压规则。复制[主例完整资源](architecture.mdoc#use:architecture-create)后，可在自己正文用下列标签直接复现；已有事实不另建第二套信号数据：
+
+```text {% process=false %}
+{% relation-diagram id="study:boundary" /%}
+{% relation-diagram id="study:control" /%}
+{% interface-table id="study:recorder" mode="overview" /%}
+```
 
 {% /section %}
 
@@ -28,6 +40,8 @@
 {% relation-diagram id="simple:stream" /%}
 ```
 
+{% relation-diagram id="simple:stream" /%}
+
 起初显示接口总览；展开后可以追踪 DATA 和 VALID。视图只决定怎么显示，原连接端点始终是真实 Port，不改成接口 ID。
 
 {% /section %}
@@ -36,7 +50,14 @@
 
 只展示一个模块、尚不需要画对端时，kind: 'interface' 也可以生成完整的单框接口图。下面的组件与视图同样来自上方 interfaces.json，不需要虚构外部模块或 Connection：
 
+{% tabs %}
+{% tab name="显示分组附注" %}
 {% relation-diagram id="simple:component-overview" /%}
+{% /tab %}
+{% tab name="只显示分组名称" %}
+{% relation-diagram id="simple:component-compact" /%}
+{% /tab %}
+{% /tabs %}
 
 无可见对端的信号用短边界引线表达方向：in 指向框内，out 指向框外，inout 双向；unknown/passive 不猜方向。有真实可见连接的端口沿用连接路径，避免重复画线。引线不代表工程中未连接，查询的真实连接数量也不会增加。
 
@@ -44,17 +65,11 @@ REQUEST [31:0] 与反向 READY 留在 CALL 组内；点击合并后，较粗的�
 
 {% /section %}
 
-{% section id="use:interface-details" title="只显示分组名称并收回附注空间" %}
+{% section id="use:interface-details" title="对照：分组附注与信号身份" %}
 
-分组名称已足以说明用途时，在对应视图中设置 display.showInterfaceDetails: false。下面复用同一个组件，只保留 CALL 名称与展开箭头，隐藏 target 角色及流向、协议、成员数量等分组附注，并收回其额外行距与宽度：
+上节两个 Tab 引用同一个组件。第二个视图设置 display.showInterfaceDetails=false，只保留 CALL 名称与展开箭头，隐藏角色、协议、成员数等分组附注并收回空间；成员及原关系没有变化。工具栏“分组附注”也可逐图切换。
 
-{% relation-diagram id="simple:component-compact" /%}
-
-工具栏的“分组附注”可逐图切换；切换会重新布局，展开、折叠和类别筛选继续沿用该选择。多个接入槽位仍保留连线需要的空间。端口名称中的位宽与“端口属性”开关相互独立，不会随分组附注消失。
-
-例如接口 label 为 sample、control 时，关闭后分组头部只显示这两个名称和展开箭头，无需改写原 label 或删除 role、protocol。点击分组仍可查属性；协议、角色、完整成员与关系保留在查询和 SVG 元数据中。
-
-网页下载的当前视图 SVG、完整逐信号 SVG 以及打印图都使用当前选择。完整逐信号图仍保留视图定义内的全部成员和关系；CLI 导出采用配置中的设置。未配置时默认显示分组附注，保持已有图的行为。字段定义见 {% reference id="ref:graph-display" /%}。
+端口名称中的位宽不属于附注；“端口属性”另行控制方向、域和选定属性。当前视图 SVG、完整逐信号 SVG 跟随当前文字选择，CLI 采用配置设置。完整不是“重新显示所有附注”，具体范围见[阅读与导出](display.mdoc)。字段定义见 {% reference id="ref:graph-display" /%}。
 
 {% /section %}
 
@@ -71,25 +86,43 @@ REQUEST [31:0] 与反向 READY 留在 CALL 组内；点击合并后，较粗的�
 }
 ```
 
-以上是已有 Node 的局部调整，不是一份完整资源；从零创建请使用上一节完整例子。Port 自身仍提供方向、位宽和来源；工具不会根据 AXI 名称自动补齐信号。视图设置 display.interfaceMode: 'collapsed' 可默认合并。
+以上是已有 Node 的局部调整，不是一份完整资源；从零创建请使用[最小接口图的完整配方](interfaces.mdoc#use:interface-create)。Port 自身仍提供方向、位宽和来源；工具不会根据 AXI 名称自动补齐信号。视图设置 display.interfaceMode: 'collapsed' 可默认合并。
 
 接口属于一个模块；逻辑 Group 表示选集，不能代替模块接口归属。共享时钟保留独立端口与显式时钟域。
 
 {% /section %}
 
+{% section id="use:interface-tables" title="接口汇总表与逐信号表" %}
+
+将同一个 study:recorder 整理成表：汇总先核对控制与样本两组的成员数，逐信号表再核对启动和状态的方向。行直接来自原 ports/interfaces，不手写 Table，也不重新输入信号名。
+
+{% interface-table id="study:recorder" mode="overview" /%}
+{% interface-table id="study:recorder.control" mode="detailed" /%}
+
+复制[主例完整资源](architecture.mdoc#use:architecture-create)、保留最小配置后，在自己的 docs/index.mdoc 写入并运行 edoc：
+
+```text {% process=false %}
+{% interface-table id="study:recorder" mode="overview" /%}
+{% interface-table id="study:recorder.control" mode="detailed" /%}
+```
+
+interface-table 的 id 选择 Node、Interface 或直接含端口的 Group，不能引用关系视图。overview 汇总真实成员，detailed 列出逐信号；mode 不控制图的折叠。原 author:host 表格示例的事实仍在进阶资源中，可用 edoc docs query 查阅，不再在本页重复展示。完整约束见[接口表契约](../../reference/tags/interface-table.mdoc)。
+
+{% /section %}
+
 {% section id="use:interface-reference" title="详图与精确查询" %}
 
-理解整体后，需要哪个接口再查哪个。查询本页最小例子的成员：
+理解整体后，需要哪个接口再查哪个。不复制数据也可查询随包最小例子的成员；复制到自己工程后去掉 docs 前缀：
 
 ```sh
-edoc query --id simple:source.stream --depth 1
+edoc docs query --id simple:source.stream --depth 1
 ```
 
 [样例查询参考](../../reference/examples.mdoc)保留按接口拆分的详图、信号表和来源。正文无需把它们全部展开，静态文档输出仍保留参与文档的完整内容。
 
 字段与边界见 {% reference id="ref:interfaces" label="接口参考" /%}。
 
-需要调整接口左右边、顺序或仅展开一端时，继续读[图形分组与接口显示](graph-options.mdoc)，其中包含完整数据、配置、汇总表和逐信号表。
+需要调整接口左右边、顺序或仅展开一端时，继续读[进阶接口排序与多组总线](graph-options.mdoc)，其中包含完整接口数据、配置和排序对照；同源表格见本页上节。
 
 {% /section %}
 {% /section %}

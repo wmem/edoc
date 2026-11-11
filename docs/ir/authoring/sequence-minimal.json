@@ -1,0 +1,15 @@
+{
+  "sequences": [{
+    "id": "recipe:sequence",
+    "kind": "sequence",
+    "label": "读取状态",
+    "participants": [
+      {"id": "host", "label": "主机"},
+      {"id": "device", "label": "设备"}
+    ],
+    "steps": [
+      {"id": "request", "from": "host", "to": "device", "label": "读取状态"},
+      {"id": "reply", "from": "device", "to": "host", "label": "状态应答", "replyTo": "request"}
+    ]
+  }]
+}

@@ -29,7 +29,7 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
  const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['relation-diagram','state-diagram','flowchart'].includes(node.tag))usedViews.add(node.attributes.view??node.attributes.id);
  for(const id of usedViews){scenes[id]=await (options.scene??scene)(graph,id);printScenes[id]=scenes[id].control?await (options.scene??scene)(graph,id,{control:'full'}):scenes[id].interfaceModel?await (options.scene??scene)(graph,id,{interfaces:'expanded'}):scenes[id];}
  const figures=new Map<string,{current:string;full:string}>();
- for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['sequence-diagram','binary-diagram','plot','register-map'].includes(node.tag)){const id=node.attributes.view??node.attributes.id;if(!figures.has(id)){const current=await engineeringSVG(graph,id);figures.set(id,{current,full:await engineeringSVG(graph,id,true)});}}
+ for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['sequence-diagram','binary-diagram','plot','register-map'].includes(node.tag)){const id=node.attributes.view??node.attributes.id;if(node.tag==='register-map'&&node.attributes.mode&&node.attributes.mode!=='all')continue;if(!figures.has(id)){const current=await engineeringSVG(graph,id);figures.set(id,{current,full:await engineeringSVG(graph,id,true)});}}
  const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0,tableCounter=0;const tableInstances=new Map<string,number>();
  const specIds=new Set(plan.all.filter(e=>e.sectionId&&graph.index.get(e.sectionId)?.type==='clause').map(e=>e.id));
  const reading=readingOutline(plan.roots,title,specIds),usedIds=new Set(plan.all.map(e=>e.id));
@@ -77,7 +77,8 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
    if(type==='page')return `<a href="${esc(routeHash({kind:'page',project:a.project??graph.manifest.projectId,id,...(a.anchor?{anchor:a.anchor}:{})}))}">${esc(a.label??id)}</a>`;
    if(type==='attachment')return `<a class="attachment-link" href="${esc(routeHash({kind:'pdf',project:a.project??graph.manifest.projectId,id,...(a.target?{target:a.target}:{})}))}">${esc(a.label??(!a.project||a.project===graph.manifest.projectId?graph.attachments?.[id]?.title:undefined)??id)}</a>`;
    if(type==='include'&&a.project){const link=options.projectLink?.(a.project);return link?`<a class="project-entry" href="${esc(routeHash({kind:'page',project:link.project,id:link.page}))}">进入 ${esc(link.title)}</a>`:'';}
-   if(['sequence-diagram','binary-diagram','plot','register-map'].includes(type)){const key=a.view??id,figure=figures.get(key)!;return engineeringHTML(key,figure.current,figure.full,type==='register-map'?registerMapTable(graph,id):'');}
+   if(type==='register-map'&&a.mode&&a.mode!=='all')return registerMapTable(graph,id,a);
+   if(['sequence-diagram','binary-diagram','plot','register-map'].includes(type)){const key=a.view??id,figure=figures.get(key)!;return engineeringHTML(key,figure.current,figure.full,type==='register-map'?registerMapTable(graph,id,a):'');}
    if(type==='binary-field-table')return binaryFieldTable(graph,id,a.view?graph.index.get(a.view)!.entity as BinaryView:{});
    if(type==='data-table')return renderTable(graph.index.get(id)!.entity as Table,scope,a);
    if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId);

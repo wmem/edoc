@@ -1,9 +1,38 @@
-{% section id="use:diagram-details" title="显示设置与完整导出" %}
+{% section id="use:diagram-details" title="图形阅读与当前、完整导出" %}
 
-端口默认保留名称，属性附注默认隐藏；连线标题默认在线上显示。开关逐图独立，不修改原事实。
+图能显示后，先确认当前范围，再选择阅读比例和要显示的文字。下面复用[采样记录器](architecture.mdoc#use:architecture-system)的同一控制接口；只有两条原始关系，适合核对每一步操作前后的差异。
 
-网页可筛选、缩放和查看详情。逐信号 SVG 保留该视图定义的完整范围；接口图另有跟随当前展开状态的“当前视图 SVG”。想缩小静态输出范围，应另建视图。
+{% relation-diagram id="study:control" /%}
 
-完整字段见 {% reference id="ref:graph-display" label="显示参考" /%}；需要调整位置时再阅读[布局教程](layout.mdoc)。
+{% section id="use:diagram-details:operate" title="从总览核对到一个真实信号" %}
 
+1. 先点击聚合线，核对启动与状态两个成员；展开一端，观察对端仍合并。
+2. 点击真实信号查看原 Port 和 Connection ID；类别筛选只改变当前可见内容，不改变这些端点。
+3. 关闭“连线标题”，线与箭头仍应存在。打开“端口属性”，按需查看方向、位宽等附注；来源通过点击对象后的属性查看；名称中的位宽不随该开关消失。
+4. 点击“适配画布”看完整范围；点击“清晰阅读”恢复可读比例。宽图用拖动或“大图查看”，不要把过小总览当作文字已看清。
+
+每张图的开关独立。上方视图仅选择控制接口，所以样本接口本来就不在这张图的范围内；导出“完整”也不会自动补入系统的其他接口。
+
+{% /section %}
+{% section id="use:diagram-details:svg" title="对照当前视图 SVG 与完整逐信号 SVG" %}
+
+保持一端展开、一端合并，分别下载两种 SVG 并独立打开：
+
+| 输出 | 应检查什么 |
+| --- | --- |
+| 当前视图 SVG | 保留当前接口展开状态；和眼前的总览/局部展开对照 |
+| 完整逐信号 SVG | 在这张视图定义的范围内展开真实信号，启动与状态都可追溯；不是整个工程所有关系 |
+| CLI export | 使用源视图配置中的文字设置，不读取另一个浏览器窗口的临时状态 |
+
+网页两种 SVG 都沿用当前的文字开关；完整/当前描述内容范围，不是重置附注。类别筛选不能使完整静态输出丢失定义内的原关系。想发布更小范围，另建一个明确选择范围的视图。
+
+复制主例完整数据、保留最小配置后，在自己的 docs/index.mdoc 使用 relation-diagram id=study:control 并运行 edoc；命令行导出为：
+
+```sh
+edoc export --view study:control --format svg --output control.svg
+```
+
+若只查询手册示例，用 edoc docs query --id study:start。完整字段与操作边界见[显示参考](../../reference/graph.mdoc#ref:graph-display)和[图形阅读操作](../../reference/graph.mdoc#ref:graph-operations)；需要改变位置时进入[布局教程](layout.mdoc)。
+
+{% /section %}
 {% /section %}

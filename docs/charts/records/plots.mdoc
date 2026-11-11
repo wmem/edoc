@@ -1,43 +1,135 @@
 {% section id="use:plots" title="测量与统计图" %}
 
-PlotView 引用已有 Table，将记录映射为曲线、散点、柱图或统计分布。原始行、类型、单位和来源继续保存在表中；不为画图再维护一份采样数据。数据表适合查精确值，统计图帮助比较趋势和分布。
+假设要比较采样器的两种配置 A、B：负载升高时，哪种配置的时延更低？平均值是否掩盖了波动？本页用同一次构造试验依次查看趋势、分布和分位数；所有图都引用同一张 Table，没有另抄一份统计结果。这是教学数据，非产品实测，也没有定义验收门限。
 
-{% section id="use:plot-simple" title="简单：原始采样趋势" %}
+{% section id="use:plot-conditions" title="先明确比较条件与记录" %}
 
-本页全部是构造的演示数据，非产品实测。每个配置有 24 条采样，其中一条没有时延字段；曲线在缺测处断开，不填成零。最小视图只需 data、mark 和 x/y 映射，单位来自 Table。
+记录覆盖 15%、30%、45%、60%、75%、90% 六档负载；每个“配置 × 负载”安排四条采样。A、B 各有 24 行，45% 负载下各有一条缺测，因此各有 23 个有效时延。除负载、配置和样本序号外，数据没有提供设备、温度、测量窗口或校准信息，不能据此推断真实系统的性能。
 
-{% plot id="plot:simple" /%}
-
-折线的连续 x 默认按 x 稳定排序；需要保留采样顺序时显式声明 order。图中单位、缺测、排序和统计步骤均可 query，不靠文字标签猜统计含义。
+Table 的 load、latency、mode、sample 分别表示负载、时延、配置和样本序号，单位由列定义维护。先在[原始记录](#use:plot-records)中核对采样；需要筛选和定位时见[数据表格](tables.mdoc)。PlotView 通过 data 引用这张表，encoding 选择坐标与分组，transform 声明筛选和统计口径。
 
 {% /section %}
-{% section id="use:plot-complex" title="复杂：分面、图层与分位数" %}
 
-下面按配置分面，在同一坐标上叠加箱线图与原始散点。箱线图使用 Tukey 1.5 IQR，缺测值不参加数值统计；散点仍能追溯原始行。
+{% section id="use:plot-trend" title="随负载查看平均时延" %}
+
+先在每个“配置 × 负载”内忽略缺测、计算平均时延，再连接各档负载的均值。连接线表示负载条件之间的比较，不表示连续时间采样；A、B 的颜色表示配置。
+
+{% plot id="plot:load-trend" /%}
+
+在这批构造数据中，两条线都随负载上升，B 在相同负载下高于 A。45% 档的均值各只使用三个有效值，其他档使用四个；均值不能告诉我们每组内部的分散程度，所以下一步回到原始点。
+
+{% /section %}
+
+{% section id="use:plot-complex" title="按配置与负载查看分布" %}
+
+每个面板只包含一种配置，横轴的每个位置是一档负载。箱线图和散点使用同一组记录：散点显示有效采样值，箱线使用 Tukey 1.5 IQR；缺测不补零，也不产生散点。箱线表示当前样本的分布，不是均值置信区间。
 
 {% plot id="plot:distribution" /%}
 
-同一张表也可以按配置求分位数。这里明确采用线性插值 R-7，展示 P50、P90、P99；不能将这些样本统计解释为总体保证。
-
-{% plot id="plot:quantile" /%}
+同一负载下两配置的分布位置不同；随着负载上升，各组整体向上移动。每组只有三到四个有效值，箱体形状对单个样本很敏感，应同时看原始点和有效数量。分面层的转换先作用于整体输入，spec 内的转换再在各面内执行；每个图层独立筛选或聚合，query 与绘图使用同一份投影。
 
 {% /section %}
+
+{% section id="use:plot-quantiles" title="在相同负载内比较分位数" %}
+
+下面仍按配置分面，在每个面内按负载求 P50、P90、P99，采用线性插值 R-7。颜色对应分位概率 0.5、0.9、0.99；同一条线连接相同分位数在不同负载下的结果，没有把不同负载合并计算。
+
+{% plot id="plot:load-quantile" /%}
+
+45% 档各有三个有效样本，其余档各有四个。如此小的样本中，P99 只是靠近最大观测值的插值，不能当作总体尾时延保证。需要作配置选择时，先确定目标负载、可接受时延和试验条件，再增加采样与独立验证；这张图只展示当前记录的统计结果。
+
+查询 plot:distribution 的 statistics，可查看各组的 count、validCount、missingCount 与 rowIds；count 包含缺测记录，不能当作有效时延数。分位数图的 rows 是转换后的结果，其 rowIds 指回参与该组计算的原始行。
+
+```sh
+edoc docs query --id plot:distribution --depth 1
+edoc docs query --id plot:load-quantile --depth 1
+```
+
+{% /section %}
+
 {% section id="use:plot-records" title="原始记录" collapsed=true %}
+
+筛选“配置”为 A、“负载”为 45%，可看到四行中有一条时延显示 unknown。样本序号是稳定记录的显示值，点击可追溯所属表的 JSON 来源；表中的空缺与图中缺测使用同一事实。
 
 {% data-table id="table:measurements" /%}
 
 {% /section %}
-{% section id="use:plot-data" title="数据与查询" collapsed=true %}
+
+{% section id="use:plot-data" title="创建：复制完整配置比较" collapsed=true %}
+
+新建 docs/ir/authoring/，将下面完整 JSON 保存为 docs/ir/authoring/measurements.json。它包含同一张原始表，以及趋势、分布和分位数视图；Table 的 source.file 与保存位置一致。已有项目将数据合入自己的入口，不覆盖既有配置。
 
 {% code file="docs/ir/authoring/measurements.json" language="json" /%}
 
-```sh
-edoc query --id plot:quantile --depth 1
-edoc read --id plot:quantile
-edoc export --view plot:distribution --format svg --output distribution.svg
+在新项目的 docs/edoc.config.js 保存：
+
+```javascript
+export default {};
 ```
 
-字段映射、过滤、聚合、分箱、分位数、组合与限制见[统计图契约](../../reference/tags/engineering-charts.mdoc#ref:tag-plot)。使用 Vega-Lite 后端生成自包含 SVG，网页和 SVG 都无需远程数据或脚本。统计计算与绘图检查不代替实验设计、测量校准和验收判据。
+在 docs/index.mdoc 写入：
+
+```text {% process=false %}
+{% plot id="plot:load-trend" /%}
+{% plot id="plot:distribution" /%}
+{% plot id="plot:load-quantile" /%}
+{% data-table id="table:measurements" /%}
+```
+
+回到项目根运行 edoc，打开 output/index.html。最小配置自动扫描 docs/ir/；不需要另写视图清单或复制统计结果。查询自己的工程和导出 SVG 时使用普通命令：
+
+```sh
+edoc
+edoc query --id plot:load-quantile --depth 1
+edoc read --id plot:load-quantile
+edoc export --view plot:load-trend --format svg --output trend.svg
+```
+
+如果改变 source.file 所指位置，须同步修改来源路径。图的 id 直接选择 PlotView，不另外传 view 属性。字段和转换的完整契约见[统计图参考](../../reference/tags/engineering-charts.mdoc#ref:tag-plot)。
+
+{% /section %}
+
+{% section id="use:plot-simple" title="最小语法：两条记录画折线" collapsed=true %}
+
+只需验证最小输入时，可在独立新工程先创建 docs/ir/，在 docs/edoc.config.js 保存：
+
+```javascript
+export default {};
+```
+
+将下面完整 JSON 保存为 docs/ir/plot-minimal.json：
+
+{% code file="docs/ir/authoring/plot-minimal.json" language="json" /%}
+
+在 docs/index.mdoc 写入：
+
+```text {% process=false %}
+{% plot id="recipe:plot" /%}
+```
+
+回到项目根运行 edoc，打开 output/index.html，应看到连接 (0 ms, 8 us) 和 (1 ms, 12 us) 的折线。这两条构造记录只演示字段映射，不用于前面的 A/B 统计比较。
+
+{% plot id="recipe:plot" /%}
+
+连续 x 的折线默认按 x 稳定排序，同值保留原记录顺序；显式 order 可改变顺序。原表缺测省略字段，折线保留断点，不补零。
+
+```sh
+edoc query --id recipe:plot --depth 1
+edoc read --id recipe:plot
+edoc export --view recipe:plot --format svg --output trend.svg
+```
+
+{% /section %}
+
+{% section id="use:plot-mixed" title="高级：明确跨负载的混合统计" collapsed=true %}
+
+原有 plot:quantile 只按配置分组，把六档负载合在一起；保留它是为了说明另一种统计问题。每条曲线有 23 个有效时延，代表本次六档各安排四条采样、各缺一条的混合记录，不代表任何单一负载，也没有按生产负载的出现频率加权。
+
+{% plot id="plot:quantile" /%}
+
+只有目标确实是这批混合记录的分布时才使用该口径。负载配比变化会改变结果，不能用它回答“90% 负载下的 P99”。前面的 plot:load-quantile 才按配置和负载分别计算。
+
+PlotView 还支持散点、柱图、分箱、误差线与图层组合，当前后端为 Vega-Lite 支持子集。网页和导出的 SVG 自包含，不依赖远程数据或脚本；统计计算与绘图检查仍不能代替试验设计、测量校准和验收判据。
 
 {% /section %}
 {% /section %}

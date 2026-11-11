@@ -1,0 +1,226 @@
+{
+  "flowcharts": [
+    {
+      "id": "tutorial:device-init",
+      "kind": "flowchart",
+      "label": "设备初始化：检查、重试与失败恢复",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start"
+        },
+        {
+          "id": "prepare",
+          "label": "准备初始化",
+          "actions": [
+            "关闭业务输出",
+            "attempt = 0"
+          ]
+        },
+        {
+          "id": "identify",
+          "label": "读取设备标识"
+        },
+        {
+          "id": "supported",
+          "kind": "decision",
+          "label": "标识受支持？"
+        },
+        {
+          "id": "configure",
+          "label": "配置并启动自检",
+          "actions": [
+            "attempt += 1",
+            "写入配置并启动自检"
+          ]
+        },
+        {
+          "id": "wait",
+          "kind": "wait",
+          "label": "等待自检报告",
+          "wait": {
+            "kind": "event",
+            "event": "自检完成"
+          }
+        },
+        {
+          "id": "result",
+          "kind": "decision",
+          "label": "自检通过？"
+        },
+        {
+          "id": "attempt-failed",
+          "kind": "merge",
+          "label": "本次尝试失败"
+        },
+        {
+          "id": "retry",
+          "kind": "decision",
+          "label": "还可重试？"
+        },
+        {
+          "id": "recover",
+          "label": "复位并清理本次状态",
+          "actions": [
+            "撤销未完成I/O",
+            "清除错误标志"
+          ]
+        },
+        {
+          "id": "shutdown",
+          "label": "关闭输出并报告原因"
+        },
+        {
+          "id": "ready",
+          "kind": "end",
+          "label": "成功：设备就绪"
+        },
+        {
+          "id": "failed",
+          "kind": "end",
+          "label": "失败：保持停用"
+        }
+      ],
+      "edges": [
+        {
+          "id": "begin",
+          "from": "start",
+          "to": "prepare"
+        },
+        {
+          "id": "read-id",
+          "from": "prepare",
+          "to": "identify"
+        },
+        {
+          "id": "check-id",
+          "from": "identify",
+          "to": "supported"
+        },
+        {
+          "id": "supported-id",
+          "from": "supported",
+          "to": "configure",
+          "guard": "已支持"
+        },
+        {
+          "id": "unsupported-id",
+          "from": "supported",
+          "to": "shutdown",
+          "otherwise": true
+        },
+        {
+          "id": "await-report",
+          "from": "configure",
+          "to": "wait"
+        },
+        {
+          "id": "reported",
+          "from": "wait",
+          "to": "result",
+          "label": "自检完成"
+        },
+        {
+          "id": "timed-out",
+          "from": "wait",
+          "to": "attempt-failed",
+          "kind": "timeout",
+          "label": "等待超过100ms"
+        },
+        {
+          "id": "io-error",
+          "from": "wait",
+          "to": "attempt-failed",
+          "kind": "exception",
+          "label": "I/O异常"
+        },
+        {
+          "id": "passed",
+          "from": "result",
+          "to": "ready",
+          "guard": "通过"
+        },
+        {
+          "id": "selftest-failed",
+          "from": "result",
+          "to": "attempt-failed",
+          "otherwise": true
+        },
+        {
+          "id": "retry-allowed",
+          "from": "retry",
+          "to": "recover",
+          "guard": "attempt < 3"
+        },
+        {
+          "id": "retry-exhausted",
+          "from": "retry",
+          "to": "shutdown",
+          "otherwise": true
+        },
+        {
+          "id": "reconfigure",
+          "from": "recover",
+          "to": "configure"
+        },
+        {
+          "id": "report-failure",
+          "from": "shutdown",
+          "to": "failed"
+        },
+        {
+          "id": "retry-budget",
+          "from": "attempt-failed",
+          "to": "retry"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "tutorial:init-entry",
+      "kind": "flowchart",
+      "model": "tutorial:device-init",
+      "label": "阶段一：标识检查与出口",
+      "focus": "supported",
+      "layout": {
+        "direction": "LR",
+        "spacing": {
+          "node": 32,
+          "layer": 64,
+          "padding": 16
+        }
+      }
+    },
+    {
+      "id": "tutorial:init-result",
+      "kind": "flowchart",
+      "model": "tutorial:device-init",
+      "label": "阶段二：等待结果与成功出口",
+      "focus": "result",
+      "layout": {
+        "direction": "LR",
+        "spacing": {
+          "node": 32,
+          "layer": 64,
+          "padding": 16
+        }
+      }
+    },
+    {
+      "id": "tutorial:init-recovery",
+      "kind": "flowchart",
+      "model": "tutorial:device-init",
+      "label": "阶段三：次数预算与恢复",
+      "focus": "retry",
+      "layout": {
+        "direction": "LR",
+        "spacing": {
+          "node": 32,
+          "layer": 64,
+          "padding": 16
+        }
+      }
+    }
+  ]
+}

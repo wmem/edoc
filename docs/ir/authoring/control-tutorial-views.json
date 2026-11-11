@@ -1,0 +1,78 @@
+{
+  "views": [
+    {
+      "id": "tutorial:microwave-overview",
+      "kind": "state-machine",
+      "model": "example:microwave",
+      "label": "微波炉：两个同时存在的区域",
+      "collapsed": [
+        "engine",
+        "door"
+      ],
+      "layout": {
+        "direction": "LR",
+        "arrangement": "layered",
+        "alignment": "none",
+        "spacing": {
+          "node": 32,
+          "layer": 60,
+          "padding": 16
+        }
+      }
+    },
+    {
+      "id": "tutorial:microwave-engine",
+      "kind": "state-machine",
+      "model": "example:microwave",
+      "label": "烹饪控制：启动与停止",
+      "focus": "engine",
+      "layout": {
+        "direction": "LR",
+        "arrangement": "layered",
+        "alignment": "none",
+        "spacing": {
+          "node": 32,
+          "layer": 60,
+          "padding": 16
+        }
+      },
+      "collapsed": [
+        "on"
+      ]
+    },
+    {
+      "id": "tutorial:microwave-working",
+      "kind": "state-machine",
+      "model": "example:microwave",
+      "label": "烹饪控制：已启动内部的运行阶段",
+      "focus": "working",
+      "layout": {
+        "direction": "LR",
+        "arrangement": "layered",
+        "alignment": "none",
+        "spacing": {
+          "node": 24,
+          "layer": 48,
+          "padding": 12
+        }
+      }
+    },
+    {
+      "id": "tutorial:microwave-door",
+      "kind": "state-machine",
+      "model": "example:microwave",
+      "label": "炉门区域",
+      "focus": "door",
+      "layout": {
+        "direction": "LR",
+        "arrangement": "layered",
+        "alignment": "none",
+        "spacing": {
+          "node": 24,
+          "layer": 48,
+          "padding": 12
+        }
+      }
+    }
+  ]
+}

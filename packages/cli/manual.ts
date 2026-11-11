@@ -21,7 +21,7 @@ const help=`edoc 自带工具手册（不读取当前项目配置）
  edoc docs serve [--port 5176]             本机 HTTP 阅读，Ctrl+C 结束
  edoc docs outline [--project ID] [--id SECTION_ID] [--depth 0..10 | --all] [--format json|text]
  edoc docs read --id ID [--project ID] [--scope self|subtree] [--with-clauses] [--offset 0] [--max-chars 12000] [--format json|text]
- edoc docs query --id ID [--project ID] [--depth 0..10] [--max-items 1..10000] [--format json|text]
+ edoc docs query --id ID [--project ID] [--element ELEMENT] [--depth 0..10] [--max-items 1..10000] [--format json|text]
 目录默认 depth=0；--all 显式返回全量。读取使用 sectionId，不使用导航 id/anchor。
 入门：edoc docs read --id use:home --format text
 最小配置：edoc docs read --id use:first-build --format text

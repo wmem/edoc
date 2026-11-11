@@ -1,85 +1,65 @@
 {% section id="use:tables" title="数据表格" %}
 
-先判断这张表保存的是说明，还是工程事实。几行阅读说明可直接用 Markdown 表；已有对象的字段使用 objectId 投影；只在项目知识里定义的参数、决策等使用 values 行。不要为了一张表再抄一份已有数据。
+要比较采样器的 A、B 两种配置，首先得保留可查询的原始记录。下面沿同一个例子说明如何建表、查行、筛选与追溯来源；[测量与统计图](plots.mdoc)直接引用同一张表查看趋势和分布，不再复制采样值。本页样例均为构造数据，非产品实测。
 
-需要在大量记录中按列查找时，继续[筛选与排序](tables.mdoc#use:table-reading)，其中有可操作的千行样例。
+{% section id="use:table-records" title="把一次配置比较保存为记录" %}
 
-{% section id="use:table-choices" title="选择正文表或数据表" %}
+每行保存配置、负载、样本序号和可选的时延。列定义维护名称、类型和单位；稳定行 ID 表达记录身份，排序后仍指向同一条记录。A、B 各有六档负载、每档四行；45% 档各有一条缺测，时延显示 unknown，没有补成零。
 
-| 当前任务 | 推荐写法 |
-| --- | --- |
-| 说明步骤、比较几种阅读方式 | 普通 Markdown 表，单元格可写普通正文链接 |
-| 已有器件、端口或其他对象的字段 | [对象投影表](tables.mdoc#use:table)，行只引用 objectId |
-| 参数与决策本身就是项目维护的事实 | values 行，列声明字段类型与单位 |
+{% data-table id="table:measurements" /%}
 
-结构化表的单元格显示转义后的文本或 JSON，不把字符串再次当作 Markdown、HTML 或标签执行。下面示例中的 `**普通文本**` 会保留星号，不能用它设置粗体或注入链接。
-
-单元格也可将文字和跳转目标分别定义在 values 与 links 中，见[实例到寄存器及字段](../data-layout/registers.mdoc#use:registers:links)。
+这种由项目直接维护的记录使用 values；若字段已存在于器件、端口等对象中，则使用[objectId 投影](#use:table)，避免再抄一套工程事实。几行说明或步骤比较直接使用普通 Markdown 表即可。
 
 {% /section %}
 
-{% section id="use:table" title="把已有对象投影成表格" %}
+{% section id="use:table-row-links" title="查询行事实、定位记录与追溯来源" %}
 
-下面的表直接从两个对象读取名称：
+以 A 配置在 45% 负载下的缺测记录为例，三种操作各有用途：
 
-{% data-table id="system:modules" /%}
+- {% reference id="measurement:A:11" label="查询这条缺测记录" /%}：打开行详情，查看 values 和声明来源。
+- {% page id="docs/charts/records/tables" anchor="measurement:A:11" label="定位表中的缺测行" /%}：回到本页原始记录，核对上下文。
+- 点击表中“样本序号”的链接：跟随该行所属 Table 的 source 声明，查看 measurements.json 来源与表的稳定 selector。
 
-先按[数据接入](../../engineering/data.mdoc#use:standard-data)保存两个对象，将 {% reference id="ref:table-example" label="最小投影表定义" /%} 保存为 docs/ir/authoring/tables.json。在参与发布的 docs/index.mdoc 加入：
+显示文字保存在 values，跳转目标保存在 links。source 类型的单元格链接引用行 ID，并沿所属 Table 查找 source；数值仍保留为 number，不用 Markdown 链接替换采样值。
 
-```text {% process=false %}
-{% data-table id="system:modules" /%}
-```
-
-执行 edoc。修改原对象 label 后重建，图与表会一起变化；表格行不用再抄一份名称。完整字段只在 {% reference id="ref:tables" label="表格参考" /%} 维护。
-
-需要维护参数、布尔值或 JSON、引用某一行时，继续下一节，不要把这些值先伪装成器件对象。
-
-{% /section %}
-
-{% section id="use:table-values" title="创建多类型参数表" %}
-
-以下两组参数是虚构数据，演示多类型单元格与缺失值：
-
-{% data-table id="author:settings" /%}
-
-单位 Hz 显示在列标题，不会自动换算数值；未提供的 note 显示 unknown。配置名和说明是 string，频率是 number，启用状态是 boolean，补充对象使用 json。修改字段类型而不修改数据时，validate 会报告类型不符。
-
-创建这张表时，将完整定义保存为自己工程的 docs/ir/authoring/table-values.json；保留空配置、docs/index.mdoc 首页与默认 docs/ir 扫描：
-
-{% code file="docs/ir/authoring/table-values.json" language="json" /%}
-
-在自己工程的 docs/index.mdoc 写入：
-
-```text {% process=false %}
-{% data-table id="author:settings" /%}
-
-{% reference id="author:settings:low" label="查询低功耗行事实" /%}
-{% page id="docs/index" anchor="author:settings:low" label="定位表中的低功耗行" /%}
-```
-
-执行 edoc，数字、布尔值和 JSON 从同一份行数据生成，不把字符串再次当作 Markdown 解析。
-
-{% /section %}
-
-{% section id="use:table-row-links" title="查询行事实或定位表中的行" %}
-
-两种跳转回答不同问题：
-
-- {% reference id="author:settings:low" label="查询低功耗行事实" /%}：打开该行的对象详情，查看 values 或 objectId。
-- {% page id="docs/charts/records/tables" anchor="author:settings:low" label="定位表中的低功耗行" /%}：留在表格文章并滚动到该行。
-
-page.id 是表所在阅读页的逻辑路径，不含 .md/.mdoc。这里的手册页是 docs/charts/records/tables；复制上面的配方到自己的 docs/index.mdoc 时使用 docs/index。anchor 使用稳定行 ID，不使用行号或当前排序位置。
+page.id 是表所在阅读页的逻辑路径，不含 .md/.mdoc；anchor 使用稳定行 ID，不使用行号或排序位置。这里是手册路径 docs/charts/records/tables，复制到自己的首页时使用 docs/index。
 
 ```sh
-edoc query --id author:settings:low
-edoc read --id use:table-values
+edoc docs query --id measurement:A:11
+edoc docs read --id use:table-records
 ```
 
-第二条命令读取本手册说明；在自己的工程改用自己定义的 section ID。完整字段、投影目标和当前边界见 {% reference id="ref:tables" label="表格参考" /%}。
+以上查询随包手册。复制数据到自己的项目后，使用普通 edoc query --id measurement:A:11；读取自己的正文则用 edoc read 和自己定义的 section ID。
 
 {% /section %}
 
-{% section id="use:table-reading" title="筛选与排序" %}
+{% section id="use:table-records-create" title="创建：复制同一份采样数据" collapsed=true %}
+
+新项目先创建 docs/ir/authoring/，在 docs/edoc.config.js 保存最小配置：
+
+```javascript
+export default {};
+```
+
+将完整数据保存为 docs/ir/authoring/measurements.json。该文件也包含[统计图教程](plots.mdoc)使用的 PlotView；不需要把视图和记录再各抄一份，未引用的图不会布局。
+
+{% code file="docs/ir/authoring/measurements.json" language="json" /%}
+
+在 docs/index.mdoc 写入：
+
+```text {% process=false %}
+{% data-table id="table:measurements" /%}
+{% reference id="measurement:A:11" label="查询缺测行事实" /%}
+{% page id="docs/index" anchor="measurement:A:11" label="定位缺测行" /%}
+```
+
+在项目根运行 edoc，打开 output/index.html。检查筛选 A 配置与 45% 负载后是否有四行、其中一条时延为 unknown；点击行链接、来源链接并返回。source.file 与文件位置一致；移动数据时同步修改路径。已有工程保留自己的配置与数据入口，不覆盖它们。
+
+{% /section %}
+
+{% section id="use:table-reading" title="筛选与排序：先找配置，再核对记录" %}
+
+在上面的采样表中，将“配置”筛选为 A，再将“负载”的最小值和最大值都设为 45；应剩四行，其中一行时延缺失。按“时延”排序时，缺失值始终在后。清空筛选后，可继续比较 B 配置。
 
 data-table 默认保留声明顺序，读者可以在列标题上排序或筛选。操作只改变当前表的显示，完整数据仍在 HTML 中，行 ID 和 query 的事实不变。普通 Markdown/Markdoc 表不增加这些控件。
 
@@ -95,7 +75,7 @@ data-table 默认保留声明顺序，读者可以在列标题上排序或筛选
 
 {% /section %}
 
-{% section id="use:table-reading-live" title="实际操作千行样例" %}
+{% section id="use:table-reading-live" title="进阶：千行表与定位恢复" collapsed=true %}
 
 以下均为虚构参数。试着将“采样率”限制在 10–100 Hz，再将“启用”设为 true；也可按“说明”的未提供情况筛选，比较真实 unknown 字符串与缺失值。
 
@@ -129,6 +109,79 @@ data-table 默认保留声明顺序，读者可以在列标题上排序或筛选
 字段的权威来源和数据类型见[表格创建](tables.mdoc)，两个展示开关与完整边界见[data-table 契约](../../reference/tags/data-table.mdoc)。
 
 {% /section %}
+{% /section %}
+
+{% section id="use:table-choices" title="选择正文表或数据表" %}
+
+| 当前任务 | 推荐写法 |
+| --- | --- |
+| 说明步骤、比较几种阅读方式 | 普通 Markdown 表，单元格可写普通正文链接 |
+| 已有器件、端口或其他对象的字段 | [对象投影表](tables.mdoc#use:table)，行只引用 objectId |
+| 参数与决策本身就是项目维护的事实 | values 行，列声明字段类型与单位 |
+
+结构化表的单元格显示转义后的文本或 JSON，不把字符串再次当作 Markdown、HTML 或标签执行。下面示例中的 `**普通文本**` 会保留星号，不能用它设置粗体或注入链接。
+
+单元格也可将文字和跳转目标分别定义在 values 与 links 中，见[实例到寄存器及字段](#use:registers:links)。
+
+{% /section %}
+
+{% section id="use:table" title="已有对象：投影字段，不复制事实" collapsed=true %}
+
+下面的表直接从两个对象读取名称：
+
+{% data-table id="system:modules" /%}
+
+先按[数据接入](../../engineering/data.mdoc#use:standard-data)保存两个对象，将 {% reference id="ref:table-example" label="最小投影表定义" /%} 保存为 docs/ir/authoring/tables.json。在参与发布的 docs/index.mdoc 加入：
+
+```text {% process=false %}
+{% data-table id="system:modules" /%}
+```
+
+执行 edoc。修改原对象 label 后重建，图与表会一起变化；表格行不用再抄一份名称。完整字段只在 {% reference id="ref:tables" label="表格参考" /%} 维护。
+
+需要维护参数、布尔值或 JSON、引用某一行时，继续下一节，不要把这些值先伪装成器件对象。
+
+{% /section %}
+
+{% section id="use:table-values" title="独立参数：维护多种类型" collapsed=true %}
+
+除了采样记录，参数和决策本身也可用 values 维护。下面是独立的虚构参数示例，不是前面 A/B 配置的测试条件；它演示布尔值、JSON 与缺失字段：
+
+{% data-table id="author:settings" /%}
+
+单位 Hz 显示在列标题，不会自动换算数值；未提供的 note 显示 unknown。配置名和说明是 string，频率是 number，启用状态是 boolean，补充对象使用 json。修改字段类型而不修改数据时，validate 会报告类型不符。
+
+创建这张表时，将完整定义保存为自己工程的 docs/ir/authoring/table-values.json；保留空配置、docs/index.mdoc 首页与默认 docs/ir 扫描：
+
+{% code file="docs/ir/authoring/table-values.json" language="json" /%}
+
+在自己工程的 docs/index.mdoc 写入：
+
+```text {% process=false %}
+{% data-table id="author:settings" /%}
+
+{% reference id="author:settings:low" label="查询低功耗行事实" /%}
+{% page id="docs/index" anchor="author:settings:low" label="定位表中的低功耗行" /%}
+```
+
+执行 edoc，数字、布尔值和 JSON 从同一份行数据生成，不把字符串再次当作 Markdown 解析。
+
+{% /section %}
+
+{% section id="use:registers:links" title="单元格链接：实例、定义与原文" collapsed=true %}
+
+下面是真实可操作的结构化表格。点击“采样器”进入寄存器手册的模板章节，点击寄存器或字段进入对象详情；“寄存器手册中的字段表”定位到表内一行。浏览器返回可回到原位置。筛选、排序后链接仍保留。
+
+{% data-table id="manual:register-instances" /%}
+
+显示文字在 values 中，跳转在 links 中分别声明。**不会把字符串重新解释成 Markdown**。单元格链接也适用于普通 Table，不限于寄存器；objectId 投影行同样可以加 links。
+
+```json
+{"id":"instance:0","values":{"name":"CTRL"},"links":{"name":{"kind":"entity","id":"manual:ctrl"}}}
+```
+
+links 的键是 columns.field。entity 跳到章节或对象，page 定位文章与行，pdf 定位附件，source 跟随目标的声明来源。精确字段、同工程校验和跨工程弱跳转见[单元格目标契约](../../reference/ir.mdoc#ref:cell-links)。
+
 {% /section %}
 
 {% /section %}

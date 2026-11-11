@@ -19,7 +19,8 @@
 | packages/render-graph/text.ts、font-metrics.ts、render-wave/bounds.ts | 随包字体度量、文字排布与波形SVG边界；度量生成器仅在开发/打包阶段运行 |
 | packages/doc-theme | 正文呈现、当前页交互、PDF 阅读器 |
 | packages/pack-html | 单 HTML、离线载荷、字体与许可证 |
-| packages/extensions | 关系图、数据表、波形与正文的类型、标签和数据契约；见[扩展维护](extensions.mdoc) |
+| packages/extensions | 关系、控制、消息、协议布局、统计、寄存器及地址组织等领域的类型、标签、数据契约与查询；见[扩展维护](extensions.mdoc) |
+| packages/figure | 工程图共用输出、诊断及分派入口；领域契约与计算留在各 extensions 目录 |
 | packages/schema | 来源、配置、内部清单和语义引用等共用结构 |
 
 正文先使用原生 Markdoc 机制获得本次上下文的节点投影；条件和 partial 使用原生实现。未显示分支仍检查文件与工程引用，实际选择的章节建立目录和查询身份。异步文本/Schema 校验完成后再建索引，HTML 等待异步转换；字面围栏明确 process=false。通用呈现保留原生有效属性，工程数据表使用独立 data-table，不覆盖原生 table。精确契约见[原生语法参考](../reference/markdoc-native.mdoc)。

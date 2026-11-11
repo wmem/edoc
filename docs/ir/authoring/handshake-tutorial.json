@@ -1,0 +1,47 @@
+{
+  "waveforms": [
+    {
+      "id": "tutorial:valid-ready",
+      "kind": "waveform",
+      "label": "valid/ready：正常传输、背压和连续传输",
+      "format": "wavejson",
+      "semantic": "specification",
+      "data": {
+        "signal": [
+          {
+            "name": "clk",
+            "wave": "p......."
+          },
+          {
+            "name": "valid",
+            "wave": "01....0."
+          },
+          {
+            "name": "ready",
+            "wave": "1.0.1..."
+          },
+          {
+            "name": "data",
+            "wave": "x34..5x.",
+            "data": [
+              "A",
+              "B",
+              "C"
+            ]
+          }
+        ],
+        "head": {
+          "text": "每列对应一次clk上升沿采样",
+          "tick": 0
+        },
+        "foot": {
+          "text": "valid与ready同时为1才传输；背压时保持valid和data"
+        }
+      },
+      "source": {
+        "file": "docs/ir/authoring/handshake-tutorial.json",
+        "selector": "tutorial:valid-ready"
+      }
+    }
+  ]
+}

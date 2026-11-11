@@ -1,22 +1,231 @@
-{% section id="use:registers" title="寄存器手册：位域图与字段表" %}
+{% section id="use:registers" title="编写 FPGA 寄存器手册" %}
 
-需要介绍寄存器定义时，用 register-diagram 看位分布，用 register-field-table 查访问属性、定义复位和说明。两者读取同一个寄存器 ID，不需要自己维护绘图数据，也不把字段伪装成端口。
+先让使用者知道怎样寻址、到哪里找到某个寄存器、怎样读写它，再解释数据如何组织。本页给出一份完整的虚构采样器手册：地址划分、寄存器列表、位图和字段表都读取同一份资源，不维护第二份地址表或字段表。它不是实际 FPGA 的硬件规范。
 
-{% section id="use:registers:links" title="先从实例进入定义" %}
+{% section id="handbook:fpga:access" title="访问约定" %}
 
-下面是真实可操作的结构化表格。点击“采样器”进入本文模板章节，点击寄存器或字段进入对象详情；“本文中的字段表”定位到表内一行。浏览器返回可回到原位置。筛选、排序后链接仍保留。
+本例使用 32 位寄存器和 8 bit 地址单位，即字节寻址；地址划分中的起始地址就是各区域实例的基址。访问地址等于所属区域基址加区域内偏移。寄存器列表同时给出两者，避免把区域内偏移当成绝对地址。
 
-{% data-table id="manual:register-instances" /%}
-
-显示文字在 values 中，跳转在 links 中分别声明。**不会把字符串重新解释成 Markdown**。单元格链接也适用于普通 Table，不限于寄存器；objectId 投影行同样可以加 links。
-
-```json
-{"id":"instance:0","values":{"name":"CTRL"},"links":{"name":{"kind":"entity","id":"manual:ctrl"}}}
-```
-
-links 的键是 columns.field。entity 跳到章节或对象，page 定位文章与行，pdf 定位附件，source 跟随目标的声明来源。精确字段、同工程校验和跨工程弱跳转见[单元格目标契约](../../reference/ir.mdoc#ref:cell-links)。
+只允许对所列寄存器进行 32 位对齐访问；其他宽度或非对齐访问不在本例约定内。复位后采样关闭、通道空闲、有效计数为零。已标注的保留位读 0、写入忽略；未列出的地址不允许访问。读取状态不会清零计数，版本和状态寄存器的写入被忽略。
 
 {% /section %}
+{% section id="handbook:fpga:regions" title="地址划分：先选择功能区" %}
+
+全局控制区负责启停、模式与版本；通道区保存运行状态和采样参数。下表列出各区的基址、含末地址的分配范围和用途。只有后续列表中的寄存器允许访问。
+
+{% register-map id="fpga:csr" mode="regions" /%}
+
+{% /section %}
+{% section id="handbook:fpga:list" title="寄存器列表：从位置进入定义" %}
+
+先按区域与用途找寄存器，再点击名称进入本文对应定义。列表中的偏移相对该区域实例的起始地址；绝对地址可以直接用于本例的字节寻址访问。
+
+{% register-map id="fpga:csr" mode="registers" definitions={"fpga:control": "handbook:fpga:control", "fpga:version": "handbook:fpga:version", "fpga:status": "handbook:fpga:status", "fpga:threshold": "handbook:fpga:threshold"} /%}
+
+{% /section %}
+{% section id="handbook:fpga:definitions" title="寄存器定义" %}
+
+{% section id="handbook:fpga:control" title="CTRL：全局采样控制" %}
+
+先把 ENABLE 写为 0，并等待 STATUS.ACTIVE=0，再修改 MODE；设置好阈值后把 ENABLE 写为 1 开始采样。单次模式完成一个样本后自动停止并清 ENABLE；连续模式持续采样，直到软件请求停止。运行中修改 MODE 的写入被忽略。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:control" definitions={"fpga:control": "handbook:fpga:control"} /%}
+{% register-diagram id="fpga:control" /%}
+{% register-field-table id="fpga:control" /%}
+
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+
+{% /section %}
+{% section id="handbook:fpga:version" title="VERSION：只读版本标识" %}
+
+软件初始化时先读取 VERSION，核对主、次版本是否在驱动支持范围内。它是只读标识，不用于控制采样；向该寄存器写入不会改变版本值。具体编码与本例版本见字段表。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:version" definitions={"fpga:version": "handbook:fpga:version"} /%}
+{% register-diagram id="fpga:version" /%}
+{% register-field-table id="fpga:version" /%}
+
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+
+{% /section %}
+{% section id="handbook:fpga:status" title="STATUS：通道状态与完成计数" %}
+
+写入启动请求后，观察 ACTIVE 判断通道是否还在处理；单次模式等待它回到 0，连续模式在请求停止后等待它清零。COUNT 只累计达到阈值的有效样本，读取或停止采样都不会清零；计数在复位时清零，溢出后回绕。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:status" definitions={"fpga:status": "handbook:fpga:status"} /%}
+{% register-diagram id="fpga:status" /%}
+{% register-field-table id="fpga:status" /%}
+
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+
+{% /section %}
+{% section id="handbook:fpga:threshold" title="THRESHOLD：采样阈值" %}
+
+停止采样并等待 ACTIVE=0 后再配置阈值，然后启动下一次采样。样本值大于等于 THRESHOLD 时才计入 COUNT；运行中写入被忽略。初始阈值见下方复位列。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:threshold" definitions={"fpga:threshold": "handbook:fpga:threshold"} /%}
+{% register-diagram id="fpga:threshold" /%}
+{% register-field-table id="fpga:threshold" /%}
+
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+
+{% /section %}
+{% /section %}
+
+{% section id="use:registers:create" title="创建这份完整手册" %}
+
+新项目创建 docs/edoc.config.js，保持最小配置；已有工程保留自己的配置，并将下方资源放入当前数据入口。默认会自动扫描 docs/ir/，无需手写清单：
+
+```javascript
+export default {};
+```
+
+将以下完整资源保存为 docs/ir/authoring/fpga-register-handbook.json。区域、实例位置、名称、用途和字段定义保存在这份资源中；操作步骤与访问约定写在正文里：
+
+{% code file="docs/ir/authoring/fpga-register-handbook.json" language="json" /%}
+
+在 docs/index.mdoc 写入下方完整正文。definitions 显式将寄存器 ID 链到定义章节；同一寄存器出现多次也不会猜测首次出现的位置：
+
+```text {% process=false %}
+# 虚构 FPGA 采样器寄存器手册
+
+32 位寄存器，8 bit 字节寻址，只允许 32 位对齐访问。区域内偏移相对下表各区域基址；保留位读 0、写入忽略，未列出地址不允许访问。复位后通道关闭、空闲，计数为零。
+
+{% section id="handbook:fpga:regions" title="地址划分" %}
+{% register-map id="fpga:csr" mode="regions" /%}
+{% /section %}
+{% section id="handbook:fpga:list" title="寄存器列表" %}
+{% register-map id="fpga:csr" mode="registers" definitions={"fpga:control": "handbook:fpga:control", "fpga:version": "handbook:fpga:version", "fpga:status": "handbook:fpga:status", "fpga:threshold": "handbook:fpga:threshold"} /%}
+{% /section %}
+{% section id="handbook:fpga:definitions" title="寄存器定义" %}
+{% section id="handbook:fpga:control" title="CTRL：全局采样控制" %}
+先把 ENABLE 写为 0，并等待 STATUS.ACTIVE=0，再修改 MODE；设置好阈值后把 ENABLE 写为 1 开始采样。单次模式完成一个样本后自动停止并清 ENABLE；连续模式持续采样，直到软件请求停止。运行中修改 MODE 的写入被忽略。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:control" /%}
+{% register-diagram id="fpga:control" /%}
+{% register-field-table id="fpga:control" /%}
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+{% /section %}
+{% section id="handbook:fpga:version" title="VERSION：只读版本标识" %}
+软件初始化时先读取 VERSION，核对主、次版本是否在驱动支持范围内。它是只读标识，不用于控制采样；向该寄存器写入不会改变版本值。具体编码与本例版本见字段表。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:version" /%}
+{% register-diagram id="fpga:version" /%}
+{% register-field-table id="fpga:version" /%}
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+{% /section %}
+{% section id="handbook:fpga:status" title="STATUS：通道状态与完成计数" %}
+写入启动请求后，观察 ACTIVE 判断通道是否还在处理；单次模式等待它回到 0，连续模式在请求停止后等待它清零。COUNT 只累计达到阈值的有效样本，读取或停止采样都不会清零；计数在复位时清零，溢出后回绕。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:status" /%}
+{% register-diagram id="fpga:status" /%}
+{% register-field-table id="fpga:status" /%}
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+{% /section %}
+{% section id="handbook:fpga:threshold" title="THRESHOLD：采样阈值" %}
+停止采样并等待 ACTIVE=0 后再配置阈值，然后启动下一次采样。样本值大于等于 THRESHOLD 时才计入 COUNT；运行中写入被忽略。初始阈值见下方复位列。
+
+{% register-map id="fpga:csr" mode="registers" register="fpga:threshold" /%}
+{% register-diagram id="fpga:threshold" /%}
+{% register-field-table id="fpga:threshold" /%}
+{% reference id="handbook:fpga:list" label="返回寄存器列表" /%}
+{% /section %}
+{% /section %}
+```
+
+在项目根运行 edoc，打开 output/index.html，应看到地址划分、四行寄存器列表和四个完整定义；点击列表中的名称定位到同页章节，再用“返回寄存器列表”返回。名称与用途来自原定义，页面不另建 Table。
+
+```sh
+edoc
+edoc query --id fpga:csr --element '["channel0","status"]'
+edoc query --id fpga:status
+edoc export --id fpga:csr --format svg --output address-map.svg
+```
+
+这些命令用于已经复制的数据。只查看随包手册时使用 edoc docs query --id fpga:csr 或 edoc docs read --id use:registers。SVG 导出仍给出该地址模型的完整汇总；regions/registers 只是正文位置上的同源呈现选择，不改 query。
+
+字段/复位用 Register，块内位置用 RegisterBlock，实例基址用 AddressSpace：三者各维护一类事实。这是创建时的分工，读者不必先理解这三个模型才能使用手册。选择某个寄存器的实例位置时用 register 属性，仍从同一地址空间计算，不在定义章节手填地址。字段、视图和来源的精确规则见[寄存器契约](../../reference/tags/registers.mdoc)与[地址呈现契约](../../reference/tags/engineering-charts.mdoc#ref:tag-register-map)。
+
+{% /section %}
+{% section id="use:registers:advanced" title="按需进阶：重复通道、嵌套与宽寄存器" collapsed=true %}
+
+完整手册建立后，才按真实工程需要增加数组、嵌套块、64 位字段或特殊地址单位。下面保留独立的既有演示，分别说明这些边界；它们不是主例的另一份事实。
+
+{% section id="use:register-maps" title="嵌套、重复与特殊地址单位" %}
+
+Register 定义一个寄存器的位域；RegisterBlock 定义块内有哪些寄存器或子块，放在哪里；AddressSpace 将块映射到地址空间。同一寄存器可以被多个实例引用，位域只维护一次。
+
+{% section id="use:register-map-simple" title="创建：块内相对偏移" %}
+
+新项目先创建 docs/ir/，并在 docs/edoc.config.js 保存最小配置；已有项目保留自己的配置，将数据合入当前数据入口。以下步骤使用默认自动扫描的 docs/ir/：
+
+```javascript
+export default {};
+```
+
+将下面完整 JSON 保存为 docs/ir/register-map-minimal.json：
+
+{% code file="docs/ir/authoring/register-map-minimal.json" language="json" /%}
+
+在 docs/index.mdoc 写入下面的正文标签：
+
+```text {% process=false %}
+{% register-map id="recipe:register-block" /%}
+{% register-diagram id="recipe:control" /%}
+```
+
+回到项目根运行：
+
+```sh
+edoc
+```
+
+打开 output/index.html。应看到 ctrl 位于相对偏移 0x0，跨度 0x4；下方是同一 32 位寄存器的位域图。Register 只定义位域，RegisterBlock 引用它并保存 offset，不复制 fields。未提供访问属性、复位或空洞规则时不推断这些信息。
+
+{% register-map id="recipe:register-block" /%}
+{% register-diagram id="recipe:control" /%}
+
+此时没有基址，只显示相对地址；独立块默认按 8 bit 地址单位计算。需要实际地址时再增加 AddressSpace，用 mappings 将块映射到 base，register-map 的 id 改为地址空间 ID；下节展示完整例子。register-map 直接选择块或空间，不需要另建 view。size 缺省只计算最小覆盖，不推断硬件 aperture。
+
+复制上面数据后，可在自己的项目根查询、读取或导出：
+
+```sh
+edoc query --id recipe:register-block --element ctrl
+edoc read --id recipe:register-block
+edoc export --id recipe:register-block --format svg --output register-map.svg
+```
+
+{% /section %}
+{% section id="use:register-map-complex" title="复杂：嵌套、数组与大地址" %}
+
+设备块包含四个端口实例；映射基址特意使用超过 JavaScript 精确整数范围的值，地址始终以整数字符串保存并精确计算。count 和 stride 组织重复实例，不复制寄存器字段。表中点击定义进入原 Register。
+
+{% register-map id="space:csr" /%}
+
+块内偏移和跨度沿地址空间的 addressUnitBits 解释，嵌套子块也继承该单位。独立查看块时仍使用 8 bit 默认；如果块只在字寻址空间中合法，应从对应空间进入，独立查看会明确诊断该默认单位下的冲突。
+
+实例路径是 JSON 数组，避免名称拼接歧义。例如 ["device","ports",2,"ctrl"] 指第三个端口的控制寄存器，地址为 0x1000000000000300。
+
+{% /section %}
+{% section id="use:register-map-data" title="数据与查询" collapsed=true %}
+
+以下完整数据同时包含原 Register 定义、嵌套 RegisterBlock 和 AddressSpace；不依赖前面的最小模块块。
+
+{% code file="docs/ir/authoring/register-maps.json" language="json" /%}
+
+以下命令查询安装包自带的手册示例，不要求把复杂数据复制到当前项目：
+
+```sh
+edoc docs query --id space:csr --element '["device","ports",2,"ctrl"]'
+edoc docs query --id block:port --depth 1
+```
+
+若要在自己的项目复用复杂地址图，先保存这份完整 JSON 并调整 source.file，再用 register-map 的 id 选择 space:csr；之后使用普通 edoc query/read/export。
+
+地址单位、数组范围、占用区间和当前不支持的别名/窗口语义见[地址组织契约](../../reference/tags/engineering-charts.mdoc#ref:tag-register-map)。校验地址布局不表示总线访问或硬件行为已验证。
+
+{% /section %}
+{% /section %}
+
 
 {% section id="use:registers:template" title="32 位控制寄存器模板" %}
 
@@ -42,7 +251,7 @@ COUNT 没有 reset，表示“未声明”；EVENT 用 unknown 显式声明未�
 
 {% /section %}
 
-{% section id="use:registers:create" title="如何创建" %}
+{% section id="use:registers:single-create" title="只需要单寄存器时的最小创建" %}
 
 最小步骤：在 docs/edoc.config.js 的 data.registers 内写定义，在 docs/index.mdoc 用两个标签引用同一 ID，然后执行 edoc。已有配置时把数据合入 data，也可以放到默认扫描的 docs/ir/*.json。表格单元格链接单独定义在 data.tables 中。
 
@@ -63,6 +272,8 @@ export default {data:{registers:[{
 {% code file="docs/support/recipes/registers.config.js" language="javascript" /%}
 
 Agent 用 query --id ctrl 查看字段与空洞投影；query --id ctrl.en 读精确字段及继承来源；query --id 表格行ID 返回 cellLinks 的原目标与解析后的路由。CLI 导出示例：edoc export --id ctrl --format svg --output output/ctrl.svg（默认每带 16 位）。这不是 RTL 提取器，也不推断硬件绑定值、观测值、地址步长或复位表达式的计算结果。
+
+{% /section %}
 
 {% /section %}
 {% /section %}

@@ -1,13 +1,18 @@
 {% section id="use:behavior-charts" title="行为与控制" %}
 
-{% directory-order items=["state.mdoc","flowchart.mdoc"] /%}
+{% directory-order items=["state.mdoc","state-advanced.mdoc","flowchart.mdoc"] /%}
 
 本领域解释系统怎样工作。持续处于某个状态、等待事件后迁移，与一项任务按步骤向前推进，使用不同模型；它们可以描述同一设计的不同方面。
 
 | 语义模型与呈现 | 当前表达能力 | 可以画什么 |
 | --- | --- | --- |
 | StateMachine → [状态图](state.mdoc) | 状态、初始入口、事件/时钟/超时、守卫与动作、自环、反向/多重迁移；复合/并行区域、历史和子状态机 | RTL FSM、设备生命周期、驱动连接与恢复状态、分层控制器 |
+| StateMachine → [层级与并行状态](state-advanced.mdoc) | 复合状态、区域入口、并行与历史恢复的选择；沿原模型增补结构 | 多阶段设备、同时存在的控制与门状态 |
 | Flowchart → [流程图](flowchart.mdoc) | 步骤、判断、回边、互斥合流、并行分叉/同步、异常/超时、等待、泳道和子流程 | 初始化、收发算法、升级、重试与恢复、跨职责操作流程 |
+
+[基础状态图](state.mdoc)用序列检测器连接状态迁移与逐拍轨迹；[流程图](flowchart.mdoc)用设备初始化串起检查、超时、恢复和重试。
+
+先从[基础状态图](state.mdoc)开始；需要在一个状态内组织子状态、同时描述多组状态或恢复历史状态时，进入[层级与并行状态](state-advanced.mdoc)。步骤、分支和职责协作则进入[流程图](flowchart.mdoc)。
 
 状态机用 state-diagram，流程用 flowchart。简单实例由模型直接生成默认视图，特殊展示再声明 ControlView。两种模型独立保存行为，投影后共用 Drawing 的布局、路线与阅读能力。标签和完整字段见[专用契约](../../reference/tags/control-diagrams.mdoc)。
 
@@ -15,7 +20,7 @@
 
 以“设备初始化后开始收发”为例：结构图解释驱动、FPGA、MCU 各自负责什么；流程图解释配置、检查和失败重试的步骤；状态图解释 IDLE、RUN、ERROR 在哪些条件下切换；[数字波形](../timing/waveforms.mdoc)解释某次 valid/ready 握手具体在哪拍完成。
 
-主机发命令、MCU 应答、FPGA 产生中断属于[时间与交互](../timing/index.mdoc)。它关注多方消息顺序、等待和超时，当前没有专用模型；流程泳道表示职责，不会自动获得消息语义。
+主机发命令、MCU 应答、FPGA 产生中断属于[时间与交互](../timing/index.mdoc)。它关注多方消息顺序、等待和超时，使用 [Sequence 消息交互模型](../timing/sequences.mdoc)；流程泳道表示职责，不会自动获得消息语义。
 
 这些模型是工程说明，edoc 不执行条件或动作，不证明条件完整、无死锁或恢复一定成功。触发和条件未声明时保留未声明，不根据节点摆放顺序猜执行行为。
 

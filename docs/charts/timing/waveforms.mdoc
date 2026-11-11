@@ -1,53 +1,63 @@
-{% section id="use:waveform" title="时序图" %}
+{% section id="use:waveform" title="数字波形：valid/ready握手与背压" %}
 
-用按时间排列的电平与总线描述规范或仿真结果。时序图需要波形数据，不会从任意 RTL 自动推断。状态如何迁移另见[状态图](../behavior/state.mdoc#use:state)。
+数字波形把信号随时间的变化放在同一条轴上，回答“哪拍传了什么，哪段在等待”。下面用一次valid/ready握手贯穿信号约定、正常传输和背压，再创建同一张图。状态何时迁移另见[状态图](../behavior/state.mdoc#use:state)。
 
-{% section id="use:waveform-live" title="握手与反压波形" %}
+{% section id="use:waveform-live" title="先约定在哪拍接受数据" %}
 
-{% waveform id="mac:tx-handshake" /%}
+发送方驱动valid和data，接收方驱动ready。本例在clk上升沿采样：valid=1表示data有效，ready=1表示接收方可以接受；只有两者同时为1，该沿才完成一次传输。valid=0时data没有传输含义，不根据总线文字推断一次有效数据。
 
-该 WaveJSON 来自样例 handshake.json。semantic: 'specification' 明确标为规范示意；只有确有仿真来源时才使用 simulation。
+如果某沿valid=1、ready=0，发送方须保持valid=1和同一份data，直到某个后续采样沿ready=1。这就是背压。ready先变成1或valid连续为1，都不表示已经独立完成传输。
 
-正文引用方式：
+{% waveform id="tutorial:valid-ready" /%}
 
-```text {% process=false %}
-{% waveform id="mac:tx-handshake" /%}
-```
+A在正常可接受的情况下传出；B遇到背压后保持，直到接收方恢复；随后C可以紧接着传输。表格逐列读取上图同一份WaveJSON，接受结果由valid和ready共同派生，数据标签也从总线区间读取：
 
-数据以 format: 'wavejson' 提供，并保留 source。完整字段见 {% reference id="ref:waveforms" label="时序参考" /%}。需要说明行为规范与覆盖关系时，可参考[样例查询参考](../../reference/examples.mdoc)。
+{% data-table id="tutorial:handshake-beats" /%}
 
-上面的标签引用本手册已准备的 MAC 样例。在自己的工程创建时，按下面的完整例子保存数据和正文，不需要到仓库寻找 handshake.json。
+关注连续为高的valid：它可以覆盖等待期，也可以覆盖连续多次传输，不能只数valid的上升沿。背压期间保持B，接受后才切换到C；如果等待期间改成了C，即使valid始终为1也破坏了本例握手约定。
+
+图中每列用于说明对应采样沿所见的逻辑值，跳变位置不表达建立/保持时间或组合路径延迟。这是规范示意，不是RTL仿真记录，也不是某种总线完整规范。
 
 {% /section %}
+{% section id="use:waveform-create" title="创建同一张握手波形" %}
 
-{% section id="use:waveform-bounds" title="长名称、标题与脚注" %}
+准备[最小配置](../../start/02-first-document.mdoc#use:first-build)，保留 docs/edoc.config.js 为 export default {}。把下面完整定义保存为 docs/ir/authoring/handshake-tutorial.json；不需要先创建Node、Port或Connection：
 
-信号名称无需为了避免裁切而缩短。工具使用随包字体的度量安排文字边界，保留完整名称；长 head.text/foot.text 可换行，SVG 视口包含完整内容。IR 的 label 是图外标题，与 WaveJSON 的内部标题分别显示：
+{% code file="docs/ir/authoring/handshake-tutorial.json" language="json" /%}
+
+在 docs/index.mdoc 写入并在项目根运行 edoc：
+
+```text {% process=false %}
+{% waveform id="tutorial:valid-ready" /%}
+```
+
+打开 output/index.html，应看到上面的valid、ready、data波形。signal 的行顺序决定显示顺序；p是周期时钟，0/1是电平，点号延续上一段，x表示未知/不关心区间；3/4/5为带标签的总线区间，data数组按区间出现顺序提供A、B、C。x本身不表示握手无效，是否传输仍看valid/ready。
+
+本手册的逐拍表由独立教学Adapter读取这份WaveJSON生成；复制上面的JSON和标签即可创建波形，不需要Adapter。若在自己工程中增加逐拍表，也应从波形或同一份采样记录投影，避免手写另一份握手事实。完整字段与WaveJSON范围见[时序参考](../../reference/ir.mdoc#ref:waveforms)。
+
+{% /section %}
+{% section id="use:waveform-bounds" title="进阶：来源、长文字与旧示例" %}
+
+semantic='specification'标明规范示意；只有确有仿真来源时才使用simulation，source记录依据。工具不从任意RTL推断波形，也不执行WaveJSON中的信号名。需要核对行为规范与覆盖关系时，继续[样例查询参考](../../reference/examples.mdoc)。
+
+下面保留来自MAC样例handshake.json的原始握手波形。它有自己的工程上下文，不能把主例的逐拍表直接套到这份数据：
+
+{% waveform id="mac:tx-handshake" /%}
+
+长信号名、内部标题和脚注是另一个排版任务，后面的原示例保留完整文字。工具用随包字体度量边界，长head.text/foot.text可换行；IR的label是图外标题，与WaveJSON内部标题分别显示。
 
 {% waveform id="system:pending" /%}
 
-这张图也是下方同一数据文件中的规范示意。缩窄页面后仍保留完整矢量内容；时序密集时应按阅读任务拆分，不把文字缩短或删除当作渲染修复。该行为不需要浏览器参与构建，也没有新增须手工填写的文字边界参数。
-
-{% /section %}
-
-{% section id="use:waveform-create" title="创建最小规范波形" %}
-
-保留最小配置与 docs/index.mdoc 首页时，将下面完整定义保存为 docs/ir/authoring/waveforms.json。这份数据不依赖其他对象：
+下面文件完整保留这张长字图和旧的最小valid/data示意。旧system:handshake没有ready，只能展示发送方电平和数据，不能据它判断哪拍被接收；valid/ready教学主例使用上节的新文件。
 
 {% code file="docs/ir/authoring/waveforms.json" language="json" /%}
 
-在自己的 docs/index.mdoc 写入并执行 edoc：
-
 ```text {% process=false %}
 {% waveform id="system:handshake" /%}
+{% waveform id="system:pending" /%}
 ```
 
-结果如下。此例中 p 为时钟、0/1 为电平、点号延续上一状态、x 为未知区间，3 表示带文字的总线区间：
-
-{% waveform id="system:handshake" /%}
-
-signal 的行顺序决定显示顺序；标签并不执行仿真。这里 semantic='specification' 表示规范示意，有真实仿真来源时才使用 simulation。字段与 WaveJSON 可选范围只在[时序参考](../../reference/ir.mdoc#ref:waveforms)维护。
+缩窄页面后仍应保留完整矢量内容；时序密集时按阅读任务拆分。长字示例不额外要求手调文字边界，规范示意也不会因渲染成功变成仿真证据。
 
 {% /section %}
-
 {% /section %}

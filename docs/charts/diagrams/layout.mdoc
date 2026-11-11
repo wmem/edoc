@@ -1,47 +1,61 @@
-{% section id="use:layout" title="需要时调整布局" %}
+{% section id="use:layout" title="用少量约束突出阅读顺序" %}
 
-先使用默认布局。位置或阅读顺序不够清楚时，再声明少量意图，保持工程事实与显示分离。
+先使用默认布局，再明确读者要先看什么。约束表达显示意图，不能改写模块职责、真实连接或数据流向。本页始终使用同一采样记录器的三方对象和四条端口关系，不再借另一张图的参数解释眼前的结果。
 
-未声明方向的小图会在符合条件时比较横向与纵向候选，标题根据内容换行，节点不再一律使用宽框。初始显示优先保持主要文字至少约12px；放不下完整图时会提示当前为局部视图，可拖动查看。“适配画布”显式显示完整总览，“清晰阅读”恢复1:1。作者已经给出的方向、位置和相对约束继续优先，接口展开保留当前缩放和操作位置。
+{% section id="use:layout-comparison" title="默认结果 → 控制在上、样本路径在下" %}
 
-{% section id="use:layout-comparison" title="同一数据的布局对照" %}
+默认图按连接排列三方。目标图让读者先看到上方“任务控制”，再沿下方“记录模块 → 存储端”阅读样本路径，以区分控制职责与数据处理；不是把同一行的三个框换个标题。
 
 {% tabs %}
-{% tab name="原样例固定位置" %}
-{% relation-diagram id="mac:overview" /%}
+{% tab name="默认布局" %}
+{% relation-diagram id="study:layout-default" /%}
 {% /tab %}
-{% tab name="相对顺序与反馈通道" %}
-{% relation-diagram id="gallery:architecture-intent" /%}
+{% tab name="控制在上，数据流在下" %}
+{% relation-diagram id="study:layout-intent" /%}
 {% /tab %}
 {% /tabs %}
 
-两个视图使用相同对象和关系。第二张要求 Control 位于 Data plane 左侧、TX/RX 上下对齐、RX 与 FIFO 同行；主数据流和反馈关系采用不同布线意图。
-
-可选中对象或关系对照稳定 ID。修改 label、显示顺序或通道，不应复制或改写原关系。
+两个视图的 include 完全一致。点击聚合线，核对仍是 study:start/status/data/valid，排布没有创造新总线或缩并 Net。默认图较宽时用“适配画布”核对整体，目标图更适合此处的分层阅读；这不表示任意工程都应采用同一排法。
 
 {% /section %}
+{% section id="use:layout-constraints" title="把目标写成相对约束" %}
 
-{% section id="use:layout-constraints" title="从方向到相对约束" %}
+这次只需要三项：控制在记录模块上方；三个模块按控制、记录、存储从左到右排列；记录与存储中心同行。order 的 gap 是最小间距，align 表达中心坐标关系，均引用原 Node ID，不填写任意像素坐标。
 
-最简单的 layout 只写 direction: 'LR'。需要相对位置时，再增加：
-
-```js
+```javascript
 layout: {
-  direction: 'LR',
   constraints: [
-    {type: 'order', axis: 'x', nodes: ['producer', 'consumer'], gap: 120},
-    {type: 'align', axis: 'y', nodes: ['producer', 'consumer']}
+    {type: 'order', axis: 'y', nodes: ['study:host', 'study:recorder'], gap: 64},
+    {type: 'order', axis: 'x', nodes: ['study:host', 'study:recorder', 'study:storage'], gap: 64},
+    {type: 'align', axis: 'y', nodes: ['study:recorder', 'study:storage']}
   ]
 }
 ```
 
-其中 ID 应替换为本工程已有对象。order/align 是必须满足的约束；channel 和 priority 是可解释的偏好。gap 是最小间距，工具会为标题等增加空间。
+这是上图 study:layout-intent 的局部字段，不是完整配置。只想改变横向或纵向阅读时，先尝试 direction；只有明确的对齐和先后要求才增加约束。固定位置或相对约束不能被自动候选静默覆盖；无法满足时要检查诊断。
 
-多端点 Net 可在 relationHints 中选择 backbone，保留短支路，仍保留所有真实端点。完整契约见 {% reference id="ref:graph-layout" label="布局参考" /%}。
+{% /section %}
+{% section id="use:layout-create" title="独立复现同一数据的两种布局" collapsed=true %}
 
-需要照着创建时，直接使用 {% reference id="ref:layout-example" label="主干与通道完整示例" /%}：它包含补充数据、完整视图定义、正文标签和渲染结果。两端点反馈可以设置 channel，多端点 Net 使用 backbone；具体限制集中在 {% reference id="ref:relation-hints" /%}。
+保留[最小配置](../../start/02-first-document.mdoc#use:first-build) export default {}，将完整主例保存为 docs/ir/authoring/structure-system.json。与[架构教程](architecture.mdoc#use:architecture-create)同源，不需要另写对象：
 
-工程 include 关系视图的 layout 不提供任意折点；需要固定路线的模块地图使用[原生框图](drawing.mdoc)中的 route/fixedRoute。完整的项目默认/引用处覆盖链尚未提供。无效 ID、冲突或无法布线会报错，不能把失败解释成已满足约束。普通图形的穿框、错接和标签问题应优先修工具，不要求每个作者手调所有线。
+{% code file="docs/ir/authoring/structure-system.json" language="json" /%}
+
+在 docs/index.mdoc 写入，执行 edoc：
+
+```text {% process=false %}
+{% relation-diagram id="study:layout-default" /%}
+{% relation-diagram id="study:layout-intent" /%}
+```
+
+应看到相同三个模块和四条原关系：一幅横向协作，一幅上方控制、下方数据路径。布局前后都可用 edoc query --id study:status 查同一状态反馈；查看手册示例使用 edoc docs query。
+
+{% /section %}
+{% section id="use:layout-boundaries" title="更复杂路线与适用边界" %}
+
+多端点 Net 的 backbone 选择显示主干，仍保留全部端点；两端点反馈可选择 channel，不能将它用于三端点 Net。需要这类布线时进入[主干与通道完整示例](../../reference/graph.mdoc#ref:layout-example)，本页聚合接口的对照不冒充已演示通道效果。
+
+工程 RelationView 的 layout 不提供任意折点；明确需要固定路线的地图使用[Drawing](drawing.mdoc#use:drawing.board-map)的 route/fixedRoute。两种布局契约不同。完整的项目默认/引用覆盖链尚未提供；字段、硬约束和偏好见[布局参考](../../reference/graph.mdoc#ref:graph-layout)。普通图形的穿框、错接与标签重叠应先修工具，不以手调把默认缺陷掩盖掉。
 
 {% /section %}
 {% /section %}

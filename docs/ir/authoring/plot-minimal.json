@@ -1,0 +1,22 @@
+{
+  "tables": [{
+    "id": "recipe:measurements",
+    "kind": "table",
+    "label": "构造的时延采样",
+    "columns": [
+      {"field": "elapsed", "label": "经过时间", "type": "number", "unit": "ms"},
+      {"field": "latency", "label": "时延", "type": "number", "unit": "us"}
+    ],
+    "rows": [
+      {"id": "recipe:sample0", "values": {"elapsed": 0, "latency": 8}},
+      {"id": "recipe:sample1", "values": {"elapsed": 1, "latency": 12}}
+    ]
+  }],
+  "views": [{
+    "id": "recipe:plot",
+    "kind": "plot",
+    "data": "recipe:measurements",
+    "mark": "line",
+    "encoding": {"x": {"field": "elapsed"}, "y": {"field": "latency"}}
+  }]
+}

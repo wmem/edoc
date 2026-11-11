@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
 import {join,dirname,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
+import {spawnSync} from 'node:child_process';
 import {loadBook} from '../packages/core/book.ts';
 import {resolveProjectConfig} from '../packages/core/project.ts';
 import {readDocument,query} from '../packages/core/index.ts';
@@ -48,6 +49,11 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
   }
  }
  assert.ok(rows>=20);assert.match(content('use:capabilities:gaps'),/polyline/);assert.match(content('ref:graph-routing'),/待修复/);
+ const errors=content('ref:error-codes');
+ for(const code of ['CLAUSE_BEHAVIOR','CLAUSE_REFERENCE','CLAUSE_APPLICATION','CLAUSE_NESTING'])assert.ok(errors.includes(code),'错误参考缺少实际诊断码 '+code);
+ assert.doesNotMatch(errors,/SPECIFICATION_/);
+ const help=spawnSync(process.execPath,[join(repository,'packages/cli/edoc.ts'),'docs','query','--help'],{cwd:repository,encoding:'utf8'});
+ assert.equal(help.status,0,help.stderr);assert.match(help.stdout,/edoc docs query[^\n]*\[--element ELEMENT\]/);
  // 字段名与链接覆盖只是防遗漏，不替代下面的独立配方和浏览器阅读验证。
 });
 
@@ -69,11 +75,15 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
  assert.equal(layout.book.root.graph.index.get('layout:details')?.type,'document');assert.match(layout.page.html,/class="tabs"/);assert.match(layout.page.html,/<details id=/);
  assert.ok(!readDocument(layout.book.root.graph,'layout:home').content.includes('这里保存按需读取的字段说明'));assert.match(readDocument(layout.book.root.graph,'layout:details').content,/字段说明/);
  const graphs=await create('graphs',one('use:graph-options-create','javascript'),one('use:graph-options-create','json'),one('use:graph-options-create','text'));
- assert.equal(Object.keys(graphs.page.scenes).length,4);assert.match(graphs.page.html,/class="interface-overview"/);
+ assert.equal(Object.keys(graphs.page.scenes).length,2);
+ const interfaceTables=await create('interface-tables',"export default {};",one('use:architecture-create','json'),one('use:interface-tables','text'));
+ assert.match(interfaceTables.page.html,/class="interface-overview"/);
+ assert.match(interfaceTables.page.html,/启动/);assert.match(interfaceTables.page.html,/状态/);
  const scene=graphs.page.scenes['author:interface-override'];assert.equal(scene.interfaces!.filter(i=>i.expanded).length,1);
  const node=scene.nodes.find(n=>n.id==='author:host')!,members=node.ports.filter(p=>p.interfaceId==='author:host.ctrl'&&!p.interfaceHeader&&!p.slot);
  assert.deepEqual(members.map(p=>p.label),['READY','COMMAND']);assert.ok(members.every(p=>p.side==='right'));
- assert.deepEqual(graphs.page.scenes['author:group-overview'].collapsedGroups,['author:workers']);
+ const groups=await create('groups',one('use:architecture-groups-create','javascript'),one('use:architecture-groups-create','json'),one('use:architecture-groups-create','text'));
+ assert.deepEqual(groups.page.scenes['author:group-overview'].collapsedGroups,['author:workers']);
  // 教程拆页以后，读者仍能单独复制一种能力，不依赖前面章节或仓库 Gallery。
  const minimal="export default {};";
  for(const [name,id,view]of [['interfaces','use:interface-create','simple:stream'],['wiring','use:wiring','wire:overview'],['states','use:state-simple','author:state']]as const){
@@ -83,8 +93,8 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
   if(name==='wiring')assert.equal((query(sample.book.root.graph,'wire:clock').target.entity as any).endpoints.length,3);
   if(name==='states')assert.equal(sample.page.scenes[view].nets.length,9,'八次迁移和显式初始入口');
  }
- const wave=await create('waveform',minimal,one('use:waveform-create','json'),one('use:waveform-create','text'));assert.match(wave.page.html,/最小握手示意/);
- const registers=await create('registers',blocks('use:registers:create','javascript')[0],undefined,one('use:registers:create','text'));assert.match(registers.page.html,/data-register="ctrl"/);assert.equal(query(registers.book.root.graph,'ctrl.en').registerField!.resetText,'0x0');
+ const wave=await create('waveform',minimal,one('use:waveform-create','json'),one('use:waveform-create','text'));assert.match(wave.page.html,/tutorial:valid-ready/);
+ const registers=await create('registers',blocks('use:registers:single-create','javascript')[0],undefined,one('use:registers:single-create','text'));assert.match(registers.page.html,/data-register="ctrl"/);assert.equal(query(registers.book.root.graph,'ctrl.en').registerField!.resetText,'0x0');
  const native=await create('native',one('use:markdoc:variables','javascript'),undefined,one('use:markdoc:variables','text'));assert.match(native.page.html,/我的工程/);assert.match(native.page.html,/展示完整说明/);assert.ok(!native.page.html.includes('展示简略说明'));
  const partial=await create('native-partial',one('use:markdoc:partials','javascript'),undefined,one('use:markdoc:partials','text'),{'docs/_partials/card.mdoc':readFileSync(join(repository,'docs/support/recipes/_partials/markdoc-card.mdoc'))});assert.match(readDocument(partial.book.root.graph,'term:shared').content,/共享术语/);assert.match(partial.page.html,/我的工程/);
  const functions=await create('native-functions',one('use:markdoc:functions','javascript'),undefined,one('use:markdoc:functions','text'));assert.match(functions.page.html,/EDOC/);

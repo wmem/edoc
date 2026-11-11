@@ -1,34 +1,70 @@
-{% section id="use:binary-layouts" title="协议数据布局图" %}
+{% section id="use:binary-layouts" title="协议布局：读懂升级消息中的字段" %}
 
-BinaryLayout 描述报文、DMA 描述符、文件头等连续数据的布局。同一份 fields 生成布局图与字段表，包含固定大小，也可以保留尚未求值的长度和条件。寄存器位域仍使用[Register](registers.mdoc)，地址组织使用[寄存器映射](register-maps.mdoc)。
+[升级交互](../timing/sequences.mdoc)中的请求和数据块引用同一个 binary:packet。这里先从总体格式进入字段含义，再看类型分支和确定取值下的长度。它是虚构协议的结构示例，CRC 算法、时间基准等未给出的规则保持未声明，不能当作完整编解码器规范。
 
-{% section id="use:binary-simple" title="简单：固定大小的描述符" %}
+{% section id="use:binary-format" title="总体格式：从公共头到校验尾部" %}
 
-字段顺序默认决定偏移，只需 id、size；省略 unit 表示 bit。下图按 32 bit 换行，流偏移从左到右递增；它不表示小端或大端。byteOrder 与 bitOrder 是独立的数据解释声明。
+沿流偏移从左到右读：公共头给出类型、负载长度和扩展标志，随后是类型相关头、可选时间戳、负载、对齐填充，最后是 CRC32。负载长度只计算 payload，不包含其他部分；变长字段之前不能用任意框宽冒充固定字节数。
 
-{% binary-diagram id="binary:descriptor" /%}
-{% binary-field-table id="binary:descriptor" /%}
+{% binary-diagram id="binary:packet" view="view:packet-overview" /%}
+
+总览把类型相关头和时间戳扩展折叠为整段，先让校验尾部也在阅读范围内；下面的字段表与取值场景再展开细节。没有给定类型、长度和扩展取值时，后续偏移保持符号。先看字段属于哪一段，再查下面的含义，不必先通读资源 JSON。
 
 {% /section %}
-{% section id="use:binary-complex" title="复杂：动态长度、条件与重复" %}
+{% section id="use:binary-fields" title="字段含义、声明值与解释顺序" %}
 
-下面的报文包含类型分支、可选时间戳、变长负载、对齐与 CRC。没有场景取值时，负载长度和后续偏移保持符号；不能把未知长度算成零，也不能把未选定的分支当成固定头部。
+公共头中的 type 选择数据块或控制消息；len 描述负载字节数；extension 声明是否带时间戳。数据块序号用于确认和重传；本示例控制消息使用一个声明的开始升级命令。下表同时给出中文名称、稳定路径、取值说明和有效的字节序/位序，读取同一份字段定义。
 
-{% binary-diagram id="binary:packet" /%}
+{% binary-field-table id="binary:packet" /%}
 
-这是同一模型的取值场景：type=1、len=12、extension=true。场景只用于解释这一种布局，不改写规范默认值。字段表保留所有分支的定义和条件。
+先按类型找到自己的类型头，再读其余字段。字节序决定多字节数值怎样解释，位序是独立声明；它们不由图中左右方向补齐。本模型声明大端与高位先，字段若有自己的声明则覆盖所属模型；未声明的项会直接标为未声明。
 
+字段表中的“声明值”与枚举说明的是格式约定，不是从某次报文解析出来的观测值。CRC32 字段的存在也不说明已经选定并验证 CRC 参数。
+
+{% /section %}
+{% section id="use:binary-complex" title="条件分支：哪些字段真的占长度" %}
+
+数据块选择序号头，控制消息选择命令头；两种头是 choice 的分支，不能当作前后相接的两个固定字段。时间戳由 optional 控制；没有扩展时它不占长度。负载之后的 align 将流偏移对齐，再放 CRC。
+
+optional.condition 是规范条件文字，可通过同名 true/false 场景键确定是否存在，不要求为条件另建字段。这里已有 extension 字段，它在格式中使用 0/1 表示含义；场景使用解码后的布尔选择，不把场景 JSON 当成线上报文。
+
+{% /section %}
+{% section id="use:binary-scenarios" title="确定场景：数据块与控制消息的实际范围" %}
+
+先看带时间戳、负载已给定的数据块，再切换到无扩展、空负载的控制消息。两者仍引用 binary:packet，没有复制另一套字段定义；字段表保留未选择分支的说明，图中只绘制本场景生效的部分。
+
+{% tabs %}
+{% tab name="数据块：带扩展" %}
 {% binary-diagram id="binary:packet" view="view:packet-sample" /%}
 {% binary-field-table id="binary:packet" view="view:packet-sample" /%}
+{% /tab %}
+{% tab name="控制消息：无扩展" %}
+{% binary-diagram id="binary:packet" view="view:packet-control" /%}
+{% binary-field-table id="binary:packet" view="view:packet-control" /%}
+{% /tab %}
+{% /tabs %}
 
-重复结构用 repeat，嵌套结构用 ref。数组子结构的偏移相对单次实例，图中明确标注；不会为未知次数伪造实例。
-
-{% binary-diagram id="binary:scatter" /%}
+观察控制头比序号头短、无时间戳时后续偏移前移，以及 CRC 前的对齐填充。精确大小和偏移在同源表中计算；场景只说明一组取值，不会改写规范默认值或替实际报文做合法性验证。
 
 {% /section %}
-{% section id="use:binary-data" title="数据与查询" collapsed=true %}
+{% section id="use:binary-data" title="创建同源布局图与字段表" collapsed=true %}
+
+准备[最小配置与首页](../../start/02-first-document.mdoc#use:first-build)，保留 docs/edoc.config.js 为 export default {}，保存完整数据到 docs/ir/authoring/binary-layouts.json：
 
 {% code file="docs/ir/authoring/binary-layouts.json" language="json" /%}
+
+在 docs/index.mdoc 写入下方正文并运行 edoc：
+
+```text {% process=false %}
+{% section id="example:packet" title="升级报文布局" %}
+{% binary-diagram id="binary:packet" view="view:packet-overview" /%}
+{% binary-field-table id="binary:packet" /%}
+{% binary-diagram id="binary:packet" view="view:packet-sample" /%}
+{% binary-diagram id="binary:packet" view="view:packet-control" /%}
+{% /section %}
+```
+
+应看到同一报文的符号定义、字段含义和两个确定场景。直接用 id 选择 BinaryLayout；需要取值场景、行宽、折叠或焦点时才增加 BinaryView，用 view 引用。复制后在自己项目查询/导出：
 
 ```sh
 edoc query --id binary:packet --element crc
@@ -36,7 +72,57 @@ edoc read --id binary:packet
 edoc export --view view:packet-sample --format svg --output packet.svg
 ```
 
-长度表达式、条件、场景、来源及展示限额见[协议布局契约](../../reference/tags/engineering-charts.mdoc#ref:tag-binary-diagram)。这是结构布局计算，不验证报文内容、CRC 算法或 RTL 实现。
+只查手册示例使用 edoc docs query/read；协议模型、来源、表达式与展示限额见[精确契约](../../reference/tags/engineering-charts.mdoc#ref:tag-binary-diagram)。
+
+{% /section %}
+{% section id="use:binary-repeat" title="进阶：描述符数组与引用子结构" collapsed=true %}
+
+需要表达散列表或 DMA 描述符链时，使用 repeat 保存次数、ref 指向同一个描述符定义。下面保留高级示例 binary:scatter；每个子项偏移相对单次实例，不为未知次数伪造完整展开。
+
+{% binary-diagram id="binary:scatter" /%}
+
+子结构使用自己的字节序声明；字段继承所属模型，引用外层不能替未声明的子模型补上解释规则。嵌套场景用实例路径，避免同名字段串用。长度未知时后续偏移继续保持符号。
+
+{% /section %}
+{% section id="use:binary-simple" title="进阶起点：最小两字节报文头" collapsed=true %}
+
+新项目先创建 docs/ir/，并在 docs/edoc.config.js 保存最小配置；已有项目保留自己的配置，将数据合入当前数据入口。以下步骤使用默认自动扫描的 docs/ir/：
+
+```javascript
+export default {};
+```
+
+将下面完整 JSON 保存为 docs/ir/binary-minimal.json：
+
+{% code file="docs/ir/authoring/binary-minimal.json" language="json" /%}
+
+在 docs/index.mdoc 写入下面的正文标签：
+
+```text {% process=false %}
+{% binary-diagram id="recipe:header" /%}
+{% binary-field-table id="recipe:header" /%}
+```
+
+回到项目根运行：
+
+```sh
+edoc
+```
+
+打开 output/index.html。应看到同源布局图和字段表：type 从 bit 0 开始，length 从 bit 8 开始，总长 16 bit。字段顺序默认决定偏移，省略 unit 表示 bit；不必重复填写 offset。流偏移从左到右递增，不表示小端或大端；byteOrder 与 bitOrder 未写时保持未声明。
+
+{% binary-diagram id="recipe:header" /%}
+{% binary-field-table id="recipe:header" /%}
+
+两个标签直接引用模型，默认不需要视图。需要行宽、折叠、焦点或取值场景时，再在 views 中定义 kind=binary-layout、model 指向模型 ID，并在标签上用 view 选择它；上方升级报文使用这种场景视图。
+
+复制上面数据后，可在自己的项目根查询、读取或导出：
+
+```sh
+edoc query --id recipe:header --element length
+edoc read --id recipe:header
+edoc export --id recipe:header --format svg --output header.svg
+```
 
 {% /section %}
 {% /section %}

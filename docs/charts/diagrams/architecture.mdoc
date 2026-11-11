@@ -1,27 +1,99 @@
-{% section id="use:architecture" title="架构图：模块与关系" %}
+{% section id="use:architecture" title="架构图：职责、边界与协作" %}
 
-先看两个模块的最小结果：
+架构图让读者先理解模块承担什么、怎样协作，再进入局部实现。Node 保存工程对象身份，parentId 保存包含关系；视图只选择当前要看的范围。功能关系与逐信号连接都要说明粒度，不能把相似线条当成同一个事实。
 
-{% relation-diagram id="system:overview" /%}
 
-在自己的工程，将下面数据保存为 docs/ir/authoring/objects.json。它与[数据接入教程](../../engineering/data.mdoc#use:standard-data)使用同一个源文件：
+{% section id="use:architecture-system" title="主例：采样记录器的系统协作" %}
+
+这是一个完整的虚构小型说明工程，不是标准总线的完整实现。先读上方控制角色，再沿下方的样本路径读：任务控制发起采样，记录模块采集并缓冲，存储端接收样本。状态从记录模块返回任务控制，不是第二条样本数据流。
+
+{% relation-diagram id="study:system" /%}
+
+| 同一工程对象 | 负责什么 | 本图明确保留的关系 |
+| --- | --- | --- |
+| study:host，任务控制 | 发起采样、读取状态 | 启动与状态两条控制接口成员 |
+| study:recorder，记录模块 | 采集样本并缓冲输出 | 控制和样本两组边界接口 |
+| study:storage，存储端 | 接收样本记录 | 数据与有效标记两条输入 |
+
+本图的接口总览线是四条真实端口关系的显示聚合：study:start、study:status、study:data、study:valid，未静默缩并成一条 Net。点击聚合线可核对成员；[接口教程](interfaces.mdoc#use:interface-overview)将同一控制接口展开。布局把控制放在上面、样本路径放在下方，以区分两种职责；[布局对照](layout.mdoc)说明同一数据如何得到这一显示。
+
+{% /section %}
+{% section id="use:architecture-inside" title="展开局部：记录模块内部的职责边界" %}
+
+下一步只看记录模块。采样单元产生样本，缓存单元暂存它们；外围主控与存储没有纳入此视图。
+
+{% relation-diagram id="study:inside" /%}
+
+采样与缓存使用 parentId 归属于 study:recorder，因此父框仍是系统图中的同一个记录模块。内部 study:buffering 是明确标注的功能关系，不声称已经建模内部到边界端口的逐信号映射；外部端口的归属仍可查询。不能因为省略外围连线就断言模块在工程中未连接。
+
+{% /section %}
+{% section id="use:architecture-create" title="在自己的工程创建主例" collapsed=true %}
+
+准备[最小配置](../../start/02-first-document.mdoc#use:first-build) export default {}，保存完整资源为 docs/ir/authoring/structure-system.json；对象、端口、接口、关系和各阅读视图都在这里，其他教程复用这份身份：
+
+{% code file="docs/ir/authoring/structure-system.json" language="json" /%}
+
+在 docs/index.mdoc 写入并运行 edoc，应分别得到三方协作和模块内部两幅图：
+
+```text {% process=false %}
+{% relation-diagram id="study:system" /%}
+{% relation-diagram id="study:inside" /%}
+```
+
+复制后在自己项目使用 edoc query --id study:recorder --depth 1；只查看随包手册使用 edoc docs query --id study:recorder --depth 1。ID 用于跨图追溯，label 和排布变化不创建第二份模块。未提供时钟域、协议握手或背压规则的部分保持未声明。
+
+{% /section %}
+{% section id="use:architecture-minimal" title="从零创建：两个模块的最小闭环" collapsed=true %}
+
+先看数据与视图怎样相连。保存下方数据为 docs/ir/authoring/objects.json；它与[数据接入教程](../../engineering/data.mdoc#use:standard-data)使用同一个源文件：
 
 {% code file="docs/ir/authoring/objects.json" language="json" /%}
 
-再将下面完整配置保存为 docs/edoc.config.js。默认收集 docs 下的正文，views 只引用刚才定义的对象和关系：
+将完整配置保存为 docs/edoc.config.js，已有工程只合并 views，保留自己的其他配置：
 
 {% code file="docs/support/recipes/edoc.config.js" language="javascript" /%}
 
-已有其他配置时只增加 views 项，保留原来的 documents、data 等字段。配置对象整体替换会重置未写出的字段；validate 成功并不表示你期望的每篇文章都在发布入口中。
-
-在自己的 docs/index.mdoc 中写入：
+在 docs/index.mdoc 写入并在项目根运行 edoc：
 
 ```text {% process=false %}
 {% relation-diagram id="system:overview" /%}
 ```
 
-在项目根执行 edoc，打开 output/index.html，应该看到上面的两节点图。数据和视图引用同一批稳定 ID，不复制对象名称或关系。
+{% relation-diagram id="system:overview" /%}
 
-想确认正文入口时，先运行 edoc outline --depth 1 --format text。
+应看到生产者、消费者和数据关系。这个例子只解释引用机制；真实工程还要交代职责与边界，完整的职责与边界见[上方采样记录器主例](architecture.mdoc#use:architecture-system)。
 
+{% /section %}
+
+{% section id="use:graph-groups" title="父子框与逻辑集合不是同一种分组" %}
+
+下面的处理模块用 parentId 包含接收、发送单元；两路单元另组成 Group，便于临时查看集合总览。试着点击“总览 两路处理单元”，然后展开：
+
+{% relation-diagram id="author:hierarchy" /%}
+
+同一批事实也可以初始显示集合总览：
+
+{% relation-diagram id="author:group-overview" /%}
+
+parentId 定义框内外层级；Group.members 只定义选集，不能替代物理或语义父子关系。Group 总览是逻辑集合的临时投影，不改变原关系；完整 SVG 保留视图定义内的原节点和连接。模块协议接口使用 Node.interfaces，见[模块边界与接口总览](interfaces.mdoc#use:interface-overview)。
+
+{% /section %}
+
+这组父子/选集示例的既有数据和视图也可独立复制；需要该能力时保存以下资源和配置，再在正文引用 author:hierarchy 或 author:group-overview：
+
+{% section id="use:architecture-groups-create" title="父子与逻辑选集的完整配方" collapsed=true %}
+
+保存数据为 docs/ir/authoring/graph-options.json，并将配置合并到 docs/edoc.config.js：
+
+{% code file="docs/ir/authoring/graph-options.json" language="json" /%}
+{% code file="docs/support/recipes/graph-options.config.js" language="javascript" /%}
+
+```text {% process=false %}
+{% relation-diagram id="author:hierarchy" /%}
+{% relation-diagram id="author:group-overview" /%}
+```
+
+本例仍与接口排序示例共用原资源，避免复制对象定义。精确边界见[Node 与 Group](../../reference/ir.mdoc#ref:objects)；完整与当前阅读范围见[图形阅读](display.mdoc)。
+
+{% /section %}
 {% /section %}

@@ -1,46 +1,83 @@
 {% section id="use:drawing" title="模块框图与布局" %}
 
-原生框图适合表达模块组成、接口关系和容器边界。作者与 Agent 维护结构化数据，edoc 负责测量、布局、布线、独立检查和网页/SVG输出。数据可以由工程适配器投影生成，位置和路线不写回原理图、网表或 RTL。
+先画清“有哪些部分、边界在哪里、流向哪里”。Drawing 适合解释性模块图；它的局部对象是显示身份，不自动成为真实器件、引脚或电气 Net。已有工程事实时从原来源投影，位置与路线不写回原理图或 RTL。
 
-{% section id="use:drawing.auto" title="先使用自动布局" %}
+{% section id="use:drawing.auto" title="创建：三个模块的数据通路" %}
 
-在 views 中声明 drawing，正文仍使用 relation-diagram。drawing.schemaVersion 为 1.0；nodes 定义框及可选端口，connections 引用明确的端点。省略 layout 时自动布局，不要求作者填写坐标。完整数据和此图来自同一份声明。
+本图只解释主机、处理模块和外设的功能协作。连线直接挂到模块，不额外声明没有工程来源的端口；需要表达真实命名接口时，进入[工程接口教程](interfaces.mdoc#use:interface-create)。
 
 {% relation-diagram id="manual:drawing-auto" /%}
 
-{% section id="use:drawing.auto-source" title="自动布局的完整数据" collapsed=true %}
+先准备[最小配置与首页](../../start/02-first-document.mdoc#use:first-build)：docs/edoc.config.js 为 export default {}，正文为 docs/index.mdoc。将完整资源保存为 docs/ir/authoring/drawing.json：
 
 {% code file="docs/ir/authoring/drawing.json" language="json" /%}
 
+在 docs/index.mdoc 写入：
+
+```text {% process=false %}
+{% relation-diagram id="manual:drawing-auto" /%}
+```
+
+在项目根运行 edoc，打开 output/index.html。应看到三个模块和两条功能关系；不需要给节点坐标。示例选择 layout.spacing.layer=32，让带线名的短通路紧凑一些；它是可选的显示设置，省略仍会自动构建，只是间距较大。默认求解不是自动切换横竖方向的保证。
+
+{% section id="use:drawing.auto-source" title="局部身份与数据位置" collapsed=true %}
+
+上面的 drawing.json 是完整输入。模块 ID 在该 Drawing 内唯一，连接端 ID 在所属连接内唯一；ends.node 引用模块，需要端口时再提供 ends.port。连线方向只由 marker 声明，不能从名称猜箭头。复制后用 edoc query --id manual:drawing-auto 查看输入，用 edoc export --view manual:drawing-auto --format svg --output modules.svg 导出。
+
+{% /section %}
 {% /section %}
 
-模块 ID 在当前 drawing 内唯一，端口 ID 在所属模块内唯一，连接端 ID 在所属连接内唯一。连线通过 node 和可选 port 引用端点，不从名称相同推断相连。未知方向不加箭头，箭头只由 ends.marker 声明。
+{% section id="use:drawing.nested" title="增强：模块内部与输出分支" %}
+
+读图任务：采样和缓存属于哪个模块？记录和统计是同一个接收方吗？记录模块容器包含两个步骤，缓存之后分别输出到存储与状态查看；箭头表达此说明模型的流向，不表示两条电气线被短接。
+
+{% relation-diagram id="study:drawing-nested" /%}
+
+这里用 parentId 声明显示包含，用各自的 connection 保留两条输出关系。布局仅选纵向阅读与紧凑间距，没有 place、size 或 fixedRoute；先理解边界与分支，再考虑精确地图。它是独立的功能说明，和下一篇工程采样模型题材相近，但不声称已有逐信号映射。
+
+准备最小配置，保存下方资源为 docs/ir/authoring/drawing-nested.json，再将字面标签放到 docs/index.mdoc 并运行 edoc：
+
+{% code file="docs/ir/authoring/drawing-nested.json" language="json" /%}
+
+```text {% process=false %}
+{% relation-diagram id="study:drawing-nested" /%}
+```
 
 {% /section %}
-{% section id="use:drawing.board-map" title="参考：两板模块地图" %}
+{% section id="use:drawing.board-map" title="进阶：先读板区，再看两板地图" %}
 
-下面是参考 KY3134 已审阅画法的虚构简化示例：板卡各自成框，底板主控居中，外设就近分区，两侧连接器位于相向板边。先看模块便能理解组成，再用每对模块一条接口关系说明互联。该示例不代表 KY3134 实际器件、接线或接口数量。
+精确模块地图回答“器件和连接器怎样分区摆放”。下面仍是参考 KY3134 画法的虚构简化示例，不表示真实器件或连接数量。先读顶板：两类 PHY 和 GPIO 管理都接到 BTB，再切到完整地图查看 BTB 的对端和底板主处理器。
 
+{% tabs %}
+{% tab name="顶板局部" %}
+{% relation-diagram id="manual:drawing-top-board" /%}
+{% /tab %}
+{% tab name="完整两板" %}
 {% relation-diagram id="manual:drawing-board-map" /%}
+{% /tab %}
+{% /tabs %}
 
-这类版面可以声明布局意图，不必完全依赖自动分层。place 相对父容器内容区，size 指定尺寸，port 指定侧边、顺序或整条边的比例偏移，fixedRoute 指定完整路线；仍执行包含、端点、文字、穿框、正交性及独立连接间距检查。不能通过固定路径绕过正确性。
+局部视图只含顶板节点与两端都在顶板的关系，明确不展示板间 board-bus；不把排除的连线画成悬空端点，也不表示连接器其他端口未使用。完整图保留全部原对象与关系。全图适配用于认分区；逐器件阅读用“清晰阅读”或“大图查看”，不要把小字总览当作细节已看清。
 
-{% section id="use:drawing.map-source" title="模块地图的完整数据" collapsed=true %}
+{% section id="use:drawing.map-source" title="完整数据与局部视图的来源" collapsed=true %}
+
+完整地图使用 place/size、端口侧边与 fixedRoute 表达明确的版面意图，仍检查包含、端点、文字与路线。它不是入门图必须手写的字段。资源保存在 docs/ir/authoring/board-map.json：
 
 {% code file="docs/ir/authoring/board-map.json" language="json" /%}
 
-{% /section %}
+局部视图由手册数据入口调用下面的选择函数，从上方同一份 Drawing 取得原节点、端口和约束，没有第二份器件定义。自己的工程若需要此局部视图，在数据函数中同样调用它；只复制上方 JSON 时使用原完整视图 ID。
+
+{% code file="docs/support/board-map-focus.mjs" language="javascript" /%}
 
 {% /section %}
-{% section id="use:drawing.boundaries" title="工程事实、接口与交付" %}
+{% /section %}
+{% section id="use:drawing.boundaries" title="工程事实与输出边界" %}
 
-视图 drawing 是显示数据，工程事实继续由项目的权威源维护。originIds 保留来源身份，局部显示节点不注册为新增电气器件。query 查询 view 时返回完整 drawing；网页可选择框、锚点和连线查看输入与几何。来源身份不能替代项目适配器对真实通道或引脚的核对。
+Drawing 的局部节点与工程 Node 是两种身份；originIds 可以追溯来源，不能替代适配器对真实端点的核对。layout 写在 drawing.layout，include 保持空数组，不同时声明工程视图的外层布局或接口展开。
 
-drawing 的布局放在 drawing.layout，视图 include 保持空数组，不同时填写外层 layout 或接口展开设置；工具拒绝互相冲突的两套定义。已有 Node.interfaces 继续用于工程接口合并/展开，成员和聚合事实的规则不变，两类输入共用绘图内核。
+默认 orthogonal；curved 当前适用于双端连接，多端点继续使用正交路线。polyline 尚未实现时明确报错。普通图的穿框、错接或标签重叠应先修工具，不能以精确坐标兜底后宣称默认布局已通过。
 
-原生框图使用 orthogonal。polyline 尚未在此契约实现，显式请求会报错，不静默忽略；这不改变其他工程关系视图的既有路由能力。工具不能承诺任意自动图都无需调整。
-
-网页支持连线标题开关、类别筛选、缩放、平移、大图和 SVG 导出。布局失败给出诊断，离线接口重算失败保留最近一次成功画面。使用标准 edoc validate、build 和 export，无需原型脚本或自定义求解器注入；字段见[Drawing参考](../../reference/graph.mdoc#ref:drawing)。
+输入、约束与限制统一见[Drawing 参考](../../reference/graph.mdoc#ref:drawing)，实际阅读和当前/完整 SVG 见[阅读与导出](display.mdoc)。
 
 {% /section %}
 {% /section %}

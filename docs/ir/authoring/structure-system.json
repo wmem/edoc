@@ -1,0 +1,165 @@
+{
+  "objects": [
+    {
+      "id": "study:host",
+      "kind": "node",
+      "label": "任务控制",
+      "attributes": {"职责": "发起采样并读取状态"},
+      "ports": [
+        {"id": "study:host.start", "label": "启动", "direction": "out", "width": 1},
+        {"id": "study:host.status", "label": "状态", "direction": "in", "width": 1}
+      ],
+      "interfaces": [
+        {"id": "study:host.control", "label": "控制", "members": ["study:host.start", "study:host.status"]}
+      ]
+    },
+    {
+      "id": "study:recorder",
+      "kind": "node",
+      "label": "记录模块",
+      "attributes": {"职责": "采集样本并缓冲输出"},
+      "ports": [
+        {"id": "study:recorder.start", "label": "启动", "direction": "in", "width": 1},
+        {"id": "study:recorder.status", "label": "状态", "direction": "out", "width": 1},
+        {"id": "study:recorder.data", "label": "数据", "direction": "out", "width": 16},
+        {"id": "study:recorder.valid", "label": "有效", "direction": "out", "width": 1}
+      ],
+      "interfaces": [
+        {"id": "study:recorder.control", "label": "控制", "members": ["study:recorder.start", "study:recorder.status"]},
+        {"id": "study:recorder.samples", "label": "样本", "members": ["study:recorder.data", "study:recorder.valid"]}
+      ]
+    },
+    {
+      "id": "study:storage",
+      "kind": "node",
+      "label": "存储端",
+      "attributes": {"职责": "接收样本记录"},
+      "ports": [
+        {"id": "study:storage.data", "label": "数据", "direction": "in", "width": 16},
+        {"id": "study:storage.valid", "label": "有效", "direction": "in", "width": 1}
+      ],
+      "interfaces": [
+        {"id": "study:storage.samples", "label": "样本", "members": ["study:storage.data", "study:storage.valid"]}
+      ]
+    },
+    {
+      "id": "study:sample",
+      "kind": "node",
+      "label": "采样单元",
+      "parentId": "study:recorder",
+      "attributes": {"职责": "产生样本"}
+    },
+    {
+      "id": "study:buffer",
+      "kind": "node",
+      "label": "缓存单元",
+      "parentId": "study:recorder",
+      "attributes": {"职责": "暂存样本"}
+    },
+    {"id": "study:processing", "kind": "group", "label": "采样与缓存选集", "members": ["study:sample", "study:buffer"]}
+  ],
+  "relations": [
+    {
+      "id": "study:start",
+      "kind": "connection",
+      "class": "control",
+      "label": "启动",
+      "endpoints": ["study:host.start", "study:recorder.start"],
+      "direction": {"sources": ["study:host.start"], "targets": ["study:recorder.start"]}
+    },
+    {
+      "id": "study:status",
+      "kind": "connection",
+      "class": "event",
+      "label": "状态",
+      "endpoints": ["study:recorder.status", "study:host.status"],
+      "direction": {"sources": ["study:recorder.status"], "targets": ["study:host.status"]}
+    },
+    {
+      "id": "study:data",
+      "kind": "connection",
+      "class": "data",
+      "label": "样本数据",
+      "endpoints": ["study:recorder.data", "study:storage.data"],
+      "direction": {"sources": ["study:recorder.data"], "targets": ["study:storage.data"]}
+    },
+    {
+      "id": "study:valid",
+      "kind": "connection",
+      "class": "data",
+      "label": "有效标记",
+      "endpoints": ["study:recorder.valid", "study:storage.valid"],
+      "direction": {"sources": ["study:recorder.valid"], "targets": ["study:storage.valid"]}
+    },
+    {
+      "id": "study:buffering",
+      "kind": "connection",
+      "class": "data",
+      "label": "样本暂存（功能关系）",
+      "endpoints": ["study:sample", "study:buffer"],
+      "direction": {"sources": ["study:sample"], "targets": ["study:buffer"]}
+    }
+  ],
+  "views": [
+    {
+      "id": "study:system",
+      "kind": "architecture",
+      "label": "采样记录器：三方协作",
+      "include": {"objects": ["study:host", "study:recorder", "study:storage"], "relations": ["study:start", "study:status", "study:data", "study:valid"]},
+      "display": {"interfaceMode": "collapsed", "showInterfaceDetails": false},
+      "layout": {
+        "constraints": [
+          {"type": "order", "axis": "y", "nodes": ["study:host", "study:recorder"], "gap": 64},
+          {"type": "order", "axis": "x", "nodes": ["study:host", "study:recorder", "study:storage"], "gap": 64},
+          {"type": "align", "axis": "y", "nodes": ["study:recorder", "study:storage"]}
+        ]
+      }
+    },
+    {
+      "id": "study:inside",
+      "kind": "architecture",
+      "label": "记录模块内部：职责边界",
+      "include": {"objects": ["study:sample", "study:buffer"], "relations": ["study:buffering"]}
+    },
+    {
+      "id": "study:boundary",
+      "kind": "interface",
+      "label": "记录模块：输入、输出及接口归属",
+      "include": {"objects": ["study:recorder"], "relations": []},
+      "display": {"interfaceMode": "expanded", "showInterfaceDetails": false}
+    },
+    {
+      "id": "study:control",
+      "kind": "interface",
+      "label": "控制接口：总览与逐信号",
+      "include": {"objects": ["study:host.control", "study:recorder.control"], "relations": ["study:start", "study:status"]},
+      "display": {"interfaceMode": "collapsed", "showInterfaceDetails": false},
+      "layout": {
+        "constraints": [
+          {"type": "order", "axis": "x", "nodes": ["study:host", "study:recorder"], "gap": 80}
+        ]
+      }
+    },
+    {
+      "id": "study:layout-default",
+      "kind": "architecture",
+      "label": "采样记录器：默认布局",
+      "include": {"objects": ["study:host", "study:recorder", "study:storage"], "relations": ["study:start", "study:status", "study:data", "study:valid"]},
+      "display": {"interfaceMode": "collapsed", "showInterfaceDetails": false}
+    },
+    {
+      "id": "study:layout-intent",
+      "kind": "architecture",
+      "label": "控制在上，样本流在下",
+      "include": {"objects": ["study:host", "study:recorder", "study:storage"], "relations": ["study:start", "study:status", "study:data", "study:valid"]},
+      "layout": {
+        "constraints": [
+          {"type": "order", "axis": "y", "nodes": ["study:host", "study:recorder"], "gap": 64},
+          {"type": "order", "axis": "x", "nodes": ["study:host", "study:recorder", "study:storage"], "gap": 64},
+          {"type": "align", "axis": "y", "nodes": ["study:recorder", "study:storage"]}
+        ]
+      },
+      "display": {"interfaceMode": "collapsed", "showInterfaceDetails": false}
+    }
+  ]
+}

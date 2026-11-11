@@ -1,0 +1,62 @@
+{
+  "views": [
+    {
+      "id": "study:drawing-nested",
+      "kind": "architecture",
+      "label": "采样记录：边界与分支",
+      "include": {"objects": [], "relations": []},
+      "drawing": {
+        "schemaVersion": "1.0",
+        "id": "sampling-explanation",
+        "nodes": [
+          {"id": "source", "label": "采样源"},
+          {"id": "recorder", "label": "记录模块"},
+          {"id": "sample", "label": "采样", "parentId": "recorder"},
+          {"id": "buffer", "label": "缓存", "parentId": "recorder"},
+          {"id": "store", "label": "存储"},
+          {"id": "monitor", "label": "状态查看"}
+        ],
+        "connections": [
+          {
+            "id": "input",
+            "ends": [
+              {"id": "from", "node": "source"},
+              {"id": "to", "node": "sample", "marker": "arrow"}
+            ]
+          },
+          {
+            "id": "samples",
+            "ends": [
+              {"id": "from", "node": "sample"},
+              {"id": "to", "node": "buffer", "marker": "arrow"}
+            ]
+          },
+          {
+            "id": "write",
+            "ends": [
+              {"id": "from", "node": "buffer"},
+              {"id": "to", "node": "store", "marker": "arrow"}
+            ],
+            "labels": [
+              {"id": "name", "text": "记录"}
+            ]
+          },
+          {
+            "id": "report",
+            "ends": [
+              {"id": "from", "node": "buffer"},
+              {"id": "to", "node": "monitor", "marker": "arrow"}
+            ],
+            "labels": [
+              {"id": "name", "text": "统计"}
+            ]
+          }
+        ],
+        "layout": {
+          "direction": "TB",
+          "spacing": {"layer": 8, "node": 32}
+        }
+      }
+    }
+  ]
+}

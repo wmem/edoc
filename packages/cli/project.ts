@@ -2,6 +2,7 @@ import {isEngineering,engineeringSVG} from '../figure/render.ts';
 import {registerSVG} from '../extensions/register/render.ts';
 import type {Register} from '../extensions/register/types.ts';
 import {fontCSS} from '../render-graph/font.ts';
+import {esc} from '../core/html.ts';
 import {resolve,dirname,join} from 'node:path';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -101,7 +102,7 @@ export async function main(argv:string[]):Promise<number>{
    const content=command==='build'&&targets.some(t=>t.format==='html')?await bookHTML(book):undefined;
    for(const [i,target]of targets.entries()){
     mkdirSync(dirname(target.file),{recursive:true});const pending=join(temporary,`document-${i}.`+target.format);
-    if(target.format==='svg'){const id=args['--id']??args['--view'],entry=graph.index.get(id);if(args['--id']&&entry?.type!=='register'&&!isEngineering(graph,id))failure(entry?'EXPORT_TYPE':'QUERY_NOT_FOUND',config.file,'/id','--id 必须指向可绘图模型：'+id);writeFileSync(pending,isEngineering(graph,id)?(await engineeringSVG(graph,id,true)).replace('><title>','><style>'+fontCSS()+'</style><title>'):args['--id']&&entry?.type==='register'?registerSVG(entry.entity as Register,{project:graph.manifest.projectId,fontCSS:fontCSS()}):svg(await scene(graph,id,{interfaces:'expanded',control:'full'})));}
+    if(target.format==='svg'){const id=args['--id']??args['--view'],entry=graph.index.get(id);if(args['--id']&&entry?.type!=='register'&&!isEngineering(graph,id))failure(entry?'EXPORT_TYPE':'QUERY_NOT_FOUND',config.file,'/id','--id 必须指向可绘图模型：'+id);writeFileSync(pending,isEngineering(graph,id)?(await engineeringSVG(graph,id,true)).replace('><title>','><style>'+esc(fontCSS())+'</style><title>'):args['--id']&&entry?.type==='register'?registerSVG(entry.entity as Register,{project:graph.manifest.projectId,fontCSS:fontCSS()}):svg(await scene(graph,id,{interfaces:'expanded',control:'full'})));}
     else if(target.format==='html')writeFileSync(pending,content!);
     generated.push({pending,target});
    }

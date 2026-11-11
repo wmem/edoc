@@ -3,6 +3,8 @@ import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
+import {topBoardView} from './board-map-focus.mjs';
+import {controlTutorialData} from './control-tutorials.mjs';
 import authoringConfig from './recipes/edoc.config.js';
 import graphOptionsConfig from './recipes/graph-options.config.js';
 import registersConfig from './recipes/registers.config.js';
@@ -41,10 +43,12 @@ export function tutorialData({root}){
  const pipeline=json('docs/support/pipeline.json');
  for(const type of ['objects','relations'])result[type].push(...pipeline[type].map(entity=>({...entity,source:{file:'docs/support/pipeline.json',selector:entity.id}})));
  result.objects.push({id:'manual:pdf-source',kind:'node',label:'PDF 定位示例文件',source:{file:'docs/assets/location.pdf',selector:'DETAIL',attachment:{id:'location',target:'detail'}}});
- for(const file of ['drawing','board-map','objects','tables','waveforms','topology','layout','table-values','graph-options','interfaces','states','flows','control-complex','sequences','binary-layouts','register-maps','measurements','wiring','evidence']){
+ for(const file of ['drawing','drawing-nested','structure-system','board-map','objects','tables','waveforms','topology','layout','table-values','graph-options','interfaces','states','flows','device-initialization','handshake-tutorial','control-tutorial-views','control-complex','state-hierarchy','sequence-minimal','binary-minimal','register-map-minimal','fpga-register-handbook','plot-minimal','sequences','binary-layouts','register-maps','measurements','wiring','evidence']){
   const path=`docs/ir/authoring/${file}.json`,data=json(path);
   for(const type of Object.keys(result))result[type].push(...(data[type]??[]).map(entity=>({...entity,source:entity.source??{file:path,selector:entity.id}})));
  }
+ result.tables.push(...controlTutorialData({root}).tables);
+ result.views.push(topBoardView(result.views.find(view=>view.id==='manual:drawing-board-map')));
  result.registers.push(...registersConfig.data.registers);
  result.tables.push(...registersConfig.data.tables);
  result.tables.push(...tableReadingConfig.data.tables.map(table=>({...table,source:{file:'docs/support/recipes/table-reading.config.js',selector:table.id}})));

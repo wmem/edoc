@@ -30,9 +30,9 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
  assert.deepEqual(domains.map((n:any)=>[n.sectionId,n.label]),[['use:diagrams','结构与连接'],['use:behavior-charts','行为与控制'],['use:timing-charts','时间与交互'],['use:data-layout-charts','数据布局'],['use:record-charts','记录与结果']],'图表只按工程含义设五领域，不把模型、用途和标签平铺');
  const domain=(id:string)=>domains.find((n:any)=>n.sectionId===id)!;
  const domainPages=(id:string)=>domain(id).children.filter((n:any)=>n.page!==domain(id).page).map((n:any)=>n.sectionId);
- assert.deepEqual(domainPages('use:behavior-charts'),['use:state','use:flowchart']);
+ assert.deepEqual(domainPages('use:behavior-charts'),['use:state','use:state-advanced','use:flowchart']);
  assert.deepEqual(domainPages('use:timing-charts'),['use:waveform','use:sequences']);
- assert.deepEqual(domainPages('use:data-layout-charts'),['use:registers','use:register-maps','use:binary-layouts']);
+ assert.deepEqual(domainPages('use:data-layout-charts'),['use:registers','use:binary-layouts']);
  assert.deepEqual(domainPages('use:record-charts'),['use:tables','use:plots']);
  assert.match(readDocument(graph,'use:chart-choice').content,/表达领域/);
  assert.match(readDocument(graph,'use:chart-models').content,/承载层/);
@@ -49,7 +49,7 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
  assert.ok(!all.some((n:any)=>n.sectionId==='use:specifications'),'撤下旧教程，不保留重复入口');
  const rendering=branch('use:rendering'),diagrams=rendering.children.find((n:any)=>n.sectionId==='use:diagrams');
  assert.ok(diagrams,'关系图是一个有总览页的文档分组');
- assert.deepEqual(diagrams.children.filter((n:any)=>n.page!==diagrams.page).map((n:any)=>n.sectionId),['use:drawing','use:architecture','use:wiring','use:interfaces','use:diagram-details','use:graph-options','use:layout'],'接口展开及显示设置属于结构与连接，分成独立短篇');
+ assert.deepEqual(diagrams.children.filter((n:any)=>n.page!==diagrams.page).map((n:any)=>n.sectionId),['use:drawing','use:architecture','use:wiring','use:interfaces','use:graph-options','use:diagram-details','use:layout'],'接口展开及显示设置属于结构与连接，分成独立短篇');
  assert.ok(!rendering.children.some((n:any)=>n.sectionId==='use:interfaces'),'接口展开不与关系图平级');
  assert.ok(branch('ref:home').children.some((n:any)=>n.sectionId==='use:capabilities'));assert.ok(!branches.some((n:any)=>n.sectionId==='use:capabilities'),'字段索引不冒充入门');
  for(const id of ['use:install','use:state-wave','use:state','use:waveform','use:projects-pdf','use:composition','use:pdf','use:publish','use:table','guide:agent','guide:home'])assert.equal(graph.index.get(id)?.type,'document',id+' 的稳定入口保留');
@@ -82,7 +82,7 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
   }
   assert.deepEqual(observed,expected,document.file+' 的正文阅读顺序与导航必须一致');
  }
- assert.match(readDocument(graph,'use:diagrams').content,/Drawing/);assert.match(readDocument(graph,'use:diagrams').content,/Node/);
+ assert.match(readDocument(graph,'use:chart-input').content,/Drawing/);assert.match(readDocument(graph,'use:chart-input').content,/Node/);
  assert.match(readDocument(graph,'use:capabilities:graphs').content,/use:drawing/,'新框图能力进入正式索引');
 
  const data=await compileBook(book),pages=Object.values(data.pages);assert.ok(pages.some(p=>p.html.includes('data-diagram="gallery:interface-buses"')));assert.ok(pages.some(p=>p.html.includes('received frame')));assert.ok(pages.some(p=>p.html.includes('规范示意')));
@@ -104,9 +104,9 @@ test('从正式正文提取的创建配方可在含 README 的用户工程连续
  const root=mkdtempSync(join(tmpdir(),'edoc-authoring-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
  const write=(file:string,content:string)=>{mkdirSync(join(root,file,'..'),{recursive:true});writeFileSync(join(root,file),content);};
  write('README.md','# 仓库首页\n不应取代配置指定的正文。');
- write('docs/edoc.config.js',one('use:architecture','javascript'));
+ write('docs/edoc.config.js',one('use:architecture-minimal','javascript'));
  write('docs/ir/authoring/objects.json',one('use:standard-data','json'));
- const overview=one('use:architecture','text');write('docs/index.mdoc','# 创建结果\n'+overview);
+ const overview=one('use:architecture-minimal','text');write('docs/index.mdoc','# 创建结果\n'+overview);
  const initial=await loadBook(await resolveProjectConfig(undefined,root));assert.deepEqual(initial.root.documents.documents.map(d=>d.file),['docs/index.mdoc']);
  const initialData=await compileBook(initial);assert.ok(Object.values(initialData.pages)[0].html.includes('data-diagram="system:overview"'));
  write('docs/ir/authoring/tables.json',one('ref:table-example','json'));

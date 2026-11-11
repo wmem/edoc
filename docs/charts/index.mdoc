@@ -2,13 +2,13 @@
 
 {% directory-order items=["diagrams/","behavior/","timing/","data-layout/","records/"] /%}
 
-edoc 按工程中要表达的含义组织图表：先选择表达领域，再确定数据模型，最后选择图或表的呈现方式。模块框图、接口表和 Drawing 分别属于用途、呈现和绘图承载，不能放在同一级分类中。
+先确定读者需要回答的问题，再从下面选择图表。各教程围绕一个工程任务组织解释、同源图表和完整创建配方；第一次创建时先完成[最小配置](../start/02-first-document.mdoc#use:first-build)。
 
 从下面的[五类表达](index.mdoc#use:chart-choice)进入，各领域维护自己的现有能力、工程用途和教程。需要判断共享与独立关系时读[模型与呈现](index.mdoc#use:chart-models)，字段查[查询参考](../reference/index.mdoc)；维护体系时读[图表体系设计](../development/records/design/chart-system.mdoc)。
 
 {% section id="use:chart-choice" title="按表达领域选择模型与呈现" %}
 
-图表体系采用以下五类。这里说明已有能力的归属，具体图种和从简到复杂的写法在各领域展开，不把所有用途或标签平铺成同级组件。
+按场景进入对应领域，再选择具体教程：组成和连接看结构图，状态变化看状态图，操作步骤看流程图，收发消息看交互图，电平变化看波形，字段和地址看数据布局，样本趋势看统计图。
 
 | 表达领域 | 维护什么含义 | 当前模型与呈现 |
 | --- | --- | --- |

@@ -35,7 +35,7 @@
     {
       "id": "binary:packet",
       "kind": "binary-layout",
-      "label": "变长报文与可选扩展",
+      "label": "升级报文：公共头、类型头与负载",
       "unit": "byte",
       "byteOrder": "big",
       "bitOrder": "msb-first",
@@ -43,17 +43,28 @@
         {
           "id": "type",
           "label": "类型",
-          "size": 1
+          "size": 1,
+          "description": "选择类型头：1 为数据块，2 为控制消息；其他类型码在本示例中保留。",
+          "enums": {
+            "1": "数据块",
+            "2": "控制消息"
+          }
         },
         {
           "id": "len",
           "label": "负载长度",
-          "size": 2
+          "size": 2,
+          "description": "负载 payload 的字节数，不包含公共头、类型头、扩展、对齐和 CRC。"
         },
         {
           "id": "extension",
           "label": "扩展标志",
-          "size": 1
+          "size": 1,
+          "description": "声明是否携带时间戳扩展；场景使用同名布尔键选择对应结构。",
+          "enums": {
+            "0": "不带时间戳",
+            "1": "携带时间戳"
+          }
         },
         {
           "id": "header",
@@ -67,9 +78,11 @@
                 {
                   "id": "seqno",
                   "label": "序号",
-                  "size": 4
+                  "size": 4,
+                  "description": "数据块序号；同一块重传时保持相同序号。"
                 }
-              ]
+              ],
+              "label": "数据块头"
             },
             {
               "id": "control",
@@ -78,11 +91,15 @@
                 {
                   "id": "command",
                   "label": "命令",
-                  "size": 2
+                  "size": 2,
+                  "value": "0x0001",
+                  "description": "本示例的控制消息使用开始升级命令。"
                 }
-              ]
+              ],
+              "label": "控制消息头"
             }
-          ]
+          ],
+          "label": "类型相关头"
         },
         {
           "id": "extra",
@@ -92,9 +109,11 @@
             {
               "id": "timestamp",
               "label": "时间戳",
-              "size": 8
+              "size": 8,
+              "description": "发送端时间戳，仅带扩展时存在；本示例未规定时间基准和单位。"
             }
-          ]
+          ],
+          "label": "时间戳扩展"
         },
         {
           "id": "payload",
@@ -102,17 +121,21 @@
           "size": {
             "field": "len",
             "unit": "byte"
-          }
+          },
+          "description": "数据块内容或控制消息负载，长度由 len 给出。"
         },
         {
           "id": "pad",
           "kind": "align",
-          "to": 4
+          "to": 4,
+          "description": "在 CRC 前将当前流偏移对齐到 4 字节，填充字节内容未声明。",
+          "label": "对齐填充"
         },
         {
           "id": "crc",
           "label": "CRC32",
-          "size": 4
+          "size": 4,
+          "description": "CRC32 字段；本示例不规定多项式、初值与覆盖算法，不能据布局推断。"
         }
       ],
       "source": {
@@ -169,6 +192,34 @@
       "source": {
         "file": "docs/ir/authoring/binary-layouts.json",
         "selector": "view:packet-sample"
+      }
+    },
+    {
+      "id": "view:packet-control",
+      "kind": "binary-layout",
+      "model": "binary:packet",
+      "bitsPerRow": 32,
+      "values": {
+        "type": 2,
+        "len": 0,
+        "extension": false
+      },
+      "source": {
+        "file": "docs/ir/authoring/binary-layouts.json",
+        "selector": "view:packet-control"
+      }
+    },
+    {
+      "id": "view:packet-overview",
+      "kind": "binary-layout",
+      "model": "binary:packet",
+      "collapsed": [
+        "header",
+        "extra"
+      ],
+      "source": {
+        "file": "docs/ir/authoring/binary-layouts.json",
+        "selector": "view:packet-overview"
       }
     }
   ]

@@ -1,0 +1,11 @@
+{
+  "binaryLayouts": [{
+    "id": "recipe:header",
+    "kind": "binary-layout",
+    "label": "两字节报文头",
+    "fields": [
+      {"id": "type", "label": "类型", "size": 8},
+      {"id": "length", "label": "长度", "size": 8}
+    ]
+  }]
+}

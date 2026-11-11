@@ -14,37 +14,15 @@
         "nodes": [
           {
             "id": "host",
-            "label": "主机",
-            "ports": [
-              {
-                "id": "p",
-                "label": "数据接口"
-              }
-            ]
+            "label": "主机"
           },
           {
             "id": "engine",
-            "label": "处理模块",
-            "ports": [
-              {
-                "id": "host",
-                "label": "数据接口"
-              },
-              {
-                "id": "media",
-                "label": "媒体接口"
-              }
-            ]
+            "label": "处理模块"
           },
           {
             "id": "media",
-            "label": "外设",
-            "ports": [
-              {
-                "id": "p",
-                "label": "媒体接口"
-              }
-            ]
+            "label": "外设"
           }
         ],
         "connections": [
@@ -53,13 +31,11 @@
             "ends": [
               {
                 "id": "a",
-                "node": "host",
-                "port": "p"
+                "node": "host"
               },
               {
                 "id": "b",
-                "node": "engine",
-                "port": "host"
+                "node": "engine"
               }
             ],
             "labels": [
@@ -74,13 +50,11 @@
             "ends": [
               {
                 "id": "a",
-                "node": "engine",
-                "port": "media"
+                "node": "engine"
               },
               {
                 "id": "b",
-                "node": "media",
-                "port": "p"
+                "node": "media"
               }
             ],
             "labels": [
@@ -90,7 +64,12 @@
               }
             ]
           }
-        ]
+        ],
+        "layout": {
+          "spacing": {
+            "layer": 32
+          }
+        }
       }
     }
   ]

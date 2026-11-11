@@ -1,0 +1,201 @@
+{
+  "registers": [
+    {
+      "id": "fpga:control",
+      "kind": "register",
+      "label": "CTRL · 全局控制",
+      "width": 32,
+      "description": "启动、停止采样并选择单次或连续模式。保留位读 0，写入忽略。",
+      "fields": [
+        {
+          "id": "fpga:control.enable",
+          "label": "ENABLE",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          },
+          "description": "写 1 启动采样并置 ACTIVE=1；写 0 请求当前样本结束后停止。单次模式完成一次采样后，硬件自动清零 ENABLE。"
+        },
+        {
+          "id": "fpga:control.mode",
+          "label": "MODE",
+          "msb": 2,
+          "lsb": 1,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          },
+          "description": "0：单次采样；1：连续采样；2、3 保留，写入忽略。仅 ENABLE=0 且 ACTIVE=0 时允许修改，否则忽略模式写入。"
+        },
+        {
+          "id": "fpga:control.reserved",
+          "label": "RESERVED · 保留位",
+          "msb": 31,
+          "lsb": 3,
+          "access": "RO",
+          "reset": {
+            "value": "0"
+          },
+          "description": "固定读 0；软件写入忽略。"
+        }
+      ]
+    },
+    {
+      "id": "fpga:version",
+      "kind": "register",
+      "label": "VERSION · 版本标识",
+      "width": 32,
+      "description": "只读版本标识，用于软件兼容性检查；写入忽略。",
+      "fields": [
+        {
+          "id": "fpga:version.value",
+          "label": "VERSION",
+          "msb": 31,
+          "lsb": 0,
+          "access": "RO",
+          "reset": {
+            "value": "0x00010000"
+          },
+          "description": "版本编码：高 16 位为主版本，低 16 位为次版本；本例为 1.0。"
+        }
+      ]
+    },
+    {
+      "id": "fpga:status",
+      "kind": "register",
+      "label": "STATUS · 通道状态",
+      "width": 32,
+      "description": "观察通道活动状态与累计有效样本数；只读，读取不清零，写入忽略。保留位读 0，写入忽略。",
+      "fields": [
+        {
+          "id": "fpga:status.active",
+          "label": "ACTIVE",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RO",
+          "reset": {
+            "value": "0"
+          },
+          "description": "1：采样尚在进行；0：空闲。ENABLE 写 1 后置位，当前采样结束且无需继续时清零。"
+        },
+        {
+          "id": "fpga:status.count",
+          "label": "COUNT",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RO",
+          "description": "累计达到阈值的有效样本数，复位清零；停止采样或读取不清零，16 位溢出后回绕。",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "fpga:status.reserved",
+          "label": "RESERVED · 保留位",
+          "msb": 15,
+          "lsb": 1,
+          "access": "RO",
+          "reset": {
+            "value": "0"
+          },
+          "description": "固定读 0；软件写入忽略。"
+        }
+      ]
+    },
+    {
+      "id": "fpga:threshold",
+      "kind": "register",
+      "label": "THRESHOLD · 采样阈值",
+      "width": 32,
+      "description": "有效样本的判定阈值；仅通道停止时允许配置，运行中写入忽略。保留位读 0，写入忽略。",
+      "fields": [
+        {
+          "id": "fpga:threshold.value",
+          "label": "THRESHOLD",
+          "msb": 15,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0x0100"
+          },
+          "description": "16 位无符号阈值，样本值大于等于该阈值时计入 COUNT。仅 ENABLE=0 且 ACTIVE=0 时允许写入，否则忽略写入。"
+        },
+        {
+          "id": "fpga:threshold.reserved",
+          "label": "RESERVED · 保留位",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RO",
+          "reset": {
+            "value": "0"
+          },
+          "description": "固定读 0；软件写入忽略。"
+        }
+      ]
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "fpga:global",
+      "kind": "register-block",
+      "label": "全局控制区",
+      "description": "启停、模式选择和版本识别。",
+      "size": "0x100",
+      "entries": [
+        {
+          "id": "ctrl",
+          "register": "fpga:control",
+          "offset": "0x0"
+        },
+        {
+          "id": "version",
+          "register": "fpga:version",
+          "offset": "0x4"
+        }
+      ]
+    },
+    {
+      "id": "fpga:channel",
+      "kind": "register-block",
+      "label": "采样通道区",
+      "description": "通道运行状态与采样参数。",
+      "size": "0x100",
+      "entries": [
+        {
+          "id": "status",
+          "register": "fpga:status",
+          "offset": "0x0"
+        },
+        {
+          "id": "threshold",
+          "register": "fpga:threshold",
+          "offset": "0x4"
+        }
+      ]
+    }
+  ],
+  "addressSpaces": [
+    {
+      "id": "fpga:csr",
+      "kind": "address-space",
+      "label": "虚构 FPGA 采样器寄存器空间",
+      "addressUnitBits": 8,
+      "addressWidth": 32,
+      "mappings": [
+        {
+          "id": "global",
+          "block": "fpga:global",
+          "base": "0x40000000"
+        },
+        {
+          "id": "channel0",
+          "label": "通道 0 采样区",
+          "block": "fpga:channel",
+          "base": "0x40000100"
+        }
+      ]
+    }
+  ]
+}

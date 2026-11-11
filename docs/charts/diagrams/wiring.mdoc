@@ -1,8 +1,12 @@
 {% section id="use:wiring" title="接线图：端点与分支" %}
 
-接线图需要真实端口，而不只是模块之间的一条功能线。先用一个三端点虚构时钟网络观察：一条关系同时连接主控、外设和观察点，不能拆成互不相关的 Net。
+接线图需要真实端口，而不只是模块之间的一条功能线。本页先用一个三端点 Net 学会保留完整分支，再进入带信号类别与引脚属性的板级摘录。功能图中的“数据传输”可以只连模块；接线图必须引用实际 Port，不能把功能路径当作电气同网。
+
+先用一个三端点虚构时钟网络观察：一条关系同时连接主控、外设和观察点，不能拆成互不相关的 Net。
 
 {% relation-diagram id="wire:overview" /%}
+
+读图任务：点击时钟线，确认它同时包含主控、外设和观察点三个端点。视图中的主干只是阅读组织，不是新关系。
 
 保留最小配置与 docs/index.mdoc 首页时，保存以下完整数据为 docs/ir/authoring/wiring.json：
 
@@ -18,7 +22,7 @@
 
 {% section id="use:wiring:board" title="在板级例子中核对完整连接" %}
 
-下图复用虚构 FPGA–Flash 网表。FLASH_SCK 同时连接 FPGA、Flash 和测试连接器，始终是一条三端点 Net；显示主干不表示真实 PCB 走线拓扑。
+读图任务从“一个 Net 有几个端点”变为“哪些是数据、时钟和片选，以及它们接到哪个 Ball/Pin”。下图复用虚构 FPGA–Flash 网表。FLASH_SCK 同时连接 FPGA、Flash 和测试连接器，始终是一条三端点 Net；显示主干不表示真实 PCB 走线拓扑。
 
 {% relation-diagram id="gallery:wiring-intent" /%}
 
@@ -30,7 +34,7 @@ edoc docs query --id board:net.FLASH_SCK --depth 1
 
 图宽时使用“大图查看”或“清晰阅读”，再拖动查看。不要靠删除第三端点或缩小到无法辨认来制造整洁。
 
-从上面的架构例子改为接线图时，在 Node 中提供真实 ports、Connection.endpoints 引用端口 ID，视图 kind 改为 wiring；字段和校验规则见[对象与端口](../../reference/ir.mdoc#ref:objects)及[Connection](../../reference/ir.mdoc#ref:connections)。本图的完整原始数据来自仓库虚构板级 Adapter，不把其中的 pin 当成自己的工程事实。
+从功能架构进入接线时，不是只把视图 kind 改名：必须先具备真实端口与完整 Net。具体做法是在 Node 中提供真实 ports、Connection.endpoints 引用端口 ID，视图 kind 改为 wiring；字段和校验规则见[对象与端口](../../reference/ir.mdoc#ref:objects)及[Connection](../../reference/ir.mdoc#ref:connections)。本图的完整原始数据来自仓库虚构板级 Adapter，不把其中的 pin 当成自己的工程事实。
 
 {% /section %}
 

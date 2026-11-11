@@ -1,3 +1,4 @@
+import {plotTargetError} from '../extensions/plot/contract.ts';
 import {engineeringTags,engineeringTargets,engineeringResources} from '../figure/contract.ts';
 import {validateSequences} from '../extensions/sequence/validate.ts';
 import {validateBinaryLayouts} from '../extensions/binary-layout/validate.ts';
@@ -26,7 +27,7 @@ export const referenceTargets:Record<string,readonly RecordEntry['type'][]>={
 };
 export const targetChecks:Record<string,((graph:Graph,entry:RecordEntry)=>string|undefined)|undefined>={
  'interface-table':interfaceTableTargetError,
- plot:(_g,e)=>('kind'in e.entity?e.entity.kind:'')==='plot'?undefined:'plot 必须引用 kind=plot 的视图',
+ plot:plotTargetError,
 };
 export const resourceSchemas:Record<ResourceType,SchemaName>={
  ...relationDiagramResources,...dataTableResources,...waveformResources,references:'reference',clauses:'clause',...registerResources,...controlResources,...engineeringResources,

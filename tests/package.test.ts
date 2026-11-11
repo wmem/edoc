@@ -73,6 +73,12 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:instance1'],project)).cellLinks.source.route.target,'detail');
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/register/register.schema.json'));
  assert.ok(packed.files.some((f:any)=>f.path==='docs/charts/data-layout/registers.mdoc'));
+ assert.ok(!packed.files.some((f:any)=>f.path==='docs/charts/data-layout/register-maps.mdoc'),'寄存器主教程合并后不再交付旧独立页面');
+ const handbookMap=JSON.parse(run(bin,['docs','query','--id','fpga:csr'],project)).registerMap;
+ const statusPosition=handbookMap.rows.find((row:any)=>row.definition==='fpga:status');
+ assert.equal(statusPosition.address,'0x40000100');assert.equal(statusPosition.regionOffset,'0x0');
+ const handbookDefinitions=JSON.parse(run(bin,['docs','read','--id','handbook:fpga:definitions'],project));
+ assert.equal(handbookDefinitions.id,'handbook:fpga:definitions');assert.equal(handbookDefinitions.children.length,4);
  for(const domain of ['diagrams','behavior','timing','data-layout','records'])assert.ok(packed.files.some((f:any)=>f.path===`docs/charts/${domain}/index.mdoc`),'安装包携带图表领域入口 '+domain);
 
  for(const [domain,schema]of [['sequence','sequence'],['binary-layout','binary-layout'],['plot','plot'],['register-map','address-space']])assert.ok(packed.files.some((f:any)=>f.path===`dist/packages/extensions/${domain}/${schema}.schema.json`));

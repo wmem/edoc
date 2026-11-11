@@ -1,0 +1,76 @@
+{% section id="use:state-advanced" title="层级与并行状态：先看区域，再读内部阶段" %}
+
+基础状态图描述当前处于哪个状态。需要表达“一个状态内部还有阶段”，或“同一设备同时具有两组状态”时，继续使用StateMachine的复合状态与并行区域，不需要改成流程图或手绘框图。
+
+{% section id="use:state-advanced:create" title="先看微波炉的两个并行区域" %}
+
+本例复用手册的微波炉说明模型：烹饪控制和炉门同时存在，各有独立的初始入口。烹饪控制中的“已启动”又包含暂停和加热两个阶段。下面先折叠两个区域的内部，只保留区域归属，让它们在总览中同时可见：
+
+{% state-diagram id="example:microwave" view="tutorial:microwave-overview" /%}
+
+外框表示同一台微波炉，内部的烹饪控制和炉门是两个并行区域。启动/停止改变烹饪控制，开门/关门改变炉门；不是先执行一个区域，再按箭头进入另一区域。总览省略区内状态和迁移，下面分别展开，原模型保持完整。
+
+{% /section %}
+{% section id="use:state-advanced:regions" title="分别阅读内部控制与炉门" %}
+
+先看烹饪控制的外层，从初始“停止”沿启动进入“已启动”，停止或计时到期后返回“停止”。这张图暂时折叠“已启动”内部阶段，保留启动、停止和超时的去向。
+
+{% state-diagram id="example:microwave" view="tutorial:microwave-engine" /%}
+
+再展开“已启动”内的运行阶段，入口是“暂停”；满足门关闭的守卫时转入加热，门打开时暂停。这里省略外层启动、停止和到期返回，返回去向已在上图说明。“门处于关闭状态”是读取另一区域状态的条件文字，不表示跨区域跳转。
+
+{% state-diagram id="example:microwave" view="tutorial:microwave-working" /%}
+
+最后单独看炉门区域，它只有开门和关门两条事件迁移。该局部图与上方总览使用同一个模型，省略了烹饪控制的显示，不会复制一套门状态或改变原迁移端点。
+
+{% state-diagram id="example:microwave" view="tutorial:microwave-door" /%}
+
+| 要表达的问题 | 声明方法 | 读图时注意 |
+| --- | --- | --- |
+| 一个状态内有若干互斥阶段 | 状态kind=composite，一个region的owner指向它 | 子状态的region指向该区域，区域initial声明默认入口 |
+| 同时存在两组或更多状态 | 状态kind=parallel，至少两个区域归属它 | 每区各有入口；并行不表示共享一条执行顺序 |
+| 父状态转向其内部阶段 | local迁移指向内部后代 | 与退出再进入的external迁移分开 |
+| 在当前状态处理事件，不重新进入 | internal且from/to相同 | 本例每秒计时如此；不能凭自环形状判断kind |
+
+模型用states、regions、transitions建立归属；框的位置不是事实来源。一个正交区域不能直接跳到另一区域的普通状态，跨区域协作须通过条件或共同祖先等语义明确表达。本例是SCXML说明模型，不执行控制程序，也不证明开门联锁安全或计时正确。
+
+{% /section %}
+{% section id="use:state-advanced:views" title="创建同源总览与局部视图" %}
+
+准备[最小配置](../../start/02-first-document.mdoc#use:first-build)。把下面完整模型保存为 docs/ir/authoring/state-hierarchy.json：
+
+{% code file="docs/ir/authoring/state-hierarchy.json" language="json" /%}
+
+再保存下面视图为 docs/ir/authoring/control-tutorial-views.json。collapsed折叠所选容器；focus选择烹饪控制、内部运行阶段或炉门。四张图均引用example:microwave：
+
+{% code file="docs/ir/authoring/control-tutorial-views.json" language="json" /%}
+
+在 docs/index.mdoc写入并执行edoc：
+
+```text {% process=false %}
+{% state-diagram id="example:microwave" view="tutorial:microwave-overview" /%}
+{% state-diagram id="example:microwave" view="tutorial:microwave-engine" /%}
+{% state-diagram id="example:microwave" view="tutorial:microwave-working" /%}
+{% state-diagram id="example:microwave" view="tutorial:microwave-door" /%}
+```
+
+打开output/index.html，应依次看到区域总览、烹饪控制、运行阶段和炉门详图。也可以省略view查看原模型完整默认图；阅读主线已提供局部视图，无需先拖动画布寻找另一区域。折叠、聚焦和展开只影响显示，查询始终沿原模型追溯：
+
+```sh
+edoc query --id example:microwave --element working
+edoc read --id example:microwave
+```
+
+只看随包手册时使用edoc docs query。精确字段见[状态机字段](../../reference/tags/control-diagrams.mdoc#ref:state-machine)与[显示投影](../../reference/tags/control-diagrams.mdoc#ref:control-views)；几何回归继续复用[开发回归图集](../../development/records/regression/graphics.mdoc#gallery:state-hierarchy)中的原模型。
+
+{% /section %}
+{% section id="use:state-advanced:history" title="需要恢复历史阶段时" %}
+
+如果需求是“重新进入后从默认阶段开始”，区域initial已经够用。只有需要恢复离开前阶段时，才加入kind=history的局部状态，让返回迁移指向它。
+
+history=shallow恢复该区域的直接子状态；deep还表达恢复嵌套的活动配置。default指定没有历史记录时使用的同区域状态。例如要记录运行阶段，可以把历史节点归入working区域，默认指向idle；这会改变恢复需求，不能为图形美观替换原来的初始入口。
+
+上方微波炉没有历史恢复需求，未添加history。字段表达意图，edoc不保存执行历史或模拟恢复过程。
+
+{% /section %}
+{% /section %}

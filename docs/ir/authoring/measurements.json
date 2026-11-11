@@ -36,6 +36,12 @@
             "mode": "A",
             "sample": 0,
             "latency": 7.85
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:0"
+            }
           }
         },
         {
@@ -45,6 +51,12 @@
             "mode": "A",
             "sample": 1,
             "latency": 9.25
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:1"
+            }
           }
         },
         {
@@ -54,6 +66,12 @@
             "mode": "A",
             "sample": 2,
             "latency": 10.65
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:2"
+            }
           }
         },
         {
@@ -63,6 +81,12 @@
             "mode": "A",
             "sample": 3,
             "latency": 12.05
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:3"
+            }
           }
         },
         {
@@ -72,6 +96,12 @@
             "mode": "A",
             "sample": 4,
             "latency": 9.8
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:4"
+            }
           }
         },
         {
@@ -81,6 +111,12 @@
             "mode": "A",
             "sample": 5,
             "latency": 11.2
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:5"
+            }
           }
         },
         {
@@ -90,6 +126,12 @@
             "mode": "A",
             "sample": 6,
             "latency": 12.6
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:6"
+            }
           }
         },
         {
@@ -98,7 +140,13 @@
             "load": 30,
             "mode": "A",
             "sample": 7,
-            "latency": 14.0
+            "latency": 14
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:7"
+            }
           }
         },
         {
@@ -108,6 +156,12 @@
             "mode": "A",
             "sample": 8,
             "latency": 11.75
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:8"
+            }
           }
         },
         {
@@ -117,6 +171,12 @@
             "mode": "A",
             "sample": 9,
             "latency": 13.15
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:9"
+            }
           }
         },
         {
@@ -126,6 +186,12 @@
             "mode": "A",
             "sample": 10,
             "latency": 14.55
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:10"
+            }
           }
         },
         {
@@ -134,6 +200,12 @@
             "load": 45,
             "mode": "A",
             "sample": 11
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:11"
+            }
           }
         },
         {
@@ -143,6 +215,12 @@
             "mode": "A",
             "sample": 12,
             "latency": 13.7
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:12"
+            }
           }
         },
         {
@@ -152,6 +230,12 @@
             "mode": "A",
             "sample": 13,
             "latency": 15.1
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:13"
+            }
           }
         },
         {
@@ -161,6 +245,12 @@
             "mode": "A",
             "sample": 14,
             "latency": 16.5
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:14"
+            }
           }
         },
         {
@@ -170,6 +260,12 @@
             "mode": "A",
             "sample": 15,
             "latency": 17.9
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:15"
+            }
           }
         },
         {
@@ -179,6 +275,12 @@
             "mode": "A",
             "sample": 16,
             "latency": 15.65
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:16"
+            }
           }
         },
         {
@@ -188,6 +290,12 @@
             "mode": "A",
             "sample": 17,
             "latency": 17.05
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:17"
+            }
           }
         },
         {
@@ -197,6 +305,12 @@
             "mode": "A",
             "sample": 18,
             "latency": 18.45
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:18"
+            }
           }
         },
         {
@@ -206,6 +320,12 @@
             "mode": "A",
             "sample": 19,
             "latency": 19.85
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:19"
+            }
           }
         },
         {
@@ -215,6 +335,12 @@
             "mode": "A",
             "sample": 20,
             "latency": 17.6
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:20"
+            }
           }
         },
         {
@@ -223,7 +349,13 @@
             "load": 90,
             "mode": "A",
             "sample": 21,
-            "latency": 19.0
+            "latency": 19
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:21"
+            }
           }
         },
         {
@@ -233,6 +365,12 @@
             "mode": "A",
             "sample": 22,
             "latency": 20.4
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:22"
+            }
           }
         },
         {
@@ -242,6 +380,12 @@
             "mode": "A",
             "sample": 23,
             "latency": 21.8
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:A:23"
+            }
           }
         },
         {
@@ -251,6 +395,12 @@
             "mode": "B",
             "sample": 0,
             "latency": 11.85
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:0"
+            }
           }
         },
         {
@@ -260,6 +410,12 @@
             "mode": "B",
             "sample": 1,
             "latency": 13.25
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:1"
+            }
           }
         },
         {
@@ -269,6 +425,12 @@
             "mode": "B",
             "sample": 2,
             "latency": 14.65
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:2"
+            }
           }
         },
         {
@@ -278,6 +440,12 @@
             "mode": "B",
             "sample": 3,
             "latency": 16.05
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:3"
+            }
           }
         },
         {
@@ -287,6 +455,12 @@
             "mode": "B",
             "sample": 4,
             "latency": 13.8
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:4"
+            }
           }
         },
         {
@@ -296,6 +470,12 @@
             "mode": "B",
             "sample": 5,
             "latency": 15.2
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:5"
+            }
           }
         },
         {
@@ -305,6 +485,12 @@
             "mode": "B",
             "sample": 6,
             "latency": 16.6
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:6"
+            }
           }
         },
         {
@@ -313,7 +499,13 @@
             "load": 30,
             "mode": "B",
             "sample": 7,
-            "latency": 18.0
+            "latency": 18
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:7"
+            }
           }
         },
         {
@@ -323,6 +515,12 @@
             "mode": "B",
             "sample": 8,
             "latency": 15.75
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:8"
+            }
           }
         },
         {
@@ -332,6 +530,12 @@
             "mode": "B",
             "sample": 9,
             "latency": 17.15
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:9"
+            }
           }
         },
         {
@@ -341,6 +545,12 @@
             "mode": "B",
             "sample": 10,
             "latency": 18.55
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:10"
+            }
           }
         },
         {
@@ -349,6 +559,12 @@
             "load": 45,
             "mode": "B",
             "sample": 11
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:11"
+            }
           }
         },
         {
@@ -358,6 +574,12 @@
             "mode": "B",
             "sample": 12,
             "latency": 17.7
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:12"
+            }
           }
         },
         {
@@ -367,6 +589,12 @@
             "mode": "B",
             "sample": 13,
             "latency": 19.1
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:13"
+            }
           }
         },
         {
@@ -376,6 +604,12 @@
             "mode": "B",
             "sample": 14,
             "latency": 20.5
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:14"
+            }
           }
         },
         {
@@ -385,6 +619,12 @@
             "mode": "B",
             "sample": 15,
             "latency": 21.9
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:15"
+            }
           }
         },
         {
@@ -394,6 +634,12 @@
             "mode": "B",
             "sample": 16,
             "latency": 19.65
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:16"
+            }
           }
         },
         {
@@ -403,6 +649,12 @@
             "mode": "B",
             "sample": 17,
             "latency": 21.05
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:17"
+            }
           }
         },
         {
@@ -412,6 +664,12 @@
             "mode": "B",
             "sample": 18,
             "latency": 22.45
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:18"
+            }
           }
         },
         {
@@ -421,6 +679,12 @@
             "mode": "B",
             "sample": 19,
             "latency": 23.85
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:19"
+            }
           }
         },
         {
@@ -430,6 +694,12 @@
             "mode": "B",
             "sample": 20,
             "latency": 21.6
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:20"
+            }
           }
         },
         {
@@ -438,7 +708,13 @@
             "load": 90,
             "mode": "B",
             "sample": 21,
-            "latency": 23.0
+            "latency": 23
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:21"
+            }
           }
         },
         {
@@ -448,6 +724,12 @@
             "mode": "B",
             "sample": 22,
             "latency": 24.4
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:22"
+            }
           }
         },
         {
@@ -457,6 +739,12 @@
             "mode": "B",
             "sample": 23,
             "latency": 25.8
+          },
+          "links": {
+            "sample": {
+              "kind": "source",
+              "id": "measurement:B:23"
+            }
           }
         }
       ],
@@ -547,7 +835,7 @@
     {
       "id": "plot:quantile",
       "kind": "plot",
-      "label": "时延分位数（R-7）",
+      "label": "跨负载混合样本的时延分位数（R-7）",
       "data": "table:measurements",
       "transform": [
         {
@@ -570,10 +858,12 @@
       "mark": "line",
       "encoding": {
         "x": {
-          "field": "probability"
+          "field": "probability",
+          "title": "分位概率"
         },
         "y": {
-          "field": "latencyQ"
+          "field": "latencyQ",
+          "title": "混合样本时延分位数 (us)"
         },
         "color": {
           "field": "mode"
@@ -582,6 +872,95 @@
       "source": {
         "file": "docs/ir/authoring/measurements.json",
         "selector": "plot:quantile"
+      }
+    },
+    {
+      "id": "plot:load-trend",
+      "kind": "plot",
+      "label": "两种配置随负载变化的平均时延",
+      "data": "table:measurements",
+      "transform": [
+        {
+          "aggregate": [
+            {
+              "op": "mean",
+              "field": "latency",
+              "as": "meanLatency"
+            }
+          ],
+          "groupby": [
+            "mode",
+            "load"
+          ]
+        }
+      ],
+      "mark": "line",
+      "encoding": {
+        "x": {
+          "field": "load"
+        },
+        "y": {
+          "field": "meanLatency",
+          "title": "平均时延 (us)"
+        },
+        "color": {
+          "field": "mode"
+        }
+      },
+      "source": {
+        "file": "docs/ir/authoring/measurements.json",
+        "selector": "plot:load-trend"
+      }
+    },
+    {
+      "id": "plot:load-quantile",
+      "kind": "plot",
+      "label": "各配置与负载内的时延分位数（R-7）",
+      "data": "table:measurements",
+      "facet": {
+        "field": "mode",
+        "columns": 2
+      },
+      "spec": {
+        "transform": [
+          {
+            "quantile": "latency",
+            "probs": [
+              0.5,
+              0.9,
+              0.99
+            ],
+            "groupby": [
+              "load"
+            ],
+            "as": [
+              "probability",
+              "latencyQ"
+            ],
+            "method": "linear"
+          }
+        ],
+        "mark": "line",
+        "encoding": {
+          "x": {
+            "field": "load"
+          },
+          "y": {
+            "field": "latencyQ",
+            "title": "时延分位数 (us)"
+          },
+          "color": {
+            "field": "probability",
+            "type": "ordinal",
+            "title": "分位概率"
+          }
+        }
+      },
+      "width": 350,
+      "height": 270,
+      "source": {
+        "file": "docs/ir/authoring/measurements.json",
+        "selector": "plot:load-quantile"
       }
     }
   ]

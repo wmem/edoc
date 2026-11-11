@@ -1,40 +1,27 @@
 {% section id="use:diagrams" title="结构与连接" %}
 
-{% directory-order items=["drawing.mdoc","architecture.mdoc","wiring.mdoc","interfaces.mdoc","display.mdoc","graph-options.mdoc","layout.mdoc"] /%}
+{% directory-order items=["drawing.mdoc","architecture.mdoc","wiring.mdoc","interfaces.mdoc","graph-options.mdoc","display.mdoc","layout.mdoc"] /%}
 
-本领域解释有哪些部分、归属哪里、怎样相连。工程结构用 Node/Port/Interface/Connection 保存对象与真实关系，RelationView 选择阅读范围；模块框图、架构、接线和接口是这些内容的不同用途和呈现。纯解释性框图也可在视图中直接提供 Drawing，不自动建立电气器件。
+先确定这张图要让读者回答什么，再选择输入与呈现。这里的图描述组成、归属和相连关系，不执行电路或 RTL，也不从名字补出协议或连接。
 
-| 当前呈现 | 表达能力 | 可以画什么 |
+| 读者的问题 | 从哪里开始 | 继续深入 |
 | --- | --- | --- |
-| [模块框图](drawing.mdoc) | 模块、嵌套容器、端口、带标签/箭头的关系；自动布局、对齐及精确位置/路线 | 两板硬件组成、FPGA 模块框图、软硬件分工，按主题组织的电源树、时钟树和数据通路 |
-| [工程架构图](architecture.mdoc) | 工程对象、父子层级、逻辑集合、分类关系；多视图引用同一批事实 | RTL 实例层级、模块协作、子系统结构 |
-| [接线图](wiring.mdoc) | 真实端口、完整多端点 Net、方向、分支及引脚属性 | FPGA–Flash、MCU–外设、时钟扇出、连接器与模块的信号接线 |
-| [接口图与接口表](interfaces.mdoc) | 单框端口、多组接口总览、独立合并/展开、逐信号连接；表中汇总或查询方向、位宽和时钟域 | RTL 模块接口、AXI-Stream 等已声明的端口分组、跨模块总线和信号清单 |
+| 系统由哪些模块组成？边界和分支在哪里？ | [模块框图](drawing.mdoc#use:drawing.auto) | [嵌套模块](drawing.mdoc#use:drawing.nested)、[两板地图](drawing.mdoc#use:drawing.board-map) |
+| 哪个模块负责什么，怎样协作？ | [工程架构](architecture.mdoc#use:architecture-system) | 内部职责、父子层级和逻辑选集 |
+| 一个信号实际接到哪些端口？ | [接线图](wiring.mdoc#use:wiring) | 多信号类别、引脚属性和完整多端点 |
+| 一个模块有哪些接口，怎样进入逐信号细节？ | [接口图与同源表](interfaces.mdoc#use:interface-overview) | [多接口排序与局部展开](graph-options.mdoc) |
+| 怎样看清图、筛选内容并分享 SVG？ | [阅读与导出](display.mdoc) | 当前视图和完整逐信号输出 |
+| 默认排布不能突出阅读重点？ | [布局对照](layout.mdoc) | 同一事实的默认结果与少量显示约束 |
 
-电源树、时钟树和数据通路是本领域的主题视图，不另设独立模型。先说明模块组成与关系，再进入精确端点；抽象关系保留依据，不表示电气短接，多端点 Net 的完整身份继续保留。
+电源树、时钟树和数据通路是这些模型的主题视图，不另建同名数据类型。功能关系说明协作，电气连接保留真实端点；二者不能仅凭一条相似的线互相替代。
 
-按当前要理解的问题选择一篇短教程，无需顺序通读：
+{% section id="use:chart-input" title="选择解释性绘图还是工程事实" %}
 
-| 你要看什么 | 阅读入口 |
-| --- | --- |
-| 模块组成、板卡布局或精确控制路线 | [模块框图与布局](drawing.mdoc) |
-| 模块有哪些职责、怎样协作 | [架构图：模块与关系](architecture.mdoc) |
-| 信号接到哪些端口、多端点怎样表示 | [接线图：端点与分支](wiring.mdoc) |
-| 多组总线先总览、再展开逐信号 | [接口合并与展开](interfaces.mdoc) |
-| 隐藏附注、筛选类别、导出完整图 | [显示设置与完整导出](display.mdoc) |
-| 父子框、逻辑集合、接口顺序与初始状态 | [图形分组与接口显示](graph-options.mdoc) |
-| 默认布局不够清楚时声明展示意图 | [需要时调整布局](layout.mdoc) |
+[模块框图](drawing.mdoc)的 Drawing 直接声明显示节点、端口、容器与线，适合解释组成和分工；它不会将显示节点自动注册为电气器件。已有权威工程事实时应从原来源投影，不手抄第二份定义。
 
-{% section id="use:chart-input" title="结构图先选对输入，再逐步展开" %}
+[架构](architecture.mdoc)、[接线](wiring.mdoc)和[接口](interfaces.mdoc)使用 Node/Port/Interface/Connection 保存工程对象与真实关系，RelationView 选择范围与展示。图、interface-table 和 query 复用这些身份；接口合并不改写逐信号端点。
 
-模块框图使用视图内的 Drawing 描述框、端口、容器和连线；自动布局是起点，也可声明对齐、位置和路线。Drawing 是显示结构，不把显示节点自动注册为电气器件。已有权威工程事实时仍从原来源投影，不手抄第二份定义。
-
-已有工程对象与真实连接时，Node、Port、Interface、Connection保存事实，RelationView选择范围；图、表和查询共用这些身份。架构图、接线图和接口图沿这条路径，接口合并/展开仍保持逐信号原关系。两类输入都在views中，由relation-diagram引用；创建方式见对应教程，精确边界见[标签契约](../../reference/tags/relation-diagram.mdoc)。
-
-接口表使用 interface-table 整理同一批端口，始终生成表格，不要求另建 Table 或信号数据，见[接口表契约](../../reference/tags/interface-table.mdoc)。简单场景先使用默认展示，复杂含义补在工程模型，特殊排版补在视图；Drawing 和工程视图当前支持的布局字段并不完全相同，不能跨模型照搬参数。
-
-数字波形归[时间与交互](../timing/index.mdoc)，状态和流程归[行为与控制](../behavior/index.mdoc)。本领域的关系图不执行电路或 RTL，也不根据名称推断协议与缺失连接。
+两条路径都把视图放在 views，由 relation-diagram 的 id 引用；布局字段各有适用范围，不能跨模型照搬。[标签契约](../../reference/tags/relation-diagram.mdoc)维护边界，[接口表契约](../../reference/tags/interface-table.mdoc)说明同源表格。波形进入[时间与交互](../timing/index.mdoc)，状态与流程进入[行为与控制](../behavior/index.mdoc)。
 
 {% /section %}
-
 {% /section %}

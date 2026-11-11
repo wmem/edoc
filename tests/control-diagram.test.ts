@@ -63,7 +63,7 @@ test('折叠投影保留原始跨层迁移身份；展开调用保留被调用�
  const expanded=projectControl(p,{expandedCalls:['call']});assert.ok(expanded.nodes.some(n=>n.originIds?.[0]===child.id&&n.originIds[1]==='busy'));await solveDrawing(folded);await solveDrawing(expanded);
 });
 test('公开复杂案例使用同一求解器与独立几何校验',async()=>{
- const data=JSON.parse(readFileSync('docs/ir/authoring/control-complex.json','utf8'));for(const m of [...data.stateMachines,...data.flowcharts]){const s=await scene(load([m]),m.id);assert.ok(s.drawing);verifyDrawingScene(s.drawingInput!,s.drawing!);assert.ok(!svg(s,false).includes('<script'));}
+ const data=JSON.parse(readFileSync('docs/ir/authoring/control-complex.json','utf8'));for(const m of [...JSON.parse(readFileSync('docs/ir/authoring/state-hierarchy.json','utf8')).stateMachines,...data.stateMachines,...data.flowcharts]){const s=await scene(load([m]),m.id);assert.ok(s.drawing);verifyDrawingScene(s.drawingInput!,s.drawing!);assert.ok(!svg(s,false).includes('<script'));}
 });
 test('旧state关系视图拒绝，不降低Connection的电气约束',()=>{
  assert.throws(()=>graphFromResources([{type:'views',data:{views:[{id:'old',kind:'state',include:{objects:[],relations:[]}}]},file:'old.json'}],{projectId:'p',irVersion:'1.7',resources:[],entryDocuments:[]},{root:process.cwd(),strict:true}));

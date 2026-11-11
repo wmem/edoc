@@ -17,9 +17,18 @@ test('能力教程的表行、Tabs折叠、Group和接口局部设置可在离�
  const context=await browser.newContext({offline:true,viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  const base=pathToFileURL(file).href,ready=()=>page.waitForFunction(()=>window.EdocReady);
  const go=async(id:string)=>{await page.goto(base+'#edoc='+encodeURIComponent(JSON.stringify({kind:'entity',project:'edoc-manual',id})));await ready();};
- await go('use:tables');const table=page.locator('#reader table').filter({hasText:'两组虚构参数'});assert.equal(await table.count(),1);assert.match(await table.innerText(),/频率 \(Hz\)/);assert.match(await table.innerText(),/false/);assert.match(await table.innerText(),/unknown/);assert.equal(await table.locator('strong').count(),0);
- await page.locator('#reader').getByRole('link',{name:'查询低功耗行事实',exact:true}).click();await ready();assert.match(await page.locator('#reader').innerText(),/"rate": 20/);
- await page.goBack();await ready();await page.locator('#reader').getByRole('link',{name:'定位表中的低功耗行',exact:true}).click();await ready();assert.ok(await page.locator('tr').filter({hasText:'低功耗配置'}).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=-1&&r.bottom<=innerHeight+1;}));
+ await go('use:table-values');const table=page.locator('#reader table').filter({hasText:'两组虚构参数'});assert.equal(await table.count(),1);assert.match(await table.innerText(),/频率 \(Hz\)/);assert.match(await table.innerText(),/false/);assert.match(await table.innerText(),/unknown/);assert.equal(await table.locator('strong').count(),0);
+ await go('use:table-records');
+ const records=page.locator('.data-table[data-table="table:measurements"]').first();
+ for (const [column, conditions] of [['配置', {'包含文字':'A'}], ['负载', {'最小值':'45','最大值':'45'}]] as const) {
+  await records.getByRole('button',{name:new RegExp('^筛选 '+column)}).click();const panel=records.locator('.table-filter-panel');
+  for (const [label,value] of Object.entries(conditions)) await panel.getByLabel(label,{exact:true}).fill(value);
+  await panel.getByRole('button',{name:'应用筛选',exact:true}).click();
+ }
+ assert.equal(await records.locator('tbody tr:visible').count(),4);assert.equal(await records.locator('tbody tr:visible').filter({hasText:'unknown'}).count(),1);
+ await records.getByRole('button',{name:'清空筛选',exact:true}).click();
+ await go('use:table-row-links');await page.locator('#reader').getByRole('link',{name:'查询这条缺测记录',exact:true}).click();await ready();assert.match(await page.locator('#reader').innerText(),/measurement:A:11/);
+ await page.goBack();await ready();await page.locator('#reader').getByRole('link',{name:'定位表中的缺测行',exact:true}).click();await ready();assert.ok(await page.locator('#ed-'+Buffer.from('measurement:A:11').toString('hex')).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=-1&&r.bottom<=innerHeight+1;}));
  await go('use:page-layout-live');const fold=page.locator('#reader details[id="ed-6c61796f75743a64657461696c73"]');assert.equal(await fold.evaluate(el=>(el as HTMLDetailsElement).open),false);
  await page.getByRole('button',{name:'查询入口',exact:true}).click();assert.match(await page.locator('.tab:not([hidden])').innerText(),/已知问题/);
  await page.locator('#reader').getByRole('link',{name:'打开详细参考',exact:true}).click();await ready();assert.ok(await page.locator('#reader details[id="ed-6c61796f75743a64657461696c73"]').evaluate(el=>(el as HTMLDetailsElement).open));
