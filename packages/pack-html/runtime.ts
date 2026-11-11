@@ -8,7 +8,8 @@ export async function browserScript(name:string,entry:string,define:Record<strin
  let script:string;
  if(import.meta.url.endsWith('.js'))script=readFileSync(new URL(`../../runtime/${name}.js`,import.meta.url),'utf8');
  else{
-  if(define.__EDOC_INTERFACES__==='true'||entry==='client-interface-entry'){
+  // 普通阅读器中的状态/流程折叠也需要原生求解器，不能只给接口版注入 Worker。
+  {
    const {build:bundle}=await import('esbuild');
    const worker=await bundle({entryPoints:[fileURLToPath(new URL('../doc-theme/drawing-worker.ts',import.meta.url))],bundle:true,write:false,minify:true,format:'iife',platform:'browser',target:'es2024'});
    define={...define,__EDOC_DRAWING_WORKER__:JSON.stringify(worker.outputFiles[0].text)};

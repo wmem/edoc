@@ -1,0 +1,15 @@
+import type {Source} from '../../core/common-types.ts';
+import type {Drawing} from '../../drawing/types.ts';
+export type Element = {id:string;label?:string;source?:Source};
+export type Trigger = string | {kind:'event';event:string} | {kind:'after';value:number;unit:'ns'|'us'|'ms'|'s'|'cycles';clock?:string} | {kind:'clock';clock:string;edge?:'rising'|'falling'} | {kind:'completion'|'always'} | {kind:'change';expression:string};
+export type State = Element & {kind?:'state'|'composite'|'parallel'|'initial'|'final'|'choice'|'junction'|'history'|'fork'|'join'|'entry'|'exit'|'terminate'|'submachine';region?:string;entry?:string[];do?:string[];exit?:string[];history?:'shallow'|'deep';default?:string;call?:{model:string;entries?:Record<string,string>;returns?:Record<string,string>};bindings?:Record<string,string>};
+export type Transition = Element & {from:string;to:string;trigger?:Trigger;guard?:string;otherwise?:boolean;actions?:string[];kind?:'external'|'internal'|'local';priority?:number};
+export type StateMachine = Element & {kind:'state-machine';initial?:string;states:State[];regions?: (Element & {owner:string;initial?:string})[];transitions:Transition[];notes?: (Element & {text:string;for?:string[]})[];semantics?:{profile?:string;selection?:'unordered'|'priority';clock?:string;reset?:string;encoding?:string};completeness?:'complete'|'partial'};
+export type Step = Element & {kind?:'start'|'process'|'decision'|'merge'|'fork'|'join'|'end'|'call'|'wait'|'io'|'connector';lane?:string;scope?:'flow'|'branch';joinSpec?:'all'|'any'|{expression:string};call?:{model:string;returns?:Record<string,string>};wait?:Trigger;actions?:string[]};
+export type FlowEdge = Element & {from:string;to:string;guard?:string;otherwise?:boolean;kind?:'control'|'exception'|'timeout';priority?:number;return?:string};
+export type Flowchart = Element & {kind:'flowchart';nodes:Step[];edges:FlowEdge[];lanes?:Element[];notes?:(Element & {text:string;for?:string[]})[];selection?:'unordered'|'priority';completeness?:'complete'|'partial'};
+export type ControlModel = StateMachine|Flowchart;
+export type ControlView = Element & {kind:'state-machine'|'flowchart';model:string;focus?:string;collapsed?:string[];layout?:Drawing['layout'];display?:{showRelationLabels?:boolean;repeatClock?:boolean}};
+export type ControlPresentation = {projectId?:string;model:ControlModel;view:ControlView;models:ControlModel[]};
+export const isControl = (value:unknown):value is ControlModel => !!value && typeof value==='object' && ['state-machine','flowchart'].includes((value as ControlModel).kind) && !('model' in value);
+export const elements = (m:ControlModel):{element:Element;path:string}[] => (m.kind==='state-machine'? [['states',m.states],['regions',m.regions??[]],['transitions',m.transitions],['notes',m.notes??[]]] : [['nodes',m.nodes],['edges',m.edges],['lanes',m.lanes??[]],['notes',m.notes??[]]]).flatMap(([key,list])=>(list as Element[]).map((element,index)=>({element,path:`/${key}/${index}`})));

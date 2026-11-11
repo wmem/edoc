@@ -1,6 +1,6 @@
 {% section id="ref:ir" title="数据契约" %}
 
-当前支持 IR 1.6；原生绘图使用 native-drawing 能力，条款使用 clauses 能力。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Register、RegisterField、Waveform、Clause 分属不同数据模型；[标签职责](tags/index.mdoc)说明各自如何展示。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+当前支持 IR 1.8；原生绘图使用 native-drawing 能力，条款使用 clauses 能力。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Register、RegisterField、Waveform、Clause，以及 StateMachine、Flowchart 分属不同数据模型；状态/流程的局部身份和字段见[专用契约](tags/control-diagrams.mdoc)；[标签职责](tags/index.mdoc)说明各自如何展示。新增 Sequence、BinaryLayout、RegisterBlock、AddressSpace 与 PlotView 的字段见[工程图契约](tags/engineering-charts.mdoc)。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
 
 | 外层字段 | 内容 | 本页条目 |
 | --- | --- | --- |
@@ -9,6 +9,8 @@
 | views | 引用范围和展示 | 图形参考 |
 | tables | 投影或权威表格行 | ref:tables |
 | registers | 寄存器及嵌套字段 | [位域契约](tags/registers.mdoc) |
+| stateMachines | 状态、区域及迁移 | [StateMachine](tags/control-diagrams.mdoc#ref:state-machine) |
+| flowcharts | 步骤、网关、泳道及控制边 | [Flowchart](tags/control-diagrams.mdoc#ref:flowchart) |
 | waveforms | WaveJSON 与语义来源 | ref:waveforms |
 | references | 有身份的语义关联 | ref:references |
 | clauses | 富文本条款 | [Clause](tags/semantic-content.mdoc#ref:clauses) |
@@ -59,7 +61,7 @@ Table 必需 id、kind='table'、label、columns、rows。列必需 field、labe
 {% data-table id="system:modules" /%}
 ```
 
-运行 edoc 后得到[教程中的两行表格](../charts/tables.mdoc#use:table)。columns 的 field 从 objectId 指向的对象取值，rows 只维护行身份和对象引用。添加其他列时沿用同一对象，不把其值抄进 values。
+运行 edoc 后得到[教程中的两行表格](../charts/records/tables.mdoc#use:table)。columns 的 field 从 objectId 指向的对象取值，rows 只维护行身份和对象引用。添加其他列时沿用同一对象，不把其值抄进 values。
 
 {% /section %}
 
@@ -71,7 +73,7 @@ values 是行自身的字段对象，columns.field 相对它取值；objectId �
 
 unit 只追加到列标题，如“频率 (Hz)”，不修改数值或提供单位换算。单元格中的对象以 JSON 文本显示，其余值按文本显示并转义；不会执行字符串中的 Markdown、HTML 或 Markdoc 标签。
 
-完整定义、五种显示结果及创建命令见[多类型参数表](../charts/tables.mdoc#use:table-values)。不需要机器查询的短说明表可以直接用 Markdown。
+完整定义、五种显示结果及创建命令见[多类型参数表](../charts/records/tables.mdoc#use:table-values)。不需要机器查询的短说明表可以直接用 Markdown。
 
 {% /section %}
 
@@ -81,7 +83,7 @@ unit 只追加到列标题，如“频率 (Hz)”，不修改数值或提供单�
 
 同一页重复展示一张表时，首处使用稳定行锚点，后续实例使用独立显示锚点；条款 中仍按条款局部命名空间定位。排序或筛选不重复注册行实体。
 
-投影行详情保存 objectId；values 行详情保存自身字段。不要用显示序号或当前位置代替稳定 ID。对照实际跳转见[行事实与行位置](../charts/tables.mdoc#use:table-row-links)。
+投影行详情保存 objectId；values 行详情保存自身字段。不要用显示序号或当前位置代替稳定 ID。对照实际跳转见[行事实与行位置](../charts/records/tables.mdoc#use:table-row-links)。
 
 {% /section %}
 
@@ -98,13 +100,13 @@ unit 只追加到列标题，如“频率 (Hz)”，不修改数值或提供单�
 
 source 有 attachment 时跳 PDF；否则打开来源所属实体详情，展示完整路径与 selector/line，不假装提供任意原文件阅读器。未声明来源的本工程目标报错。同工程实体、文章、锚点、PDF 与位置参与 validate/build 校验；显式其他 project 的目标沿现有弱跳转，只查当前产物，没有时提示，不加载外部工程。
 
-query 表格行返回 cellLinks：每列含 target 原声明和 route 解析目标，source 还含来源及 sourceOwnerId。它是导航元数据，不自动生成语义 Reference 或硬件 Connection。效果见[实例、寄存器与字段跳转](../charts/registers.mdoc#use:registers:links)。
+query 表格行返回 cellLinks：每列含 target 原声明和 route 解析目标，source 还含来源及 sourceOwnerId。它是导航元数据，不自动生成语义 Reference 或硬件 Connection。效果见[实例、寄存器与字段跳转](../charts/data-layout/registers.mdoc#use:registers:links)。
 
 {% /section %}
 
 {% section id="ref:table-limits" title="表格展示边界" %}
 
-表格按 columns 和 rows 的声明顺序展示；默认列宽、长文本换行和打印重复表头由通用样式处理。网页按列排序与筛选属于展示状态，由 data-table 的 sortable/filterable 控制，不新增 IR 字段；默认保持声明顺序。详情见[表格阅读](../charts/tables.mdoc#use:table-reading)。当前没有公开的列宽/对齐/格式化函数、可见列、表内分页、虚拟滚动、多列排序、合并单元格或 CSV 导出配置。页面搜索和 query 的范围控制不等于表格分页功能。
+表格按 columns 和 rows 的声明顺序展示；默认列宽、长文本换行和打印重复表头由通用样式处理。网页按列排序与筛选属于展示状态，由 data-table 的 sortable/filterable 控制，不新增 IR 字段；默认保持声明顺序。详情见[表格阅读](../charts/records/tables.mdoc#use:table-reading)。当前没有公开的列宽/对齐/格式化函数、可见列、表内分页、虚拟滚动、多列排序、合并单元格或 CSV 导出配置。页面搜索和 query 的范围控制不等于表格分页功能。
 
 这些是尚未提供的展示能力，不能通过未知字段、任意 CSS 或在 values 中拼 HTML 实现。
 
@@ -114,7 +116,7 @@ query 表格行返回 cellLinks：每列含 target 原声明和 route 解析目�
 
 必需 id、kind='waveform'、label、format='wavejson'、semantic、data、source。semantic 只能为 specification 或 simulation，分别表示规范示意与有来源的仿真结果；不能为了图形效果混用。
 
-data 保存 WaveJSON 对象，交由时序渲染器处理。[时序教程](../charts/waveforms.mdoc)展示样例握手；下面的最小定义可独立创建一张规范波形。完整外层结构见 packages/extensions/waveform/waveform.schema.json。
+data 保存 WaveJSON 对象，交由时序渲染器处理。[时序教程](../charts/timing/waveforms.mdoc)展示样例握手；下面的最小定义可独立创建一张规范波形。完整外层结构见 packages/extensions/waveform/waveform.schema.json。
 
 data 必需 signal，可含 edge、head、foot、config。signal 可包含信号对象或命名分组，edge 描述标注，head/foot/config 交给 WaveDrom 处理；接受这些对象不表示其中每个第三方选项都已逐项验收，也不提供独立的通用时间窗口或时序布局配置层。
 
@@ -148,7 +150,7 @@ source.file 必需，selector 和 line 可选。file 以工程根定位，select
 
 来源路径必须在工程范围内，符号链接不能绕过边界；source.file 可仅保留未随工程携带的追溯路径，这不表示已核验该文件内容。实际加载的数据、正文、图片、代码示例和 PDF 则必须存在并通过相应检查。
 
-数据可声明 irVersion 和 requiredFeatures。当前已知能力为 graph、documents、tables、wavejson、references、interface-groups、layout-intent、pdf-attachments、clauses、registers、table-cell-links、native-drawing；未知必需能力明确失败。工具会识别已知结构需要的能力，普通配置无需手填版本清单。
+数据可声明 irVersion 和 requiredFeatures。当前已知能力为 graph、documents、tables、wavejson、references、interface-groups、layout-intent、pdf-attachments、clauses、registers、table-cell-links、native-drawing、state-machines、flowcharts、sequences、binary-layouts、plots、register-maps；未知必需能力明确失败。工具会识别已知结构需要的能力，普通配置无需手填版本清单。
 
 {% /section %}
 {% /section %}

@@ -9,7 +9,7 @@ import registersConfig from './recipes/registers.config.js';
 import tableReadingConfig from './recipes/table-reading.config.js';
 
 export function tutorialData({root}){
- const result={objects:[],relations:[],views:[],tables:[],waveforms:[],references:[],registers:[]};
+ const result={objects:[],relations:[],views:[],tables:[],waveforms:[],references:[],registers:[],stateMachines:[],flowcharts:[],sequences:[],binaryLayouts:[],registerBlocks:[],addressSpaces:[]};
  const json=file=>JSON.parse(readFileSync(join(root,file),'utf8'));
  const relocate=(value,prefix)=>{
   if(Array.isArray(value))return value.map(v=>relocate(v,prefix));
@@ -41,7 +41,7 @@ export function tutorialData({root}){
  const pipeline=json('docs/support/pipeline.json');
  for(const type of ['objects','relations'])result[type].push(...pipeline[type].map(entity=>({...entity,source:{file:'docs/support/pipeline.json',selector:entity.id}})));
  result.objects.push({id:'manual:pdf-source',kind:'node',label:'PDF 定位示例文件',source:{file:'docs/assets/location.pdf',selector:'DETAIL',attachment:{id:'location',target:'detail'}}});
- for(const file of ['drawing','board-map','objects','tables','waveforms','topology','layout','table-values','graph-options','interfaces','states','wiring','evidence']){
+ for(const file of ['drawing','board-map','objects','tables','waveforms','topology','layout','table-values','graph-options','interfaces','states','flows','control-complex','sequences','binary-layouts','register-maps','measurements','wiring','evidence']){
   const path=`docs/ir/authoring/${file}.json`,data=json(path);
   for(const type of Object.keys(result))result[type].push(...(data[type]??[]).map(entity=>({...entity,source:entity.source??{file:path,selector:entity.id}})));
  }

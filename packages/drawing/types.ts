@@ -5,7 +5,8 @@ export type Side = 'top' | 'right' | 'bottom' | 'left';
 export type Direction = 'LR' | 'RL' | 'TB' | 'BT';
 export type Content = {id: string; kind: 'text'; text: string; role?: 'body' | 'note' | 'code'} | {id: string; kind: 'stack'; axis: 'x' | 'y'; children: Content[]};
 export type DrawingPort = {id: string; label?: string; annotation?: string; appearance?: 'normal' | 'header' | 'slot'; originIds?: string[]};
-export type Node = {id: string; label: string; parentId?: string; ports?: DrawingPort[]; portGroups?: {id: string; ports: string[]; header?: string}[]; content?: Content[]; originIds?: string[]};
+export type Shape = 'rectangle'|'rounded'|'ellipse'|'initial'|'final'|'terminate'|'diamond'|'bar'|'history'|'io'|'call'|'wait'|'connector'|'region'|'lane'|'note';
+export type Node = {shape?:Shape;id: string; label: string; parentId?: string; ports?: DrawingPort[]; portGroups?: {id: string; ports: string[]; header?: string}[]; content?: Content[]; originIds?: string[]};
 export type End = {id: string; node: string; port?: string; marker?: 'none' | 'arrow' | 'circle'};
 export type Connection = {id: string; ends: End[]; labels?: {id: string; text: string}[]; style?: string; originIds?: string[]};
 export type Target = {node: string; port?: string; edge?: 'start' | 'center' | 'end'};
@@ -22,12 +23,14 @@ export type Constraint =
 export type Spacing = {node?: number; layer?: number; edge?: number; port?: number; padding?: number};
 export type Drawing = {
   schemaVersion: '1.0'; id: string; nodes: Node[]; connections: Connection[];
-  layout?: {direction?: Direction; routing?: 'orthogonal' | 'polyline'; spacing?: Spacing; containers?: Record<string, {direction?: Direction; spacing?: Spacing}>; constraints?: Constraint[]; hints?: {main?: string[]; channels?: {connection: string; side: Side; container?: string}[]}};
+  layout?: {arrangement?:'layered'|'cyclic';alignment?:'auto'|'none';direction?: Direction; routing?: 'orthogonal' | 'polyline' | 'curved'; spacing?: Spacing; containers?: Record<string, {direction?: Direction; spacing?: Spacing}>; constraints?: Constraint[]; hints?: {main?: string[]; channels?: {connection: string; side: Side; container?: string}[]}};
 };
 export type TextBox = Rect & {id: string; lines: string[]; size: number};
 export type PortGeometry = Point & {id: string; label: string; side: Side; text: TextBox; annotation?: TextBox; appearance?: DrawingPort['appearance']; originIds: string[]};
-export type NodeGeometry = Rect & {id: string; parentId?: string; contentBox: Rect; title: TextBox; contents: TextBox[]; ports: PortGeometry[]; originIds: string[]};
-export type ConnectionGeometry = {id: string; originIds: string[]; ends: (End & Point & {side: Side})[]; paths: {id: string; points: Point[]}[]; junctions: Point[]; labels: TextBox[]};
+export type NodeGeometry = Rect & {shape?:Shape;id: string; parentId?: string; contentBox: Rect; title: TextBox; contents: TextBox[]; ports: PortGeometry[]; originIds: string[]};
+export type CurveControl = {c1:Point;c2:Point};
+export type DrawingPath = {id:string;points:Point[];curves?:CurveControl[];from?:string;to?:string};
+export type ConnectionGeometry = {id: string; originIds: string[]; ends: (End & Point & {side: Side})[]; paths: DrawingPath[]; junctions: Point[]; labels: TextBox[]};
 export type DrawingScene = {id: string; nodes: NodeGeometry[]; connections: ConnectionGeometry[]; width: number; height: number; viewBox: Rect; effectiveLayout: Drawing['layout']; satisfiedConstraints: string[]; diagnostics: {code: string; message: string; id?: string}[]; durationMs: number};
 export class DrawingError extends Error {
   code: string; stage: string; ids: string[]; path: string;

@@ -25,7 +25,7 @@ export type LayoutConstraint={type:'order';axis:'x'|'y';nodes:string[];gap?:numb
 export type RelationLayoutHint={backbone?:[string,string];endpointSides?:Record<string,LayoutSide>;channel?:LayoutSide;priority?:'main'|'normal'};
 export type RelationView = {
   drawing?: import('../../drawing/types.ts').Drawing;
-  id: string; kind: 'architecture' | 'interface' | 'wiring' | 'state'; label?: string;
+  id: string; kind: 'architecture' | 'interface' | 'wiring'; label?: string;
   include: { objects: string[]; relations: string[] };
   layout?: { direction?: 'LR' | 'RL' | 'TB' | 'BT'; routing?: 'orthogonal' | 'polyline';
     portOrder?: string[]; interfaceOrder?:string[];interfaceSides?:Record<string,'left'|'right'>;positions?: { objectId: string; x: number; y: number }[];

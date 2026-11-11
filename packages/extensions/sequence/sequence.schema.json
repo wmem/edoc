@@ -1,0 +1,488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/sequence.schema.json",
+  "type": "object",
+  "properties": {
+    "sequences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          },
+          "kind": {
+            "const": "sequence"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "ref": {
+                  "$ref": "common.schema.json#/$defs/id"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/step"
+            }
+          },
+          "constraints": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source": {
+                      "$ref": "common.schema.json#/$defs/source"
+                    },
+                    "kind": {
+                      "const": "order"
+                    },
+                    "before": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "end": {
+                          "enum": [
+                            "send",
+                            "receive"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "message",
+                        "end"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "after": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "end": {
+                          "enum": [
+                            "send",
+                            "receive"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "message",
+                        "end"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "before",
+                    "after"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source": {
+                      "$ref": "common.schema.json#/$defs/source"
+                    },
+                    "kind": {
+                      "const": "duration"
+                    },
+                    "from": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "end": {
+                          "enum": [
+                            "send",
+                            "receive"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "message",
+                        "end"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "to": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "end": {
+                          "enum": [
+                            "send",
+                            "receive"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "message",
+                        "end"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "max": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "unit": {
+                      "enum": [
+                        "ns",
+                        "us",
+                        "ms",
+                        "s",
+                        "cycles"
+                      ]
+                    },
+                    "clock": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "from",
+                    "to",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "participants",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "sequences"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "step": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "kind": {
+              "const": "message"
+            },
+            "from": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "to": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "mode": {
+              "enum": [
+                "call",
+                "signal",
+                "return"
+              ]
+            },
+            "replyTo": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "protocol": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "required": [
+            "id",
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "kind": {
+              "enum": [
+                "alt",
+                "par"
+              ]
+            },
+            "branches": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "common.schema.json#/$defs/id"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source": {
+                    "$ref": "common.schema.json#/$defs/source"
+                  },
+                  "guard": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "otherwise": {
+                    "type": "boolean"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/step"
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "steps"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "branches"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "kind": {
+              "enum": [
+                "opt",
+                "loop",
+                "strict"
+              ]
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            },
+            "guard": {
+              "type": "string",
+              "minLength": 1
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "steps"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "kind": {
+              "const": "ref"
+            },
+            "model": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "participants": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "common.schema.json#/$defs/id"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "model",
+            "participants"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "kind": {
+              "const": "note"
+            },
+            "on": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "uniqueItems": true
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "on",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "kind": {
+              "enum": [
+                "activate",
+                "deactivate",
+                "create",
+                "destroy"
+              ]
+            },
+            "participant": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "participant"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

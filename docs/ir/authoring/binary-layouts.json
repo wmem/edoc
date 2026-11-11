@@ -1,0 +1,175 @@
+{
+  "binaryLayouts": [
+    {
+      "id": "binary:descriptor",
+      "kind": "binary-layout",
+      "label": "固定 64 bit 描述符",
+      "byteOrder": "little",
+      "fields": [
+        {
+          "id": "opcode",
+          "label": "操作码",
+          "size": 8
+        },
+        {
+          "id": "flags",
+          "label": "标志",
+          "size": 8
+        },
+        {
+          "id": "length",
+          "label": "长度",
+          "size": 16
+        },
+        {
+          "id": "address",
+          "label": "缓冲区地址",
+          "size": 32
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/binary-layouts.json",
+        "selector": "binary:descriptor"
+      }
+    },
+    {
+      "id": "binary:packet",
+      "kind": "binary-layout",
+      "label": "变长报文与可选扩展",
+      "unit": "byte",
+      "byteOrder": "big",
+      "bitOrder": "msb-first",
+      "fields": [
+        {
+          "id": "type",
+          "label": "类型",
+          "size": 1
+        },
+        {
+          "id": "len",
+          "label": "负载长度",
+          "size": 2
+        },
+        {
+          "id": "extension",
+          "label": "扩展标志",
+          "size": 1
+        },
+        {
+          "id": "header",
+          "kind": "choice",
+          "selector": "type",
+          "branches": [
+            {
+              "id": "data",
+              "when": 1,
+              "fields": [
+                {
+                  "id": "seqno",
+                  "label": "序号",
+                  "size": 4
+                }
+              ]
+            },
+            {
+              "id": "control",
+              "otherwise": true,
+              "fields": [
+                {
+                  "id": "command",
+                  "label": "命令",
+                  "size": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "extra",
+          "kind": "optional",
+          "condition": "extension",
+          "fields": [
+            {
+              "id": "timestamp",
+              "label": "时间戳",
+              "size": 8
+            }
+          ]
+        },
+        {
+          "id": "payload",
+          "label": "负载",
+          "size": {
+            "field": "len",
+            "unit": "byte"
+          }
+        },
+        {
+          "id": "pad",
+          "kind": "align",
+          "to": 4
+        },
+        {
+          "id": "crc",
+          "label": "CRC32",
+          "size": 4
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/binary-layouts.json",
+        "selector": "binary:packet"
+      }
+    },
+    {
+      "id": "binary:scatter",
+      "kind": "binary-layout",
+      "label": "描述符链：重复与嵌套",
+      "fields": [
+        {
+          "id": "count",
+          "label": "描述符数",
+          "size": 16
+        },
+        {
+          "id": "reserved",
+          "kind": "reserved",
+          "size": 16
+        },
+        {
+          "id": "items",
+          "label": "描述符数组",
+          "kind": "repeat",
+          "count": {
+            "field": "count"
+          },
+          "element": {
+            "id": "descriptor",
+            "kind": "ref",
+            "model": "binary:descriptor"
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/binary-layouts.json",
+        "selector": "binary:scatter"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "view:packet-sample",
+      "kind": "binary-layout",
+      "model": "binary:packet",
+      "bitsPerRow": 32,
+      "values": {
+        "type": 1,
+        "len": 12,
+        "extension": true
+      },
+      "source": {
+        "file": "docs/ir/authoring/binary-layouts.json",
+        "selector": "view:packet-sample"
+      }
+    }
+  ]
+}

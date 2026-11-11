@@ -1,9 +1,11 @@
 import {DrawingError} from './types.ts';
 import type {ConnectionGeometry, Point} from './types.ts';
 import {same} from '../render-graph/geometry.ts';
+import {checkCurvePaths} from './curve-check.ts';
 
 // 与路由算法分开检查，包括直接采用的 fixedRoute；交叉只能在两条直线内部发生。
 export function checkPaths(connections: ConnectionGeometry[], clearance = 0): void {
+  if(connections.some(c=>c.paths.some(p=>p.curves))){checkCurvePaths(connections,clearance);return;}
   const segments = connections.flatMap(c => c.paths.flatMap(path => path.points.slice(1).map((b, i) => ({c, path, i, a: path.points[i], b}))));
   const on = (p: Point, a: Point, b: Point) => p.x >= Math.min(a.x, b.x) - .001 && p.x <= Math.max(a.x, b.x) + .001 && p.y >= Math.min(a.y, b.y) - .001 && p.y <= Math.max(a.y, b.y) + .001;
   for (const [index, u] of segments.entries()) for (const v of segments.slice(index + 1)) {

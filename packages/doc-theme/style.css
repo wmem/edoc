@@ -176,3 +176,15 @@ nav.sidebar > * { flex-shrink: 0; }
 .register-field-detail dl { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px 18px; }
 .register-field-detail dd { margin: 0; overflow-wrap: anywhere; }
 @media print { .register-actions { display: none; } .register-scroll { overflow: visible; } }
+
+.engineering-figure { margin: 18px 0; border: 1px solid #d5dfeb; border-radius: 8px; overflow: hidden; background: white; }
+.engineering-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:9px; background:#f3f6fa; border-bottom:1px solid #d5dfeb; }
+.engineering-toolbar button,.engineering-toolbar input { font:inherit; font-size:12px; padding:5px 8px; border:1px solid #c4d0df; background:white; border-radius:4px; }
+.engineering-toolbar input { width:150px; }
+.engineering-toolbar output { font-size:12px; color:#64748b; }
+.engineering-viewport { width:100%; height:540px; overflow:hidden; touch-action:none; }
+.engineering-viewport > svg { width:100%; height:100%; display:block; }
+.engineering-figure > pre { max-height:250px; overflow:auto; margin:0; padding:12px; font-size:12px; }
+.engineering-figure > table,.engineering-figure > p { margin:12px; }
+.binary-field-table { overflow:auto; }
+@media print { .engineering-toolbar,.engineering-figure > pre {display:none} .engineering-viewport {height:auto!important} .engineering-viewport > svg {height:auto} }

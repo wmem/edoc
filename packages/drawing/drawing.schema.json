@@ -211,8 +211,7 @@
           "$ref": "#/$defs/nodeId"
         },
         "label": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "parentId": {
           "$ref": "#/$defs/nodeId"
@@ -237,6 +236,26 @@
         },
         "originIds": {
           "$ref": "#/$defs/origins"
+        },
+        "shape": {
+          "enum": [
+            "rectangle",
+            "rounded",
+            "initial",
+            "final",
+            "terminate",
+            "diamond",
+            "bar",
+            "history",
+            "io",
+            "call",
+            "wait",
+            "connector",
+            "region",
+            "lane",
+            "note",
+            "ellipse"
+          ]
         }
       },
       "required": [
@@ -829,7 +848,8 @@
         "routing": {
           "enum": [
             "orthogonal",
-            "polyline"
+            "polyline",
+            "curved"
           ]
         },
         "spacing": {
@@ -849,6 +869,15 @@
         },
         "hints": {
           "$ref": "#/$defs/hints"
+        },
+        "alignment": {
+          "enum": [
+            "auto",
+            "none"
+          ]
+        },
+        "arrangement": {
+          "enum": ["layered", "cyclic"]
         }
       },
       "additionalProperties": false

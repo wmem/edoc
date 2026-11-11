@@ -16,5 +16,5 @@ export default {data:{registers:[
  ]}
 ],tables:[{id:'manual:register-instances',kind:'table',label:'实例到模板和字段',columns:[{field:'instance',label:'实例',type:'string'},{field:'register',label:'寄存器',type:'string'},{field:'field',label:'字段',type:'string'},{field:'source',label:'来源',type:'string'}],rows:[
  {id:'manual:instance0',values:{instance:'采样器 0',register:'CTRL',field:'MODE 字段定义',source:'定义来源'},links:{instance:{kind:'entity',id:'use:registers:template'},register:{kind:'entity',id:'manual:ctrl'},field:{kind:'entity',id:'manual:ctrl.mode'},source:{kind:'source',id:'manual:ctrl.mode'}}},
- {id:'manual:instance1',values:{instance:'采样器 1',register:'STATUS64',field:'本文中的字段表',source:'示例 PDF'},links:{instance:{kind:'entity',id:'use:registers:template'},register:{kind:'entity',id:'manual:status64'},field:{kind:'page',id:'docs/charts/registers',anchor:'manual:status64.cross'},source:{kind:'pdf',id:'location',target:'detail'}}}
+ {id:'manual:instance1',values:{instance:'采样器 1',register:'STATUS64',field:'本文中的字段表',source:'示例 PDF'},links:{instance:{kind:'entity',id:'use:registers:template'},register:{kind:'entity',id:'manual:status64'},field:{kind:'page',id:'docs/charts/data-layout/registers',anchor:'manual:status64.cross'},source:{kind:'pdf',id:'location',target:'detail'}}}
 ]}]}};

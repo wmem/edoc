@@ -6,7 +6,7 @@
 {% waveform id="system:handshake" /%}
 ```
 
-id 必需，只接受当前工程的 Waveform。数据放在 waveforms 中，format 当前固定 wavejson，data 为 WaveJSON，semantic 区分 specification 与 simulation，source 记录依据；[精确字段](../ir.mdoc#ref:waveforms)与[完整创建例子](../../charts/waveforms.mdoc#use:waveform-create)分别按需读取。
+id 必需，只接受当前工程的 Waveform。数据放在 waveforms 中，format 当前固定 wavejson，data 为 WaveJSON，semantic 区分 specification 与 simulation，source 记录依据；[精确字段](../ir.mdoc#ref:waveforms)与[完整创建例子](../../charts/timing/waveforms.mdoc#use:waveform-create)分别按需读取。
 
 不需要 Node、Port、Connection 或关系视图；WaveJSON 的信号名也不会自动成为独立的工程 Port。需关联真实设计事实时，由工程维护明确的解释和引用。
 

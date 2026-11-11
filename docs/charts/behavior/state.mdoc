@@ -1,0 +1,44 @@
+{% section id="use:state" title="状态图：FPGA 状态机" %}
+
+状态框表示当前处于什么状态，箭头回答“发生什么事件或满足什么条件后，转到哪个状态”。箭头回到自身表示保持当前状态；迁移上的 / 后面可以写动作。普通状态使用椭圆，初始入口用实心点。
+
+{% section id="use:state-simple" title="四状态序列检测器与同源数据" %}
+
+下面检测连续输入中是否出现 1011。S0 表示还没有匹配，S1、S10、S101 分别表示已经匹配前缀 1、10、101。读图时从任意状态出发，分别沿 din=0、din=1 的箭头查看下一状态；在 S101 收到 1 时报告 matched，并保留末尾的 1，继续检测重叠序列。
+
+迁移关系参考 [AMD UG897 的 1011 检测器](https://docs.amd.com/r/en-US/ug897-vivado-sysgen-user/Finite-State-Machines)。这是改写的说明模型，另行约定 clk 上升沿采样和 rst_n 低有效同步复位，不是从 KY3133/KY3134 生产 RTL 提取的状态机。
+
+{% state-diagram id="author:state" /%}
+
+下面就是上图使用的完整 JSON，可直接保存为 docs/ir/authoring/states.json；不需要手写坐标或对齐参数。
+
+{% code file="docs/ir/authoring/states.json" language="json" /%}
+
+```text {% process=false %}
+{% state-diagram id="author:state" /%}
+```
+
+{% /section %}
+{% section id="use:state-complex" title="条件、自环与时钟如何理解" %}
+
+本例每个状态都明确画出输入 0 和 1 的去向，包括 S0 收到 0、S1 收到 1 时的自环。输入 1011011 会报告两次匹配；不能在第一次匹配后直接丢弃已有的末尾前缀。
+
+trigger.kind=clock 指定采样时钟沿，guard 是该沿上判断的输入条件。本例所有迁移都声明相同的时钟，图上统一说明，箭头专注显示条件和动作；原始 JSON 与 query 仍保留每条迁移的完整 trigger。时钟或边沿不一致、事件触发或未声明触发时，工具不会这样合并。
+
+initial 只声明图的初始入口；复位是否同步、有效极性、对任意状态的作用和优先级由 semantics.reset 单独说明。不要仅凭一个初始箭头就推断硬件的复位方式。复位说明对整个控制器生效，无需画四条重复的复位线。
+
+edoc 显示这些约定并检查结构，不执行守卫或 RTL。状态编码、寄存器输出等可以用语义说明或 bindings 记录。层级、并行及历史状态仍支持，复杂结构示例保留在[开发回归图集](../../development/records/regression/graphics.mdoc#gallery:state-hierarchy)，不挤入四状态 RTL 的阅读主线。
+
+{% /section %}
+{% section id="use:state-model" title="模型、布局与查询" %}
+
+states 定义局部状态，transitions 用 from/to 引用状态 ID，trigger、guard 和 actions 分别保存触发、条件和动作。省略 kind 的状态为普通状态；省略 trigger 表示未声明，不能自动解释为 completion 或 always。
+
+状态图默认按迁移中的循环关系组织布局，循环内部在二维空间展开，自环和双向边保留独立曲线；没有循环的部分保留层次结构。曲线端点接到真实状态轮廓，条件和动作沿所属曲线水平显示。图下 JSON 只声明状态与迁移，不需要手写控制点。
+
+特殊展示可在 views 中声明 layout.arrangement=layered 选择分层排列，layout.routing=orthogonal 选择正交线，或设置 display.repeatClock=true 逐条显示公共时钟。排列与线型互相独立，显式布局约束继续优先，字段见[专用契约](../../reference/tags/control-diagrams.mdoc)和[原生绘图](../diagrams/drawing.mdoc)。
+
+精确查询使用 query --id author:state --element seen101；read --id author:state 分页读取同一份模型。局部 ID 在同一模型的状态、区域、迁移及注释间唯一，不占用工程全局 ID。
+
+{% /section %}
+{% /section %}

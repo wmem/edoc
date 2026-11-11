@@ -1,3 +1,4 @@
+import {controlDiagnostics} from '../extensions/control-diagram/diagnostics.ts';
 import type {Graph,Manifest,ResourceType,Entity,RecordEntry,Connection,Diagnostic,Interface} from './types.ts';
 import {validateSchema} from './schema.ts';
 import {resourceSchemas} from './extension-contracts.ts';
@@ -22,6 +23,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
   if(errors.length){diagnostics.push(...errors.map(d=>({...d,path:(part.prefix??'')+d.path})));continue;}
   for(const [i,entity]of part.data[part.type].entries()){
    const path=`${part.prefix??''}/${part.type}/${i}`;
+   if(part.type==='views'&&('model'in entity||entity.kind==='plot')){const strict=validateSchema('view',{views:[entity]},part.file);if(strict.length){diagnostics.push(...strict.map(d=>({...d,path:path+d.path.replace(/^\/views\/0/,'' )})));continue;}}
    add(entity,part.type==='views'?'view':entity.kind,part.file,path);
    if(entity.kind==='table')entity.rows.forEach((row:Entity,p:number)=>add(row,'row',part.file,`${path}/rows/${p}`,entity.id));
    if(entity.kind==='register')entity.fields.forEach((field:Entity,p:number)=>add(field,'register-field',part.file,`${path}/fields/${p}`,entity.id));
@@ -33,7 +35,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
  }
  if(diagnostics.length)throw new EdocError(diagnostics);
  const graph:Graph={attachments:options.attachments,manifest:metadata,projectRoot:options.root,irDirectory:options.directory??options.root,index,connections,adjacency:new Map(),...(options.documents?{documentPlan:options.documents}:{})};
- prepareMachineClauses(graph);registerDocuments(graph);registerClauses(graph);validateResources(graph);validateDocuments(graph);
+ prepareMachineClauses(graph);registerDocuments(graph);registerClauses(graph);validateResources(graph);validateDocuments(graph);graph.controlDiagnostics=controlDiagnostics(graph);
  graph.interfaceByPort=new Map();for(const entry of index.values())if(entry.type==='interface')for(const id of (entry.entity as Interface).members)graph.interfaceByPort.set(id,entry.id);
  for(const connection of connections.values())for(const id of connection.endpoints){
   const ids=[id,index.get(id)!.ownerId,graph.interfaceByPort.get(id)].filter(Boolean) as string[];

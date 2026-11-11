@@ -8,8 +8,11 @@ import {drawingInterfaceScene} from '../drawing/interface-scene.ts';
 import {prepareInterfaceModel,initialInterfaceState} from './interfaces.ts';
 import type {Scene} from './scene.ts';
 
+import {presentation,projectControl} from '../extensions/control-diagram/project.ts';
 // 构建/导出入口：原生显示数据和工程接口投影共享求解器；浏览器只加载纯求解部分。
-export async function scene(graph:Graph,id:string,options:{interfaces?:'expanded'}={}):Promise<Scene>{
+export async function scene(graph:Graph,id:string,options:{interfaces?:'expanded';control?:'full'}={}):Promise<Scene>{
+  const control=presentation(graph,id);
+  if(control){try{const input=projectControl(control,options.control==='full'?{collapsed:[]}:{}),geometry=await solveDrawing(input);const result=drawingReaderScene(input,geometry,id,control.view.label??control.model.label??id,control.view.display);return {...result,kind:control.model.kind,control,layoutEngine:'drawing'};}catch(error){if(!(error instanceof DrawingError))throw error;const origin=graph.index.get(id)!;throw new EdocError([{code:error.code,file:origin.location.file,path:origin.location.path+error.path,id,message:`${error.message}（${error.stage}；${error.ids.join('、')}）`}]);}}
   const entry=graph.index.get(id),view=entry?.entity as RelationView;
   try{
     if(view?.drawing){

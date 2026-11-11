@@ -84,7 +84,7 @@ FPGA–Flash 展示 Ball、Pin、功能名和 clock / control / data 分类。FL
 
 状态图表达显式迁移与条件标签，反向迁移保持独立路径。这是规范示意，不是运行中的仿真，也没有自动解析 HDL 状态机。
 
-{% relation-diagram id="mac:tx-state" /%}
+{% state-diagram id="mac:tx-state" /%}
 {% /section %}
 
 {% section id="gallery:layout" title="布局与避障" %}
@@ -150,4 +150,11 @@ WaveJSON 描述握手与反压。它作为独立的时序视图渲染，标为�
 {% data-table id="board:pins" /%}
 {% data-table id="mac:port-table" /%}
 规范与覆盖条款在手册的“样例查询与来源”中同源接入；独立旧 Gallery 构建将两份原片段作为独立入口。
+{% section id="gallery:state-hierarchy" title="层级与并行状态回归" %}
+
+保留 [W3C SCXML 并行微波炉](https://www.w3.org/TR/scxml/#MicrowaveParallel)的独立中文投影，用于层级、并行、内部迁移和跨容器路线回归。它不是 RTL 入门示例，也不表示执行了 SCXML 或验证了硬件。
+
+{% state-diagram id="example:microwave" /%}
+
+{% /section %}
 {% /section %}

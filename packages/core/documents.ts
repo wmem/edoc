@@ -123,6 +123,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const references:DocumentReference[]=[];
  for(const {node,file,line}of checks){
   if(node.type==='tag'&&(Object.hasOwn(referenceTargets,node.tag??'')||['reference','page','attachment'].includes(node.tag??'')))references.push({id:node.attributes.id,tag:node.tag!,file,line,...(node.attributes.project!==undefined?{project:node.attributes.project}:{}),...(node.attributes.target!==undefined?{target:node.attributes.target}:{})});
+  if(node.type==='tag'&&['state-diagram','flowchart','sequence-diagram','binary-diagram','binary-field-table'].includes(node.tag)&&node.attributes.view)references.push({id:node.attributes.view,tag:'relation-diagram',file,line});
   if(node.type==='tag'&&node.tag==='clause-list'){for(const id of [node.attributes.for,...node.attributes.ids??[]])references.push({id,tag:node.tag,file,line});}
   if(node.type==='image'||node.type==='tag'&&base.tags?.[node.tag!]?.render==='img'){
    const src=node.type==='image'?node.attributes.src:node.transformAttributes(base).src;
@@ -155,6 +156,7 @@ export function validateDocuments(graph:Graph){
    const file=locations.get(node)?.file??entryFile;
    if(node.type==='tag'&&Object.hasOwn(tags,node.tag??'')){
     const id=node.attributes.id;
+    if(['state-diagram','flowchart','sequence-diagram','binary-diagram','binary-field-table'].includes(node.tag)&&node.attributes.view){const v=graph.index.get(node.attributes.view);if(v?.type!=='view'||!('model'in v.entity)||v.entity.model!==id||v.entity.kind!==({'state-diagram':'state-machine',flowchart:'flowchart','sequence-diagram':'sequence','binary-diagram':'binary-layout','binary-field-table':'binary-layout'} as Record<string,string>)[node.tag])errors.push({code:'DOCUMENT_REFERENCE',file,path:`#L${locations.get(node)?.line??1}`,id:node.attributes.view,message:'显示视图必须引用标签指定的同种模型'});}
     if(node.attributes.project!==undefined&&(typeof node.attributes.project!=='string'||!node.attributes.project.trim()))errors.push({code:'DOCUMENT_PROJECT',file,path:`#L${locations.get(node)?.line??1}`,message:'project 必须是非空稳定项目 ID'});
     if(['reference','page','attachment'].includes(node.tag??'')&&typeof id==='string'&&!id.trim())errors.push({code:'DOCUMENT_REFERENCE_ID',file,path:`#L${locations.get(node)?.line??1}`,message:'跳转目标 ID 不能空白'});
     if(node.tag==='attachment'&&node.attributes.target!==undefined&&(typeof node.attributes.target!=='string'||!node.attributes.target.trim()))errors.push({code:'DOCUMENT_REFERENCE_ID',file,path:`#L${locations.get(node)?.line??1}`,message:'PDF 位置 ID 不能空白，省略 target 才表示首页'});

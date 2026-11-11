@@ -1,6 +1,6 @@
 {% section id="ref:graph" title="图形参考" %}
 
-RelationView 是关系图视图，不是所有图表的公共视图。数据放在 views 中，query 类型为 view，正文使用 relation-diagram。必需 id、kind、include；label、layout、display、source 可选。kind 为 architecture/interface/wiring/state。include.objects 与 include.relations 引用本工程稳定 ID，不复制数据。
+RelationView 是关系图视图，不是所有图表的公共视图。数据放在 views 中，query 类型为 view，正文使用 relation-diagram。必需 id、kind、include；label、layout、display、source 可选。kind 为 architecture/interface/wiring；状态机与流程分别使用 [专用模型](tags/control-diagrams.mdoc)。include.objects 与 include.relations 引用本工程稳定 ID，不复制数据。
 
 {% section id="ref:drawing" title="RelationView.drawing" %}
 
@@ -15,6 +15,12 @@ RelationView 是关系图视图，不是所有图表的公共视图。数据放�
 | constraints | 带唯一id的place、size、order、align、port、route、fixedRoute、label |
 
 parentId表达真实显示包含，不能有循环；portGroups是显示分组，不创建工程协议。content为text或有序stack，不执行HTML/JS。匿名slot不显示端口文字，适合模块关系线的独立锚点。style引用内置关系样式；未知值明确报错。
+
+Drawing.layout.alignment 可选 auto/none，状态/流程投影默认 auto。arrangement 可选 layered/cyclic，默认 layered，状态投影默认 cyclic；cyclic 将平面图中三个及以上节点的强连通分量按二维循环排列，分量之间保留层次，不要求所有节点都成环。layered 整理平面主链与泳道的中心线及同层位置。两者都联合处理匿名连接挂点；已有显式布局约束和真实端口优先。复合容器沿用层级布局和局部约束，不为展示改写源关系。
+
+Node.shape 可选择 rectangle、rounded、ellipse、initial、final、terminate、diamond、bar、history、io、call、wait、connector、region、lane、note；普通框图默认为 rectangle。shape 是显示轮廓，不替代状态/流程的语义 kind。圆、椭圆、菱形及 I/O 按真实轮廓挂线；未知形状报错。region 表示虚线区域，lane 是职责泳道的显示投影。
+
+Drawing.layout.routing 可选 orthogonal、curved；原有 polyline 仍明确报未实现。默认 orthogonal，状态投影默认 curved。curved 的求解结果中 paths[].points 是各段结点，curves 与相邻结点逐段对应，每项仅保存三次 Bezier 的 c1、c2 控制点；from/to 引用连接端 ID，即使闭合自环的两端坐标相同也能保留箭头身份。没有 curves 的路径仍是折线。标签比例按曲线弧长解释，端点方向按切线解释，输出范围按曲线极值计算。三次曲线使用 [SVG C 指令](https://www.w3.org/TR/SVG/paths.html#PathDataCubicBezierCommands)，网页不重新计算控制点。
 
 place坐标相对父内容区，根节点相对根坐标；port.offset是整条边的0～1比例。align.targets可引用节点边缘或端口。route和fixedRoute的frame为root或包含相应端点的容器，点坐标相对该内容区；fixedRoute使用端点/分叉ID和全部折点，不能创造虚假的电气合并。全部硬约束都验证，不能静默放宽；hints.main和channels是可报告回退的偏好。
 

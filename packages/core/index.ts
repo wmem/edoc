@@ -23,6 +23,8 @@ export {preflightBook} from './document-preflight.ts';
 export {resolveLinkTarget,entitySource} from './link-target.ts';
 export {registerProjection,resetText} from '../extensions/register/model.ts';
 
-export type {Drawing,DrawingScene,Constraint as DrawingConstraint} from '../drawing/types.ts';
+export type {Drawing,DrawingScene,DrawingPath,CurveControl,Constraint as DrawingConstraint} from '../drawing/types.ts';
 export {solveDrawing} from '../drawing/solve.ts';
 export {validateDrawing} from '../drawing/validate.ts';
+
+export {queryElement} from './query.ts';

@@ -6,271 +6,362 @@
     "views": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "$ref": "common.schema.json#/$defs/id"
+        "if": {
+          "properties": {
+            "kind": {
+              "enum": [
+                "state-machine",
+                "flowchart",
+                "sequence",
+                "binary-layout",
+                "plot"
+              ]
+            }
           },
-          "label": {
-            "type": "string",
-            "minLength": 1
-          },
-          "kind": {
-            "enum": [
-              "architecture",
-              "interface",
-              "wiring",
-              "state"
-            ]
-          },
-          "include": {
-            "type": "object",
-            "properties": {
-              "objects": {
-                "$ref": "common.schema.json#/$defs/ids"
-              },
-              "relations": {
-                "$ref": "common.schema.json#/$defs/ids"
-              }
-            },
-            "required": [
-              "objects",
-              "relations"
-            ],
-            "additionalProperties": false
-          },
-          "layout": {
-            "type": "object",
-            "properties": {
-              "direction": {
-                "enum": [
-                  "LR",
-                  "RL",
-                  "TB",
-                  "BT"
-                ]
-              },
-              "routing": {
-                "enum": [
-                  "orthogonal",
-                  "polyline"
-                ]
-              },
-              "portOrder": {
-                "$ref": "common.schema.json#/$defs/ids"
-              },
-              "positions": {
-                "type": "array",
-                "items": {
+          "required": [
+            "kind"
+          ]
+        },
+        "then": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "kind": {
+                  "enum": [
+                    "state-machine",
+                    "flowchart"
+                  ]
+                },
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "focus": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "collapsed": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "layout": {
+                  "$ref": "drawing.schema.json#/properties/layout"
+                },
+                "display": {
                   "type": "object",
                   "properties": {
-                    "objectId": {
-                      "$ref": "common.schema.json#/$defs/id"
+                    "showRelationLabels": {
+                      "type": "boolean"
                     },
-                    "x": {
-                      "type": "number"
-                    },
-                    "y": {
-                      "type": "number"
+                    "repeatClock": {
+                      "type": "boolean"
                     }
                   },
-                  "required": [
-                    "objectId",
-                    "x",
-                    "y"
-                  ],
+                  "required": [],
                   "additionalProperties": false
                 }
               },
-              "interfaceOrder": {
-                "$ref": "common.schema.json#/$defs/ids"
+              "required": [
+                "id",
+                "kind",
+                "model"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "$ref": "sequence-view.schema.json#/$defs/view"
+            },
+            {
+              "$ref": "binary-view.schema.json#/$defs/view"
+            },
+            {
+              "$ref": "plot.schema.json#/$defs/view"
+            }
+          ]
+        },
+        "else": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "enum": [
+                "architecture",
+                "interface",
+                "wiring"
+              ]
+            },
+            "include": {
+              "type": "object",
+              "properties": {
+                "objects": {
+                  "$ref": "common.schema.json#/$defs/ids"
+                },
+                "relations": {
+                  "$ref": "common.schema.json#/$defs/ids"
+                }
               },
-              "interfaceSides": {
-                "type": "object",
-                "additionalProperties": {
+              "required": [
+                "objects",
+                "relations"
+              ],
+              "additionalProperties": false
+            },
+            "layout": {
+              "type": "object",
+              "properties": {
+                "direction": {
                   "enum": [
-                    "left",
-                    "right"
+                    "LR",
+                    "RL",
+                    "TB",
+                    "BT"
                   ]
-                }
-              },
-              "constraints": {
-                "type": "array",
-                "items": {
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "const": "order"
-                        },
-                        "axis": {
-                          "enum": [
-                            "x",
-                            "y"
-                          ]
-                        },
-                        "nodes": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "common.schema.json#/$defs/id"
-                          },
-                          "minItems": 2,
-                          "uniqueItems": true
-                        },
-                        "gap": {
-                          "type": "number",
-                          "minimum": 16
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "axis",
-                        "nodes"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "const": "align"
-                        },
-                        "axis": {
-                          "enum": [
-                            "x",
-                            "y"
-                          ]
-                        },
-                        "nodes": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "common.schema.json#/$defs/id"
-                          },
-                          "minItems": 2,
-                          "uniqueItems": true
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "axis",
-                        "nodes"
-                      ],
-                      "additionalProperties": false
-                    }
+                },
+                "routing": {
+                  "enum": [
+                    "orthogonal",
+                    "polyline"
                   ]
-                }
-              },
-              "relationHints": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "object",
-                  "properties": {
-                    "backbone": {
-                      "type": "array",
-                      "items": {
+                },
+                "portOrder": {
+                  "$ref": "common.schema.json#/$defs/ids"
+                },
+                "positions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectId": {
                         "$ref": "common.schema.json#/$defs/id"
                       },
-                      "minItems": 2,
-                      "uniqueItems": true,
-                      "maxItems": 2
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
                     },
-                    "endpointSides": {
-                      "type": "object",
-                      "additionalProperties": {
+                    "required": [
+                      "objectId",
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "interfaceOrder": {
+                  "$ref": "common.schema.json#/$defs/ids"
+                },
+                "interfaceSides": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "enum": [
+                      "left",
+                      "right"
+                    ]
+                  }
+                },
+                "constraints": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "order"
+                          },
+                          "axis": {
+                            "enum": [
+                              "x",
+                              "y"
+                            ]
+                          },
+                          "nodes": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "common.schema.json#/$defs/id"
+                            },
+                            "minItems": 2,
+                            "uniqueItems": true
+                          },
+                          "gap": {
+                            "type": "number",
+                            "minimum": 16
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "axis",
+                          "nodes"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "const": "align"
+                          },
+                          "axis": {
+                            "enum": [
+                              "x",
+                              "y"
+                            ]
+                          },
+                          "nodes": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "common.schema.json#/$defs/id"
+                            },
+                            "minItems": 2,
+                            "uniqueItems": true
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "axis",
+                          "nodes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "relationHints": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "backbone": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "maxItems": 2
+                      },
+                      "endpointSides": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "enum": [
+                            "left",
+                            "right",
+                            "top",
+                            "bottom"
+                          ]
+                        }
+                      },
+                      "channel": {
                         "enum": [
                           "left",
                           "right",
                           "top",
                           "bottom"
                         ]
+                      },
+                      "priority": {
+                        "enum": [
+                          "main",
+                          "normal"
+                        ]
                       }
                     },
-                    "channel": {
-                      "enum": [
-                        "left",
-                        "right",
-                        "top",
-                        "bottom"
-                      ]
-                    },
-                    "priority": {
-                      "enum": [
-                        "main",
-                        "normal"
-                      ]
-                    }
-                  },
-                  "additionalProperties": false
+                    "additionalProperties": false
+                  }
                 }
-              }
+              },
+              "required": [],
+              "additionalProperties": false
             },
-            "required": [],
-            "additionalProperties": false
-          },
-          "display": {
-            "type": "object",
-            "properties": {
-              "showInterfaceDetails": {
-                "type": "boolean"
-              },
-              "showPortAttributes": {
-                "type": "boolean"
-              },
-              "showRelationLabels": {
-                "type": "boolean"
-              },
-              "portAttributes": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1
+            "display": {
+              "type": "object",
+              "properties": {
+                "showInterfaceDetails": {
+                  "type": "boolean"
                 },
-                "uniqueItems": true
-              },
-              "collapsedGroups": {
-                "$ref": "common.schema.json#/$defs/ids"
-              },
-              "classes": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1
+                "showPortAttributes": {
+                  "type": "boolean"
                 },
-                "uniqueItems": true
-              },
-              "interfaceMode": {
-                "enum": [
-                  "collapsed",
-                  "expanded"
-                ]
-              },
-              "interfaceOverrides": {
-                "type": "object",
-                "additionalProperties": {
+                "showRelationLabels": {
+                  "type": "boolean"
+                },
+                "portAttributes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "collapsedGroups": {
+                  "$ref": "common.schema.json#/$defs/ids"
+                },
+                "classes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "interfaceMode": {
                   "enum": [
                     "collapsed",
                     "expanded"
                   ]
+                },
+                "interfaceOverrides": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "enum": [
+                      "collapsed",
+                      "expanded"
+                    ]
+                  }
                 }
-              }
+              },
+              "required": [],
+              "additionalProperties": false
             },
-            "required": [],
-            "additionalProperties": false
+            "source": {
+              "$ref": "common.schema.json#/$defs/source"
+            },
+            "drawing": {
+              "$ref": "drawing.schema.json"
+            }
           },
-          "source": {
-            "$ref": "common.schema.json#/$defs/source"
-          },
-          "drawing": {
-            "$ref": "drawing.schema.json"
-          }
+          "required": [
+            "id",
+            "kind",
+            "include"
+          ],
+          "additionalProperties": false
         },
-        "required": [
-          "id",
-          "kind",
-          "include"
-        ],
-        "additionalProperties": false
+        "type": "object"
       }
     }
   },

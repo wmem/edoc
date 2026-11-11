@@ -24,7 +24,8 @@ export function crosses(a:Point,b:Point,r:Rect):boolean{
 }
 export function simplify(points:Point[]):Point[]{
  const out:Point[]=[];
- for(const p of points){if(out.length&&same(out.at(-1)!,p))continue;while(out.length>1){const a=out.at(-2)!,b=out.at(-1)!;if((a.x===b.x&&b.x===p.x&&(b.y-a.y)*(p.y-b.y)>=0)||(a.y===b.y&&b.y===p.y&&(b.x-a.x)*(p.x-b.x)>=0))out.pop();else break;}out.push({...p});}
+ // 近似重合的两个正交折点仍可能属于不同轴线，删除其中一个会制造微小斜线。
+ for(const p of points){if(out.length&&out.at(-1)!.x===p.x&&out.at(-1)!.y===p.y)continue;while(out.length>1){const a=out.at(-2)!,b=out.at(-1)!;if((a.x===b.x&&b.x===p.x&&(b.y-a.y)*(p.y-b.y)>=0)||(a.y===b.y&&b.y===p.y&&(b.x-a.x)*(p.x-b.x)>=0))out.pop();else break;}out.push({...p});}
  return out;
 }
 export function splitPath(points:Point[]):{hub:Point;first:Point[];last:Point[]}{

@@ -1,0 +1,1514 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/plot.schema.json",
+  "$defs": {
+    "view": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "$ref": "common.schema.json#/$defs/source"
+        },
+        "mark": {
+          "enum": [
+            "line",
+            "point",
+            "bar",
+            "area",
+            "rule",
+            "errorbar",
+            "boxplot"
+          ]
+        },
+        "encoding": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "y": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "x2": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "y2": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "color": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "detail": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "tooltip": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "order": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "transform": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "filter": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "$ref": "common.schema.json#/$defs/id"
+                      },
+                      "equal": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      },
+                      "range": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "oneOf": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "minItems": 1
+                      }
+                    },
+                    "required": [
+                      "field"
+                    ],
+                    "additionalProperties": false,
+                    "oneOf": [
+                      {
+                        "required": [
+                          "equal"
+                        ],
+                        "properties": {
+                          "equal": {}
+                        }
+                      },
+                      {
+                        "required": [
+                          "range"
+                        ],
+                        "properties": {
+                          "range": {}
+                        }
+                      },
+                      {
+                        "required": [
+                          "oneOf"
+                        ],
+                        "properties": {
+                          "oneOf": {}
+                        }
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "filter"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "aggregate": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "op": {
+                          "enum": [
+                            "count",
+                            "sum",
+                            "mean",
+                            "median",
+                            "min",
+                            "max"
+                          ]
+                        },
+                        "field": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "as": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        }
+                      },
+                      "required": [
+                        "op",
+                        "as"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1
+                  },
+                  "groupby": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "aggregate"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "bin": {
+                    "type": "object",
+                    "properties": {
+                      "step": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "step"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "field": {
+                    "$ref": "common.schema.json#/$defs/id"
+                  },
+                  "as": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                },
+                "required": [
+                  "bin",
+                  "field",
+                  "as"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "quantile": {
+                    "$ref": "common.schema.json#/$defs/id"
+                  },
+                  "probs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "minItems": 1
+                  },
+                  "as": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "groupby": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "uniqueItems": true
+                  },
+                  "method": {
+                    "const": "linear"
+                  }
+                },
+                "required": [
+                  "quantile",
+                  "probs",
+                  "as",
+                  "method"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "layer": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/spec"
+          },
+          "minItems": 1
+        },
+        "facet": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "columns": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "field"
+          ],
+          "additionalProperties": false
+        },
+        "spec": {
+          "$ref": "#/$defs/spec"
+        },
+        "kind": {
+          "const": "plot"
+        },
+        "data": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 200,
+          "maximum": 2400
+        },
+        "height": {
+          "type": "number",
+          "minimum": 160,
+          "maximum": 1600
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "mark": {
+          "enum": [
+            "line",
+            "point",
+            "bar",
+            "area",
+            "rule",
+            "errorbar",
+            "boxplot"
+          ]
+        },
+        "encoding": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "y": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "x2": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "y2": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "color": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "detail": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "tooltip": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "order": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "type": {
+                  "enum": [
+                    "quantitative",
+                    "nominal",
+                    "ordinal",
+                    "temporal"
+                  ]
+                },
+                "aggregate": {
+                  "enum": [
+                    "count",
+                    "sum",
+                    "mean",
+                    "median",
+                    "min",
+                    "max"
+                  ]
+                },
+                "bin": {
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "step": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "step"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "sort": {
+                  "enum": [
+                    "ascending",
+                    "descending",
+                    null
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "transform": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "filter": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "$ref": "common.schema.json#/$defs/id"
+                      },
+                      "equal": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      },
+                      "range": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "oneOf": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "minItems": 1
+                      }
+                    },
+                    "required": [
+                      "field"
+                    ],
+                    "additionalProperties": false,
+                    "oneOf": [
+                      {
+                        "required": [
+                          "equal"
+                        ],
+                        "properties": {
+                          "equal": {}
+                        }
+                      },
+                      {
+                        "required": [
+                          "range"
+                        ],
+                        "properties": {
+                          "range": {}
+                        }
+                      },
+                      {
+                        "required": [
+                          "oneOf"
+                        ],
+                        "properties": {
+                          "oneOf": {}
+                        }
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "filter"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "aggregate": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "op": {
+                          "enum": [
+                            "count",
+                            "sum",
+                            "mean",
+                            "median",
+                            "min",
+                            "max"
+                          ]
+                        },
+                        "field": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        },
+                        "as": {
+                          "$ref": "common.schema.json#/$defs/id"
+                        }
+                      },
+                      "required": [
+                        "op",
+                        "as"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1
+                  },
+                  "groupby": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "aggregate"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "bin": {
+                    "type": "object",
+                    "properties": {
+                      "step": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "step"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "field": {
+                    "$ref": "common.schema.json#/$defs/id"
+                  },
+                  "as": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                },
+                "required": [
+                  "bin",
+                  "field",
+                  "as"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "quantile": {
+                    "$ref": "common.schema.json#/$defs/id"
+                  },
+                  "probs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "minItems": 1
+                  },
+                  "as": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "groupby": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "common.schema.json#/$defs/id"
+                    },
+                    "uniqueItems": true
+                  },
+                  "method": {
+                    "const": "linear"
+                  }
+                },
+                "required": [
+                  "quantile",
+                  "probs",
+                  "as",
+                  "method"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "layer": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/spec"
+          },
+          "minItems": 1
+        },
+        "facet": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "columns": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "field"
+          ],
+          "additionalProperties": false
+        },
+        "spec": {
+          "$ref": "#/$defs/spec"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  }
+}

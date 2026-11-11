@@ -1,0 +1,17 @@
+{% section id="use:data-layout-charts" title="数据布局" %}
+
+{% directory-order items=["registers.mdoc","register-maps.mdoc","binary-layouts.mdoc"] /%}
+
+本领域解释位、字节或地址范围中的数据如何组织。Register 维护位域，RegisterBlock/AddressSpace 组织地址，BinaryLayout 描述报文和描述符；图和表分别投影同一份定义。
+
+| 当前呈现 | 表达能力 | 可以画什么 |
+| --- | --- | --- |
+| [寄存器位域图与字段表](registers.mdoc) | 单个 1～64 位寄存器的字段范围、访问属性、定义复位、未声明/保留位及跨位带显示 | FPGA/MCU 控制与状态寄存器的位图和字段手册 |
+
+正文用 register-diagram 看位分布，用 register-field-table 查字段，两者引用同一寄存器 ID；字段表不要求另外建立 Table。属性没有声明时保留未声明或未知，不能从 RO/RW 或空洞推断复位与保留位。精确契约见[寄存器与字段](../../reference/tags/registers.mdoc)。
+
+[寄存器映射](register-maps.mdoc)组织相对偏移、基址、嵌套与数组，引用现有 Register；[协议布局](binary-layouts.mdoc)支持固定、动态、条件、重复和嵌套字段，保留符号偏移，不继承 Register 的 64 位限制。
+
+精确字段、单位、来源和限制统一查[协议与地址契约](../../reference/tags/engineering-charts.mdoc)。
+
+{% /section %}

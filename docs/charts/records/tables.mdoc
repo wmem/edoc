@@ -14,7 +14,7 @@
 
 结构化表的单元格显示转义后的文本或 JSON，不把字符串再次当作 Markdown、HTML 或标签执行。下面示例中的 `**普通文本**` 会保留星号，不能用它设置粗体或注入链接。
 
-单元格也可将文字和跳转目标分别定义在 values 与 links 中，见[实例到寄存器及字段](registers.mdoc#use:registers:links)。
+单元格也可将文字和跳转目标分别定义在 values 与 links 中，见[实例到寄存器及字段](../data-layout/registers.mdoc#use:registers:links)。
 
 {% /section %}
 
@@ -24,7 +24,7 @@
 
 {% data-table id="system:modules" /%}
 
-先按[数据接入](../engineering/data.mdoc#use:standard-data)保存两个对象，将 {% reference id="ref:table-example" label="最小投影表定义" /%} 保存为 docs/ir/authoring/tables.json。在参与发布的 docs/index.mdoc 加入：
+先按[数据接入](../../engineering/data.mdoc#use:standard-data)保存两个对象，将 {% reference id="ref:table-example" label="最小投影表定义" /%} 保存为 docs/ir/authoring/tables.json。在参与发布的 docs/index.mdoc 加入：
 
 ```text {% process=false %}
 {% data-table id="system:modules" /%}
@@ -66,9 +66,9 @@
 两种跳转回答不同问题：
 
 - {% reference id="author:settings:low" label="查询低功耗行事实" /%}：打开该行的对象详情，查看 values 或 objectId。
-- {% page id="docs/charts/tables" anchor="author:settings:low" label="定位表中的低功耗行" /%}：留在表格文章并滚动到该行。
+- {% page id="docs/charts/records/tables" anchor="author:settings:low" label="定位表中的低功耗行" /%}：留在表格文章并滚动到该行。
 
-page.id 是表所在阅读页的逻辑路径，不含 .md/.mdoc。这里的手册页是 docs/charts/tables；复制上面的配方到自己的 docs/index.mdoc 时使用 docs/index。anchor 使用稳定行 ID，不使用行号或当前排序位置。
+page.id 是表所在阅读页的逻辑路径，不含 .md/.mdoc。这里的手册页是 docs/charts/records/tables；复制上面的配方到自己的 docs/index.mdoc 时使用 docs/index。anchor 使用稳定行 ID，不使用行号或当前排序位置。
 
 ```sh
 edoc query --id author:settings:low
@@ -101,7 +101,7 @@ data-table 默认保留声明顺序，读者可以在列标题上排序或筛选
 
 {% data-table id="author:channels" /%}
 
-{% page id="docs/charts/tables" anchor="author:channel:1000" label="定位到第 1000 个原始通道" /%}
+{% page id="docs/charts/records/tables" anchor="author:channel:1000" label="定位到第 1000 个原始通道" /%}
 
 行链接使用稳定 ID，和当前排序位置无关。如果新的定位请求指向被隐藏的行，阅读器清空本表筛选并提示，排序保持；浏览器返回恢复之前的条件。同一表的不同展示位置独立操作，切换文章后返回或刷新也保留各实例的筛选与排序。
 
@@ -126,7 +126,7 @@ data-table 默认保留声明顺序，读者可以在列标题上排序或筛选
 
 浏览器打印保留当前筛选与顺序，并保留状态行的范围提示；它不是全量数据导出。
 
-字段的权威来源和数据类型见[表格创建](tables.mdoc)，两个展示开关与完整边界见[data-table 契约](../reference/tags/data-table.mdoc)。
+字段的权威来源和数据类型见[表格创建](tables.mdoc)，两个展示开关与完整边界见[data-table 契约](../../reference/tags/data-table.mdoc)。
 
 {% /section %}
 {% /section %}

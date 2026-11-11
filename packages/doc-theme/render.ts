@@ -1,3 +1,7 @@
+import {engineeringSVG,engineeringHTML} from '../figure/render.ts';
+import {binaryFieldTable} from '../extensions/binary-layout/render.ts';
+import {registerMapTable} from '../extensions/register-map/render.ts';
+import type {BinaryView} from '../core/types.ts';
 import {registerDiagramHTML,registerFieldTable} from '../extensions/register/render.ts';
 import type {Register} from '../extensions/register/types.ts';
 import {readingOutline,headingGroups} from './reading-structure.ts';
@@ -14,6 +18,7 @@ import {pageId} from '../core/book.ts';
 import {routeHash} from '../core/routes.ts';
 import {prepareOutline} from '../core/outline.ts';
 import {tableHTML} from '../extensions/data-table/render.ts';
+import {presentation} from '../extensions/control-diagram/project.ts';
 import {relationDiagramHTML} from '../extensions/relation-diagram/render.ts';
 import {interfaceTableHTML} from '../extensions/relation-diagram/interface-table.ts';
 export {tableHTML,field} from '../extensions/data-table/render.ts';
@@ -21,8 +26,10 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
  graph=presentationGraph(graph);
  const aliases=new Map<string,string|undefined>();
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
- const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&node.tag==='relation-diagram')usedViews.add(node.attributes.id);
- for(const id of usedViews){scenes[id]=await (options.scene??scene)(graph,id);printScenes[id]=scenes[id].interfaceModel?await (options.scene??scene)(graph,id,{interfaces:'expanded'}):scenes[id];}
+ const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['relation-diagram','state-diagram','flowchart'].includes(node.tag))usedViews.add(node.attributes.view??node.attributes.id);
+ for(const id of usedViews){scenes[id]=await (options.scene??scene)(graph,id);printScenes[id]=scenes[id].control?await (options.scene??scene)(graph,id,{control:'full'}):scenes[id].interfaceModel?await (options.scene??scene)(graph,id,{interfaces:'expanded'}):scenes[id];}
+ const figures=new Map<string,{current:string;full:string}>();
+ for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['sequence-diagram','binary-diagram','plot','register-map'].includes(node.tag)){const id=node.attributes.view??node.attributes.id;if(!figures.has(id)){const current=await engineeringSVG(graph,id);figures.set(id,{current,full:await engineeringSVG(graph,id,true)});}}
  const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0,tableCounter=0;const tableInstances=new Map<string,number>();
  const specIds=new Set(plan.all.filter(e=>e.sectionId&&graph.index.get(e.sectionId)?.type==='clause').map(e=>e.id));
  const reading=readingOutline(plan.roots,title,specIds),usedIds=new Set(plan.all.map(e=>e.id));
@@ -70,10 +77,13 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
    if(type==='page')return `<a href="${esc(routeHash({kind:'page',project:a.project??graph.manifest.projectId,id,...(a.anchor?{anchor:a.anchor}:{})}))}">${esc(a.label??id)}</a>`;
    if(type==='attachment')return `<a class="attachment-link" href="${esc(routeHash({kind:'pdf',project:a.project??graph.manifest.projectId,id,...(a.target?{target:a.target}:{})}))}">${esc(a.label??(!a.project||a.project===graph.manifest.projectId?graph.attachments?.[id]?.title:undefined)??id)}</a>`;
    if(type==='include'&&a.project){const link=options.projectLink?.(a.project);return link?`<a class="project-entry" href="${esc(routeHash({kind:'page',project:link.project,id:link.page}))}">进入 ${esc(link.title)}</a>`:'';}
+   if(['sequence-diagram','binary-diagram','plot','register-map'].includes(type)){const key=a.view??id,figure=figures.get(key)!;return engineeringHTML(key,figure.current,figure.full,type==='register-map'?registerMapTable(graph,id):'');}
+   if(type==='binary-field-table')return binaryFieldTable(graph,id,a.view?graph.index.get(a.view)!.entity as BinaryView:{});
    if(type==='data-table')return renderTable(graph.index.get(id)!.entity as Table,scope,a);
    if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId);
    if(type==='register-field-table')return renderTable(registerFieldTable(graph.index.get(id)!.entity as Register,graph),scope,{});
    if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
+   if(type==='state-diagram'||type==='flowchart'){const target=a.view??id;return relationDiagramHTML(target,scenes[target],printScenes[target],++counter);}
    if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);
    if(type==='interface-table')return interfaceTableHTML(graph,id,a.mode??'detailed');
   }

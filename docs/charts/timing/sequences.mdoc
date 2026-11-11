@@ -1,0 +1,36 @@
+{% section id="use:sequences" title="消息交互图" %}
+
+消息交互图回答“谁向谁发送了什么，哪些事件必须先发生”。主机与设备协议、驱动初始化、固件升级、跨模块请求应答适合使用 Sequence；逐拍电平变化使用[波形](waveforms.mdoc)，单个模块的状态迁移使用[状态图](../behavior/state.mdoc)。
+
+{% section id="use:sequence-simple" title="简单：请求与应答" %}
+
+最少只需 participants 和 steps。参与者与消息的 id 在本模型内唯一，不必先建立 Node 或 Connection。默认箭头不声明调用同步性；确实需要表达调用、异步通知或返回时再加 mode。
+
+{% sequence-diagram id="seq:request" /%}
+
+replyTo 将应答与请求明确关联，不靠箭头颜色或文字猜测。点击消息可查局部身份与来源；工具栏可缩放、适配、按 ID 定位，并分别下载当前视口和完整图的 SVG。
+
+{% /section %}
+{% section id="use:sequence-complex" title="复杂：片段、子交互与时间约束" %}
+
+下面是构造的固件升级规范示例：先鉴权，再分块写入；每块有成功或重传分支，随后有两个并行活动。ref 引用另一 Sequence 并映射参与者，鉴权在此视图中展开。loop、alt、par 保留各自含义，不将它们都压成普通消息。
+
+{% sequence-diagram id="seq:upgrade" view="view:upgrade" /%}
+
+纵向距离不代表真实耗时。par 分支之间没有隐式全局屏障；图中上下排列仅方便阅读，精确事件偏序由 query 返回。右侧约束说明升级时限，不表示已经进行计时或仿真。选择片段后可折叠/展开，双击 ref 可展开子交互。
+
+{% /section %}
+{% section id="use:sequence-data" title="数据与查询" collapsed=true %}
+
+以下文件就是本页的数据来源。普通场景只写参与者、from/to 和消息文字；复杂场景再加片段、生命周期或约束。完整字段与实现边界见[消息契约](../../reference/tags/engineering-charts.mdoc#ref:tag-sequence-diagram)。
+
+{% code file="docs/ir/authoring/sequences.json" language="json" /%}
+
+```sh
+edoc query --id seq:upgrade --element write
+edoc read --id seq:upgrade
+edoc export --view view:upgrade --format svg --output upgrade.svg
+```
+
+{% /section %}
+{% /section %}

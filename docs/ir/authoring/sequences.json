@@ -1,0 +1,254 @@
+{
+  "sequences": [
+    {
+      "id": "seq:request",
+      "kind": "sequence",
+      "label": "请求与应答",
+      "participants": [
+        {
+          "id": "host",
+          "label": "主机"
+        },
+        {
+          "id": "fpga",
+          "label": "FPGA"
+        }
+      ],
+      "steps": [
+        {
+          "id": "request",
+          "from": "host",
+          "to": "fpga",
+          "label": "读取状态"
+        },
+        {
+          "id": "reply",
+          "from": "fpga",
+          "to": "host",
+          "label": "状态应答",
+          "mode": "return",
+          "replyTo": "request"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/sequences.json",
+        "selector": "seq:request"
+      }
+    },
+    {
+      "id": "seq:auth",
+      "kind": "sequence",
+      "label": "升级鉴权子交互",
+      "participants": [
+        {
+          "id": "client",
+          "label": "请求方"
+        },
+        {
+          "id": "service",
+          "label": "设备"
+        }
+      ],
+      "steps": [
+        {
+          "id": "challenge",
+          "from": "client",
+          "to": "service",
+          "label": "发送签名",
+          "mode": "call"
+        },
+        {
+          "id": "verified",
+          "from": "service",
+          "to": "client",
+          "label": "验证通过",
+          "mode": "return",
+          "replyTo": "challenge"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/sequences.json",
+        "selector": "seq:auth"
+      }
+    },
+    {
+      "id": "seq:upgrade",
+      "kind": "sequence",
+      "label": "固件升级：鉴权、重试与并发状态通知",
+      "participants": [
+        {
+          "id": "host",
+          "label": "主机驱动"
+        },
+        {
+          "id": "mcu",
+          "label": "管理 MCU"
+        },
+        {
+          "id": "flash",
+          "label": "Flash"
+        },
+        {
+          "id": "monitor",
+          "label": "监测服务"
+        }
+      ],
+      "steps": [
+        {
+          "id": "begin",
+          "from": "host",
+          "to": "mcu",
+          "label": "请求升级",
+          "mode": "call"
+        },
+        {
+          "id": "authenticate",
+          "kind": "ref",
+          "model": "seq:auth",
+          "participants": {
+            "client": "host",
+            "service": "mcu"
+          }
+        },
+        {
+          "id": "write-loop",
+          "kind": "loop",
+          "guard": "仍有数据块，且重试未超限",
+          "max": 3,
+          "label": "分块写入",
+          "steps": [
+            {
+              "id": "block",
+              "from": "host",
+              "to": "mcu",
+              "label": "写入数据块",
+              "protocol": "binary:packet"
+            },
+            {
+              "id": "write",
+              "from": "mcu",
+              "to": "flash",
+              "label": "编程 Flash",
+              "mode": "call"
+            },
+            {
+              "id": "result",
+              "kind": "alt",
+              "branches": [
+                {
+                  "id": "ok",
+                  "guard": "校验通过",
+                  "steps": [
+                    {
+                      "id": "ack",
+                      "from": "mcu",
+                      "to": "host",
+                      "label": "块确认",
+                      "mode": "signal"
+                    }
+                  ]
+                },
+                {
+                  "id": "retry",
+                  "otherwise": true,
+                  "steps": [
+                    {
+                      "id": "nack",
+                      "from": "mcu",
+                      "to": "host",
+                      "label": "请求重传",
+                      "mode": "signal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "background",
+          "kind": "par",
+          "branches": [
+            {
+              "id": "notify",
+              "label": "升级进度",
+              "steps": [
+                {
+                  "id": "progress",
+                  "from": "mcu",
+                  "to": "host",
+                  "label": "上报进度",
+                  "mode": "signal"
+                }
+              ]
+            },
+            {
+              "id": "telemetry",
+              "label": "独立监测",
+              "steps": [
+                {
+                  "id": "poll",
+                  "from": "monitor",
+                  "to": "flash",
+                  "label": "读取温度",
+                  "mode": "call"
+                },
+                {
+                  "id": "temperature",
+                  "from": "flash",
+                  "to": "monitor",
+                  "label": "温度采样",
+                  "mode": "return",
+                  "replyTo": "poll"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "done",
+          "from": "mcu",
+          "to": "host",
+          "label": "升级完成",
+          "mode": "return",
+          "replyTo": "begin"
+        }
+      ],
+      "constraints": [
+        {
+          "id": "timeout",
+          "kind": "duration",
+          "from": {
+            "message": "begin",
+            "end": "send"
+          },
+          "to": {
+            "message": "done",
+            "end": "receive"
+          },
+          "max": 5,
+          "unit": "s",
+          "label": "升级时限"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/sequences.json",
+        "selector": "seq:upgrade"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "view:upgrade",
+      "kind": "sequence",
+      "model": "seq:upgrade",
+      "expandedCalls": [
+        "authenticate"
+      ],
+      "source": {
+        "file": "docs/ir/authoring/sequences.json",
+        "selector": "view:upgrade"
+      }
+    }
+  ]
+}

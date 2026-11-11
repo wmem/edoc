@@ -5,7 +5,7 @@ import {intersects} from '../render-graph/geometry.ts';
 import {DrawingError} from './types.ts';
 import type {Drawing, Node, Content, Constraint, Direction, Side, NodeGeometry, TextBox, Target, Point} from './types.ts';
 
-type Work = {compact: boolean; source: Node; x: number; y: number; width: number; height: number; minimumWidth: number; minimumHeight: number; header: number; top: number; bottom: number; left: number; right: number; content: Measure; children: Work[]; sides: Map<string, Side>; padding: number; rows: Map<string, number>; extents: Map<Side, number>};
+type Work = {gutterX:number;gutterY:number;compact: boolean; source: Node; x: number; y: number; width: number; height: number; minimumWidth: number; minimumHeight: number; header: number; top: number; bottom: number; left: number; right: number; content: Measure; children: Work[]; sides: Map<string, Side>; padding: number; rows: Map<string, number>; extents: Map<Side, number>};
 type Measure = {width: number; height: number; texts: TextBox[]};
 const forward: Record<Direction, Side> = {LR: 'right', RL: 'left', TB: 'bottom', BT: 'top'};
 const opposite: Record<Side, Side> = {left: 'right', right: 'left', top: 'bottom', bottom: 'top'};
@@ -53,13 +53,18 @@ export async function layoutDrawing(drawing: Drawing): Promise<NodeGeometry[]> {
     const groupLayout = groupedRows(source, sides, Math.max(28, spacing(source.parentId).port), ranks);
     const slotSpan = (side: Side) => Math.max(0, count(side).length - 1) * spacing(source.parentId).port + 24;
     const titleHeight = text('title', source.label, 17, 220).height;
-    const minimumWidth = compact ? Math.max(160, ...wrapText(source.label, 17, 220).map(l => measureText(l, 17) + 40), slotSpan('top'), slotSpan('bottom')) : Math.max(160, ...wrapText(source.label, 17, 220).map(l => measureText(l, 17) + 40), left + right + content.width + 44, sideRow('top') + 24, sideRow('bottom') + 24, groupLayout.width + 24);
-    const minimumHeight = compact ? Math.max(48, titleHeight + 24, slotSpan('left'), slotSpan('right')) : top + header + Math.max(content.height, groupLayout.height, Math.max(count('left').length, count('right').length) * Math.max(spacing(source.parentId).port, ...ports.map(portHeight)), 20) + 26 + bottom;
+    let minimumWidth = compact ? Math.max(160, ...wrapText(source.label, 17, 220).map(l => measureText(l, 17) + 40), slotSpan('top'), slotSpan('bottom')) : Math.max(160, ...wrapText(source.label, 17, 220).map(l => measureText(l, 17) + 40), left + right + content.width + 44, sideRow('top') + 24, sideRow('bottom') + 24, groupLayout.width + 24);
+    let minimumHeight = compact ? Math.max(48, titleHeight + 24, slotSpan('left'), slotSpan('right')) : top + header + Math.max(content.height, groupLayout.height, Math.max(count('left').length, count('right').length) * Math.max(spacing(source.parentId).port, ...ports.map(portHeight)), 20) + 26 + bottom;
+    if (['initial','final','terminate','history','connector','bar'].includes(source.shape??'')) { minimumWidth=source.shape==='bar'?120:source.shape==='history'?44:28; minimumHeight=source.shape==='bar'?12:source.shape==='history'?44:28; }
+    if(source.shape==='ellipse'){const title=text('title',source.label,17,220);minimumWidth=Math.max(160,(Math.max(title.width,content.width)+24)*1.5);minimumHeight=Math.max(88,(title.height+(content.height?content.height+12:0)+24)*1.5);}
+    if(source.shape==='diamond'){minimumWidth=Math.max(120,measureText(source.label,15)*2+48);minimumHeight=Math.max(90,wrapText(source.label,15,160).length*44+36);}
+    for(const loop of drawing.connections.filter(c=>c.ends.every(e=>e.node===source.id))){for(const label of loop.labels??[]){minimumWidth=Math.max(minimumWidth,measureText(label.text.split('\n').sort((a,b)=>b.length-a.length)[0],14)+80);minimumHeight=Math.max(minimumHeight,wrapText(label.text,14,200).length*21+80);}}
+    if(source.shape){const degree=drawing.connections.filter(c=>c.ends.some(e=>e.node===source.id)).length;if(['rounded','ellipse','call','wait','rectangle'].includes(source.shape))minimumHeight=Math.max(minimumHeight,degree*32+48);if(source.shape==='bar')minimumWidth=Math.max(minimumWidth,degree*32+48);}
     const sizes = rules.filter((r): r is Extract<Constraint, {type: 'size'}> => r.type === 'size' && r.node === source.id);
     for (const axis of ['width', 'height'] as const) if (new Set(sizes.flatMap(s => s[axis] === undefined ? [] : [s[axis]])).size > 1) fail(sizes.map(s => s.id), '固定尺寸要求冲突');
     const width = sizes.find(s => s.width !== undefined)?.width ?? minimumWidth, height = sizes.find(s => s.height !== undefined)?.height ?? minimumHeight;
     if (width + .01 < minimumWidth || height + .01 < minimumHeight) fail([source.id, ...sizes.map(s => s.id)], `固定尺寸不足：至少需要 ${Math.ceil(minimumWidth)} × ${Math.ceil(minimumHeight)}`);
-    byId.set(source.id, {compact, source, x: 0, y: 0, width, height, minimumWidth, minimumHeight, header, top, bottom, left, right, content, children: [], sides, padding: spacing(source.id).padding, rows: groupLayout.rows, extents: groupLayout.extents});
+    byId.set(source.id, {gutterX:0,gutterY:0,compact, source, x: 0, y: 0, width, height, minimumWidth, minimumHeight, header, top, bottom, left, right, content, children: [], sides, padding: spacing(source.id).padding, rows: groupLayout.rows, extents: groupLayout.extents});
   }
   const roots: Work[] = [];
   for (const w of byId.values()) { if (w.source.parentId) byId.get(w.source.parentId)!.children.push(w); else roots.push(w); }
@@ -121,8 +126,13 @@ export async function layoutDrawing(drawing: Drawing): Promise<NodeGeometry[]> {
       extra.push({a: pair[0].source.id, b: pair[1].source.id, gap: dimension(pair[0], separate) + spacing(parent?.source.id).node, axis: separate, id: 'avoid:' + pair.map(w => w.source.id).join('/')});
     }
     if (parent) {
-      const width = Math.max(parent.minimumWidth, Math.max(160, ...siblings.map(w => w.x + w.width)) + parent.padding * 2 + parent.left + parent.right);
-      const height = Math.max(parent.minimumHeight, Math.max(20, ...siblings.map(w => w.y + w.height)) + parent.padding * 2 + parent.header + parent.top + parent.bottom + (parent.source.content?.length ? parent.content.height + 12 : 0));
+      if(drawing.layout?.alignment==='auto'&&!rules.some(r=>['place','align','order','route','fixedRoute'].includes(r.type))){
+        const inside=(id:string)=>{let n=byId.get(id);while(n?.source.parentId){if(n.source.parentId===parent.source.id)return true;n=byId.get(n.source.parentId);}return false;};
+        const internal=drawing.connections.filter(c=>c.ends.every(e=>inside(e.node))),labels=internal.flatMap(c=>(c.labels??[]).map(l=>text(l.id,l.text,14,200)));
+        if(internal.length){parent.gutterX=Math.max(64,...labels.map(l=>l.width/2+128));parent.gutterY=Math.max(64,...labels.map(l=>l.height/2+72));}
+      }
+      const width = Math.max(parent.minimumWidth, Math.max(160, ...siblings.map(w => w.x + w.width)) + parent.padding * 2 + parent.left + parent.right + parent.gutterX*2);
+      const height = Math.max(parent.minimumHeight, Math.max(20, ...siblings.map(w => w.y + w.height)) + parent.padding * 2 + parent.gutterY*2 + parent.header + parent.top + parent.bottom + (parent.source.content?.length ? parent.content.height + 12 : 0));
       const locked = rules.filter((r): r is Extract<Constraint, {type: 'size'}> => r.type === 'size' && r.node === parent.source.id);
       if (locked.some(r => r.width !== undefined && r.width < width || r.height !== undefined && r.height < height)) fail([parent.source.id, ...locked.map(r => r.id)], '固定容器尺寸无法包含子图');
       parent.width = locked.find(r => r.width !== undefined)?.width ?? width;
@@ -164,7 +174,7 @@ export async function layoutDrawing(drawing: Drawing): Promise<NodeGeometry[]> {
         return {id: boundaryId(c.id, e.id), x: side === 'left' ? 0 : side === 'right' ? w.width : pos.x, y: side === 'top' ? 0 : side === 'bottom' ? w.height : pos.y, width: 0, height: 0, layoutOptions: {'elk.port.side': side.toUpperCase()}};
       }));
       const edges = drawing.connections.flatMap(c => c.ends.slice(1).map((e, i) => ({id: c.id + '/' + i, sources: [endId(c.ends[0], c.id)!], targets: [endId(e, c.id)!], labels: (c.labels ?? []).map(l => ({text: l.text, width: Math.max(...wrapText(l.text, 14, 200).map(line => measureText(line, 14))) + 24, height: wrapText(l.text, 14, 200).length * 21 + 8})), owners: [childOf(c.ends[0].node, parent), childOf(e.node, parent)]}))).filter(e => e.owners[0] && e.owners[1] && e.owners[0] !== e.owners[1]).map(({owners, ...edge}) => edge);
-      const s = spacing(parent?.source.id), result = await elk.layout({id: '__frame__', layoutOptions: {'elk.algorithm': 'layered', 'elk.direction': directions[direction(parent?.source.id)], 'elk.padding': '[top=0,left=0,bottom=0,right=0]', 'elk.spacing.nodeNode': String(s.node), 'elk.layered.spacing.nodeNodeBetweenLayers': String(s.layer)}, children: siblings.map(w => ({id: w.source.id, width: w.width, height: w.height, layoutOptions: {'elk.portConstraints': 'FIXED_POS'}, ports: [...(w.source.ports ?? []).map(p => ({id: portId(w.source.id, p.id), ...localPort(w, p.id), width: 0, height: 0, layoutOptions: {'elk.port.side': w.sides.get(p.id)!.toUpperCase()}})), ...boundaryPorts(w)]})), edges});
+      const s = spacing(parent?.source.id), result = await elk.layout({id: '__frame__', layoutOptions: {'elk.algorithm': 'layered','elk.layered.cycleBreaking.strategy':drawing.nodes.some(n=>n.shape)&&!drawing.nodes.some(n=>n.parentId)?'GREEDY_MODEL_ORDER':'GREEDY', 'elk.direction': directions[direction(parent?.source.id)], 'elk.padding': '[top=0,left=0,bottom=0,right=0]', 'elk.spacing.nodeNode': String(s.node), 'elk.layered.spacing.nodeNodeBetweenLayers': String(s.layer)}, children: siblings.map(w => ({id: w.source.id, width: w.width, height: w.height, layoutOptions: {'elk.portConstraints': 'FIXED_POS'}, ports: [...(w.source.ports ?? []).map(p => ({id: portId(w.source.id, p.id), ...localPort(w, p.id), width: 0, height: 0, layoutOptions: {'elk.port.side': w.sides.get(p.id)!.toUpperCase()}})), ...boundaryPorts(w)]})), edges});
       for (const p of result.children ?? []) { const w = byId.get(p.id)!; w.x = p.x ?? 0; w.y = p.y ?? 0; initial.set(w.source.id, {x: w.x, y: w.y}); }
     }
     fit(siblings, parent);
@@ -199,8 +209,13 @@ export async function layoutDrawing(drawing: Drawing): Promise<NodeGeometry[]> {
           ports.push({annotation, appearance: p.appearance, ...pos, id: p.id, label: p.label ?? p.id, side, text: box, originIds: p.originIds ?? []});
         }
       }
-      result.push({id: w.source.id, parentId: w.source.parentId, x, y, width: w.width, height: w.height, contentBox, title, contents: w.content.texts.map(t => ({...t, x: t.x + contentBox.x, y: t.y + (isContainer ? y + w.header + w.top + 12 : contentBox.y)})), ports, originIds: w.source.originIds ?? []});
-      w.children.forEach(c => visit(c, contentBox));
+      if(w.source.shape==='ellipse'){const total=title.height+(w.content.height?w.content.height+12:0);title.x=x+(w.width-title.width)/2;title.y=y+(w.height-total)/2;contentBox.x=x+(w.width-w.content.width)/2;contentBox.y=title.y+title.height+12;contentBox.width=w.content.width;contentBox.height=w.content.height;}
+      if(w.source.shape){
+        if(['initial','final','terminate','bar'].includes(w.source.shape)){title.lines=[];title.width=0;title.height=0;}
+        else if(['diamond','history','connector'].includes(w.source.shape)){Object.assign(title,text('title',w.source.label,w.source.shape==='diamond'?15:17,w.source.shape==='diamond'?w.width/2-20:w.width-8));title.x=x+(w.width-title.width)/2;title.y=y+(w.height-title.height)/2;}
+      }
+      result.push({shape:w.source.shape,id: w.source.id, parentId: w.source.parentId, x, y, width: w.width, height: w.height, contentBox, title, contents: w.content.texts.map(t => ({...t, x: t.x + contentBox.x, y: t.y + (isContainer ? y + w.header + w.top + 12 : contentBox.y)})), ports, originIds: w.source.originIds ?? []});
+      w.children.forEach(c => visit(c, {x:contentBox.x+w.gutterX,y:contentBox.y+w.gutterY}));
     }
     roots.forEach(w => visit(w, {x: 0, y: 0})); return result;
   }

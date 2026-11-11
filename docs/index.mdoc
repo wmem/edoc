@@ -12,13 +12,15 @@ edoc 将 Markdown / Markdoc 正文、工程数据和配置生成可导航、可�
 | --- | --- |
 | 首次安装，生成自己的第一份文档 | [快速开始](start/index.mdoc) |
 | 安排文章和目录，编写正文、行为要求与引用 | [编写与组织文档](writing/index.mdoc) |
-| 描述模块、接口、记录、寄存器或状态与波形 | [图表](charts/index.mdoc) |
+| 不确定工程场景该用什么图，或准备描述模块、接口、行为、数据与波形 | [图表：先选择表达方式](charts/index.mdoc) |
 | 转换原始数据或组合多个独立工程 | [工程数据与多工程组合](engineering/index.mdoc) |
 | 操作网页、按ID读取与查询、分发离线文件 | [阅读、查询与发布](reading/index.mdoc) |
 | 已经知道问题，直接查属性、命令和限制 | [查询参考](reference/index.mdoc) |
 | 修改edoc源码，核对设计依据与验证方法 | [edoc 开发](development/index.mdoc) |
 
 第一次使用，沿“快速开始 → 编写与组织文档”前进，再按自己的任务选择图表或数据接入。已有工程可直接进入对应主题，精确字段通过参考查询。组织方法见[文档组织简略指南](writing/agent-guide.mdoc)，需要时再读[完整指南](writing/guide.mdoc)。
+
+图表按结构与连接、行为与控制、时间与交互、数据布局、记录与结果五个表达领域组织；先选含义，再选模型和呈现。Drawing、布局与渲染是承载机制，在相应领域内按需使用。
 
 Agent也从本页进入；随包源文的定位与outline/read/query操作统一见[查询与维护](reading/query.mdoc)。工具源码维护约定从[开发规则](development/agent-rules.mdoc)进入。
 
@@ -51,7 +53,7 @@ Markdown正文与代码、页面编排、数据驱动图表、引用与证据都
 {% relation-diagram id="system:overview" /%}
 {% data-table id="system:modules" /%}
 
-关系图还能表达真实端口与多端点连接、接口总览与展开、状态迁移，这些能力都从[关系图](charts/diagrams/index.mdoc)进入。信号随时间的变化使用[时序图](charts/waveforms.mdoc)，寄存器定义使用[位域图与字段表](charts/registers.mdoc)，结构化记录使用[表格](charts/tables.mdoc)。本例为虚构数据，不代表真实工程或仿真结果。
+关系图还能表达真实端口与多端点连接、接口总览与展开、这些能力都从[关系图](charts/diagrams/index.mdoc)进入。状态迁移使用[状态图](charts/behavior/state.mdoc)，步骤、分支和并行使用[流程图](charts/behavior/flowchart.mdoc)。信号随时间的变化使用[时序图](charts/timing/waveforms.mdoc)，寄存器定义使用[位域图与字段表](charts/data-layout/registers.mdoc)，结构化记录使用[表格](charts/records/tables.mdoc)。多方请求应答使用[消息交互](charts/timing/sequences.mdoc)，报文与描述符使用[协议布局](charts/data-layout/binary-layouts.mdoc)，地址组织使用[寄存器映射](charts/data-layout/register-maps.mdoc)，原始记录的趋势与分布使用[测量统计](charts/records/plots.mdoc)。本例为虚构数据，不代表真实工程或仿真结果。
 
 {% /section %}
 

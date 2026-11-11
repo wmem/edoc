@@ -1,0 +1,118 @@
+{
+  "registers": [
+    {
+      "id": "reg:port-ctrl",
+      "kind": "register",
+      "label": "端口控制",
+      "width": 32,
+      "fields": [
+        {
+          "id": "reg:port-ctrl-enable",
+          "label": "使能",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "reg:port-ctrl-mode",
+          "label": "模式",
+          "msb": 3,
+          "lsb": 1,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/register-maps.json",
+        "selector": "reg:port-ctrl"
+      }
+    },
+    {
+      "id": "reg:port-status",
+      "kind": "register",
+      "label": "端口状态",
+      "width": 32,
+      "fields": [
+        {
+          "id": "reg:port-status-link",
+          "label": "链路有效",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RO"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/register-maps.json",
+        "selector": "reg:port-status"
+      }
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "block:port",
+      "kind": "register-block",
+      "label": "端口 CSR 块",
+      "size": "0x100",
+      "entries": [
+        {
+          "id": "ctrl",
+          "register": "reg:port-ctrl",
+          "offset": "0x00"
+        },
+        {
+          "id": "status",
+          "register": "reg:port-status",
+          "offset": "0x04"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/register-maps.json",
+        "selector": "block:port"
+      }
+    },
+    {
+      "id": "block:device",
+      "kind": "register-block",
+      "label": "设备寄存器块",
+      "size": "0x1000",
+      "entries": [
+        {
+          "id": "ports",
+          "block": "block:port",
+          "offset": "0x100",
+          "count": 4,
+          "stride": "0x100"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/register-maps.json",
+        "selector": "block:device"
+      }
+    }
+  ],
+  "addressSpaces": [
+    {
+      "id": "space:csr",
+      "kind": "address-space",
+      "label": "CSR 地址空间",
+      "addressUnitBits": 8,
+      "addressWidth": 64,
+      "mappings": [
+        {
+          "id": "device",
+          "block": "block:device",
+          "base": "0x1000000000000000"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/register-maps.json",
+        "selector": "space:csr"
+      }
+    }
+  ]
+}

@@ -34,7 +34,7 @@ export async function manualMain(argv:string[]):Promise<number>{
   if((argv.length===1&&['--help','-h'].includes(argv[0]))||(['serve','outline','read','query'].includes(argv[0])&&argv.slice(1).some(t=>['--help','-h'].includes(t)))){process.stdout.write(help);return 0;}
   const command=!argv.length||argv[0].startsWith('--')?'location':argv[0],tokens=command==='location'?argv:argv.slice(1);
   if(!['location','serve','outline','read','query'].includes(command))throw new UsageError('未知手册命令；使用 edoc docs --help');
-  const allowed=new Set(command==='location'?['--format']:command==='serve'?['--port']:['--format','--project','--id',...(['outline','query'].includes(command)?['--depth']:[]),...(command==='outline'?['--all']:[]),...(command==='query'?['--max-items']:[]),...(command==='read'?['--scope','--offset','--max-chars','--with-clauses']:[])]);
+  const allowed=new Set(command==='location'?['--format']:command==='serve'?['--port']:['--format','--project','--id',...(['outline','query'].includes(command)?['--depth']:[]),...(command==='outline'?['--all']:[]),...(command==='query'?['--max-items','--element']:[]),...(command==='read'?['--scope','--offset','--max-chars','--with-clauses']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key)||Object.hasOwn(args,key))throw new UsageError('未知或重复选项：'+key);if(key==='--all'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(key+' 缺少值');args[key]=tokens[i++];}
   if(args['--all']&&args['--depth']!==undefined)throw new UsageError('--all 与 --depth 不能同时指定');
@@ -69,7 +69,7 @@ export async function manualMain(argv:string[]):Promise<number>{
    const result=manualOutline(manual,{project:args['--project'],id:args['--id'],depth:args['--all']?undefined:depth});
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':outlineText(result.chapters).join('\n')+'\n');return 0;
   }
-  if(command==='query'){process.stdout.write(JSON.stringify(manualQuery(manual,args['--id'],{project:args['--project'],depth,maxItems}),null,2)+'\n');return 0;}
+  if(command==='query'){process.stdout.write(JSON.stringify(manualQuery(manual,args['--id'],{project:args['--project'],element:args['--element'],depth,maxItems}),null,2)+'\n');return 0;}
   const result=manualRead(manual,args['--id'],{project:args['--project'],withClauses:args['--with-clauses']?true:undefined,scope:args['--scope'] as 'self'|'subtree'|undefined,offset,maxChars});
   process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':readText(result));return 0;
  }catch(error){

@@ -1,0 +1,98 @@
+{% section id="ref:engineering-charts" title="消息、协议、统计与地址图契约" %}
+
+2026-11-11 用户批准按模型方案实施。本页维护当前契约；未开放的组合明确诊断，不静默忽略。四领域共用稳定身份、来源、查询与离线 SVG 阅读，不改变原 Register、Table 或电气连接。
+
+{% section id="ref:tag-sequence-diagram" title="sequence-diagram：消息交互" %}
+
+id 引用 sequences 中 kind=sequence 的模型，可选 view 引用 kind=sequence 的显示视图。participants 保存局部 id、可选 label、ref/source；steps 是具名递归步骤。普通步骤省略 kind 表示 message，from/to 引用参与者，label 为消息文字，mode 可选 call/signal/return，replyTo 显式引用请求。省略 mode 保留未声明，不补成同步调用。
+
+alt/par 使用具名 branches，每支有 steps；alt 的分支有 guard 或唯一 otherwise。opt/loop/strict 使用 steps，loop 有 guard 或 min/max 次数。ref 通过 model 引用另一 Sequence，并用 participants 映射目标参与者到本地参与者。note 有 on/text；activate/deactivate/create/destroy 明确 participant。消息可用 protocol 引用 BinaryLayout；未知引用、局部重名、生命周期错误、请求/响应跨互斥分支必须失败。
+
+constraints 引用 {message,end:send|receive} 事件：order 声明 before/after，duration 声明 from/to、min/max、unit，可选 clock（cycles 必须有 clock）。约束不执行时间仿真；纵向位置不代表真实耗时，未同步时钟不能直接比较。并发片段不因数组摆放获得全局先后，显式顺序与发送先于接收必须一致。
+
+视图可声明 participantOrder、collapsed、expandedCalls、spacing、showLabels；只改变呈现。模型局部元素通过 query --id MODEL --element ID 查询，read 分页返回原模型。网页支持缩放、定位、局部折叠、完整/当前 SVG，原消息与来源不变。单模型最多 3000 个局部元素，ref 深度最多 12 且不允许递归；片段条件仅作为规范文字，不执行表达式。生命周期检查要求分支汇合和循环入口/出口状态一致，不推断跨并发分支的创建/销毁同步。duration 只校验事件引用、单位、范围和顺序，不求解真实时长约束。
+
+| 对象 | 字段与含义 |
+| --- | --- |
+| 通用身份 | id 必需；label、source 可选。根模型 kind=sequence；视图也有自己的 id、kind、model |
+| 参与者 | participants 中的 id；ref 可引用已有 Node，label 省略时显示 id |
+| 消息 | kind 可省略或为 message；from、to 必需，label 可省略；mode、replyTo、protocol 可选 |
+| 片段 | alt/par 有 branches；每支 id、steps 必需，label/source 可选，alt 用 guard/otherwise；opt/loop/strict 有 steps，loop 可用 min/max |
+| 子交互 | kind=ref，model 指向另一 Sequence，participants 完整映射其参与者；展开后的局部路径如 authenticate/challenge 可查询原模型 |
+| 注释与生命周期 | note 使用 on 参与者数组及 text；activate/deactivate/create/destroy 使用 participant |
+| 事件约束 | constraints 中 kind=order 使用 before/after；kind=duration 使用 from/to、min/max、unit/clock；事件为 message 和 end=send/receive |
+| 视图 | participantOrder 是完整排列，spacing 为参与者间距；collapsed 引用片段，expandedCalls 引用 ref；showLabels 默认 true |
+
+默认采用生命线上的弱顺序。strict 加强片段内部的顺序；同一消息发送先于接收，replyTo 增加请求接收先于应答发送。引用成环、事件偏序成环、缺失参与者、反向错误的应答及不成立的生命周期明确失败。query 的事件集合限于当前模型，interactionUses 保留 ref 映射；子模型内部事件和约束分别沿 model 查询，不将展开图冒充已经平铺或仿真的全局轨迹。
+
+{% /section %}
+{% section id="ref:tag-binary-diagram" title="binary-diagram 与 binary-field-table：协议布局" %}
+
+id 引用 binaryLayouts 中 kind=binary-layout 的模型，可选 view 引用显示视图。unit 为 bit（默认）或 byte，普通 fields 按数组顺序排布；id 必需，label 可省略，size 可以是整数、{field,unit} 或 {op,args}，offset 可选。op 为 add/sub/mul/div/min/max；数值按当前单位解释，字段引用保留其声明单位，最终长度不得为负数或分数 bit。byteOrder 与 bitOrder 未声明时保持未声明，显示方向不补数据解释。
+
+kind 默认 field，也可 padding/reserved/align/ref/repeat/optional/choice。ref 用 model 引用子结构；repeat 有 count 与 element；optional 有 condition 与 fields；choice 有 selector 与具名 branches（when 或 otherwise，fields）；align 用 to 声明对齐。普通字段可加 description、value、enums、source。所有元素 ID 在模型内唯一，结构引用成环、长度依赖成环、非法重叠和未定义字段引用必须失败。
+
+未知条件、动态大小和偏移保留符号，不把未提供取值当作零。显式视图 values 只作为标明的取值场景；未选定的分支仍可查询完整定义。行宽、collapsed、focus 属于显示。字段图与字段表投影同一数据；Register 的 msb/lsb 不与串行流偏移合并为一种语义。大结构投影最多 2000 项并返回 truncated；图中单字段最多展开 64 行，超过时用明确的符号摘要，read 保留完整定义。ref 深度最多 16，不允许递归。repeat 图只展开单次元素并标明次数，子项使用单次相对偏移；optional.condition 是规范条件文字，场景只对同名键的 true/false 求值，其他条件保留符号；choice.selector 引用普通字段，场景按 when/otherwise 选尺寸。
+
+| 对象 | 字段与含义 |
+| --- | --- |
+| 模型 | id、kind=binary-layout、fields 必需；label、source、unit、byteOrder、bitOrder 可选 |
+| 普通字段 | id、size 必需；kind 默认 field，也可 padding/reserved；label、source、description、offset、value、enums、byteOrder、bitOrder 可选 |
+| 对齐与嵌套 | align 使用正整数 to，单位沿用模型；offset 和 align 均相对所属 fields 容器起点；ref 使用 model 引用子结构 |
+| 重复与条件 | repeat 使用无量纲 count 和 element，count 的表达式不带 unit；optional 使用 condition 和 fields；choice 使用 selector 和 branches，每支有 id、fields、when/otherwise，可加 label |
+| 长度 | 整数表示模型单位；field 引用的数值按其 unit 或模型单位解释；op/args 的数字操作数按模型单位运算。使用精确有理数中间值，最终必须为非负整数 bit，不能依靠浮点舍入 |
+| 视图 | id、kind=binary-layout、model 必需；label/source 可选；bitsPerRow 默认 32，collapsed 折叠结构，focus 聚焦局部元素，values 为取值场景 |
+
+子结构引用中的场景值用 JSON 路径键，例如 values 中的 `"[\"items\",\"descriptor\",\"length\"]"`；它不会与父模型的同名字段混用。根模型直接使用字段 id。展开字段的 query --element 也接受 JSON 路径。未知偏移以 end(字段路径) 表示，query 返回 symbols 对应的 offset、size、end 计算定义，避免长表达式淹没图面。展开计算上限为 20000 项，超限明确失败。
+
+{% /section %}
+{% section id="ref:tag-binary-field-table" title="binary-field-table：字段表入口" %}
+
+id 引用 BinaryLayout，可选 view 引用同模型的 BinaryView。它与 binary-diagram 投影同一份数据，返回完整分支条件、偏移和大小表达式；不另建 Table。类型和计算规则见[协议模型](engineering-charts.mdoc#ref:tag-binary-diagram)。
+
+{% /section %}
+{% section id="ref:tag-plot" title="plot：Table 的统计视图" %}
+
+id 指向 views 中 kind=plot 的 PlotView，data 引用已有 Table。mark 与 encoding 定义图元和字段映射，transform 为有序声明式处理；不新增采样资源，不直接接受远程 URL 或自由 JS。字段名、类型与单位沿用原表，objectId 行仍投影原对象，原始记录和统计结果分别返回。单位不兼容、错误字段、非法方法或无效值明确失败；原 Table 的缺测使用省略字段，不改变 Table 的列类型；转换产生的 null 继续表示缺测，不补零。
+
+mark 支持 line/point/bar/area/rule/errorbar/boxplot，encoding 包括 x/y/x2/y2/color/detail/tooltip/order；映射可声明 field/type/aggregate/bin/sort/title。支持的 transform 是结构化 filter、aggregate、bin、quantile；窗口、分位数、分箱和误差须有明确口径。layer/facet 用于组合，源表仍维护一份。时间字段的解析需显式时区或自带时区的 ISO 字符串，不能依赖机器本地时区。
+
+连续 x 的折线默认按 x 排序，同值保留原记录顺序；显式 order 可选择原序或其他字段。聚合、过滤、缺测处理、样本数和分位数方法在查询中可见。当前界面提供空间缩放与定位，不执行临时数据筛选；声明式 filter 进入处理记录。统计渲染使用 Vega-Lite 支持子集，不把后端所有选项直接暴露为当前契约；后端与 HTML/SVG 输出均需离线验证。
+
+| 对象 | 字段与含义 |
+| --- | --- |
+| 视图 | id、kind=plot、data 必需；label/source 可选；width 默认 780、height 默认 340，作用于单个绘图区域 |
+| 图元 | mark 为 line/point/bar/area/rule/errorbar/boxplot；普通图需要 encoding。errorbar 默认均值±标准误差，boxplot 为 Tukey 1.5 IQR |
+| 映射 | encoding 的 x/y/x2/y2/color/detail/tooltip/order 使用 field；type 默认按列推断，可声明 quantitative/nominal/ordinal/temporal；title、sort 可选 |
+| 映射统计 | aggregate 为 count/sum/mean/median/min/max；bin 可为 true 或带正数 step 的对象。count 计记录数，其他数值统计忽略缺测；不自动填充空分箱 |
+| 筛选 | transform 中 filter 使用 field，并在 equal/range/oneOf 中选择一个；range 含两端，不能反向 |
+| 聚合 | aggregate 是 op/field/as 数组，groupby 可选；count 可省略 field，其他操作必须有数值 field |
+| 分箱 | bin 指定 step、field、as=[起点字段,终点字段]，以 floor(value/step)×step 为起点；缺测输出 null |
+| 分位数 | quantile 指定字段，probs 在 0～1，as=[概率字段,分位字段]，groupby 可选，method 必须 linear，采用 R-7 |
+| 组合 | layer 叠加子图；facet 以 field 分面，columns 默认为 2，spec 提供子图。每个组合层最多一种结构，总计最多 100 个子视图 |
+
+query 分别返回 sourceRecords、转换后的 rows、audit、statistics 及 rowIds。statistics 是按分组字段给出的数值摘要，含有效/缺测数、均值、分位数、标准误差和箱线界限；编码中的自动 bin 边界由固定版本后端决定，不能把未分箱的摘要当作分箱结果。需要精确、可查询的分箱口径时使用显式 bin transform。__edoc_ 前缀为后端保留字段，用户表列不使用该前缀。时间轴使用 UTC 呈现；单位不做隐式换算。
+
+{% /section %}
+{% section id="ref:tag-register-map" title="register-map：寄存器块与地址空间" %}
+
+id 指向 registerBlocks 中 kind=register-block 或 addressSpaces 中 kind=address-space。Register 仍按原契约保存 width/fields/access/reset；新组织只引用它，不覆盖或复制 fields。
+
+RegisterBlock 的 entries 各有局部 id，register 或 block 二选一，offset 必需，可选 count/stride/span；size 是显式块范围。AddressSpace 的 mappings 各有 id/block/base，可选 count/stride；addressUnitBits 默认 8，可选 addressWidth。所有地址量用十进制或十六进制整数字符串，精确计算；count 省略表示 1，数组必须显式给 stride。地址单位、寄存器位宽和总线事务宽度互不推断。
+
+缺少基址时只展示块内相对地址；size 缺省只计算最小覆盖，不认定硬件 aperture 或保留地址。检查范围、循环、跨度和重叠，不能用 allowOverlap 放行；别名/窗口须有专门选择语义，尚未定义的形式明确拒绝。重复实例有独立路径，原 Register ID 保持定义身份。
+
+query --id SPACE --element '["ports",2,"ctrl"]' 查询映射、索引与块内路径；块内路径也使用 JSON 数组，避免拼接名称产生歧义。根查询不枚举海量数组；网页列表按声明范围给出汇总和按需定位，点击定义进入原位域图与字段表。模型及局部条目来源可追溯，地址值不得经 JavaScript Number 损失精度。块独立阅读时按 8 bit 地址单位计算，放入 AddressSpace 时继承它的 addressUnitBits；寄存器跨度按位宽向上取整。当前冲突检查以条目分配范围为单位，包括子块最小覆盖范围中的间隙；需要交错布置时应将真实条目放到同一层，不把子块间隙当作可独立分配范围。根查询与图表默认展示前 120 个叶寄存器并返回总数/truncated，任意实例可直接路径定位；count 为安全正整数，不枚举后再裁剪。
+
+| 对象 | 字段与含义 |
+| --- | --- |
+| 通用身份 | id、kind 必需；label、source 可选 |
+| 块 | kind=register-block，entries 必需，size 可选 |
+| 块内条目 | id、offset 必需，register/block 二选一；label、source、count、stride、span 可选。span 不得小于被引用定义所需范围 |
+| 地址空间 | kind=address-space，mappings 必需；addressUnitBits 默认 8，addressWidth 可选，范围 1～4096 |
+| 映射 | id、block、base 必需；label、source、count、stride 可选 |
+
+块引用最多嵌套 64 层。网页按叶寄存器行汇总；完整 SVG 保留该汇总范围与截断说明，不声称枚举了海量实例。精确实例查询独立于展示限额。
+
+{% /section %}
+{% /section %}

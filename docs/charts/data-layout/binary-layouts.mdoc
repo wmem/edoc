@@ -1,0 +1,42 @@
+{% section id="use:binary-layouts" title="协议数据布局图" %}
+
+BinaryLayout 描述报文、DMA 描述符、文件头等连续数据的布局。同一份 fields 生成布局图与字段表，包含固定大小，也可以保留尚未求值的长度和条件。寄存器位域仍使用[Register](registers.mdoc)，地址组织使用[寄存器映射](register-maps.mdoc)。
+
+{% section id="use:binary-simple" title="简单：固定大小的描述符" %}
+
+字段顺序默认决定偏移，只需 id、size；省略 unit 表示 bit。下图按 32 bit 换行，流偏移从左到右递增；它不表示小端或大端。byteOrder 与 bitOrder 是独立的数据解释声明。
+
+{% binary-diagram id="binary:descriptor" /%}
+{% binary-field-table id="binary:descriptor" /%}
+
+{% /section %}
+{% section id="use:binary-complex" title="复杂：动态长度、条件与重复" %}
+
+下面的报文包含类型分支、可选时间戳、变长负载、对齐与 CRC。没有场景取值时，负载长度和后续偏移保持符号；不能把未知长度算成零，也不能把未选定的分支当成固定头部。
+
+{% binary-diagram id="binary:packet" /%}
+
+这是同一模型的取值场景：type=1、len=12、extension=true。场景只用于解释这一种布局，不改写规范默认值。字段表保留所有分支的定义和条件。
+
+{% binary-diagram id="binary:packet" view="view:packet-sample" /%}
+{% binary-field-table id="binary:packet" view="view:packet-sample" /%}
+
+重复结构用 repeat，嵌套结构用 ref。数组子结构的偏移相对单次实例，图中明确标注；不会为未知次数伪造实例。
+
+{% binary-diagram id="binary:scatter" /%}
+
+{% /section %}
+{% section id="use:binary-data" title="数据与查询" collapsed=true %}
+
+{% code file="docs/ir/authoring/binary-layouts.json" language="json" /%}
+
+```sh
+edoc query --id binary:packet --element crc
+edoc read --id binary:packet
+edoc export --view view:packet-sample --format svg --output packet.svg
+```
+
+长度表达式、条件、场景、来源及展示限额见[协议布局契约](../../reference/tags/engineering-charts.mdoc#ref:tag-binary-diagram)。这是结构布局计算，不验证报文内容、CRC 算法或 RTL 实现。
+
+{% /section %}
+{% /section %}

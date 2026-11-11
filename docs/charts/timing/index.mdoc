@@ -1,0 +1,17 @@
+{% section id="use:timing-charts" title="时间与交互" %}
+
+{% directory-order items=["waveforms.mdoc","sequences.mdoc"] /%}
+
+本领域解释时间先后关系。数字信号用 Waveform / WaveJSON 描述电平；多方消息用 Sequence 描述参与者、消息和事件偏序。两者都不要求预先创建模块、端口或关系视图。
+
+| 当前呈现 | 表达能力 | 可以画什么 |
+| --- | --- | --- |
+| [数字时序波形](waveforms.mdoc) | 时钟、电平与跳变、总线、信号分组和时间关系标注；区分规范与仿真来源 | valid/ready 握手、背压、读写时序、复位与启动的信号变化示意 |
+
+波形按时间轴绘制，不通过节点布局推断时间。信号名不会自动注册为真实 Port；需要关联 RTL 或硬件时，由项目明确维护引用与来源。已有采样数据可以说明仿真结果，手写规范波形不表示执行过仿真。创建方法从上面的教程进入，字段见[波形契约](../../reference/tags/waveform.mdoc)。
+
+[消息交互图](sequences.mdoc)支持请求应答、异步通知、条件、循环、并行、子交互及显式事件约束。它描述事件顺序，不用纵向距离代替真实耗时。吞吐或时延统计关注测量值和统计口径，归[记录与结果](../records/index.mdoc)。
+
+Sequence 使用 sequence-diagram；精确字段见[消息契约](../../reference/tags/engineering-charts.mdoc#ref:tag-sequence-diagram)。
+
+{% /section %}

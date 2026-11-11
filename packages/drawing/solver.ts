@@ -1,3 +1,7 @@
+import {routeCandidates} from './route-candidates.ts';
+import {prepareAlignment,hasPositionIntent} from './alignment.ts';
+import {prepareLanes} from './lanes.ts';
+import {shapeAnchor,shapeSegmentCrosses} from './shapes.ts';
 import {layoutDrawing} from './layout.ts';
 import {validateDrawingModel} from './validate-model.ts';
 import {DrawingError} from './types.ts';
@@ -9,9 +13,10 @@ import {measureText, wrapText} from '../render-graph/text.ts';
 import {styles} from '../render-graph/styles.ts';
 import {verifyDrawingScene, trace} from './verify.ts';
 import {solveCompound} from './compound.ts';
+import {solveCurvedDrawing} from './curved-solver.ts';
 
 const sign: Record<Side, Point> = {left: {x: -1, y: 0}, right: {x: 1, y: 0}, top: {x: 0, y: -1}, bottom: {x: 0, y: 1}};
-async function solveAttempt(input: Drawing): Promise<DrawingScene> {
+async function solveAttempt(input: Drawing,autoEndpoints=false): Promise<DrawingScene> {
   const start = performance.now(); validateDrawingModel(input); const drawing: Drawing = structuredClone(input);
   const fail = (code: string, stage: string, ids: string[], message: string): never => { throw new DrawingError(code, stage, ids, message); };
   if (drawing.layout?.routing === 'polyline') fail('DRAWING_CAPABILITY', 'validate', [drawing.id], '原型尚未实现 polyline；不会忽略该字段');
@@ -32,27 +37,57 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
   for (const [i, a] of nodes.entries()) for (const b of nodes.slice(i + 1)) if (a.parentId === b.parentId && intersects(a, b)) fail('DRAWING_OVERLAP', 'geometry', [a.id, b.id], '兄弟框重叠');
   const frame = (id = 'root'): Point => id === 'root' ? {x: 0, y: 0} : byId.get(id)!.contentBox;
   const offset = (p: Point, base: Point): Point => ({x: p.x + base.x, y: p.y + base.y});
-  const used: Point[][] = [], geometries: ConnectionGeometry[] = [];
+  const used: Point[][] = [], geometries: ConnectionGeometry[] = [],previewLabels=new Map<string,Rect>();
+  function endpointSide(c:Connection,e:Connection['ends'][number],i:number):Side{
+    const n=byId.get(e.node)!,others=c.ends.filter(o=>o.id!==e.id).map(o=>byId.get(o.node)!);
+    const dx=others.reduce((sum,o)=>sum+o.x+o.width/2,0)/others.length-n.x-n.width/2;
+    const dy=others.reduce((sum,o)=>sum+o.y+o.height/2,0)/others.length-n.y-n.height/2;
+    if(autoEndpoints&&drawing.layout?.arrangement==='cyclic'&&c.ends.every(e=>e.node===n.id)){const states=nodes.filter(n=>n.shape!=='initial'&&n.shape!=='note'),cx=states.reduce((sum,n)=>sum+n.x+n.width/2,0)/states.length,cy=states.reduce((sum,n)=>sum+n.y+n.height/2,0)/states.length;return i?(n.y+n.height/2<cy?'top':'bottom'):(n.x+n.width/2<cx?'left':'right');}
+    if(autoEndpoints&&drawing.layout?.arrangement==='cyclic'&&Math.abs(dx)>.01&&Math.abs(dy)>.01&&n.shape==='ellipse'&&others.every(n=>n.shape==='ellipse')){
+      // 对角迁移使用外围两组通道，避免交叉回边挤在循环中心及椭圆角落。
+      const states=nodes.filter(n=>n.shape==='ellipse'),cx=states.reduce((s,n)=>s+n.x+n.width/2,0)/states.length,cy=states.reduce((s,n)=>s+n.y+n.height/2,0)/states.length,first=byId.get(c.ends[0].node)!;
+      const horizontal=(first.x+first.width/2-cx)*(first.y+first.height/2-cy)>=0;
+      return horizontal?(n.x+n.width/2<cx?'left':'right'):(n.y+n.height/2<cy?'top':'bottom');
+    }
+    if(autoEndpoints&&drawing.layout?.arrangement!=='cyclic'&&c.ends.length===2&&c.ends[0].node!==c.ends[1].node){const direction=drawing.layout?.direction??'LR',axis=['LR','RL'].includes(direction)?'x':'y',sign=['RL','BT'].includes(direction)?-1:1,first=byId.get(c.ends[0].node)!,last=byId.get(c.ends[1].node)!,center=(n:NodeGeometry)=>n[axis]+(axis==='x'?n.width:n.height)/2;if((center(last)-center(first))*sign<-.01)return axis==='x'?'top':'right';}
+    if(n.shape==='bar')return ['TB','BT'].includes(drawing.layout?.direction??'LR')?(dy<0?'top':'bottom'):(dx<0?'left':'right');
+    return !dx&&!dy?(i?'bottom':'right'):Math.abs(dx)>=Math.abs(dy)?dx<0?'left':'right':dy<0?'top':'bottom';
+  }
+  const anonymous=new Map<string,{c:Connection;e:Connection['ends'][number];i:number;side:Side}[]>(),anchors=new Map<string,Point>();
+  const terminalKey=(connection:string,end:string)=>JSON.stringify([connection,end]);
+  if(autoEndpoints)for(const c of drawing.connections)for(const [i,e]of c.ends.entries())if(!e.port){const side=endpointSide(c,e,i),key=JSON.stringify([e.node,side]);if(!anonymous.has(key))anonymous.set(key,[]);anonymous.get(key)!.push({c,e,i,side});}
+  for(const group of anonymous.values()){
+    const n=byId.get(group[0].e.node)!,side=group[0].side,axis=side==='left'||side==='right'?'y':'x',size=axis==='x'?n.width:n.height,center=n[axis]+size/2,margin=Math.min(20,size/5),min=n[axis]+margin,max=n[axis]+size-margin,gap=edgeGap+4;
+    const desired=(item:typeof group[number])=>{const others=item.c.ends.filter(e=>e.id!==item.e.id).map(e=>byId.get(e.node)!);return Math.round(others.reduce((sum,n)=>sum+n[axis]+(axis==='x'?n.width:n.height)/2,0)/others.length*1e6)/1e6;};
+    const occupied:number[]=[];
+    const ordered=group.slice().sort((a,b)=>Number(a.c.ends.every(e=>e.node===n.id))-Number(b.c.ends.every(e=>e.node===n.id))||Math.abs(desired(a)-center)-Math.abs(desired(b)-center)||a.c.id.localeCompare(b.c.id));
+    for(const item of ordered){
+      const preferred=Math.max(min,Math.min(max,desired(item))),candidates=[preferred,center];for(let i=1;i<=group.length+2;i++)candidates.push(preferred+i*gap,preferred-i*gap,center+i*gap,center-i*gap);
+      const at=candidates.filter(p=>p>=min&&p<=max&&!occupied.some(q=>Math.abs(p-q)<gap-.01)).sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred))[0];
+      if(at===undefined)throw new DrawingError('DRAWING_ENDPOINT_SPACE','route',group.map(g=>g.c.id),'当前节点边长不足以分开全部独立挂点');
+      occupied.push(at);const point={x:side==='left'?n.x:side==='right'?n.x+n.width:at,y:side==='top'?n.y:side==='bottom'?n.y+n.height:at};anchors.set(terminalKey(item.c.id,item.e.id),shapeAnchor(n,point,{x:point.x+sign[side].x*24,y:point.y+sign[side].y*24}));
+    }
+  }
   function terminals(c: Connection): ConnectionGeometry['ends'] {
-    return c.ends.map((e, i) => {
-      const n = byId.get(e.node)!;
-      if (e.port) { const p = n.ports.find(p => p.id === e.port)!; return {...e, x: p.x, y: p.y, side: p.side}; }
-      const others = c.ends.filter(o => o.id !== e.id).map(o => byId.get(o.node)!);
-      const dx = others.reduce((sum, o) => sum + o.x + o.width / 2, 0) / others.length - n.x - n.width / 2;
-      const dy = others.reduce((sum, o) => sum + o.y + o.height / 2, 0) / others.length - n.y - n.height / 2;
-      const side: Side = !dx && !dy ? (i ? 'bottom' : 'right') : Math.abs(dx) >= Math.abs(dy) ? dx < 0 ? 'left' : 'right' : dy < 0 ? 'top' : 'bottom';
-      return {...e, side, x: side === 'left' ? n.x : side === 'right' ? n.x + n.width : n.x + n.width * (i + 1) / (c.ends.length + 1), y: side === 'top' ? n.y : side === 'bottom' ? n.y + n.height : n.contentBox.y + n.contentBox.height * (i + 1) / (c.ends.length + 1)};
+    return c.ends.map((e,i)=>{
+      const n=byId.get(e.node)!;
+      if(e.port){const p=n.ports.find(p=>p.id===e.port)!;return {...e,x:p.x,y:p.y,side:p.side};}
+      const side=endpointSide(c,e,i),fixed=anchors.get(terminalKey(c.id,e.id));if(fixed)return {...e,side,...fixed};
+      const group=drawing.connections.flatMap(other=>other.ends.map((end,index)=>({other,end,index}))).filter(v=>v.end.node===n.id&&!v.end.port&&endpointSide(v.other,v.end,v.index)===side);
+      const rank=group.findIndex(v=>v.other.id===c.id&&v.end.id===e.id),fraction=(rank+1)/(group.length+1);
+      const at={x:side==='left'?n.x:side==='right'?n.x+n.width:n.x+n.width*fraction,y:side==='top'?n.y:side==='bottom'?n.y+n.height:n.y+n.height*fraction};
+      return {...e,side,...shapeAnchor(n,at,{x:at.x+sign[side].x*24,y:at.y+sign[side].y*24})};
     });
   }
   function obstacles(c: Connection): Rect[] {
     return nodes.map(n => {
-      if (!container(n) || !c.ends.some(e => isParent(n.id, e.node))) return n;
+      if (n.shape!=='lane'&&(!container(n) || !c.ends.some(e => isParent(n.id, e.node)))) return n;
       return headers(n);
     }).map(n => ({x: n.x - 8, y: n.y - 8, width: n.width + 16, height: n.height + 16}));
   }
   // 所有端口先保留出线段；顺序布线不能封住尚未处理的端点。
   const terminalSets = new Map(drawing.connections.map(c => [c.id, terminals(c)]));
-  const lead = (e: ConnectionGeometry['ends'][number]) => ({x: e.x + sign[e.side].x * 24, y: e.y + sign[e.side].y * 24});
+  const lead = (e: ConnectionGeometry['ends'][number]) => {const n=byId.get(e.node)!;return {x:e.side==='left'?n.x-24:e.side==='right'?n.x+n.width+24:e.x,y:e.side==='top'?n.y-24:e.side==='bottom'?n.y+n.height+24:e.y};};
   function reserved(c: Connection): Rect[] {
     const own = terminalSets.get(c.id)!;
     return [...terminalSets].filter(([id]) => id !== c.id).flatMap(([, ends]) => ends.filter(e => !own.some(o => same(o, e))).map(e => {
@@ -61,7 +96,7 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
     }));
   }
   const primary = drawing.layout?.hints?.main ?? [];
-  const ordered = drawing.connections.slice().sort((a, b) => Number(!primary.includes(a.id)) - Number(!primary.includes(b.id)));
+  const ordered = drawing.connections.slice().sort((a, b) => Number(!primary.includes(a.id)) - Number(!primary.includes(b.id)) || (autoEndpoints&&drawing.layout?.arrangement==='cyclic'?Number(a.ends.some(e=>byId.get(e.node)?.shape==='initial'))-Number(b.ends.some(e=>byId.get(e.node)?.shape==='initial'))||a.id.localeCompare(b.id):0));
   for (const c of ordered) {
     const ends = terminals(c), locked = constraints.filter((r): r is Extract<Constraint, {type: 'fixedRoute'}> => r.type === 'fixedRoute' && r.connection === c.id);
     if (locked.length > 1) fail('DRAWING_CONSTRAINT', 'route', locked.map(r => r.id), '原型要求每条连接最多一份完整固定路线');
@@ -76,7 +111,9 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
       if (route.length > 1) fail('DRAWING_CAPABILITY', 'route', route.map(r => r.id), '原型尚未合并多份经过点约束');
       const a = route.length ? ends.find(e => e.id === route[0].from)! : ends[0], b = route.length ? ends.find(e => e.id === route[0].to)! : ends[1];
       const from = lead(a), to = lead(b), waypoints = route.length ? route[0].via.map(p => offset(p, frame(route[0].frame))) : [];
-      const blocked = [...obstacles(c), ...reserved(c)];
+      const internal=nodes.filter(n=>autoEndpoints&&container(n)&&c.ends.every(e=>e.node!==n.id&&isParent(n.id,e.node)));
+      const walls=internal.flatMap(n=>{const b=n.contentBox;return [{x:b.x-12,y:b.y-12,width:b.width+24,height:8},{x:b.x-12,y:b.y+b.height+4,width:b.width+24,height:8},{x:b.x-12,y:b.y-12,width:8,height:b.height+24},{x:b.x+b.width+4,y:b.y-12,width:8,height:b.height+24}];});
+      const blocked = [...obstacles(c), ...reserved(c),...walls,...previewLabels.values()];
       const future = ends.filter(e => e !== a && e !== b).map(e => { const p = lead(e); return {x: Math.min(e.x, p.x) - edgeGap, y: Math.min(e.y, p.y) - edgeGap, width: Math.abs(e.x - p.x) + edgeGap * 2, height: Math.abs(e.y - p.y) + edgeGap * 2}; });
       const pathThrough = (via: Point[]) => {
         const targets = [from, ...via, to]; let path: Point[] = [{x: a.x, y: a.y}, from];
@@ -85,6 +122,7 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
       };
       const channel = drawing.layout?.hints?.channels?.find(h => h.connection === c.id);
       let path: Point[] | undefined;
+      if(drawing.nodes.some(n=>n.shape)&&c.ends.length===2&&!waypoints.length&&!route.length)path=routeCandidates(a,from,to,b,blocked,geometries,geometry,edgeGap,path=>{try{const boxes:Rect[]=[];for(const label of c.labels??[]){const lines=wrapText(label.text,14,200),box={x:0,y:0,width:Math.max(...lines.map(l=>measureText(l,14)))+16,height:lines.length*21+8,lines};boxes.push(placeLabel(box,[path],[...nodes.filter(n=>!container(n)),...nodes.filter(container).map(n=>n.title),...(autoEndpoints?reserved(c):[])],[...previewLabels.values(),...boxes],used));}if(autoEndpoints)(c.labels??[]).forEach((label,i)=>previewLabels.set(JSON.stringify([c.id,label.id]),boxes[i]));return true;}catch{return false;}});
       if (channel && !waypoints.length) {
         const box = channel.container ? byId.get(channel.container)! : {x: Math.min(...nodes.map(n => n.x)) - 40, y: Math.min(...nodes.map(n => n.y)) - 40, width: Math.max(...nodes.map(n => n.x + n.width)) + 80, height: Math.max(...nodes.map(n => n.y + n.height)) + 80};
         const vertical = channel.side === 'left' || channel.side === 'right';
@@ -105,8 +143,8 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
       const a = path.points[i - 1], b = path.points[i];
       if (a.x !== b.x && a.y !== b.y) fail('DRAWING_ORTHOGONAL', 'geometry', [c.id, path.id], '正交路线含斜线');
       for (const n of nodes) {
-        const obstacle = container(n) && c.ends.some(e => isParent(n.id, e.node)) ? headers(n) : n;
-        if (crosses(a, b, obstacle)) fail('DRAWING_PATH_COLLISION', 'geometry', [c.id, n.id], '路径穿过实体或容器标题');
+        const obstacle = n.shape==='lane'?headers(n):container(n) && c.ends.some(e => isParent(n.id, e.node)) ? headers(n) : n;
+        if (obstacle===n?shapeSegmentCrosses(n,a,b):crosses(a,b,obstacle)) fail('DRAWING_PATH_COLLISION', 'geometry', [c.id, n.id], '路径穿过实体或容器标题');
       }
       for (const t of allText) if (crosses(a, b, t)) fail('DRAWING_PATH_COLLISION', 'geometry', [c.id, t.id], '路径穿过框内文字');
     }
@@ -154,7 +192,7 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
           });
           for (const segment of segments) { try { p = placeLabel(box, [segment], labelNodes, placed, otherPaths); break; } catch { /* 从参考端逐段寻找合法位置。 */ } }
           if (!p) throw new Error('参考端附近没有合法标签位置');
-        } else p = placeLabel(box, paths, labelNodes, placed, otherPaths);
+        } else {const preview=previewLabels.get(JSON.stringify([c.id,label.id]));p = placeLabel(box, paths, labelNodes, placed, otherPaths,preview?{x:preview.x+preview.width/2,y:preview.y+preview.height/2}:undefined);}
         if (!p) throw new Error('没有满足约束的标签位置');
         const t = {...p, id: label.id, size: 14}; g.labels.push(t); placed.push(t);
       }
@@ -177,20 +215,24 @@ async function solveAttempt(input: Drawing): Promise<DrawingScene> {
 
 export async function solveDrawingModel(input: Drawing): Promise<DrawingScene> {
   validateDrawingModel(input); const start = performance.now();
+  if(input.layout?.routing==='curved')return solveCurvedDrawing(input);
+  const original=input;input=await prepareAlignment(await prepareLanes(input));
   for (const c of input.connections) if (c.style && !Object.hasOwn(styles, c.style)) throw new DrawingError('DRAWING_STYLE', 'validate', [c.id, c.style], '未注册的主题样式');
   // 大二端图采用联合求解；精确路径/位置仍走支持这些硬约束的受控求解器。
   const compactRelations = input.connections.length > 0 && input.nodes.some(n => n.ports?.length) && input.nodes.every(n => (n.ports ?? []).every(p => p.appearance === 'slot'));
-  if ((input.connections.length > 3 || compactRelations) && input.layout?.routing !== 'polyline' && input.connections.every(c => c.ends.length === 2) && !(input.layout?.constraints ?? []).some(r => !['port', 'size'].includes(r.type))) return solveCompound(input);
+  if ((input.connections.length > 3 || compactRelations || input.nodes.some(n=>n.shape)) && input.layout?.routing !== 'polyline' && input.connections.every(c => c.ends.length === 2) && !(input.layout?.constraints ?? []).some(r => !['port', 'size'].includes(r.type))) {try{return await solveCompound(input);}catch(error){if(!(error instanceof DrawingError)||!['DRAWING_PATH_CONTACT','DRAWING_PATH_CLEARANCE','DRAWING_LABEL'].includes(error.code))throw error;}}
   for (let attempt = 0; attempt < 4; attempt++) {
-    const drawing = structuredClone(input);
+    let drawing = structuredClone(original);
     if (attempt) {
       drawing.layout ??= {}; drawing.layout.spacing ??= {};
       drawing.layout.spacing.node = Math.max(64, drawing.layout.spacing.node ?? 0) * 2 ** attempt;
+      if(original.layout?.alignment==='auto'&&!original.nodes.some(n=>n.shape==='lane')&&!hasPositionIntent(original))drawing.layout.spacing.padding=Math.max(40,drawing.layout.spacing.padding??0)*2**attempt;
       drawing.layout.spacing.layer = Math.max(100, drawing.layout.spacing.layer ?? 0) * 2 ** attempt;
     }
+    drawing=await prepareAlignment(await prepareLanes(drawing));
     try {
-      const scene = await solveAttempt(drawing); scene.durationMs = performance.now() - start;
-      scene.satisfiedConstraints = verifyDrawingScene(input, scene);
+      const scene = await solveAttempt(drawing,original.layout?.alignment==='auto'&&!hasPositionIntent(original)&&(!original.nodes.some(n=>n.parentId)||original.nodes.some(n=>n.shape==='lane'))); scene.durationMs = performance.now() - start;
+      scene.satisfiedConstraints = verifyDrawingScene(original, scene);
       if (attempt) scene.diagnostics.push({code: 'DRAWING_SPACING_EXPANDED', message: `为路径和标签增加最小空白，使用 ${attempt + 1} 次布局尝试；固定位置和经过点保持不变`});
       return scene;
     } catch (error) {

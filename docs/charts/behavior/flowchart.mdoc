@@ -1,0 +1,34 @@
+{% section id="use:flowchart" title="流程图：步骤、分支与并行" %}
+
+流程图回答“先做什么，条件不同走哪条路径，哪些工作并行”。它用 flowcharts 建模，与描述持续状态的状态机分开；共用绘图、缩放、来源和 SVG 阅读能力。
+
+{% section id="use:flowchart-simple" title="简单流程：设备初始化" %}
+
+初始化之后显式判断结果，成功和失败分别结束流程。
+
+{% flowchart id="author:init" /%}
+
+{% code file="docs/ir/authoring/flows.json" language="json" /%}
+
+```text {% process=false %}
+{% flowchart id="author:init" /%}
+```
+
+{% /section %}
+{% section id="use:flowchart-complex" title="复杂流程：订单履约" %}
+
+参考 [HPI 的订单履约课程案例](https://open.hpi.de/learn/fa6e42a0-7565-45e0-8abb-1a5c257f0a7e/items/ffeb07de-d284-4c87-8074-de7c52680896?locale=en)重新建模，保留资料修正循环、库存判断、生产失败出口、发货和收款并行、汇合归档。供应商选择和周末延迟在本图合并为“备料生产”，泳道是本示例补充的职责划分；不是完整 BPMN 模型，也不执行事务补偿。
+
+{% flowchart id="example:fulfillment" /%}
+
+{% /section %}
+{% section id="use:flowchart-model" title="数据与语义边界" %}
+
+nodes 省略 kind 时为 process；edges 用 from/to 引用局部节点 ID。decision 的每条出口声明 guard 或唯一 otherwise；merge 只汇合互斥路径，不等待。fork 创建并行分支，join 默认等待全部入口，joinSpec 可以明确 any 或表达式；any 不表示取消其他分支。start、end、wait、call、io 和 connector 各有明确职责。end.scope 默认为 flow，branch 仅结束当前分支。回退、重试、异常和超时必须画出边；不根据节点排列猜执行顺序。
+
+lanes 表示职责，nodes.lane 表示节点所属泳道，不表示并发。call.model 引用另一流程，returns 显式映射结束节点与后续节点。层级、聚焦和折叠是显示投影，不能改变原始边的端点。独立 views 的 kind 为 flowchart，model 引用模型；标签的 view 可选择显示方案。布局字段与[原生绘图](../diagrams/drawing.mdoc)共用。
+
+模型和局部元素 ID 稳定且唯一。query --id 模型ID --element 局部ID 返回原始字段、相邻边及来源；read --id 模型ID 可分页读取完整定义。完整模型使用显式网关，partial 用于尚未定义完的片段，不放宽引用、类型和几何正确性。
+
+{% /section %}
+{% /section %}

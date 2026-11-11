@@ -1,3 +1,6 @@
+import {sequenceElements} from '../extensions/sequence/types.ts';
+import {binaryElements} from '../extensions/binary-layout/types.ts';
+import type {Sequence,BinaryLayout,RegisterBlock,AddressSpace} from './types.ts';
 import type {Graph} from './types.ts';
 import {EdocError} from './errors.ts';
 import {projectPath} from './paths.ts';
@@ -15,6 +18,10 @@ export function validateResources(graph:Graph){
     }
     const attachment=entry.entity.source?.attachment;if(attachment&&(!attachment.project||attachment.project===graph.manifest.projectId)){const resource=graph.attachments?.[attachment.id];if(!resource||attachment.target&&!Object.hasOwn(resource.targets,attachment.target))report(entry,'ATTACHMENT_REFERENCE','/source/attachment','原始 PDF 附件或位置不存在：'+attachment.id);}
     if(entry.type==='reference') { const e=entry.entity as any; const types=[...new Set([...graph.index.values()].map(e=>e.type))];reference(entry,e.fromId,'/fromId',types);reference(entry,e.targetId,'/targetId',types);}
+ }
+ for(const entry of graph.index.values()){
+  const local=entry.type==='sequence'?sequenceElements(entry.entity as Sequence):entry.type==='binary-layout'?binaryElements(entry.entity as BinaryLayout):entry.type==='register-block'?(entry.entity as RegisterBlock).entries.map((element,i)=>({element,path:'/entries/'+i})):entry.type==='address-space'?(entry.entity as AddressSpace).mappings.map((element,i)=>({element,path:'/mappings/'+i})):[];
+  for(const {element,path}of local)if(element.source){try{projectPath(graph.projectRoot,graph.projectRoot,element.source.file,false);}catch(error){if(error instanceof EdocError)for(const d of error.diagnostics)report(entry,d.code,path+'/source/file',d.message);else throw error;}const attachment=element.source.attachment;if(attachment&&(!attachment.project||attachment.project===graph.manifest.projectId)){const resource=graph.attachments?.[attachment.id];if(!resource||attachment.target&&!Object.hasOwn(resource.targets,attachment.target))report(entry,'ATTACHMENT_REFERENCE',path+'/source/attachment','局部来源 PDF 附件或位置不存在：'+attachment.id);}}
  }
  for(const validate of dataValidators)errors.push(...validate(graph));
  if(errors.length)throw new EdocError(errors);

@@ -1,0 +1,35 @@
+{% section id="use:register-maps" title="寄存器块与地址空间" %}
+
+Register 定义一个寄存器的位域；RegisterBlock 定义块内有哪些寄存器或子块，放在哪里；AddressSpace 将块映射到地址空间。同一寄存器可以被多个实例引用，位域只维护一次。
+
+{% section id="use:register-map-simple" title="简单：块内相对偏移" %}
+
+这个端口块有控制和状态两个寄存器。只有 offset 时展示相对地址；没有基址不妨碍先编写模块手册。声明 size 表示块范围，缺省时只计算最小覆盖，不替硬件推断 aperture。
+
+{% register-map id="block:port" /%}
+{% register-diagram id="reg:port-ctrl" /%}
+
+{% /section %}
+{% section id="use:register-map-complex" title="复杂：嵌套、数组与大地址" %}
+
+设备块包含四个端口实例；映射基址特意使用超过 JavaScript 精确整数范围的值，地址始终以整数字符串保存并精确计算。count 和 stride 组织重复实例，不复制寄存器字段。表中点击定义进入原 Register。
+
+{% register-map id="space:csr" /%}
+
+实例路径是 JSON 数组，避免名称拼接歧义。例如 ["device","ports",2,"ctrl"] 指第三个端口的控制寄存器，地址为 0x1000000000000300。
+
+{% /section %}
+{% section id="use:register-map-data" title="数据与查询" collapsed=true %}
+
+{% code file="docs/ir/authoring/register-maps.json" language="json" /%}
+
+```sh
+edoc query --id space:csr --element '["device","ports",2,"ctrl"]'
+edoc query --id block:port --depth 1
+edoc export --id space:csr --format svg --output address-map.svg
+```
+
+地址单位、数组范围、占用区间和当前不支持的别名/窗口语义见[地址组织契约](../../reference/tags/engineering-charts.mdoc#ref:tag-register-map)。校验地址布局不表示总线访问或硬件行为已验证。
+
+{% /section %}
+{% /section %}

@@ -7,7 +7,7 @@ import type {ReadOptions} from './read.ts';
 import {composeClauses,selectedApplications} from '../extensions/clause/reading.ts';
 import type {Application} from '../extensions/clause/prepare.ts';
 import {readRange} from './read-range.ts';
-import {query} from './query.ts';
+import {query,queryElement} from './query.ts';
 import {failure,EdocError} from './errors.ts';
 
 type Reading=Omit<ReturnType<typeof readDocument>,'range'|'applications'>;
@@ -21,7 +21,7 @@ export function compileManual(book:Book):Manual{
   const local=(file:string)=>isAbsolute(file)?relative(node.config.root,file).split('\\').join('/'):file;
   const records=[...node.graph.index.values()].map(record=>({...record,location:{...record.location,file:local(record.location.file)}}));
   const project:Project={manifest:{...node.graph.manifest,resources:node.graph.manifest.resources.map(r=>({...r,path:local(r.path)}))},records,adjacency:[...node.graph.adjacency].map(([id,links])=>[id,[...links]]),interfaces:[...(node.graph.interfaceByPort??[])],applications:[...node.graph.clauses?.applications.values()??[]].map(set=>({...set,source:{...set.source,file:local(set.source.file)}})),readings:Object.create(null)};
-  for(const record of records)if(record.type==='document'||record.type==='clause'){
+  for(const record of records)if(record.type==='document'||record.type==='clause'||record.type==='state-machine'||record.type==='flowchart'||['sequence','binary-layout','register-block','address-space'].includes(record.type)||record.type==='view'&&['sequence','binary-layout','plot'].includes(('kind'in record.entity?record.entity.kind??'':''))){
    const values={} as Project['readings'][string];
    for(const scope of (record.type==='clause'?['subtree']:['self','subtree']) as ('self'|'subtree')[]){
     let result=readDocument(node.graph,record.id,{scope,withClauses:false,maxChars:100000}),content=result.content;
@@ -66,8 +66,10 @@ export function manualRead(manual:Manual,id:string,options:ReadOptions&{project?
  const expanded=composeClauses(reading.content,selectedApplications(reading.clauseFor??[],selected.applications??[]),specId=>selected.readings[specId].subtree,{inlineIds:reading.clauses?.filter(item=>item.origin==='local').map(item=>item.id)});
  return {...reading,sources:[...reading.sources,...expanded.sources.filter(s=>!reading.sources.some(source=>source.file===s.file))],applications:expanded.applications,...readRange(expanded.content,options.offset,options.maxChars)};
 }
-export function manualQuery(manual:Manual,id:string,options:{project?:string;depth?:number;maxItems?:number}={}){
+export function manualQuery(manual:Manual,id:string,options?:{project?:string;depth?:number;maxItems?:number;element?:undefined}):ReturnType<typeof query>;
+export function manualQuery(manual:Manual,id:string,options:{project?:string;depth?:number;maxItems?:number;element?:string}):ReturnType<typeof query>|ReturnType<typeof queryElement>;
+export function manualQuery(manual:Manual,id:string,options:{project?:string;depth?:number;maxItems?:number;element?:string}={}){
  const selected=project(manual,options.project),index=new Map(selected.records.map(r=>[r.id,r]));
  const graph:Graph={manifest:selected.manifest,projectRoot:'<manual>',irDirectory:'<manual>',index,connections:new Map(selected.records.filter(r=>r.type==='connection').map(r=>[r.id,r.entity as import('./types.ts').Connection])),adjacency:new Map(selected.adjacency.map(([id,links])=>[id,new Set(links)])),interfaceByPort:new Map(selected.interfaces)};
- return query(graph,id,options);
+ return options.element?queryElement(graph,id,options.element):query(graph,id,options);
 }

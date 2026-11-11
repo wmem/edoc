@@ -1,0 +1,92 @@
+{% section id="ref:control-diagrams" title="状态图与流程图契约" %}
+
+两种图有独立语义，共用 Drawing 的测量、布局、路线、形状轮廓、缩放、选中和 SVG。它们不是电气 Connection，也不是可执行程序。
+
+{% section id="ref:control-tags" title="标签、资源与身份" %}
+
+| 标签 | id 必需 | view 可选 | 资源数组与 kind |
+| --- | --- | --- | --- |
+| state-diagram | 状态机模型 ID | 引用同一模型的显示视图 ID | stateMachines / state-machine |
+| flowchart | 流程模型 ID | 引用同一模型的显示视图 ID | flowcharts / flowchart |
+
+顶层模型和视图 ID 在工程中唯一。模型内部所有元素共用局部命名空间；状态、区域、迁移、流程节点、泳道、边、注释不能重名。完整身份为 projectId/modelId/elementId，多个显示实例不复制工程身份。source 沿用通用来源；局部元素可覆盖模型来源。
+
+query --id MODEL 返回完整原始模型；query --id MODEL --element ELEMENT 返回局部元素、JSON 路径、来源和入边/出边。read --id MODEL 分页返回同一模型的 JSON；模型文本不经过图形布局，不把字符串解释成代码或 ID。字面标签示例：
+
+```text {% process=false %}
+{% state-diagram id="sm:send" /%}
+{% flowchart id="flow:init" view="view:init-detail" /%}
+```
+
+{% /section %}
+{% section id="ref:state-machine" title="状态机字段" %}
+
+| 字段 | 含义 |
+| --- | --- |
+| id、kind、label、source | 模型身份、state-machine、显示名称及来源 |
+| initial | 根区域初始状态简写，与显式 initial 伪状态二选一 |
+| states | 局部状态，id 必需；kind 默认 state，label 默认局部 ID |
+| regions | id、owner、initial；owner 是 composite / parallel 状态；状态通过 region 归属区域 |
+| transitions | id、from、to 必需；trigger、guard、otherwise、actions、kind、priority 可选 |
+| semantics | profile、selection、clock、reset、encoding；显式说明执行语义及硬件绑定 |
+| completeness | complete 默认；partial 接受未完成的入口定义，仍检查全部引用与类型 |
+| notes | id、text、可选 label、for、source；for 引用局部元素，注释不参与控制流 |
+
+状态 kind：state、composite、parallel、initial、final、choice、junction、history、fork、join、entry、exit、terminate、submachine。entry/do/exit 数组分别是进入、持续活动与退出动作说明；不隐含“每个时钟周期执行 do”。bindings 是名称到绑定表达式的说明映射，不执行表达式。
+
+composite 必须拥有一个区域，parallel 必须拥有至少两个区域；每个完整区域显式声明初始入口。history 必须属于区域，history 字段为 shallow/deep，default 可指定同区域默认状态。final 完成当前区域；terminate 终止整个状态机。choice 动态选择，junction 连接路径；有多个出口时需显式守卫或唯一 otherwise，单出口 junction 可无守卫。
+
+trigger 字符串等价于 event 对象。结构如下，省略 trigger 表示未定义，不默认为 completion 或 always：
+
+| trigger.kind | 其他字段 |
+| --- | --- |
+| event | event 事件文本 |
+| after | value 正数、unit: ns/us/ms/s/cycles；cycles 必须有 clock |
+| clock | clock 必需、edge 默认 rising，可选 falling |
+| completion / always | 不接受额外事件字段 |
+| change | expression 必需 |
+
+迁移 kind 默认 external，退出并重入外部目标；internal 必须 from=to，不退出源状态；local 从 composite / parallel 指向其内部后代。跨层迁移允许，但不能从一个正交区域直接跳到另一个区域普通状态；应通过同步或共同祖先建模。selection=priority 时，每个多出口节点的所有迁移需声明唯一 priority；数组顺序不充当优先级。
+
+submachine 的 call.model 引用另一个状态机；entries 映射调用侧局部状态到目标 initial/entry，returns 映射目标 final/exit 到调用侧后继。图默认显示调用框，可以展开一层；递归调用保留调用入口，避免无限嵌套。
+
+{% /section %}
+{% section id="ref:flowchart" title="流程图字段" %}
+
+| 字段 | 含义 |
+| --- | --- |
+| id、kind、label、source | 模型身份、flowchart、显示名称及来源 |
+| nodes | id 必需；kind 默认 process，label 默认局部 ID |
+| edges | id、from、to 必需；guard、otherwise、kind、priority、return、label、source 可选 |
+| lanes | id、label 必需；nodes.lane 引用职责泳道，不表示并发 |
+| selection / completeness / notes | 选择优先级、完整度与注释，规则同上 |
+
+节点 kind：start、process、decision、merge、fork、join、end、call、wait、io、connector。actions 是动作说明数组；wait 节点必须有 wait，格式与 Trigger 相同。end.scope 默认 flow，也可为 branch；图中分支结束明确标注。joinSpec 默认 all，可声明 any 或 {expression}；any 不意味着取消其他分支。call.model 引用流程模型；returns 从目标 end 映射到本流程后继。edge.return 可注明关联的调用返回出口。
+
+decision 至少两个出口，均声明 guard 或唯一 otherwise；otherwise 与 guard 互斥。merge 多进一出，仅合并互斥路径；join 多进一出并等待指定分支；fork 一进多出。完整模型的普通动作不能用多个正常出口隐含分支，必须显式使用网关。异常和超时边 kind 分别为 exception、timeout；省略为 control。无限服务循环本身不构成错误。
+
+{% /section %}
+{% section id="ref:control-views" title="显示投影与校验" %}
+
+views 中的显示视图有 id、kind（state-machine/flowchart）、model 必需，可选 label、source、focus、collapsed、layout、display.showRelationLabels。focus 聚焦某个局部元素及必要的相邻端点；collapsed 隐藏容器内部，跨边界路线挂接容器边界，原始端点仍由来源详情查询。它不生成新的语义迁移，不合并不同迁移的守卫。
+
+普通状态默认采用椭圆，复合/并行状态继续使用容器，初始/终结等伪状态保留各自符号。状态名称和动作在椭圆内部居中，连线接到真实轮廓。
+
+状态图默认 routing=curved，普通迁移使用三次 Bezier 弧线，自环在状态外回环，双向及多重迁移保持独立路径。箭头按终点切线接到实际轮廓，标签保持水平并按真实弧长定位。可以显式选择 routing=orthogonal；流程图和普通 Drawing 仍默认正交线，也可显式选择 curved。位置与排列策略独立于线型。
+
+曲线的控制点由工具生成，不写入状态机事实。网页与 SVG 消费同一份三次曲线，不能各自平滑或按直线弦检查碰撞。形状、框内文字、其他迁移、标签、容器及输出范围都按实际曲线检查；无法满足时报告具体元素。显式 route 的途经点仍依次经过；fixedRoute 是精确折线声明，优先保留原折点，不因全局选择曲线而擅自改变。当前 curved 适用于双端连接，多端点电气连接继续使用正交路线，不能静默删端点。
+
+layout 使用 Drawing.layout，同样支持方向、局部方向、间距、order/align/place/size/port/route/fixedRoute/label 约束及主线/通道偏好。两种图默认 alignment=auto，节点与匿名连线挂点联合整理，可直连时优先直线。状态图默认 arrangement=cyclic：平面图先识别强连通分量，三个及以上互相可达的状态在二维环上排列，分量之间保留层次；两状态和无环部分使用分层排列。流程图默认 arrangement=layered：主链同轴，同层分支与并行分支收齐，泳道保留全局层次。复合容器仍采用层级布局和局部约束，不将内部状态拉到外层环上。
+
+可显式设置 arrangement=layered 让状态图使用分层排列，或用 alignment=none 保留布局后端结果。显式位置、顺序、对齐及路径优先，自动整理不能覆盖它们。没有声明时自动布局；不满足硬约束会带 ID 报错，不自动忽略。自动泳道按 TB 顺序跨职责列布局；其他方向需要显式位置与对齐。合成初始节点及调用实例的显示 ID 用结构化字符串隔离，不作为模型局部 ID。
+
+display.repeatClock 默认 false。当状态机所有迁移都显式使用同一个 clock 触发和同一边沿时，图上统一说明采样时钟，边上保留条件和动作；网页与 SVG 都显示该说明。设置 true 时逐边重复时钟。混合事件、不同边沿或未声明触发时不提取公共时钟，不改变原始模型、查询和动作语义。
+
+网页可按模型局部 ID 或文字搜索并定位原始元素、切换连线标题、缩放、拖动、大图阅读、折叠容器、展开一层调用和返回上个视图。完整模型 SVG 与当前视图 SVG 区分；导出消费同一份几何，不另做一套布局。圆、菱形等按实际轮廓挂线；几何检查覆盖节点、文字、端点、路线、重合、间距及约束。
+
+重复 ID、引用错误、区域归属环、无效入口/历史、非法迁移、伪节点度数、重复 otherwise、调用与返回类型错误必须失败。守卫是不可执行文本；不能声称证明条件覆盖、无死锁、无竞态或终止性。支持的 UML/SCXML 概念用于说明，不能据此称为完整 UML、SCXML 或 BPMN 执行实现。
+
+机器校验采用安装包 dist/packages/extensions/control-diagram 中的 state-machine.schema.json 和 flowchart.schema.json；TypeScript 声明从 edoc 导出，包含 StateMachine、Flowchart、ControlView、Trigger 等类型。
+
+{% /section %}
+{% /section %}

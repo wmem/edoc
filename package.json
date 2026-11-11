@@ -45,7 +45,8 @@
     "test:manual-browser": "node --test tests/manual-browser.test.ts tests/manual-capabilities-browser.test.ts",
     "test:manual-cli": "node --test tests/manual-snapshot.test.ts",
     "test:graphics-reading": "node --test tests/graphics-reading.test.ts",
-    "fonts:metrics": "node scripts/font-metrics.mjs"
+    "fonts:metrics": "node scripts/font-metrics.mjs",
+    "test:engineering-charts": "node --test tests/engineering-charts.test.ts tests/engineering-charts-browser.test.ts"
   },
   "dependencies": {
     "@markdoc/markdoc": "0.5.11",
@@ -58,6 +59,8 @@
     "elkjs": "0.12.1",
     "esbuild": "0.28.2",
     "pdfjs-dist": "6.4.299",
+    "vega": "6.4.0",
+    "vega-lite": "6.5.0",
     "wavedrom": "3.8.0"
   },
   "devDependencies": {

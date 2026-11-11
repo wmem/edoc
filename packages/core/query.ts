@@ -1,3 +1,6 @@
+import {FigureError} from '../figure/errors.ts';
+import {engineeringProjection,engineeringElement} from '../figure/query.ts';
+import {controlElement} from '../extensions/control-diagram/query.ts';
 import {registerProjection,resetText,resetState} from '../extensions/register/model.ts';
 import {entitySource,resolveLinkTarget} from './link-target.ts';
 import type {Register,RegisterField,Row} from './types.ts';
@@ -43,6 +46,7 @@ export function query(graph: Graph, id: string, options: { depth?: number; maxIt
     }
   }
   return {
+    ...engineeringProjection(graph,target),
     irVersion: graph.manifest.irVersion, projectId: graph.manifest.projectId,
     target: {...item(target),anchor:anchor(id)}, directRelations,
     ...(target.semanticKind==='capability'||target.semanticKind==='behavior'?{children:[...graph.index.values()].filter(entry=>entry.ownerId===id&&entry.semanticKind).map(item)}:{}),
@@ -54,9 +58,10 @@ export function query(graph: Graph, id: string, options: { depth?: number; maxIt
   };
 }
 
+export function queryElement(graph:Graph,id:string,elementId:string){if(!graph.index.has(id))failure('QUERY_NOT_FOUND','<query>','/id','ID 不存在：'+id);try{return engineeringElement(graph,id,elementId)??controlElement(graph,id,elementId);}catch(error){if(error instanceof FigureError){const entry=graph.index.get(id)!;failure(error.code,entry.location.file,entry.location.path+error.path,error.message);}throw error;}}
 export function summary(graph: Graph) {
   const counts: Record<string, number> = {};
   for (const entry of graph.index.values()) counts[entry.type] = (counts[entry.type] ?? 0) + 1;
   return { valid: true, irVersion: graph.manifest.irVersion, projectId: graph.manifest.projectId,
-    resources: graph.manifest.resources.length, counts, ...(graph.documentPlan?.warnings?.length?{warnings:graph.documentPlan.warnings}:{}), entryDocuments: graph.manifest.entryDocuments };
+    resources: graph.manifest.resources.length, counts,...(graph.controlDiagnostics?.length?{modelDiagnostics:graph.controlDiagnostics}:{}), ...(graph.documentPlan?.warnings?.length?{warnings:graph.documentPlan.warnings}:{}), entryDocuments: graph.manifest.entryDocuments };
 }

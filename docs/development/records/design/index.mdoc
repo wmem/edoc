@@ -1,13 +1,16 @@
 {% section id="design:home" title="设计与需求" %}
 
-{% directory-order items=["requirements.mdoc","diagram-reading-levels.mdoc","drawing-contract.mdoc","diagram-model-and-components.mdoc","markdoc.mdoc","presentation.mdoc","navigation.mdoc","content-reuse.mdoc","layout.mdoc","interfaces.mdoc","projects.mdoc","pdf.mdoc","original-v1.mdoc","original-source.mdoc"] /%}
+{% directory-order items=["requirements.mdoc","chart-system.mdoc","chart-extension-models.mdoc","diagram-reading-levels.mdoc","drawing-contract.mdoc","diagram-model-and-components.mdoc","state-and-flow.mdoc","markdoc.mdoc","presentation.mdoc","navigation.mdoc","content-reuse.mdoc","layout.mdoc","interfaces.mdoc","projects.mdoc","pdf.mdoc","original-v1.mdoc","original-source.mdoc"] /%}
 
 先查需求边界，再读与当前修改有关的设计。这里记录目标、理由与取舍；现行字段由使用文档中的查询参考统一维护。
 
 - [需求与设计基线](requirements.mdoc)：事实边界、图形质量和验收强度。
+- [图表体系设计](chart-system.mdoc)：按工程问题划分表达、模型与绘图分工、默认简单且可扩展、Agent 选择路径及现有缺口。
+- [消息、协议、统计与寄存器扩展方案](chart-extension-models.mdoc)：待确认的 Sequence、BinaryLayout、PlotView 及 RegisterBlock/AddressSpace 定义，复用现有 Table 和 Register；尚未实现。
 - [框图阅读层级](diagram-reading-levels.mdoc)：系统关系、主题与模块接线的分工，以及真实工程总图的抽象原则。
 - [通用框图布局与布线模型](drawing-contract.mdoc)：当前优先设计的绘图内核，包含图形结构、约束、精确控制、求解与输出边界。
 - [框图与接口模型及开源选型](diagram-model-and-components.mdoc)：组件职责、Agent 作者输入、语义与显示分层，以及整体设计的决策门槛。
+- [状态图与流程图模型方案](state-and-flow.mdoc)：待审阅的专用语义、从简到复杂的数据表达、共用绘图层及完整验收范围。
 - [Markdoc 兼容基线](markdoc.mdoc)：保留上游原生能力，在其上扩展 edoc；上游差异记录与当前接入范围。
 - [声明式展示](presentation.mdoc)：全工具的默认、局部覆盖和后续规划。
 - [目录组织与局部排序](navigation.mdoc)：文件层级、index 顺序声明和跨主题阅读的取舍。

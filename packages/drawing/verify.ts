@@ -1,7 +1,10 @@
 import {DrawingError} from './types.ts';
+import {onShapeBoundary,shapeSegmentCrosses} from './shapes.ts';
 import type {Drawing, DrawingScene, Point, Rect, Target, ConnectionGeometry} from './types.ts';
 import {same, crosses, intersects} from '../render-graph/geometry.ts';
 import {checkPaths} from './check-paths.ts';
+import {verifyCurvePath} from './curve-verification.ts';
+import {pathBounds,pathContains,pathHitsRect,pathPosition,samples} from './bezier.ts';
 
 const epsilon = .02;
 const contains = (a: Rect, b: Rect) => b.x >= a.x - epsilon && b.y >= a.y - epsilon && b.x + b.width <= a.x + a.width + epsilon && b.y + b.height <= a.y + a.height + epsilon;
@@ -46,17 +49,18 @@ export function verifyDrawingScene(input: Drawing, scene: DrawingScene): string[
   for (let i = 0; i < scene.nodes.length; i++) for (const b of scene.nodes.slice(i + 1)) { const a = scene.nodes[i]; if (a.parentId === b.parentId && intersects(a, b)) fail([a.id, b.id], '同级模块重叠'); }
   for (const source of input.connections) {
     const c = connections.get(source.id); if (!c || JSON.stringify(c.originIds) !== JSON.stringify(source.originIds ?? []) || c.ends.length !== source.ends.length) fail([source.id], '连接身份、来源或端点数量丢失');
+    for(const p of c.paths)if(p.curves){if(p.points.length<2||p.curves.length!==p.points.length-1)fail([c.id,p.id],'曲线控制点数量与结点不对应');for(const control of p.curves)for(const v of [control?.c1,control?.c2])if(!v||!Number.isFinite(v.x)||!Number.isFinite(v.y))fail([c.id,p.id],'曲线控制点无效');const a=c.ends.find(e=>e.id===p.from),b=c.ends.find(e=>e.id===p.to);if(!a||!b||a.id===b.id||!same(a,p.points[0])||!same(b,p.points.at(-1)!))fail([c.id,p.id],'曲线路径端身份错误');}
     for (const end of source.ends) {
       const e = c.ends.find(e => e.id === end.id); if (!e || e.node !== end.node || e.port !== end.port || e.marker !== end.marker) fail([c.id, end.id], '连接端身份或标记改变');
       const n = nodes.get(e.node)!; const p = e.port ? n.ports.find(p => p.id === e.port)! : undefined;
       if (p && (!same(p, e) || p.side !== e.side)) fail([c.id, e.id], '端点未挂接到指定端口');
       if (!c.paths.some(p => same(p.points[0], e) || same(p.points.at(-1)!, e))) fail([c.id, e.id], `声明端点未接入路线：锚点 (${e.x},${e.y})，路线 ${JSON.stringify(c.paths.map(p => [p.points[0], p.points.at(-1)]))}`);
       const sideCoordinate = e.side === 'left' ? n.x : e.side === 'right' ? n.x+n.width : e.side === 'top' ? n.y : n.y+n.height;
-      if (!equal(e[['left','right'].includes(e.side)?'x':'y'],sideCoordinate)) fail([c.id,e.id], '框边端点或侧边错误');
+      if (!(n.shape?onShapeBoundary(n,e):equal(e[['left','right'].includes(e.side)?'x':'y'],sideCoordinate))) fail([c.id,e.id], '框边端点或侧边错误');
       for (const path of c.paths) {
         const points=same(path.points[0],e)?path.points:same(path.points.at(-1)!,e)?path.points.slice().reverse():undefined;
         if (!points) continue;
-        const d=points[1], outward=e.side==='left'?e.x-d.x:e.side==='right'?d.x-e.x:e.side==='top'?e.y-d.y:d.y-e.y;
+        const curve=path.curves,d=curve?(path.from===e.id?curve[0].c1:curve.at(-1)!.c2):points[1], outward=e.side==='left'?e.x-d.x:e.side==='right'?d.x-e.x:e.side==='top'?e.y-d.y:d.y-e.y;
         if (!(container(n.id)&&c.ends.every(other=>parent(n.id,other.node))) && outward<=0) fail([c.id,e.id], '端点未沿侧边法向向外接入');
       }
     }
@@ -65,10 +69,12 @@ export function verifyDrawingScene(input: Drawing, scene: DrawingScene): string[
     if (connected.size !== c.paths.length) fail([c.id], '路线不是连通结构');
     for (const path of c.paths) {
       if (path.points.length < 2) fail([c.id, path.id], '路线没有线段');
+      if(path.curves){if(input.layout?.routing!=='curved')fail([c.id,path.id],'未声明曲线路由却返回了曲线');verifyCurvePath(path,c,scene.nodes);continue;}
+      if(input.layout?.routing==='curved'&&!(input.layout.constraints??[]).some(r=>r.type==='fixedRoute'&&r.connection===c.id))fail([c.id,path.id],'曲线路由被静默替换为折线');
       for (let i = 1; i < path.points.length; i++) {
         const a = path.points[i - 1], b = path.points[i];
         if (!equal(a.x, b.x) && !equal(a.y, b.y)) fail([c.id, path.id], '正交路线存在斜线');
-        for (const n of scene.nodes) { const related = container(n.id) && c.ends.some(e => parent(n.id, e.node)); if (crosses(a, b, related ? n.title : n)) fail([c.id, n.id], '路径穿过模块或容器标题'); }
+        for (const n of scene.nodes) { const related = n.shape==='lane'||container(n.id) && c.ends.some(e => parent(n.id, e.node)); if (related?crosses(a,b,n.title):shapeSegmentCrosses(n,a,b)) fail([c.id, n.id], '路径穿过模块或容器标题'); }
         for (const t of texts) if (crosses(a, b, t)) fail([c.id, t.id], '路径穿过框内文字');
       }
     }
@@ -81,15 +87,15 @@ export function verifyDrawingScene(input: Drawing, scene: DrawingScene): string[
   if (!equal(scene.width,scene.viewBox.width)||!equal(scene.height,scene.viewBox.height)) fail([], '画布与输出范围不一致');
   for (const n of scene.nodes) if (!contains(scene.viewBox,n)) fail([n.id], '输出范围裁切模块');
   for (const c of scene.connections) {
-    for (const p of c.paths.flatMap(p=>p.points)) if (!contains(scene.viewBox,{...p,width:0,height:0})) fail([c.id], '输出范围裁切路线');
+    for (const p of c.paths) if (!contains(scene.viewBox,pathBounds(p))) fail([c.id], '输出范围裁切路线');
     for (const l of c.labels) if (!contains(scene.viewBox,l)) fail([c.id,l.id], '输出范围裁切标题');
   }
   for (const [i, {c, l}] of labels.entries()) {
     const center={x:l.x+l.width/2,y:l.y+l.height/2};
-    if(!c.paths.some(p=>p.points.slice(1).some((end,i)=>on(center,p.points[i],end))))fail([c.id,l.id],'线上标题中心未落在所属路径');
+    if(!c.paths.some(p=>p.curves?pathContains(p,center):p.points.slice(1).some((end,i)=>on(center,p.points[i],end))))fail([c.id,l.id],'线上标题中心未落在所属路径');
     for (const n of scene.nodes) if (intersects(l, container(n.id) ? n.title : n, 1)) fail([c.id, l.id, n.id], '线上标题遮挡模块');
     for (const {c: other, l: b} of labels.slice(i + 1)) if (intersects(l, b, 1)) fail([c.id, l.id, other.id, b.id], '线上标题互相重叠');
-    for (const other of scene.connections.filter(o => o !== c)) for (const p of other.paths) for (let j = 1; j < p.points.length; j++) if (crosses(p.points[j - 1], p.points[j], l)) fail([c.id, l.id, other.id], '线上标题遮挡其他连接');
+    for (const other of scene.connections.filter(o => o !== c)) for (const p of other.paths) if(pathHitsRect(p,l)) fail([c.id, l.id, other.id], '线上标题遮挡其他连接');
   }
   const verified: string[] = [];
   for (const [index, r] of (input.layout?.constraints ?? []).entries()) {
@@ -111,12 +117,18 @@ export function verifyDrawingScene(input: Drawing, scene: DrawingScene): string[
     }
     if (r.type === 'fixedRoute') {
       const c = connections.get(r.connection)!, f = frame(r.frame), at = (ref: import('./types.ts').RouteRef): Point => 'end' in ref ? c.ends.find(e => e.id === ref.end)! : offset(r.junctions!.find(j => j.id === ref.junction)!, f);
-      require(c.paths.length === r.paths.length, '固定路线数量改变');
+      require(c.paths.length === r.paths.length&&!c.paths.some(p=>p.curves), '固定路线数量或线型改变');
       for (const p of r.paths) { const g = c.paths.find(g => g.id === p.id), expected = [at(p.from), ...(p.via ?? []).map(p => offset(p, f)), at(p.to)]; require(!!g && g.points.length === expected.length && expected.every((p, i) => same(p, g.points[i])), '固定路线折点改变'); }
       require(c.junctions.length === (r.junctions ?? []).length && (r.junctions ?? []).every(j => c.junctions.some(p => same(p, offset(j, f)))), '固定分叉改变');
     }
     if (r.type === 'label') {
       const c = connections.get(r.connection)!, l = c.labels.find(l => l.id === r.label)!, end = c.ends.find(e => e.id === r.nearEnd)!;
+      if(c.paths.some(p=>p.curves)){
+        const p=c.paths.find(p=>same(p.points[0],end)||same(p.points.at(-1)!,end))!,center={x:l.x+l.width/2,y:l.y+l.height/2};
+        require(!!p&&pathContains(p,center),'标签未位于参考端的曲线上');
+        if(r.fraction!==undefined){const expected=pathPosition(p,p.from===end.id?r.fraction:1-r.fraction).point;require(equal(expected.x,center.x)&&equal(expected.y,center.y),'曲线标签弧长比例未满足');}
+        verified.push(r.id);continue;
+      }
       const paths = r.toEnd ? [trace(c, r.nearEnd, r.toEnd)] : c.paths.filter(p => same(p.points[0], end) || same(p.points.at(-1)!, end)).map(p => same(p.points[0], end) ? p.points : p.points.slice().reverse());
       const projection = {x: l.x + l.width / 2, y: l.y + l.height / 2};
       if (r.fraction === undefined) require(paths.some(points => points.slice(1).some((b, i) => b.x === points[i].x ? projection.y >= Math.min(b.y, points[i].y) && projection.y <= Math.max(b.y, points[i].y) : projection.x >= Math.min(b.x, points[i].x) && projection.x <= Math.max(b.x, points[i].x))), '标签未位于参考端相邻路径');
@@ -134,6 +146,7 @@ export function verifyDrawingScene(input: Drawing, scene: DrawingScene): string[
 
 // 从声明端沿唯一连接树追踪，不能以 paths 数组顺序猜主干。
 export function trace(c: ConnectionGeometry, from: string, to: string): Point[] {
+  if(c.paths.length===1&&c.paths[0].curves){const p=c.paths[0],points=samples(p,.002).map(s=>s.point);return p.from===from?points:points.reverse();}
   const start = c.ends.find(e => e.id === from)!, end = c.ends.find(e => e.id === to)!, pending: Point[][] = [[start]], seen: Point[] = [];
   while (pending.length) { const points = pending.shift()!, at = points.at(-1)!; if (same(at, end)) return points; if (seen.some(p => same(p, at))) continue; seen.push(at); for (const p of c.paths) { if (same(p.points[0], at)) pending.push([...points, ...p.points.slice(1)]); else if (same(p.points.at(-1)!, at)) pending.push([...points, ...p.points.slice().reverse().slice(1)]); } }
   throw new DrawingError('DRAWING_VERIFY', 'verify', [c.id, from, to], '声明端之间没有可追踪路线');

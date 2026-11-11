@@ -16,6 +16,7 @@ export function validateDrawingModel(drawing: Drawing): void {
   };
   const flatten = (contents: Content[]): Content[] => contents.flatMap(c => [c, ...c.kind === 'stack' ? flatten(c.children) : []]);
   for (const n of nodes.values()) {
+    if(!n.label.trim()&&!['initial','final','terminate','bar'].includes(n.shape??''))fail('DRAWING_TEXT',[n.id],'普通节点标题不能为空');
     unique(n.ports ?? [], n.id); unique(flatten(n.content ?? []), n.id);
     unique(n.portGroups ?? [], n.id); const grouped = new Set<string>();
     for (const group of n.portGroups ?? []) {

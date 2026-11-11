@@ -1,0 +1,184 @@
+{% section id="design:state-and-flow" title="状态图与流程图的数据模型和能力方案" %}
+
+状态：2026-11-11 用户已批准，按本方案实施。当前可运行定义由[正式契约](../../../reference/tags/control-diagrams.mdoc)维护，[状态教程](../../../charts/behavior/state.mdoc)和[流程教程](../../../charts/behavior/flowchart.mdoc)分别提供简单/复杂实例。本页保留设计动机、目标和完整验收矩阵；本轮实际完成的范围见验收记录，未完成的目标不作为已有能力。
+
+{% section id="design:state-and-flow-goal" title="用途与总体选择" %}
+
+状态图描述系统在何种状态配置下，因哪些事件和条件发生迁移，执行什么动作。适合FPGA控制状态机、MCU设备生命周期和主机驱动的连接/恢复行为。流程图描述任务按什么步骤推进，怎样判断、回退、调用、分工及并行同步，适合初始化、收发处理、升级与异常恢复。
+
+推荐两类独立语义模型，共用测量、布局、布线、几何检查、交互与SVG输出。简单实例只填写必要状态/步骤和关系；复杂实例增加明确结构，不改成另一套格式。模型保存语义和来源，视图保存展示范围与布局意图；节点的摆放顺序、颜色或箭头弯折不决定系统行为。
+
+交付范围是工程说明、结构检查和可追溯阅读。条件与动作可以是文本、表达式及来源引用，edoc不执行用户表达式、不加载任意JS，也不把图作为RTL/MCU仿真或自动代码生成的证据。
+
+{% /section %}
+{% section id="design:state-and-flow-research" title="原始规范与开源实现的取舍" %}
+
+下表区分公开资料的已知能力与本项目的设计判断。调研时间为2026-11-11，链接中的动态主分支不视为固定依赖版本。
+
+| 来源 | 核查到的重点 | 本方案的取舍 |
+| --- | --- | --- |
+| [OMG UML2.5.1规范](https://www.omg.org/spec/UML/2.5.1/PDF)，§14、§15 | 状态、区域、伪状态及迁移；活动控制流区分Decision/Merge、Fork/Join和两种结束 | 用于术语和结构边界，定义一个明确的edoc支持范围，不宣称完整UML或可执行UML兼容 |
+| [W3C SCXML](https://www.w3.org/TR/scxml/)，§3、附录D | 分层、并行、历史、entry/exit，以及明确的事件选择和执行规则 | 借鉴模型分层；其文档顺序、默认初态、事件队列和run-to-completion不能成为edoc隐藏默认 |
+| [Mermaid状态图](https://mermaid.js.org/syntax/stateDiagram.html)、[流程图](https://mermaid.js.org/syntax/flowchart.html) | 简洁文本、复合状态、并行、分支和子图；文档列有跨复合状态内部迁移及子图方向限制 | 借鉴常用写法与展示用例；不以Mermaid文本/SVG作为权威模型，不采用它作为精确布局能力的边界 |
+| [PlantUML状态图](https://plantuml.com/state-diagram)、[活动图](https://plantuml.com/activity-diagram-beta) | 较广的状态记法、历史、循环、并行、泳道及分区 | 作为复杂表达与图例的对照，不引入其运行服务或绘图后端 |
+| [Stately/XState迁移](https://stately.ai/docs/transitions)、[机器Schema草案](https://github.com/statelyai/schema/blob/main/spec.md) | 结构化事件/条件/动作和层级模型；Schema当前标为0.1.0 Draft | 借鉴声明式模型；不依赖其JS运行时或把草案当稳定标准 |
+| [ELK Layered](https://eclipse.dev/elk/reference/algorithms/org-eclipse-elk-layered.html) | 已支持自环、多重边、边标签、端口及跨层复合图 | 继续用作自动布局候选，不将后端接受数据当作edoc已实现或图形质量已验收 |
+| [bpmn-js](https://bpmn.io/toolkit/bpmn-js/) | BPMN2.0浏览器查看和编辑工具 | 当前目标为工程状态/算法流程，暂不引入完整BPMN业务模型与运行机制；需要BPMN交换时单独设计适配 |
+
+已实际读取UML2.5.1原始PDF相关条款，重点核对§14.2.3.8的迁移种类及§15.7的合流/同步、流程结束语义。也使用仓库已有elkjs对“两状态、自环、同端点多条边、反向迁移”做最小布局探测，均返回路径；该探测没有进行视觉、SVG或edoc端到端验收。
+
+{% /section %}
+{% section id="design:state-and-flow-gap" title="当前缺口与需要替换的定义" %}
+
+当前state只是RelationView的一种kind，状态借用Node，迁移借用Connection并把条件写在label里。Connection要求至少两个不同端点，显式源和目标还不能重叠，因此现路径无法表示状态自环。Drawing1.0的节点几何是矩形，也没有状态伪节点、判断菱形、同步条、泳道与对应边界接线契约。
+
+拟改变的定义需要单独批准：旧state继续复用通用节点/连接的方式，改为专用StateMachine及Flowchart语义；旧state输入由Agent迁移，避免维护两套状态语义。工程模块的真实Node/Port/Connection继续按原职责工作，不为支持自环而放宽电气连接约束。label作为显示文字，不再承担可查询的事件/条件/动作定义。
+
+现有效要求“迁移条件清楚、路径可追踪、不从任意HDL猜状态机、来源可追溯、离线HTML和SVG一致”继续保留。新增模型、标签、资源、Schema和绘图能力必须一起交付后，才能更新现行教程和完成清单。
+
+{% /section %}
+{% section id="design:state-and-flow-data" title="数据入口、身份与Agent写法" %}
+
+推荐标准资源stateMachines和flowcharts，分别维护状态机和流程的唯一语义；拟增加state-diagram和flowchart正文标签。默认视图由模型生成，简单实例不必另写views。复杂展示用独立views声明模型引用、focus、展开/折叠及layout，再由标签的view属性明确选择。两个模型和视图共享正文链接、来源及查询体系，不复制一份图中的要求。
+
+模型ID在工程内唯一；内部状态、区域、迁移、步骤、边和注释使用模型内唯一的稳定ID，不靠名称或数组位置生成身份。完整身份为projectId、modelId、elementId；query模型返回元素摘要，拟以--element精确查询局部元素，来源跳转采用同一完整身份。多个模型可各自使用idle；同模型不同类型的元素不能重名。
+
+源数据只保存JSON值。短字符串事件是一种新的作者快捷写法，统一归一为有类型的event触发；不会增加第二份事实。条件与动作的文字不自动当作ID；引用必须显式写ref或source。数组只决定明确声明有序的动作顺序；分支优先级必须用专门字段声明，不借布局或普通数组顺序产生。
+
+拟议最小状态机：
+
+```json {% process=false %}
+{
+  "id":"sm:send", "kind":"state-machine", "label":"发送控制",
+  "initial":"idle",
+  "states":[{"id":"idle","label":"空闲"},{"id":"sending","label":"发送中"}],
+  "transitions":[
+    {"id":"submit","from":"idle","to":"sending","trigger":"request","guard":"请求合法","actions":["锁存请求"]},
+    {"id":"done","from":"sending","to":"idle","trigger":"completed","actions":["报告结果"]}
+  ]
+}
+```
+
+拟议最小流程图：
+
+```json {% process=false %}
+{
+  "id":"flow:init", "kind":"flowchart", "label":"设备初始化",
+  "nodes":[
+    {"id":"start","kind":"start"},
+    {"id":"init","label":"初始化设备"},
+    {"id":"check","kind":"decision","label":"检查初始化结果"},
+    {"id":"ready","kind":"end","label":"就绪"},
+    {"id":"fail","kind":"end","label":"报告失败"}
+  ],
+  "edges":[
+    {"id":"begin","from":"start","to":"init"},
+    {"id":"check-result","from":"init","to":"check"},
+    {"id":"ok","from":"check","to":"ready","guard":"初始化成功"},
+    {"id":"error","from":"check","to":"fail","otherwise":true}
+  ]
+}
+```
+
+省略状态kind表示普通状态，省略流程节点kind表示process；start/end这类无文字节点可省略label。显式声明的事件、条件和动作原文始终保留，图上标题由它们生成。没有声明的字段显示未声明，不能自动补为成功、无条件、完成事件或第一个状态。
+
+拟议正文为state-diagram id="sm:send"和flowchart id="flow:init"；这些标签当前不可运行。本轮不增加独立的Mermaid/PlantUML文本DSL、必需编辑器或可执行脚本配置。
+
+{% /section %}
+{% section id="design:state-and-flow-state" title="状态图完整表达范围" %}
+
+| 内容 | 建议数据表达及边界 |
+| --- | --- |
+| 普通、初始与终态 | states、initial和final类型。initial是默认进入目标；需要初始迁移动作时可用具名initial伪节点加迁移，两种声明不得重复竞争 |
+| 事件、条件、动作 | transitions分别保存trigger、guard、actions。trigger对象区分event、after、completion、always、clock及change；缺省表示未声明，不猜为completion |
+| 超时与时钟 | after写value、unit；周期单位还需clock引用。clock触发写时钟/边沿。ms与周期不自动换算，不由布局推断执行时间 |
+| entry、do、exit | 状态内部独立的动作区域。do表示处于状态期间的活动说明，不当作每个时钟周期重复执行的隐式代码 |
+| 外部、自身、内部与局部迁移 | transition.type区分external、internal、local。外部自迁移会离开再进入；internal保持状态，不执行entry/exit；local须有合适的复合状态范围。边看起来相同不能掩盖动作差异 |
+| 复合与并行状态 | composite/parallel及regions；region.owner指向所属状态，状态/伪节点的region指向区域。顶层隐含根区域，简单实例无需写regions；复合状态一个区域，并行状态多个区域，各区域独立初态 |
+| 条件选择与连接点 | choice与junction分别有明确kind，不仅画一个菱形；迁移保留guard/otherwise，不从布局判断分支选择顺序 |
+| 历史状态 | history明确shallow/deep、所属区域和首次进入的default目标，不把H/H*仅作为标题文字 |
+| 分叉、同步与边界 | fork、join、entry、exit及terminate具名元素。分叉/同步检查区域关系；正常final与立即terminate明确区分 |
+| 子状态机 | submachine目标引用、入口/出口映射。多处引用保持同一模型身份，显示实例使用独立投影身份；内联展开有深度限额，递归调用不无限展开 |
+| 优先级与执行上下文 | 显式selection/priority描述项目约定；重叠条件的数学互斥性不由文本判断。FPGA时钟、复位、编码及寄存输出通过绑定来源描述，不强制映射成异步事件队列 |
+
+状态机的分层、历史与并行结构必须能完整显示、查询和导出；不得只接受这些字段而静默忽略。复合状态之间的合法跨层迁移须保留真实起止点，进入/离开边界的路径不是新增迁移。跨并行区域的直接普通迁移不借跨层布线放行，应使用合法同步结构。
+
+SCXML/UML/XState对冲突选择和执行细节不完全相同。edoc默认是声明与阅读，不执行事件调度；项目若要描述某种执行规则，必须显式选择并说明语义来源。此处不宣称实现了任一运行时的全部语义，也不默认用先出现者覆盖另一条迁移。
+
+{% /section %}
+{% section id="design:state-and-flow-flow" title="流程图完整表达范围" %}
+
+| 内容 | 建议数据表达及边界 |
+| --- | --- |
+| 开始、处理、结束 | start、process、end；默认process。end.scope区分整个流程结束与当前分支结束，默认flow，不能用两个同样的结束图形混淆并行路径 |
+| 判断与多分支 | decision的出边保存guard或otherwise；otherwise至多一条。若声明有序选择，使用明确priority；条件未声明或互斥性未知时保留诊断 |
+| 普通合流 | merge接收多个备选路径，不等待它们全部到达 |
+| 并行分叉与同步 | fork和join独立类型；join默认all，需要其他等待规则时显式joinSpec说明。不把普通多条入边画成隐式并行屏障，也不把any合流当取消其他分支 |
+| 循环、重试和提前结束 | 图中显式回边、判断节点及结束/跳转，覆盖while、do-while、break、continue、失败重试；不通过隐藏边伪造循环 |
+| 调用与子流程 | call引用目标流程，支持明确返回出口。可只显示调用节点、展开或进入独立详情；展开不改变语义身份、控制路径或来源 |
+| 等待与异常 | wait区分事件和带单位的计时；边kind区分control、exception、timeout。错误或超时不是因线为红色/虚线才获得语义 |
+| 输入输出及连接点 | io保存输入/输出用途，connector提供具名连接点；note和annotation不参与控制流 |
+| 泳道与责任 | lanes描述负责者，node.lane明确归属。泳道不表示并行或串行，不改变分支/同步含义；各子流程拥有自己的作用范围与可选泳道 |
+| 子图与展示分组 | 语义子流程用call/目标模型表达；仅为排版的groups放在view，不用一个parentId同时表示调用、所有权、泳道和显示分组 |
+
+process多入边不自动等待所有来源，多出边也不自动表示并行；严格完整模型要求用merge/decision/fork/join表达控制选择。部分说明允许未声明控制规则，但必须显示不完整诊断，不能声称可执行或验证充分。没有终点的长期服务循环可能是有效设计，不能一概判为错误。
+
+当前范围不包含UML完整对象令牌流、BPMN事务/补偿/消息协作或工作流执行引擎；需要这些能力时以明确新模型扩展，不能用任意属性或注释冒充已支持的语义。
+
+{% /section %}
+{% section id="design:state-and-flow-layout" title="共用绘图层与精确控制" %}
+
+处理链建议为：状态/流程语义 → 结构校验 → 视图投影 → 节点与文字测量 → 布局/布线 → 独立几何检查 → HTML/SVG。语义模型不直接继承电气Node/Connection，不重复实现缩放、选择、来源和离线查询。
+
+现有Drawing1.0需要演进形状与边界契约：圆角状态、初始点、正常终态、立即终止、菱形、同步条、历史标记、分区及泳道。节点至少保存包围盒、实际外轮廓、内容区和连接锚点；连线终点必须落在实际轮廓，不能只改外观却继续连接矩形包围盒。矩形框图的原有表现继续作为默认，不为新形状降低旧检查。
+
+布局按三层使用：默认自动；按需声明主流方向、兄弟顺序、对齐、分支侧边、循环通道、局部容器方向与标签位置；必要时声明精确位置和路线。硬约束冲突或无法求解时给出具体模型/元素/约束ID，不静默降级。自动布局不保证任意复杂图无需调整，也不能以“有自动布局”为由去掉作者控制。
+
+自环、同端点的多条不同迁移、反向边、跨层边和并行区域必须有独立路径、箭头及可辨认的标签。长条件/动作可以换行、在节点内分区或在详情中完整读取，紧凑视图不得删掉原文；优先避免穿框、压字和假交点，再优化交叉与弯折。
+
+{% /section %}
+{% section id="design:state-and-flow-reader" title="层级阅读、来源与静态交付" %}
+
+默认视图展示完整模型；较复杂的复合状态和子流程可显式折叠。折叠只改变投影：跨边界关系保留原起止身份，聚合线列出成员，不把到不同子状态的迁移合并为一条新事实。泳道和并行区域不自动成为可互换的分组。
+
+网页继续支持连线标题开关、缩放、平移、大图、选择、搜索、属性及来源跳转。状态/流程元素可链接正式行为、条款、源码和测试证据；普通链接不自动证明实现或覆盖。进入内部元素时展开必要上下文，返回恢复阅读位置和展开状态。
+
+完整SVG和当前视图SVG明确区分。两者从同一投影/几何管线生成，保留初终态、箭头、条件和分区，内嵌字体；不能把视口截图当完整SVG。query返回完整语义和来源，read按已选视图/元素提供可分页正文，不能把所有展开全文塞进侧字段绕过预算。
+
+{% /section %}
+{% section id="design:state-and-flow-validation" title="结构检查与无法自动证明的范围" %}
+
+必须报错的情况包括重复/缺失ID、区域所有权循环、错误初态/历史默认目标、不合法迁移种类、伪节点度数不符、普通终态具有出边、otherwise重复、错误调用目标/出口、未知语义类型以及不支持的必需能力。隐藏或折叠内容仍参加检查。
+
+结构上孤立或从初态无路径的节点、未声明初态/条件/执行规则、可能不完整的返回与同步路径应给出定位诊断，允许项目把相应诊断提升为错误。保持长期运行的循环、多个合法正常出口和显式部分视图；不把缺少有限终点当作所有模型的错误。
+
+guard/actions为文字或项目表达式时，edoc可以检查引用、类型和明显常量结构，不能证明所有条件互斥、覆盖所有输入、一定终止或不会并发死锁。数据有效、布局有效和真实系统行为正确是不同结论。以后接入形式验证时，通过明确的语义Profile与外部验证结果建立证据，不改变这条边界。
+
+{% /section %}
+{% section id="design:state-and-flow-acceptance" title="实现验收矩阵" %}
+
+| 组别 | 必须覆盖的实例与独立判据 |
+| --- | --- |
+| 简单作者路径 | 两状态含条件/动作；开始-处理-判断-结束；空配置接入，默认自动布局，无手写几何 |
+| 状态迁移 | 自环、内部与外部自迁移、同源同目标不同条件、反向迁移、长中文、计时与周期单位 |
+| 状态层级 | 至少两层复合、并行区域、shallow/deep历史、choice/junction、fork/join、入口/出口、子状态机及合法跨层路径 |
+| 流程控制 | 多分支/default、while与do-while回路、提前退出、重试、普通merge与并行join的区别、分支结束与全流程结束 |
+| 复杂流程 | 多泳道、子流程及多出口、事件/计时等待、异常路径、重复调用同一子流程、注释不参与控制 |
+| 布局控制 | 自动、对齐/顺序/分支与回边通道、局部方向、固定路线；冲突必须报错，所有形状检查实际轮廓与标签 |
+| 阅读与交付 | 折叠/展开、内部搜索定位、来源/条款/源码跳转、返回、离线HTML、390px、完整/当前SVG、query/read分页 |
+| 数据与来源 | 无丢失的归一化、可重排但不改变身份的元素、显式优先级、隐藏依赖、原模型不被视图修改 |
+| 真实工程规模 | FPGA发送控制状态图和MCU初始化/恢复流程各一份，以有效项目文档及源码逐项核对；虚构原型不冒充项目验收 |
+
+每个被宣布支持的复杂结构都应完成Schema、语义校验、投影、几何、网页、SVG和查询的完整链路；仅在Schema预留字段不算支持。规模测试须记录状态/步骤、边、层级和标签规模，再说明可读范围与失败预算，不承诺任意规模均自动美观。
+
+{% /section %}
+{% section id="design:state-and-flow-plan" title="实施顺序与审阅决定" %}
+
+建议先确认本方案的语义范围、专用模型和绘图层分工，然后完成正式Schema与最小/复杂夹具。状态机和流程图并行确定契约，按独立可验收步骤接入，避免先做一个只能画矩形箭头的版本再反复换模型。
+
+实施步骤：先锁定并校验模型与转换；补齐形状、自环、多重边、复合区域与约束；接入两类标签、默认与命名视图、Agent查询和来源；完成矩阵中的浏览器/SVG/真实项目对照；最后更新首页、图表入口、教程、能力索引与参考，迁移旧state写法并验证安装包。
+
+用户已批准两类专用模型、旧状态图直接迁移及公开复杂场景演示。实现与交付包含字段契约、几何、阅读、查询、迁移和安装验证；本页的目标矩阵不等于所有组合已经验收。
+
+{% /section %}
+{% /section %}

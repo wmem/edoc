@@ -1,14 +1,126 @@
 {
-  "objects": [
-    {"id":"author:state.idle","kind":"node","label":"空闲"},
-    {"id":"author:state.busy","kind":"node","label":"处理"}
-  ],
-  "relations": [
-    {"id":"author:state.start","kind":"connection","class":"control","label":"收到请求","endpoints":["author:state.idle","author:state.busy"],"direction":{"sources":["author:state.idle"],"targets":["author:state.busy"]}},
-    {"id":"author:state.finish","kind":"connection","class":"control","label":"处理完成","endpoints":["author:state.busy","author:state.idle"],"direction":{"sources":["author:state.busy"],"targets":["author:state.idle"]}}
-  ],
-  "views": [{
-    "id":"author:state","kind":"state","label":"两状态规范示意",
-    "include":{"objects":["author:state.idle","author:state.busy"],"relations":["author:state.start","author:state.finish"]}
-  }]
+  "stateMachines": [
+    {
+      "id": "author:state",
+      "kind": "state-machine",
+      "label": "1011 序列检测器",
+      "initial": "none",
+      "semantics": {
+        "profile": "同步 Mealy；din 为单比特。matched 默认为 0，仅在 S101 且 din=1 时为 1；允许重叠匹配。",
+        "clock": "clk",
+        "reset": "本说明模型约定：rst_n 低有效同步复位，优先返回 S0。"
+      },
+      "states": [
+        {
+          "id": "none",
+          "label": "S0 · 未匹配"
+        },
+        {
+          "id": "seen1",
+          "label": "S1 · 已见 1"
+        },
+        {
+          "id": "seen10",
+          "label": "S10 · 已见 10"
+        },
+        {
+          "id": "seen101",
+          "label": "S101 · 已见 101"
+        }
+      ],
+      "transitions": [
+        {
+          "id": "none-0",
+          "from": "none",
+          "to": "none",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 0"
+        },
+        {
+          "id": "none-1",
+          "from": "none",
+          "to": "seen1",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 1"
+        },
+        {
+          "id": "seen1-0",
+          "from": "seen1",
+          "to": "seen10",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 0"
+        },
+        {
+          "id": "seen1-1",
+          "from": "seen1",
+          "to": "seen1",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 1"
+        },
+        {
+          "id": "seen10-0",
+          "from": "seen10",
+          "to": "none",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 0"
+        },
+        {
+          "id": "seen10-1",
+          "from": "seen10",
+          "to": "seen101",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 1"
+        },
+        {
+          "id": "seen101-0",
+          "from": "seen101",
+          "to": "seen10",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 0"
+        },
+        {
+          "id": "seen101-1",
+          "from": "seen101",
+          "to": "seen1",
+          "trigger": {
+            "kind": "clock",
+            "clock": "clk",
+            "edge": "rising"
+          },
+          "guard": "din == 1",
+          "actions": [
+            "matched = 1"
+          ]
+        }
+      ]
+    }
+  ]
 }

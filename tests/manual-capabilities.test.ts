@@ -17,7 +17,7 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
  const book=await manual,graph=book.root.graph;
  const content=(id:string)=>readDocument(graph,id,{scope:'subtree',maxChars:100000}).content;
  const check=(fields:string[],id:string)=>{const text=content(id);for(const field of fields)assert.ok(new RegExp('\\b'+field+'\\b').test(text),id+' 缺少字段 '+field);};
- const view=json('packages/extensions/relation-diagram/view.schema.json').properties.views.items.properties;
+ const view=json('packages/extensions/relation-diagram/view.schema.json').properties.views.items.else.properties;
  const objects=json('packages/extensions/relation-diagram/object.schema.json').properties.objects.items.oneOf;
  for(const object of objects)check(Object.keys(object.properties),'ref:objects');
  check(Object.keys(objects[0].properties.interfaces.items.properties),'ref:interfaces');
@@ -35,7 +35,7 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
  for(const row of table.rows.items.oneOf)check(Object.keys(row.properties),'ref:tables');
  const register=json('packages/extensions/register/register.schema.json').properties.registers.items.properties;
  check(Object.keys(register),'ref:register-shape');check(Object.keys(register.fields.items.properties),'ref:register-shape');
- for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment'].includes(name)?'ref:markdoc-links':['include','code'].includes(name)?'ref:markdoc-files':'ref:tag-'+name);
+ for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment'].includes(name)?'ref:markdoc-links':['include','code'].includes(name)?'ref:markdoc-files':['state-diagram','flowchart'].includes(name)?'ref:control-diagrams':'ref:tag-'+name);
  const document=book.root.documents.documents.find(d=>d.file==='docs/reference/capabilities.mdoc')!;
  let rows=0;
  for(const table of [...document.ast.walk()].filter(n=>n.type==='table'))for(const row of [...table.walk()].filter(n=>n.type==='tr')){
@@ -76,12 +76,12 @@ test('新增表格、页面和图形配方可分别在空工程运行，事实�
  assert.deepEqual(graphs.page.scenes['author:group-overview'].collapsedGroups,['author:workers']);
  // 教程拆页以后，读者仍能单独复制一种能力，不依赖前面章节或仓库 Gallery。
  const minimal="export default {};";
- for(const [name,id,view]of [['interfaces','use:interface-create','simple:stream'],['wiring','use:wiring','wire:overview'],['states','use:state','author:state']]as const){
+ for(const [name,id,view]of [['interfaces','use:interface-create','simple:stream'],['wiring','use:wiring','wire:overview'],['states','use:state-simple','author:state']]as const){
   const sample=await create(name,minimal,one(id,'json'),one(id,'text'));
   assert.ok(sample.page.scenes[view],id+' 的完整图形配方必须独立构建');
   if(name==='interfaces'){assert.equal(sample.page.scenes[view].nets.length,1);assert.equal(sample.page.scenes[view].nets[0].sourceRelations?.length,2);}
   if(name==='wiring')assert.equal((query(sample.book.root.graph,'wire:clock').target.entity as any).endpoints.length,3);
-  if(name==='states')assert.equal(sample.page.scenes[view].nets.length,2);
+  if(name==='states')assert.equal(sample.page.scenes[view].nets.length,9,'八次迁移和显式初始入口');
  }
  const wave=await create('waveform',minimal,one('use:waveform-create','json'),one('use:waveform-create','text'));assert.match(wave.page.html,/最小握手示意/);
  const registers=await create('registers',blocks('use:registers:create','javascript')[0],undefined,one('use:registers:create','text'));assert.match(registers.page.html,/data-register="ctrl"/);assert.equal(query(registers.book.root.graph,'ctrl.en').registerField!.resetText,'0x0');

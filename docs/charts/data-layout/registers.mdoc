@@ -14,7 +14,7 @@
 {"id":"instance:0","values":{"name":"CTRL"},"links":{"name":{"kind":"entity","id":"manual:ctrl"}}}
 ```
 
-links 的键是 columns.field。entity 跳到章节或对象，page 定位文章与行，pdf 定位附件，source 跟随目标的声明来源。精确字段、同工程校验和跨工程弱跳转见[单元格目标契约](../reference/ir.mdoc#ref:cell-links)。
+links 的键是 columns.field。entity 跳到章节或对象，page 定位文章与行，pdf 定位附件，source 跟随目标的声明来源。精确字段、同工程校验和跨工程弱跳转见[单元格目标契约](../../reference/ir.mdoc#ref:cell-links)。
 
 {% /section %}
 
@@ -58,7 +58,7 @@ export default {data:{registers:[{
 {% register-field-table id="ctrl" /%}
 ```
 
-字段必须有唯一 ID、名称和 msb/lsb，不能重叠或越界。access、reset、description、source 按实际定义填写，未提供不推断。寄存器完整契约见[位域数据参考](../reference/tags/registers.mdoc)。上面的最小配置可独立构建；下方完整演示配置还引用本手册的模板章节、文章路径和 location PDF，复制到其他工程时须一并替换这些目标。
+字段必须有唯一 ID、名称和 msb/lsb，不能重叠或越界。access、reset、description、source 按实际定义填写，未提供不推断。寄存器完整契约见[位域数据参考](../../reference/tags/registers.mdoc)。上面的最小配置可独立构建；下方完整演示配置还引用本手册的模板章节、文章路径和 location PDF，复制到其他工程时须一并替换这些目标。
 
 {% code file="docs/support/recipes/registers.config.js" language="javascript" /%}
 

@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {spawnSync} from 'node:child_process';
+import {chromium} from 'playwright';
+import {repository} from './helpers.ts';
+
+test('新工程图离线可读：几何、局部身份、展开、缩放、导出、来源跳转与窄屏',{timeout:120000},async t=>{
+ const build=spawnSync(process.execPath,['packages/cli/edoc.ts','build'],{cwd:repository,encoding:'utf8',timeout:60000});assert.equal(build.status,0,build.stderr);
+ const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1600,height:1100},acceptDownloads:true}),page=await context.newPage(),errors:string[]=[],requests:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
+ await page.goto(pathToFileURL(join(repository,'output/index.html')).href);await page.waitForFunction(()=>window.EdocReady);
+ const go=async(id:string)=>{await page.evaluate(id=>location.hash='edoc='+encodeURIComponent(JSON.stringify({kind:'page',project:'edoc-manual',id})),id);await page.waitForFunction(()=>window.EdocReady);};
+ const figure=(id:string)=>page.locator('[data-engineering-figure]').filter({has:page.locator('svg metadata')}).filter({hasNot:page.locator('.never')}).locator(`xpath=self::*[@data-engineering-figure='${id}']`);
+ await go('docs/charts/timing/sequences');assert.equal(await page.locator('[data-engineering-figure]').count(),2);
+ const simple=figure('seq:request');assert.ok(await simple.isVisible());
+ await simple.locator('.engineering-viewport [data-local="request"] text').click();assert.match(await simple.locator('[data-figure-detail]').innerText(),/request/);
+ const camera=()=>simple.locator('.engineering-viewport > svg').getAttribute('viewBox');const before=await camera();await simple.locator('[data-figure-action=in]').click();assert.notEqual(await camera(),before);await simple.locator('[data-figure-action=fit]').click();
+ const panBefore=await camera(),box=await simple.locator('.engineering-viewport').boundingBox();assert.ok(box);await page.mouse.move(box.x+12,box.y+80);await page.mouse.down();await page.mouse.move(box.x+52,box.y+120,{steps:5});await page.mouse.up();assert.notEqual(await camera(),panBefore);await simple.locator('[data-figure-action=fit]').click();
+ const overlaps=await page.locator('[data-engineering-figure="view:upgrade"] .engineering-viewport > svg').evaluate(svg=>{const texts=[...svg.querySelectorAll('text')].filter(e=>e.textContent?.trim()).map(e=>({text:e.textContent!,b:e.getBBox()}));const result:string[]=[];for(let i=0;i<texts.length;i++)for(const b of texts.slice(i+1)){const a=texts[i];if(Math.min(a.b.x+a.b.width,b.b.x+b.b.width)-Math.max(a.b.x,b.b.x)>2&&Math.min(a.b.y+a.b.height,b.b.y+b.b.height)-Math.max(a.b.y,b.b.y)>2)result.push(a.text+' / '+b.text);}return result;});assert.deepEqual(overlaps,[],'消息文字、片段标题和分支条件不能互相覆盖');
+ const complex=figure('view:upgrade');await complex.locator('[data-figure-search]').fill('authenticate/challenge');await complex.locator('[data-figure-action=find]').click();assert.match(await complex.locator('[data-figure-detail]').innerText(),/seq:auth/);assert.equal(await complex.locator('.selected').count(),1);
+ await complex.locator('[data-figure-search]').fill('write-loop');await complex.locator('[data-figure-action=find]').click();await complex.locator('[data-figure-action=fold]').click();assert.equal(await complex.locator('.engineering-viewport [data-local="write"]').count(),0);await complex.locator('[data-figure-action=expand]').click();assert.equal(await complex.locator('.engineering-viewport [data-local="write"]').count(),1);
+ const downloadPromise=page.waitForEvent('download');await simple.locator('[data-figure-action=full]').click();const download=await downloadPromise,svg=readFileSync((await download.path())!,'utf8');assert.match(svg,/@font-face/);assert.match(svg,/读取状态/);assert.ok(!svg.includes('<script'));
+ await go('docs/charts/data-layout/binary-layouts');const sample=figure('view:packet-sample');assert.equal(await sample.locator('.engineering-viewport [data-local-id="seqno"]').count(),1);assert.equal(await sample.locator('.engineering-viewport [data-local-id="command"]').count(),0);
+ const branches=await figure('binary:packet').locator('.engineering-viewport [data-local-id="seqno"],.engineering-viewport [data-local-id="command"]').evaluateAll(es=>es.map(e=>(e as unknown as SVGGraphicsElement).getBBox().y));assert.equal(branches.length,2);assert.ok(Math.abs(branches[0]-branches[1])>45,'互斥分支必须分开显示');
+ const repeated=figure('binary:scatter');await repeated.locator('[data-figure-search]').fill('["items","descriptor","opcode"]');await repeated.locator('[data-figure-action=find]').click();assert.match(await repeated.locator('[data-figure-detail]').innerText(),/binary:descriptor/);
+ await go('docs/charts/records/plots');assert.equal(await page.locator('[data-engineering-figure]').count(),3);assert.ok(await figure('plot:distribution').locator('.engineering-viewport [role="graphics-symbol"]').count()>30);
+ const fullBounds=await figure('plot:simple').locator('.engineering-viewport > svg').evaluate((s:SVGSVGElement)=>({view:s.viewBox.baseVal.height,original:Number(s.getAttribute('height'))}));assert.equal(fullBounds.view,fullBounds.original,'普通统计图默认视口不能裁掉横轴');
+ await figure('plot:quantile').locator('[data-figure-action=data]').click();assert.match(await figure('plot:quantile').locator('[data-figure-detail]').innerText(),/linear \/ R-7/);
+ await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));await page.setViewportSize({width:1600,height:1100});
+ await go('docs/charts/data-layout/register-maps');const map=figure('space:csr');await map.locator('[data-figure-search]').fill('["device","ports",2,"ctrl"]');await map.locator('[data-figure-action=find]').click();assert.match(await map.locator('[data-figure-detail]').innerText(),/0x1000000000000300/);
+ await map.getByRole('link',{name:'reg:port-ctrl',exact:true}).first().click();await page.waitForFunction(()=>window.EdocReady);assert.equal(await page.locator('[data-register="reg:port-ctrl"]').count(),1);assert.deepEqual(errors,[]);assert.deepEqual(requests,[]);
+});

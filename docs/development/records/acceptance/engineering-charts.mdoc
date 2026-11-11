@@ -1,0 +1,43 @@
+{% section id="acceptance:engineering-charts" title="消息、协议、统计与地址图" %}
+
+2026-11-11 用户批准[模型方案](../design/chart-extension-models.mdoc)后实施。当前契约在[工程图参考](../../../reference/tags/engineering-charts.mdoc)，可运行教程分别进入消息交互、协议布局、寄存器映射和测量统计。它们沿用五领域归属，不新设顶层图表分类。
+
+{% section id="acceptance:engineering-charts:scope" title="本轮交付" %}
+
+| 模型 | 实现与证据 |
+| --- | --- |
+| Sequence | 普通消息、调用/通知/返回、应答关联、条件/循环/并行/严格片段、子交互映射、注释、生命周期、事件顺序及时间声明；原模型、局部元素和展开来源可查询 |
+| BinaryLayout | 固定/动态长度、条件/分支、重复、嵌套、对齐及字节/位序；长度使用精确有理数中间计算，未知偏移保留可追溯符号；同源字段图和字段表 |
+| PlotView | 在 views 引用 Table，复用 values/objectId、单位和行身份；过滤/聚合/分箱/分位数，七种图元、图层及分面；Vega-Lite 6.5.0 / Vega 6.4.0 生成 SVG |
+| RegisterBlock / AddressSpace | 引用已有 Register，不复制位域；精确大整数、相对/绝对地址、嵌套与数组、分配范围和重叠检查、独立实例路径 |
+
+IR 升至 1.8，新增 sequences、binary-layouts、plots、register-maps 必需能力。新增模型使用严格 Schema，不通过兼容模式放行未落实字段。网页具有缩放、平移、定位、数据与来源、适用的局部展开，以及当前/完整 SVG；CLI 导出包含字体，HTML 无远程数据或脚本依赖。
+
+{% /section %}
+{% section id="acceptance:engineering-charts:checks" title="实际验证" %}
+
+- TypeScript 类型检查通过；公共 Schema、模型、文档、查询/读取、目录与手册回归共 217 项通过，其中新领域单元测试 13 项。
+- 数值判据独立于渲染：2000 组数组区间与逐项枚举比较，海量数组按路径定位，大于 53 bit 的地址，动态/混合单位长度、符号偏移和有理数运算，以及 R-7、样本数和缺测统计。
+- Chromium 离线浏览器组 5 项通过：新图主链、原手册导航、旧接口/波形/PDF、能力教程。新图检查文字碰撞、互斥分支分带、子模型身份、点击/定位/折叠、缩放/平移、SVG 下载、寄存器跳转及 390 px 宽度。
+- 实际 npm 包与 Git prepare 安装 2 项通过；安装环境不依赖开发工具。随包 Schema、教程、query/read 与四类 SVG 导出均执行验证。
+- 使用 playwright-cli 打开正式产物检查实际布局和交互；浏览器回归与源码/查询检查分别保留，构建成功不作为工程行为证明。
+
+```sh
+npm run typecheck
+node --test tests/engineering-charts.test.ts
+EDOC_CHROMIUM=/path/to/chromium npm run test:engineering-charts
+npm run test:manual
+npm run test:package
+```
+
+{% /section %}
+{% section id="acceptance:engineering-charts:limits" title="范围与未验证事项" %}
+
+本轮验证构造的规范与采样示例，不验证 KY3134 的硬件、RTL、驱动或真实测量。消息约束不进行时间仿真；协议布局不解析二进制或生成编解码器；地址窗口/别名尚无模型；统计只开放白名单操作，不运行作者脚本。
+
+动态协议的未知区间需结合取值场景继续验证。重复结构展示单次元素，海量地址实例展示明确限额与总数；不把摘要当作完整枚举。生命周期要求分支汇合处一致，不推断跨并发分支的创建/销毁同步。具体单位、表达式、来源和限额以当前契约为准。
+
+Vega 的空箱线离群集合可能报告空 extent；该已知运行时诊断保留在 SVG metadata，不使合法的零离群集合构建失败。其他编译选项警告和未识别运行时诊断均失败；全部缺测时显示无可用测量值，不绘制零值曲线。
+
+{% /section %}
+{% /section %}

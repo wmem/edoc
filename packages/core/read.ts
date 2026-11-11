@@ -1,3 +1,7 @@
+import {sequenceElements} from '../extensions/sequence/types.ts';
+import {binaryElements} from '../extensions/binary-layout/types.ts';
+import type {Sequence,BinaryLayout,RegisterBlock,AddressSpace} from './types.ts';
+import {isControl,elements} from '../extensions/control-diagram/types.ts';
 import {documentAST} from './documents.ts';
 import {formatContent} from './content.ts';
 import {composeClauses,selectedApplications} from '../extensions/clause/reading.ts';
@@ -26,6 +30,7 @@ export function readDocument(graph:Graph,id:string,options:ReadOptions={}){
  validateReadRange(offset,maxChars);
  const entry=graph.index.get(id);
  if(!entry)failure('QUERY_NOT_FOUND','<read>','/id','ID 不存在：'+id);
+ if(isControl(entry.entity)||['sequence','binary-layout','register-block','address-space'].includes(entry.type)||entry.type==='view'&&['sequence','binary-layout','plot'].includes(('kind'in entry.entity?entry.entity.kind??'':''))){const m=entry.entity,source={...m.source,file:m.source?.file??entry.location.file,line:m.source?.line??1};return {projectId:graph.manifest.projectId,id,title:m.label??id,source,scope,format:'markdown' as const,children:[],sources:[source,...(isControl(m)?elements(m):entry.type==='sequence'?sequenceElements(m as Sequence):entry.type==='binary-layout'?binaryElements(m as BinaryLayout):entry.type==='register-block'?(m as RegisterBlock).entries.map(element=>({element})):entry.type==='address-space'?(m as AddressSpace).mappings.map(element=>({element})):[]).flatMap(e=>e.element.source?[{...e.element.source,line:e.element.source.line??1}]:[])],semanticKind:undefined as string|undefined,clauseFor:[] as string[],clauses:[] as ClauseReading[],applications:[] as ReturnType<typeof selectedApplications>,...readRange('```json\n'+JSON.stringify(m,null,2)+'\n```\n',offset,maxChars)};}
  if(entry.semanticKind==='behavior'&&options.scope===undefined)scope='subtree';
  if(entry.type==='clause')scope='subtree';
  if(entry.type!=='document'&&entry.type!=='clause')failure('READ_TYPE','<read>','/id','read 读取章节、能力、行为或条款；其他工程对象使用 query');

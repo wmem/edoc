@@ -24,7 +24,13 @@
               "waveforms",
               "references",
               "clauses",
-              "registers"
+              "registers",
+              "stateMachines",
+              "flowcharts",
+              "sequences",
+              "binaryLayouts",
+              "registerBlocks",
+              "addressSpaces"
             ]
           },
           "path": {

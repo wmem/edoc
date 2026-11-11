@@ -77,21 +77,6 @@
       "id": "mac:data-plane",
       "kind": "node",
       "label": "Data plane"
-    },
-    {
-      "id": "mac:state.idle",
-      "kind": "node",
-      "label": "IDLE"
-    },
-    {
-      "id": "mac:state.active",
-      "kind": "node",
-      "label": "ACTIVE"
-    },
-    {
-      "id": "mac:state.hold",
-      "kind": "node",
-      "label": "HOLD"
     }
   ],
   "relations": [
@@ -164,60 +149,6 @@
         ],
         "targets": [
           "mac:control"
-        ]
-      }
-    },
-    {
-      "id": "mac:transition.start",
-      "kind": "connection",
-      "class": "data",
-      "label": "valid",
-      "endpoints": [
-        "mac:state.idle",
-        "mac:state.active"
-      ],
-      "direction": {
-        "sources": [
-          "mac:state.idle"
-        ],
-        "targets": [
-          "mac:state.active"
-        ]
-      }
-    },
-    {
-      "id": "mac:transition.stall",
-      "kind": "connection",
-      "class": "control",
-      "label": "!ready",
-      "endpoints": [
-        "mac:state.active",
-        "mac:state.hold"
-      ],
-      "direction": {
-        "sources": [
-          "mac:state.active"
-        ],
-        "targets": [
-          "mac:state.hold"
-        ]
-      }
-    },
-    {
-      "id": "mac:transition.resume",
-      "kind": "connection",
-      "class": "event",
-      "label": "ready",
-      "endpoints": [
-        "mac:state.hold",
-        "mac:state.active"
-      ],
-      "direction": {
-        "sources": [
-          "mac:state.hold"
-        ],
-        "targets": [
-          "mac:state.active"
         ]
       }
     }
@@ -313,27 +244,6 @@
         "direction": "LR",
         "routing": "orthogonal"
       }
-    },
-    {
-      "id": "mac:tx-state",
-      "kind": "state",
-      "label": "TX state（规范示意）",
-      "include": {
-        "objects": [
-          "mac:state.idle",
-          "mac:state.active",
-          "mac:state.hold"
-        ],
-        "relations": [
-          "mac:transition.start",
-          "mac:transition.stall",
-          "mac:transition.resume"
-        ]
-      },
-      "layout": {
-        "direction": "LR",
-        "routing": "orthogonal"
-      }
     }
   ],
   "references": [
@@ -373,5 +283,56 @@
       "targetId": "MAC-TX-001"
     }
   ],
-  "clock": "clk"
+  "clock": "clk",
+  "stateMachines": [
+    {
+      "id": "mac:tx-state",
+      "kind": "state-machine",
+      "label": "TX state（规范示意）",
+      "initial": "mac:state.idle",
+      "states": [
+        {
+          "id": "mac:state.idle",
+          "label": "IDLE"
+        },
+        {
+          "id": "mac:state.active",
+          "label": "ACTIVE"
+        },
+        {
+          "id": "mac:state.hold",
+          "label": "HOLD"
+        }
+      ],
+      "transitions": [
+        {
+          "id": "mac:transition.start",
+          "from": "mac:state.idle",
+          "to": "mac:state.active",
+          "trigger": {
+            "kind": "change",
+            "expression": "valid"
+          }
+        },
+        {
+          "id": "mac:transition.stall",
+          "from": "mac:state.active",
+          "to": "mac:state.hold",
+          "trigger": {
+            "kind": "change",
+            "expression": "!ready"
+          }
+        },
+        {
+          "id": "mac:transition.resume",
+          "from": "mac:state.hold",
+          "to": "mac:state.active",
+          "trigger": {
+            "kind": "change",
+            "expression": "ready"
+          }
+        }
+      ]
+    }
+  ]
 }

@@ -49,6 +49,11 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  // 安装源文及 include/code 依赖可独立加载；不借助仓库外的 examples。
  assert.ok(JSON.parse(run(bin,['outline','--config',join(location.sources,'edoc.config.js'),'--depth','0'],project)).chapters.length>0);
  assert.equal(JSON.parse(run(bin,['docs','read','--id','ref:config-data'],project)).id,'ref:config-data');
+ const localState=JSON.parse(run(bin,['docs','query','--id','example:microwave','--element','cooking'],project));assert.equal(localState.modelId,'example:microwave');assert.equal(localState.target.id,'cooking');assert.ok(localState.outgoing.some((edge:any)=>edge.id==='tick'));
+ assert.match(JSON.parse(run(bin,['docs','read','--id','example:fulfillment'],project)).content,/"fork"/);
+ assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/control-diagram/state-machine.schema.json'));assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/control-diagram/flowchart.schema.json'));
+ const stateSvg=join(root,'state.svg');run(bin,['export','--config',join(location.sources,'edoc.config.js'),'--view','author:state','--format','svg','--output',stateSvg],project);const stateXML=readFileSync(stateSvg,'utf8');assert.match(stateXML,/S101/);assert.match(stateXML,/<path data-path="[^"]+" d="M [^"]+ C /);assert.match(stateXML,/clk 上升沿/);
+
  assert.ok(!packed.files.some((f:any)=>f.path.startsWith('docs/usage/')),'源目录随主导航重整，不保留第二套旧入口');
  assert.equal(JSON.parse(run(bin,['docs','read','--id','use:home'],project)).source.file,'docs/index.mdoc');
  assert.equal(JSON.parse(run(bin,['guide','--format','json'],project)).source,'docs/writing/agent-guide.mdoc');
@@ -67,7 +72,16 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:full64.data'],project)).registerField.resetText,'0xFEDCBA9876543210');
  assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:instance1'],project)).cellLinks.source.route.target,'detail');
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/register/register.schema.json'));
- assert.ok(packed.files.some((f:any)=>f.path==='docs/charts/registers.mdoc'));
+ assert.ok(packed.files.some((f:any)=>f.path==='docs/charts/data-layout/registers.mdoc'));
+ for(const domain of ['diagrams','behavior','timing','data-layout','records'])assert.ok(packed.files.some((f:any)=>f.path===`docs/charts/${domain}/index.mdoc`),'安装包携带图表领域入口 '+domain);
+
+ for(const [domain,schema]of [['sequence','sequence'],['binary-layout','binary-layout'],['plot','plot'],['register-map','address-space']])assert.ok(packed.files.some((f:any)=>f.path===`dist/packages/extensions/${domain}/${schema}.schema.json`));
+ for(const id of ['use:sequences','use:binary-layouts','use:register-maps','use:plots'])assert.equal(JSON.parse(run(bin,['docs','read','--id',id],project)).id,id);
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','seq:request','--element','reply'],project)).target.replyTo,'request');
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','space:csr','--element','["device","ports",2,"ctrl"]'],project)).address,'0x1000000000000300');
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','binary:packet','--element','crc'],project)).layout[0].offset.value,undefined);
+ assert.equal(JSON.parse(run(bin,['docs','query','--id','plot:quantile'],project)).plot.inputCount,48);
+ for(const [kind,id]of [['id','seq:request'],['view','view:packet-sample'],['view','plot:distribution'],['id','space:csr']]){const target=join(root,id.replace(/:/g,'_')+'.svg');run(bin,['export','--config',join(location.sources,'edoc.config.js'),'--'+kind,id,'--format','svg','--output',target],project);const xml=readFileSync(target,'utf8');assert.match(xml,/<svg/);assert.match(xml,/@font-face/);assert.match(xml,/<metadata>/);}
 
  cpSync(join(location.root,'templates/clauses/docs/index.mdoc'),join(project,'docs/index.mdoc'));
  const installedContract=JSON.parse(run(bin,['read','--id','behavior:timeout'],project));assert.equal(installedContract.semanticKind,'behavior');assert.equal(installedContract.clauses.length,2);assert.match(installedContract.content,/截止时刻/);
@@ -140,9 +154,14 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  writeFileSync(join(prefix,'docs/index.mdoc'),'---\n{"title":"独立元数据配方"}\n---\n# {% $meta.title %}');run(bin,[],prefix);assert.match(readFileSync(join(prefix,'output/index.html'),'utf8'),/独立元数据配方/);
  cpSync(join(repository,'docs/support/recipes/reader-note.config.js'),join(prefix,'docs/edoc.config.js'));
  writeFileSync(join(prefix,'docs/index.mdoc'),'{% reader-note tone="info" %}\n{% slot "title" %}\n独立 Schema 配方\n{% /slot %}\n普通说明。\n{% /reader-note %}');run(bin,[],prefix);assert.match(readFileSync(join(prefix,'output/index.html'),'utf8'),/独立 Schema 配方/);
- writeFileSync(join(prefix,'consumer.mts'),`import {Markdoc,resolveProjectConfig} from 'edoc';\nimport type {Node,RelationView,Table,MarkdocOptions,Drawing,Clause,ReadOptions} from 'edoc';\nconst drawing:Drawing={schemaVersion:'1.0',id:'d',nodes:[{id:'n',label:'原生模块'}],connections:[]};
+ writeFileSync(join(prefix,'consumer.mts'),`import {Markdoc,resolveProjectConfig} from 'edoc';\nimport type {Node,RelationView,Table,MarkdocOptions,Drawing,Clause,ReadOptions,Sequence,BinaryLayout,RegisterBlock,AddressSpace,PlotView} from 'edoc';\nconst drawing:Drawing={schemaVersion:'1.0',id:'d',nodes:[{id:'n',label:'原生模块'}],connections:[]};
 const clause:Clause={id:'c',kind:'clause',label:'要求',body:{format:'markdoc',content:'必须保留。'},source:{file:'source.mdoc'}};
 const reading:ReadOptions={withClauses:true};
+const sequence:Sequence={id:'s',kind:'sequence',participants:[{id:'a'},{id:'b'}],steps:[{id:'m',from:'a',to:'b'}]};
+const binary:BinaryLayout={id:'b',kind:'binary-layout',fields:[{id:'header',size:16}]};
+const block:RegisterBlock={id:'r',kind:'register-block',entries:[]};
+const space:AddressSpace={id:'a',kind:'address-space',mappings:[]};
+const plot:PlotView={id:'p',kind:'plot',data:'t',mark:'point',encoding:{x:{field:'x'},y:{field:'y'}}};
 // @ts-expect-error 旧 SDK 字段已删除。
 const removedReading:ReadOptions={withSpecs:true};
 const node:Node={id:'n',kind:'node',label:'模块'};\nconst view:RelationView={id:'v',kind:'architecture',include:{objects:[node.id],relations:[]}};\nconst table:Table={id:'t',kind:'table',label:'表',columns:[],rows:[]};\nconst options:MarkdocOptions={variables:{x:1},tokenizer:{html:false,allowComments:true}};\n// @ts-expect-error 原生 tokenizer 选项也保持精确类型。\nconst badOptions:MarkdocOptions={tokenizer:{html:"no"}};\n// @ts-expect-error 不允许将字符串当作端口宽度，验证声明不是 any。\nconst bad:Node={id:'bad',kind:'node',label:'错误',ports:[{id:'p',label:'p',direction:'in',width:'8'}]};\nconsole.log(Markdoc.parse('正文'),resolveProjectConfig,view,table,options,bad);\n`);

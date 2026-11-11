@@ -1,0 +1,19 @@
+{% section id="use:record-charts" title="记录与结果" %}
+
+{% directory-order items=["tables.mdoc","plots.mdoc"] /%}
+
+本领域维护精确值、记录与证据，Table 保存记录并呈现数据表，PlotView 引用同一张表呈现趋势、分布和统计比较。已有对象字段通过 objectId 投影，独立参数和记录通过 values 保存；不为了显示表格再抄一套工程事实。
+
+| 当前呈现 | 表达能力 | 可以呈现什么 |
+| --- | --- | --- |
+| [数据表格](tables.mdoc) | 对象字段投影或独立记录、类型/单位、稳定行 ID、单元格跳转、筛选与排序 | 引脚/参数表、端口清单、配置、测试用例与结果、问题记录 |
+
+data-table 是 Table 的呈现入口，字段见[标签契约](../../reference/tags/data-table.mdoc)。少量固定说明或阅读方式对照可以直接使用 Markdown 表格，不必创建结构化模型。
+
+表格这种外形不决定内容归属。[接口表](../diagrams/graph-options.mdoc#use:interface-tables)投影真实端口，留在结构与连接；[寄存器字段表](../data-layout/registers.mdoc)投影寄存器，留在数据布局。两者不要求建立第二份 Table。Table 自身也可以引用其他领域已有对象，保持原事实身份。
+
+[测量与统计图](plots.mdoc)支持曲线、散点、柱图、面积、范围、误差条和箱线图，可过滤、聚合、分箱、求分位数及组合图层/分面；统计步骤、缺测口径与原始行可查询。数字波形和手绘趋势线不替代原始测量证据。
+
+PlotView 放在 views 中，使用 plot 标签；字段及后端支持子集见[统计契约](../../reference/tags/engineering-charts.mdoc#ref:tag-plot)。
+
+{% /section %}

@@ -68,7 +68,9 @@ for(const [name,mutate,code]of [
 ] as const)test(name+' 明确报错',t=>{const f=fixture(t);if(name!=='未协商能力')enable(f);f.edit('views',mutate);expectCode(f.load,code);});
 test('跨父容器约束和视图外引用不静默忽略',t=>{
  const f=fixture(t);mac(f);enable(f);f.edit('views',d=>d.views[0].layout.constraints=[{type:'align',axis:'x',nodes:['mac:control','mac:rx']}]);expectCode(f.load,'LAYOUT_SCOPE');
- f.edit('views',d=>d.views[0].layout.constraints=[{type:'align',axis:'x',nodes:['mac:state.idle','mac:control']}]);expectCode(f.load,'LAYOUT_SCOPE');
+ // 状态迁移到专用模型后，使用独立且确实存在的视图外 Node 检查范围限制。
+ f.edit('objects',d=>d.objects.push({id:'test:outside',kind:'node',label:'视图外节点'}));
+ f.edit('views',d=>d.views[0].layout.constraints=[{type:'align',axis:'x',nodes:['test:outside','mac:control']}]);expectCode(f.load,'LAYOUT_SCOPE');
 });
 test('循环顺序、对齐矛盾及固定位置冲突均不能悄悄违背',async t=>{
  const f=fixture(t);mac(f);enable(f);

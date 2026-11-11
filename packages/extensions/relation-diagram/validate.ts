@@ -36,7 +36,7 @@ export function validateRelationData(graph:Graph){
         if (connection.direction.sources.some(id => connection.direction!.targets.includes(id))) report(entry, 'DIRECTION_OVERLAP', '/direction', '同一端点不能同时是显式源和目标；双向连接请省略方向');
       }
     }
-    if (entry.type === 'view') {
+    if (entry.type === 'view' && !('model' in entry.entity)&&('kind'in entry.entity?entry.entity.kind:'')!=='plot') {
       const view = entry.entity as RelationView;
       if(view.drawing){
         if(!graph.manifest.requiredFeatures?.includes('native-drawing'))report(entry,'IR_FEATURE_REQUIRED','/drawing','原生绘图需要声明native-drawing');

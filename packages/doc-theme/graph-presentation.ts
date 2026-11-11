@@ -19,7 +19,16 @@ export function readableViewport(graph:Graph,scene:Scene,holder:HTMLElement,mode
  const sizes=scene.drawing&&scene.drawingInput?scene.drawing.nodes.flatMap(n=>[n.title.size,...n.ports.filter(p=>p.text.size).map(p=>p.text.size)]):scene.nodes.flatMap(n=>[n.titleSize,...n.ports.filter(p=>!p.slot).map(()=>14)]);
  const fitted=graph.zoom(),mainSize=Math.min(...sizes,14),minimum=mode==='actual'?1:Math.min(1,12/mainSize);
  if(mode!=='fit'&&fitted<minimum){
-  graph.zoomTo(minimum);const x=Math.min(...scene.nodes.map(n=>n.x-30)),y=Math.min(...scene.nodes.map(n=>n.y));
+  graph.zoomTo(minimum);let x=Math.min(...scene.nodes.map(n=>n.x-30)),y=Math.min(...scene.nodes.map(n=>n.y));
+  // 职责列与复合区域可能有很宽的留白；可读视口应先露出实际步骤/状态。
+  if(scene.control&&scene.drawing){
+   const geometry=scene.drawing,vb=geometry.viewBox,leaves=geometry.nodes.filter(n=>n.title.lines.length&&!geometry.nodes.some(c=>c.parentId===n.id)&&!['region','lane','note'].includes(n.shape??''));
+   if(scene.control.model.kind==='flowchart'){
+    const model=scene.control.model,start=model.nodes.find(n=>n.kind==='start'),next=start?model.edges.find(e=>e.from===start.id):undefined;
+    const entry=geometry.nodes.find(n=>n.originIds[0]===model.id&&n.originIds[1]===(next?.to??start?.id))??leaves[0],begin=geometry.nodes.find(n=>n.originIds[0]===model.id&&n.originIds[1]===start?.id)??entry;
+    if(entry){x=entry.x-vb.x-30;y=begin.y-vb.y-30;}
+   }else if(leaves.length){x=Math.min(...leaves.map(n=>n.x))-vb.x-30;y=Math.min(...leaves.map(n=>n.y))-vb.y-30;}
+  }
   graph.translate(26-x*minimum,26-y*minimum);
  }
  let note=holder.querySelector<HTMLElement>(':scope > .viewport-note');

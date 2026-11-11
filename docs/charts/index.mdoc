@@ -1,22 +1,54 @@
 {% section id="use:rendering" title="图表" %}
 
-{% directory-order items=["diagrams/","tables.mdoc","registers.mdoc","state.mdoc","waveforms.mdoc"] /%}
+{% directory-order items=["diagrams/","behavior/","timing/","data-layout/","records/"] /%}
 
-按要解释的问题选择图或表，再准备相应数据。框图呈现组成与关系，表格保存可查询记录，寄存器位域图、状态图和波形各自描述不同的问题。
+edoc 按工程中要表达的含义组织图表：先选择表达领域，再确定数据模型，最后选择图或表的呈现方式。模块框图、接口表和 Drawing 分别属于用途、呈现和绘图承载，不能放在同一级分类中。
 
-| 你要表达什么 | 阅读入口 |
-| --- | --- |
-| 模块组成、连接关系、接线与接口展开 | [框图、接线与接口](diagrams/index.mdoc) |
-| 参数、对象字段、记录及筛选排序 | [数据表格](tables.mdoc) |
-| 寄存器位分布、访问属性和定义复位 | [寄存器手册](registers.mdoc) |
-| 什么条件触发状态变化 | [状态图](state.mdoc) |
-| 信号随时间怎样变化 | [时序图](waveforms.mdoc) |
+从下面的[五类表达](index.mdoc#use:chart-choice)进入，各领域维护自己的现有能力、工程用途和教程。需要判断共享与独立关系时读[模型与呈现](index.mdoc#use:chart-models)，字段查[查询参考](../reference/index.mdoc)；维护体系时读[图表体系设计](../development/records/design/chart-system.mdoc)。
 
-每篇教程给出用途、实际效果、可运行写法与边界。数据可以直接声明，也可从网表、CSV或RTL提取；[工程数据接入](../engineering/data.mdoc)介绍来源与转换，[查询参考](../reference/index.mdoc)集中维护精确字段。
+{% section id="use:chart-choice" title="按表达领域选择模型与呈现" %}
 
-{% section id="use:state-wave" title="状态图与时序图如何选择" %}
+图表体系采用以下五类。这里说明已有能力的归属，具体图种和从简到复杂的写法在各领域展开，不把所有用途或标签平铺成同级组件。
 
-状态图描述状态及迁移条件，时序图描述信号随时间的变化。两者可以解释同一设计的不同方面，不能因画出了规范波形就认为执行了仿真。
+| 表达领域 | 维护什么含义 | 当前模型与呈现 |
+| --- | --- | --- |
+| [结构与连接](diagrams/index.mdoc) | 有哪些部分、归属哪里、怎样相连 | 工程对象/端口/接口/连接；模块框图、架构、接线、接口图与接口表。解释性框图也可直接声明 Drawing |
+| [行为与控制](behavior/index.mdoc) | 当前状态怎样迁移，一项工作如何推进 | StateMachine 生成状态图；Flowchart 生成流程图。两者语义独立 |
+| [时间与交互](timing/index.mdoc) | 信号何时变化、事件如何按时间发生 | Waveform / WaveJSON 呈现数字波形；Sequence 呈现多方消息与事件偏序 |
+| [数据布局](data-layout/index.mdoc) | 位或字节范围中的数据怎样解释 | Register 呈现位域与字段表，RegisterBlock/AddressSpace 组织地址；BinaryLayout 呈现报文与描述符 |
+| [记录与结果](records/index.mdoc) | 精确值、记录与证据是什么 | Table 保存记录或投影已有对象；PlotView 引用它呈现测量统计图 |
+
+例如，板级框图、电源树、时钟树和数据通路都是结构与连接的不同主题；接口表和寄存器字段表各自留在所属领域，因为它们展示原接口或寄存器的同一份定义。通用 Table 则可以独立维护测试记录，也可以投影其他领域的对象。
+
+简单场景只准备模型所需的数据，由工具提供默认展示；复杂含义沿同一模型增加明确结构，特殊排版在视图中增加约束。各类默认与参数并不完全一致，应按所选领域进入教程，不按图名猜标签。
+
+当前尚未提供的表达见[边界](index.mdoc#use:chart-boundaries)。状态/流程不执行条件或动作，规范波形不表示执行了仿真；图形与数据校验不能代替工程正确性验证。
+
+{% /section %}
+{% section id="use:chart-models" title="领域、数据模型、呈现与绘图怎样分工" %}
+
+五类表达是内容归属，一类可以有多个语义独立的模型，一个模型也可以有多种图表呈现。当前数据与标签的对应关系按领域理解：
+
+- 结构与连接：Node/Port/Interface/Connection 配合 RelationView，使用 relation-diagram 绘制架构、接线和接口；interface-table 展示同一端口定义。纯解释性框图可在视图内提供 Drawing。
+- 行为与控制：StateMachine 对应 state-diagram，Flowchart 对应 flowchart；各自可选择 ControlView。状态与控制边不借用电气连接。
+- 时间与交互：Waveform / WaveJSON 对应 waveform；Sequence 对应 sequence-diagram，局部参与者不会自动成为工程 Port。
+- 数据布局：Register 同时对应 register-diagram 与 register-field-table；RegisterBlock/AddressSpace 对应 register-map，引用已有寄存器；BinaryLayout 对应 binary-diagram 与 binary-field-table。
+- 记录与结果：Table 对应 data-table；独立记录写 values，已有对象字段用 objectId 投影。PlotView 引用 Table，以 plot 呈现，不重抄采样。
+
+完整字段、类型及各标签的输入限制见[标签职责](../reference/tags/index.mdoc)。标签是呈现入口，不构成第二套顶层分类。
+
+Drawing 属于节点连接图的绘图承载层。状态机、流程和工程接口可投影到它，共用测量、形状、布局/布线、几何检查、缩放和 SVG；部分工程关系图仍走原有链路。波形按时间轴、寄存器按位范围、表格按列与记录绘制，各自使用合适的规则，不要求全部经过同一个布局算法或提供同样的按钮。
+
+图表可以分别使用，也可在一个模块文档中共同解释设计。例如，框图与接口表追溯同一批工程对象和端口；状态机和波形另有模型，通过显式引用与来源关联。当前不会自动从状态机生成波形，也不会自动证明不同模型的行为一致。
+
+{% /section %}
+{% section id="use:chart-boundaries" title="先核对现有表达，再识别缺口" %}
+
+先进入所属领域，区分缺少的是一种用途、呈现方式还是语义模型。例如电源树通常复用结构关系，接口表复用原接口；多方消息顺序和可变长度报文字段则不能仅用相似外形冒充已有模型。
+
+当前已提供消息、协议布局、寄存器映射和统计视图；各自保留明确边界：消息约束不执行时间仿真，协议布局不解析二进制或生成编解码器，地址映射尚无窗口/别名模型，统计仅开放白名单操作。具体限额与诊断见各领域教程和契约。后续扩展仍先确定领域和所缺含义，再定义呈现。
+
+遇到缺口时，用正文、结构化数据或表格保留可查询定义和证据，明确报告范围；不猜测标签，不手工修改生成 SVG 冒充支持。外部图和附件继续标明来源与用途。完整已有功能及具体限制见[能力索引](../reference/capabilities.mdoc)，权威数据接入见[工程数据](../engineering/data.mdoc)。
 
 {% /section %}
 {% /section %}

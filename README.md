@@ -6,6 +6,8 @@
 
 文档主入口是 [docs/index.mdoc](docs/index.mdoc)，安装包也携带同一份源文。Agent 可以从安装目录直接读取它，沿相对链接进入相应教程与字段参考，无需读取 HTML，也无需先克隆仓库或配置当前项目。
 
+准备绘图时先读[按表达领域选择模型与呈现](docs/charts/index.mdoc#use:chart-choice)，或运行 `edoc docs read --id use:chart-choice --format text`，沿五领域进入当前能力与教程；模型共享与绘图承载的关系见[体系分工](docs/charts/index.mdoc#use:chart-models)。维护模型与布局能力时读[图表体系设计](docs/development/records/design/chart-system.mdoc)。
+
 `edoc --help` 和 `edoc docs` 会显示实际安装目录中的 .mdoc 入口；`edoc docs --format json` 返回 root、readme、entry、usage 和 sources 路径。全局包通常位于 `npm root -g` 输出目录下的 edoc 文件夹。
 
 按章节查阅也可以：

@@ -1,0 +1,58 @@
+{
+  "flowcharts": [
+    {
+      "id": "author:init",
+      "kind": "flowchart",
+      "label": "设备初始化",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start"
+        },
+        {
+          "id": "init",
+          "label": "初始化设备"
+        },
+        {
+          "id": "check",
+          "kind": "decision",
+          "label": "初始化成功？"
+        },
+        {
+          "id": "ready",
+          "kind": "end",
+          "label": "就绪"
+        },
+        {
+          "id": "failed",
+          "kind": "end",
+          "label": "报告失败"
+        }
+      ],
+      "edges": [
+        {
+          "id": "begin",
+          "from": "start",
+          "to": "init"
+        },
+        {
+          "id": "result",
+          "from": "init",
+          "to": "check"
+        },
+        {
+          "id": "ok",
+          "from": "check",
+          "to": "ready",
+          "guard": "成功"
+        },
+        {
+          "id": "error",
+          "from": "check",
+          "to": "failed",
+          "otherwise": true
+        }
+      ]
+    }
+  ]
+}

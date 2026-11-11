@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/register-block.schema.json",
+  "type": "object",
+  "properties": {
+    "registerBlocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          },
+          "kind": {
+            "const": "register-block"
+          },
+          "size": {
+            "type": "string",
+            "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "register": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "block": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "offset": {
+                  "type": "string",
+                  "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "stride": {
+                  "type": "string",
+                  "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+                },
+                "span": {
+                  "type": "string",
+                  "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+                }
+              },
+              "required": [
+                "id",
+                "offset"
+              ],
+              "additionalProperties": false,
+              "oneOf": [
+                {
+                  "required": [
+                    "register"
+                  ],
+                  "not": {
+                    "required": [
+                      "block"
+                    ],
+                    "properties": {
+                      "block": {}
+                    }
+                  },
+                  "properties": {
+                    "register": {}
+                  }
+                },
+                {
+                  "required": [
+                    "block"
+                  ],
+                  "not": {
+                    "required": [
+                      "register"
+                    ],
+                    "properties": {
+                      "register": {}
+                    }
+                  },
+                  "properties": {
+                    "block": {}
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "entries"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "registerBlocks"
+  ],
+  "additionalProperties": false
+}

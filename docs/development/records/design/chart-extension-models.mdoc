@@ -1,0 +1,215 @@
+{% section id="design:chart-extension-models" title="消息、协议、统计与寄存器扩展方案" %}
+
+本方案沿[图表体系](chart-system.mdoc)定义用户优先补充的消息交互、协议数据布局、测量统计，以及与现有寄存器结合的地址组织。共同要求是默认输入简短，复杂场景沿同一模型增强；工程含义、显示视图和渲染后端各有边界。
+
+状态：2026-11-11 用户批准本方案并实施。这里保留设计依据，当前精确字段与边界以[正式契约](../../../reference/tags/engineering-charts.mdoc)和[教程](../../../charts/index.mdoc)为准；初始示例不是第二份规范。现有 Register、Table 与五领域含义保持。
+
+{% section id="design:chart-extension-scope" title="新增什么模型，复用什么定义" %}
+
+| 所属领域 | 拟议模型 | 维护的含义与呈现 |
+| --- | --- | --- |
+| 时间与交互 | Sequence | 参与者、消息及交互片段；呈现生命线、消息箭头、条件/循环/并行框与时间约束 |
+| 数据布局 | BinaryLayout | 协议或描述符的字段排列、长度与条件；呈现布局图和字段表 |
+| 记录与结果 | PlotView，引用已有 Table | 选择字段、统计处理与可视映射；呈现曲线、比较、分布及组合图，不另存一套原始样本 |
+| 数据布局 | RegisterBlock、AddressSpace，引用已有 Register | 块内位置、重复实例及地址映射；从地址概览进入已有位域图和字段表 |
+
+Sequence 和 BinaryLayout 新增工程语义模型；统计复用 Table 的事实，只新增 PlotView 显示定义；寄存器新增上层组织，不替换现有 Register/fields。消息可以引用协议定义，测量图可以引用测试记录，地址项可以定位寄存器定义，但不能因同名而自动建立这些关联。
+
+建议顺序为消息交互 → 协议布局 → 测量统计；寄存器块与地址映射先确认本页的复用方式，再进入实现。每项完成其简单/复杂输入、查询、网页与 SVG 验收后，才计入当前能力清单。
+
+{% /section %}
+{% section id="design:chart-extension-sequence" title="消息交互：参与者与递归步骤" %}
+
+本节记录 Sequence 的已批准设计。最小输入为 participants 和 steps；每个参与者、步骤、分支和注释都有模型内稳定 ID。根模型 ID 全局唯一，局部元素共用本模型命名空间。参与者可显式引用已有工程对象，省略引用表示本场景中的参与者，不自动创建 Node。
+
+下面是虚构配置应答场景的拟议模型。普通步骤省略 kind 表示 message，省略 mode 表示未声明同步性；replyTo 表示响应哪条消息，不自动等同于同步函数返回。
+
+```json {% process=false %}
+{
+  "id": "seq:configure",
+  "kind": "sequence",
+  "participants": [
+    {"id": "driver", "label": "主机驱动"},
+    {"id": "fpga", "label": "FPGA"}
+  ],
+  "steps": [
+    {"id": "request", "from": "driver", "to": "fpga", "label": "配置端口"},
+    {"id": "response", "from": "fpga", "to": "driver", "label": "配置结果", "replyTo": "request"}
+  ]
+}
+```
+
+复杂后仍使用 steps，增加具名片段并递归包含步骤。只在参与者上明确声明的事件次序，以及发送先于接收，构成普通顺序的约束；数组排列不会成为所有参与者的全局时间屏障。
+
+| 需要表达什么 | 拟议增强与语义边界 |
+| --- | --- |
+| 同步调用、异步通知、响应、自身消息 | message 的 mode 显式区分 call/signal/return，未声明仍保留未声明；响应引用请求，不能从虚线反推类型 |
+| 条件与可选路径 | kind=alt/opt，branches 各有 ID、guard 或唯一 otherwise、steps；不执行守卫，也不证明条件互斥或完整 |
+| 重试与循环 | kind=loop，声明条件或次数范围与 steps；不把重复绘制几个箭头冒充完整循环规则 |
+| 并发与严格顺序 | kind=par 的各分支分别保留内部顺序，分支之间不凭上下摆放推断先后；需要额外先后或屏障时显式声明事件约束或 strict 片段 |
+| 折叠与子交互 | kind=ref 引用另一 Sequence，映射参与者；可折叠、独立阅读或有限展开，递归引用不无限展开 |
+| 激活及参与者生命周期 | 激活区间、创建、销毁引用明确事件，不从调用箭头或竖线长度自动推断 |
+| 等待、超时和观测时间 | 时间约束引用消息的 send/receive 事件，显式单位、范围及 clock；纵向间距默认只表示逻辑顺序，不表示毫秒 |
+| 说明与工程关联 | note 不参与因果顺序；消息可显式关联协议、操作或正文，保留 source，不能按名称猜引用 |
+
+消息事件使用结构化引用，例如 {message:"request", end:"send"}；不靠拼接字符串产生身份。replyTo 检查请求存在、方向和参与者是否匹配，跨条件分支的请求不能被另一个不可能共存的分支当作响应目标。激活、销毁及事件顺序冲突须诊断，时间单位或时钟不同不能直接比较。
+
+显示采用参与者列和事件约束布局，参与者顺序、间距、片段折叠及局部显示偏好放在视图。复杂异步交互允许发送和接收分处不同事件位置，并发场景保留局部先后约束。共享文字测量、来源、选择与输出机制，不能直接用普通有向图分层算法替代交互时间语义。
+
+首批验收至少覆盖同步调用、异步中断、自身消息、嵌套条件/重试、共享参与者的并发、晚到响应、超时分支、激活、创建/销毁和子交互。尚不宣称完整 UML 交互运行语义或协议执行验证。
+
+{% /section %}
+{% section id="design:chart-extension-binary" title="协议布局：按顺序声明字段，显式描述动态部分" %}
+
+本节记录 BinaryLayout 的已批准设计，面向报文、帧头和描述符。它与现有 Register 的语义独立，可共享字段带状绘制和文字布局，不继承寄存器的 64 位范围、access 或 reset 含义。
+
+简单输入只写有序 fields 和 size，offset 由前面字段推导，不重复手写。unit 声明该布局中数值 size/offset 的单位，默认 bit；byteOrder 和 bitOrder 是数据解释规则，缺少时保留未声明，不能根据图上左右方向补齐。
+
+下面为虚构的三字节头部、变长载荷和尾部校验字段。unit=bit 明确固定长度单位；动态 size 单独声明其数值字段与单位。payloadBytes 的值表示载荷字节数，不包含头部和尾部。
+
+```json {% process=false %}
+{
+  "id": "layout:request",
+  "kind": "binary-layout",
+  "unit": "bit",
+  "byteOrder": "big",
+  "bitOrder": "msb-first",
+  "fields": [
+    {"id": "version", "size": 4},
+    {"id": "flags", "size": 4},
+    {"id": "payloadBytes", "size": 16},
+    {"id": "payload", "size": {"field": "payloadBytes", "unit": "byte"}},
+    {"id": "crc", "size": 16}
+  ]
+}
+```
+
+该定义中 payload 的起点是 bit 24；crc 的起点是 24 + 8 × payloadBytes，总长度是 40 + 8 × payloadBytes。未知长度保留符号，不能给变长载荷画一个固定框宽后标成精确长度。没有提供字段取值时，工具不假设载荷是零字节。
+
+| 需要表达什么 | 拟议增强与语义边界 |
+| --- | --- |
+| 固定偏移、空洞和对齐 | 可显式 offset；跳过范围保留未声明。padding/reserved/align 分别显式声明，不从图形留白猜含义 |
+| 子结构与复用 | 有序元素可引用另一 BinaryLayout；引用与显示实例分离，查询保留定义及所在路径 |
+| 条件、类型选择、TLV | choice/optional 元素声明选择字段与分支；并列展示未确定的合法结构，不静默挑一个分支 |
+| 数组、重复、变长字段 | repeat 保存次数或长度引用、单位和元素定义；次数与总长度区别处理，实例展开有明确限额 |
+| 长度与约束 | 固定数值、字段引用和受限声明式运算组成长度表达式；依赖、范围和运算类型可检查，不执行任意脚本 |
+| 枚举、常量、符号性校验 | 记录数值含义、允许值及校验覆盖范围；CRC 字段的存在不代表已验证某个算法 |
+| 字节序、位序与显示编号 | 解释规则保存在模型，行宽和位号显示方向保存在视图；寄存器的 msb/lsb 与串行数据的偏移不能直接等同 |
+
+fields 扩展为带类型的有序元素，普通字段省略 kind；复杂的选择、重复和子结构仍在同一模型中表达。长度运算只开放常量、具名字段引用和明确的算术操作；有歧义或无法求值时保留表达式及依赖。未确定的条件分支保留分支范围，字段之后的偏移也可能是表达式。
+
+布局图、完整字段表和查询读取同一份定义；视图可选择行宽、焦点、分支展示和取值示例。用于展开的示例值必须标明场景，不能写回规范默认。动态内容用符号带或局部展开，不按任意像素比例暗示精确长度。
+
+首批验收覆盖跨字节位域、大于 64 位结构、变长尾部、非尾部变长字段、条件/重复/嵌套、混合字节序、未声明空洞，以及非法重叠/依赖循环/单位冲突。目标是定义、布局与追溯，当前提案不包含二进制解析器或序列化代码生成。
+
+{% /section %}
+{% section id="design:chart-extension-plot" title="测量统计：Table 保存事实，PlotView 声明处理和映射" %}
+
+本节记录 PlotView 的已批准设计。原始采样或结果继续使用现有 Table，PlotView 放在 views 中，kind=plot，引用表 ID，声明 mark、encoding 及必要的 transform。同一份数据可以呈现表格、曲线或分布，不要求新增一套样本资源。测试条件与数据来源一起维护，通过 source 和显式引用追溯，不放进图形皮肤。
+
+下面 Table 的格式沿用现有契约，views 中的 plot 类型及其内容为新增提案。数值是虚构说明数据，不是 KY3134 实测。
+
+```json {% process=false %}
+{
+  "tables": [{
+    "id": "samples:throughput", "kind": "table", "label": "虚构吞吐样本",
+    "columns": [
+      {"field": "elapsed", "label": "经过时间", "type": "number", "unit": "ms"},
+      {"field": "rate", "label": "吞吐", "type": "number", "unit": "Mbit/s"}
+    ],
+    "rows": [
+      {"id": "samples:rate0", "values": {"elapsed": 0, "rate": 900}},
+      {"id": "samples:rate1", "values": {"elapsed": 100, "rate": 940}}
+    ]
+  }],
+  "views": [{
+    "id": "plot:throughput", "kind": "plot", "data": "samples:throughput",
+    "mark": "line",
+    "encoding": {"x": {"field": "elapsed"}, "y": {"field": "rate"}}
+  }]
+}
+```
+
+简单场景只需表引用、图元和字段映射。字段类型、名称和单位从 Table 读取；时间字符串必须显式声明格式和时区，不能靠运行机器的本地设置解释。连续横轴的折线默认按 x 升序，同值保持原行序；需要原采样顺序或其他顺序时显式声明 order，不暗中聚合重复横坐标。
+
+| 需要表达什么 | 拟议增强与语义边界 |
+| --- | --- |
+| 曲线、散点、柱、面积与多系列 | mark 与 x/y/color/detail 等字段映射，不为每种外形新造原始数据资源 |
+| 分组比较、堆叠与占比 | 显式分组、堆叠及归一化；标明分母和覆盖范围，过滤后的占比不能冒充全量 |
+| 直方图、CDF、分位数、箱线与误差 | 显式声明分箱边界、样本范围、聚合方法、分位数算法或误差含义；已有汇总结果不得伪装成原始样本 |
+| 过滤与统计处理 | transform 为有序的声明式操作；保留原表及处理口径，不将当前浏览器筛选作为构建的隐式输入 |
+| 阈值、误差带、局部对照与多图 | layer/facet 等组合共享数据引用；单位与坐标轴兼容性明确，不靠颜色掩盖不同量纲 |
+| 时间窗口、对数轴、缺测与插值 | 显式选择范围/坐标规则；缺测不补零，折线保留断点；平滑、插值和降采样必须声明并可追溯 |
+
+PlotView 是对数据的声明式呈现，新增统计处理必须能查询方法、输入范围、有效/缺失样本数与原记录关联。分位数、置信区间等不能只显示 P99 或误差棒名称却没有统计口径；单位转换不修改原值，原始值及单位始终可查。柱状比较默认从零起，显式截断坐标需在图中清楚呈现。
+
+建议用 Vega-Lite 承担统计渲染，以 data/mark/encoding/transform/组合的成熟结构作为参考，避免为各种统计图再写一套绘图器。edoc 仍负责 Table 身份、来源、单位、受限字段契约和诊断；只接受明确列入支持范围的声明式子集，不直接透传任意 JS、URL 数据源或自由表达式。高级统计方法需先定义再实现，不能因后端支持某个选项就宣称已经验收。
+
+首批范围建议包含折线/散点/柱、分组多系列、直方图及误差表达，配套声明式过滤/分组/聚合和组合视图。CDF、分位数与箱线需连同具体统计口径验收；不采用随机填充、默认补零或只看截图验收。浏览器缩放/选集、SVG、离线资源与 query 中的样本和变换口径保持一致。
+
+{% /section %}
+{% section id="design:chart-extension-registers" title="寄存器：定义、块内位置、地址实例三层结合" %}
+
+本节记录 RegisterBlock/AddressSpace 的已批准设计；现有 [Register 与字段契约](../../../reference/tags/registers.mdoc)继续适用。Register 保存一份位域定义，RegisterBlock 声明寄存器或子块在块内的偏移，AddressSpace 把块实例映射到可访问的地址。
+
+| 层次 | 保存什么 | 不重复什么 |
+| --- | --- | --- |
+| Register，已有 | width、fields、访问属性、定义复位、空洞策略与来源 | 不塞入某个实例的固定基址，不用一次实测值覆盖定义复位 |
+| RegisterBlock，拟新增 | 寄存器/子块引用、相对 offset、重复次数与 stride、明确声明的块范围 | 不复制 fields，不由总线宽度猜访问跨度 |
+| AddressSpace，拟新增 | 地址单位、块实例的 base、映射与数组、地址空间边界 | 不为四个相同端口复制四份寄存器定义 |
+
+下面复用当前手册中的 manual:ctrl（32 位）和 manual:status64（64 位），只增加位置与映射。它说明复用方式，不是 KY3134 的地址分配。所有地址量使用整数字符串，内部按精确整数计算。
+
+```json {% process=false %}
+{
+  "registerBlocks": [{
+    "id": "block:port", "kind": "register-block", "size": "0x100",
+    "entries": [
+      {"id": "ctrl", "register": "manual:ctrl", "offset": "0x0"},
+      {"id": "status", "register": "manual:status64", "offset": "0x8"}
+    ]
+  }],
+  "addressSpaces": [{
+    "id": "space:csr", "kind": "address-space", "addressUnitBits": 8,
+    "mappings": [
+      {"id": "ports", "block": "block:port", "base": "0x1000", "count": 4, "stride": "0x100"}
+    ]
+  }]
+}
+```
+
+这个例子生成四个端口实例，第 i 个端口的 CTRL 位于 0x1000 + i × 0x100，STATUS64 再加 0x8；i=2 时分别为 0x1200 和 0x1208。点击四处 CTRL 都进入同一 Register 定义，查询某个实例时另外返回空间、实例路径、有效地址与定义引用。
+
+简单场景可以只有一个 RegisterBlock，列出已有 Register 及 offset，只展示相对地址；需要实际寻址时再增加 AddressSpace，不能把未声明基址自动当作 0。count 省略表示单个实例；数组必须给出 stride，不从名称、位宽或视觉间距推断。
+
+addressUnitBits 约定默认 8，即字节寻址，可显式声明其他地址单位；进入字段定义后仍按 Register 的位号解释。寄存器的位宽、地址单位、总线数据宽度、实际读写事务宽度是不同概念。默认覆盖的最小地址单元数由位宽和地址单位计算，若硬件分配更大跨度则显式声明 span；不会据此猜事务宽度或自然对齐。
+
+RegisterBlock 的 size 表示明确声明的范围。省略时只能计算已定义内容的最小覆盖，不能据此推断硬件 aperture，也不能把空洞自动设为保留地址。entry 引用 register 或 block 二选一；子块递归引用不得成环，数组/子块地址逐层计算，不能枚举海量实例才做范围检查。
+
+普通映射必须检查有效范围、重叠和数组跨度；别名、银行切换和窗口映射需要显式的目标及选择条件，不能用 allowOverlap 开关放行未知冲突。它们属于复杂增强，需在实现前定好具体变体契约。地址空间和块内位置各自可追溯，不能把同一数值地址在不同空间的对象合并。
+
+实例身份采用项目/地址空间/映射/数组索引/块内路径的结构化组合，定义仍使用原全局 ID。共同定义变化会影响全部引用实例；若某实例的位域或定义复位不同，应明确引用另一份定义，不在地址映射中静默覆盖 fields。显示名与源文件行号不参与实例身份。
+
+拟新增地址概览与寄存器列表呈现，可以从 AddressSpace 或 RegisterBlock 进入。现有 register-diagram、register-field-table 继续只引用 Register；地址项链接原定义及来源。若要在字段页显示实例地址，必须传入明确实例上下文，不修改全局 Register 的查询结果。
+
+首批验收覆盖原有单寄存器输出不变、重复端口/寄存器数组、嵌套块、超过 53 位整数的地址、不同地址空间、范围/重叠诊断和实例到定义跳转。别名/窗口的后续支持必须有明确选择规则；不宣称已完成 CMSIS-SVD、SystemRDL 或 IP-XACT 的完整交换与代码生成。
+
+{% /section %}
+{% section id="design:chart-extension-evidence" title="原始资料、取舍与实施验收" %}
+
+以下资料于 2026-11-11 核查。它们说明可借鉴的模型与能力，不表示 edoc 已采用其全部语义、依赖或运行时。上面的字段名和边界属于 edoc 提案。
+
+| 原始资料 | 核查重点及本方案的取舍 |
+| --- | --- |
+| [Mermaid 消息交互](https://mermaid.js.org/syntax/sequenceDiagram.html) | 参与者、消息、条件/循环/并行等常见表达；借鉴用例，edoc 仍使用可查询的结构化模型 |
+| [Kaitai Struct 格式定义](https://doc.kaitai.io/user_guide.html) | 固定/变长、条件、重复、子结构与位序的区分；借鉴表达边界，不把其解析器生成器作为当前交付 |
+| [Mermaid 报文图](https://mermaid.js.org/syntax/packet.html) | 固定范围与顺序长度的简洁输入；扩展时必须保留动态和条件含义，不能只做固定格子的图片 |
+| [Vega-Lite 规范](https://vega.github.io/vega-lite/docs/spec.html)、[字段映射](https://vega.github.io/vega-lite/docs/encoding.html)、[变换](https://vega.github.io/vega-lite/docs/transform.html) | 声明数据、映射与组合，默认可用且可增强；建议复用统计渲染，edoc 限定和验证自己的可用子集 |
+| [Arm CMSIS-SVD 层级](https://arm-software.github.io/CMSIS_5/SVD/html/svd_Format_pg.html)、[寄存器与嵌套 cluster](https://arm-software.github.io/CMSIS_5/SVD/html/elem_registers.html) | 相对地址、嵌套与数组的组织；借鉴分层与复用，不沿用其“未描述位自动保留”等会改变现有 edoc 要求的默认 |
+
+实现前需把已确认模型补成正式 Schema、类型、标签/视图入口和诊断，并固定上面尚未细化的复杂变体；不得先接受任意对象，再用“未来扩展”解释未生效字段。规划和当前能力清单保持分离，教程在实现后提供真实可运行示例。
+
+每项至少验证：最小数据默认可读；复杂数据沿同一模型增强；错误引用/单位/条件范围明确诊断；原始与派生信息可区分；网页、SVG 与查询使用相同身份及口径。布局和大数据处理允许明确限额，不能静默截断或改写定义。实际工程协议、并发正确性、硬件访问和测量方法仍由相应项目验证，不由图形构建替代。
+
+{% /section %}
+{% /section %}

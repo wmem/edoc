@@ -1,3 +1,10 @@
+import {figureControls} from './figure-client.ts';
+import {commonClockCaption} from '../extensions/control-diagram/project.ts';
+import {elements} from '../extensions/control-diagram/types.ts';
+import {projectControl} from '../extensions/control-diagram/project.ts';
+import {drawingReaderScene} from '../drawing/reader-scene.ts';
+import {solveDrawingInBrowser} from './drawing-executor.ts';
+import {renderDrawingSVG} from '../drawing/svg-render.ts';
 import {registerControls} from './register-client.ts';
 import {tableControls} from './table-controls.ts';
 import {sidebarLayout} from './sidebar-layout.ts';
@@ -10,18 +17,19 @@ import {Graph as X6} from '@antv/x6';
 import type {Scene} from '../render-graph/index.ts';
 import {styles} from '../render-graph/styles.ts';
 import {drawDrawing} from './drawing-scene.ts';
-import {drawingSelection} from '../drawing/reader-scene.ts';
+import {drawingSelection,drawingID} from '../drawing/reader-scene.ts';
 // 构建时注入纯数据，浏览器不读取旁路 JSON、不使用动态 import。
-declare global {interface Window {EdocReady:boolean; EdocGraphs:X6[];}}
+declare global {interface Window {EdocReady:boolean; EdocGraphs:X6[];EdocControlViews:{holder:HTMLElement;state:{collapsed:string[];expandedCalls:string[]};restore:(state:{collapsed:string[];expandedCalls:string[]})=>Promise<void>}[];}}
 export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:string,detail?:unknown)=>void;signal?:AbortSignal;cleanup?:(fn:()=>void)=>void})=>void;
 export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
 const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
-const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
+const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];window.EdocControlViews=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
 const tables=options.managed?undefined:tableControls(document.querySelector<HTMLElement>('main')!);
 if(!options.managed)cleanups.push(sidebarLayout(),readingControls(document.querySelector<HTMLElement>('main')!),()=>tables?.dispose());
 const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
+if(!options.managed)cleanups.push(figureControls(document.querySelector<HTMLElement>('main')!,{manifest:{projectId:data.projectId??document.title},index:new Map(Object.entries(data.entities).map(([id,entity])=>[id,{id,entity}]))} as any));
 if(!options.managed)cleanups.push(registerControls(document.querySelector<HTMLElement>('main')!,{manifest:{projectId:data.projectId??document.title},index:new Map(Object.entries(data.entities).map(([id,entity])=>[id,{id,entity}]))} as any));
-window.EdocGraphs=[];
+window.EdocGraphs=[];window.EdocControlViews=[];
 const panel=document.querySelector<HTMLElement>('#properties')!;
 function select(id:string,detail?:unknown,origin?:HTMLElement){
  const actions=document.querySelector('#selection-actions')!;actions.replaceChildren();panel.textContent=JSON.stringify(detail??data.entities[id]??{id},null,2);const detailNode=document.querySelector('#entity-detail');if(detailNode)detailNode.textContent=panel.textContent;const a=document.querySelector<HTMLAnchorElement>('#object-link')!;a.href='#'+anchor(id);a.hidden=!data.entities[id];
@@ -34,7 +42,7 @@ function initialize(holder:HTMLElement){
  if(stopped||holder.dataset.initialized||holder.closest('details:not([open])'))return;
  if(data.scenes[holder.dataset.diagram!].interfaceModel&&interfaceRenderer){interfaceRenderer(holder,{data,select:(id,detail)=>select(id,detail,holder),signal:abort.signal,cleanup:fn=>cleanups.push(fn)});return;}
  holder.dataset.initialized='true';
- const s:Scene=data.scenes[holder.dataset.diagram!];
+ let s:Scene=data.scenes[holder.dataset.diagram!];
  const canvas=holder.querySelector<HTMLElement>('.canvas')!;
  const height=Math.min(680,Math.max(420,s.height));canvas.style.height=height+'px';
  const graph=new X6({container:canvas,width:canvas.clientWidth,height,background:{color:'#f8fafc'},panning:true,mousewheel:{enabled:true,modifiers:['ctrl','meta'],minScale:.15,maxScale:4},interacting:false});
@@ -90,11 +98,12 @@ function initialize(holder:HTMLElement){
  holder.querySelector('[data-action=plus]')!.addEventListener('click',()=>graph.zoom(.15));
  holder.querySelector('[data-action=minus]')!.addEventListener('click',()=>graph.zoom(-.15));
  holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));s.nodes.forEach(n=>graph.getCellById(n.id).attr('body/stroke','#93a9bd'));panel.textContent='选择图中对象查看工程属性';viewport();});
- holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const clone=holder.querySelector('.static-svg svg')!.cloneNode(true) as SVGSVGElement;const style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
+ const fullControlSVG=s.control?holder.querySelector('.static-svg svg')!.cloneNode(true):undefined;
+ holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const clone=(fullControlSVG??holder.querySelector('.static-svg svg')!).cloneNode(true) as SVGSVGElement;const style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
  const filtered=new Set<string>(s.visibleClasses?s.nets.filter(n=>!s.visibleClasses!.includes(n.class)).map(n=>n.class):[]),collapsed=new Set<string>();
  let showRelationLabels=s.display.showRelationLabels;
  function visibility(){for(const edge of graph.getEdges())if(edge.getData()?.portLead)edge.setVisible(graph.getCellById(edge.getData().ownerId).isVisible());for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));const cells=connectionCells.get(net.id)!;for(const id of cells)graph.getCellById(id).setVisible(!hide&&(!labelCells.has(id)||showRelationLabels));}}
- const staticSVG=holder.querySelector('.static-svg svg')!;
+ let staticSVG=holder.querySelector('.static-svg svg')!;
  const syncDrawingDisplay=()=>{if(!s.drawingInput)return;const metadata=staticSVG.querySelector('metadata');if(metadata){const payload=JSON.parse(metadata.textContent!);payload.display={...payload.display,showRelationLabels,showPortAttributes:portAttributes?.checked??s.display.showPortAttributes};metadata.textContent=JSON.stringify(payload);}};
  const portAttributes=holder.querySelector<HTMLInputElement>('[data-display="port-attributes"]');
  if(portAttributes)portAttributes.onchange=()=>{
@@ -109,13 +118,46 @@ function initialize(holder:HTMLElement){
   staticSVG.querySelectorAll('[data-relation-label]').forEach(e=>e.setAttribute('display',showRelationLabels?'':'none'));
   syncDrawingDisplay();
  };
- for(const cls of new Set(s.nets.map(n=>n.class))){const label=document.createElement('label');const check=document.createElement('input');check.type='checkbox';check.checked=!filtered.has(cls);check.dataset.class=cls;const key=document.createElement('span');key.style.cssText='display:inline-block;width:22px;border-top:2px '+((styles[cls]??styles.other).dash?'dashed':'solid')+' '+(styles[cls]??styles.other).color;label.append(check,key,document.createTextNode(cls));holder.querySelector('.filters')!.append(label);check.onchange=()=>{check.checked?filtered.delete(cls):filtered.add(cls);visibility();};}
+ for(const cls of new Set(s.control?[]:s.nets.map(n=>n.class))){const label=document.createElement('label');const check=document.createElement('input');check.type='checkbox';check.checked=!filtered.has(cls);check.dataset.class=cls;const key=document.createElement('span');key.style.cssText='display:inline-block;width:22px;border-top:2px '+((styles[cls]??styles.other).dash?'dashed':'solid')+' '+(styles[cls]??styles.other).color;label.append(check,key,document.createTextNode(cls));holder.querySelector('.filters')!.append(label);check.onchange=()=>{check.checked?filtered.delete(cls):filtered.add(cls);visibility();};}
  for(const group of s.groups.filter(g=>g.members.some(id=>s.nodes.some(n=>n.id===id||n.ports.some(p=>p.id===id))))){
   const button=document.createElement('button');button.textContent='总览 '+group.label;button.dataset.group=group.id;holder.querySelector('.groups')!.append(button);
   const related=s.nets.filter(n=>group.members.some(p=>n.endpoints.includes(p)));
   const owners=[...new Set(related.flatMap(net=>net.endpoints.map(p=>s.nodes.find(n=>n.id===p||n.ports.some(port=>port.id===p))!.id)))];
   const busIds:string[]=[];const members=s.nodes.filter(n=>group.members.includes(n.id));
   button.onclick=()=>{if(collapsed.has(group.id)){collapsed.delete(group.id);busIds.splice(0).forEach(id=>graph.removeCell(id));members.forEach(n=>graph.getCellById(n.id).show());button.textContent='总览 '+group.label;}else{collapsed.add(group.id);button.textContent='展开 '+group.label;if(members.length){members.forEach(n=>graph.getCellById(n.id).hide());const aggregate=graph.addNode({id:cellID('aggregate:'+group.id),shape:'rect',zIndex:1,x:members[0].x,y:members[0].y,width:200,height:90,attrs:{body:{fill:'#eaf3f7',stroke:'#52788e',rx:10},label:{text:group.label+'\n'+related.length+' independent nets',fontFamily:'Noto Sans SC'}},data:{entityId:group.id}});busIds.push(aggregate.id);for(const net of related){for(const endpoint of net.endpoints){const owner=s.nodes.find(n=>n.id===endpoint||n.ports.some(p=>p.id===endpoint))!;if(members.some(n=>n.id===owner.id))continue;const edge=graph.addEdge({source:{cell:aggregate.id},target:{cell:owner.id,...(endpoint!==owner.id?{port:endpoint}:{})},router:{name:'orth'},attrs:{line:{stroke:(styles[net.class]??styles.other).color,targetMarker:null}},labels:[{attrs:{label:{text:net.label,display:showRelationLabels?'':'none'}}}],data:{entityId:net.id}});busIds.push(edge.id);}}}else owners.slice(1).forEach((id,i)=>{const bus=graph.addEdge({id:cellID('bus:'+group.id+':'+i),source:{cell:owners[0]},target:{cell:id},router:{name:'orth'},attrs:{line:{stroke:'#52687d',strokeWidth:5,targetMarker:null}},labels:[{attrs:{label:{text:`${group.label} · ${related.length} independent nets`,display:showRelationLabels?'':'none'}}}],data:{entityId:group.id}});busIds.push(bus.id);});select(group.id);}visibility();};if(s.collapsedGroups.includes(group.id))button.click();
+ }
+
+ if(s.control){
+  type State={collapsed:string[];expandedCalls:string[]};
+  let state:State={collapsed:[...s.control.view.collapsed??[]],expandedCalls:[]},revision=0;
+  const saved={holder,state,restore:(next:State)=>update(next,false)};window.EdocControlViews.push(saved);
+  const history:State[]=[],status=holder.querySelector<HTMLElement>('[data-control-status]')!,back=holder.querySelector<HTMLButtonElement>('[data-control-back]')!;
+  const update=async(next:State,remember=true)=>{
+   const rev=++revision;holder.dataset.busy='true';status.textContent='正在布局…';
+   try{
+    const control=s.control!,input=projectControl(control,next),geometry=await solveDrawingInBrowser(input,{signal:abort.signal});
+    if(rev!==revision||stopped)return;
+    if(remember)history.push(structuredClone(state));state=structuredClone(next);saved.state=state;
+    s={...drawingReaderScene(input,geometry,s.id,s.label,{...s.display,showRelationLabels}),control,kind:s.kind,layoutEngine:'drawing'};
+    graph.clearCells();labelCells.clear();connectionCells=drawDrawing(graph,s,cellID,labelCells);
+    // 下载保持同一份几何；完整模型按钮和返回视图不会改动语义来源。
+    const font=document.querySelector('#edoc-document-style')?.textContent??'';
+    const exported=new DOMParser().parseFromString(renderDrawingSVG(geometry,input,font,s.display,s.id,s.control?commonClockCaption(s.control):''),'image/svg+xml').documentElement;
+    holder.querySelector('.static-svg')!.replaceChildren(exported);staticSVG=exported;
+    holder.querySelectorAll<HTMLButtonElement>('[data-control-fold]').forEach(b=>{const id=b.dataset.controlFold!;b.setAttribute('aria-pressed',String(state.collapsed.includes(id)));b.textContent=(state.collapsed.includes(id)?'展开 ':'折叠 ')+((control.model.kind==='state-machine'?control.model.states:control.model.lanes??[]).find(n=>n.id===id)?.label??id);});
+    holder.querySelectorAll<HTMLButtonElement>('[data-control-call]').forEach(b=>{b.setAttribute('aria-pressed',String(state.expandedCalls.includes(b.dataset.controlCall!)));});
+    back.disabled=!history.length;status.textContent=`${s.nodes.length} 个可见节点，${s.nets.length} 条连接`;visibility();viewport();
+   }catch(error){if(rev===revision)status.textContent='布局未成功，保留原视图：'+String(error);}
+   finally{if(rev===revision)holder.dataset.busy='false';}
+  };
+  holder.querySelectorAll<HTMLButtonElement>('[data-control-fold]').forEach(b=>{b.onclick=()=>{const id=b.dataset.controlFold!;void update({...state,collapsed:state.collapsed.includes(id)?state.collapsed.filter(x=>x!==id):[...state.collapsed,id]});};});
+  holder.querySelectorAll<HTMLButtonElement>('[data-control-call]').forEach(b=>{b.onclick=()=>{const id=b.dataset.controlCall!;void update({...state,expandedCalls:state.expandedCalls.includes(id)?state.expandedCalls.filter(x=>x!==id):[...state.expandedCalls,id]});};});
+  const search=holder.querySelector<HTMLInputElement>('[data-control-search]')!,results=holder.querySelector<HTMLSelectElement>('[data-control-result]')!;
+  search.oninput=()=>{const term=search.value.trim().toLowerCase();results.replaceChildren();results.hidden=!term;if(!term)return;const placeholder=document.createElement('option');placeholder.textContent='选择定位元素';placeholder.value='';results.append(placeholder);for(const {element} of elements(s.control!.model).filter(e=>JSON.stringify(e.element).toLowerCase().includes(term)).slice(0,100)){const option=document.createElement('option');option.value=element.id;option.textContent=(element.label??element.id)+' · '+element.id;results.append(option);}};
+  results.onchange=()=>{const id=results.value;if(!id)return;void update({...state,collapsed:[]}).then(()=>{const input=s.drawingInput!,node=input.nodes.find(n=>n.originIds?.[0]===s.control!.model.id&&n.originIds[1]===id),connection=input.connections.find(c=>c.originIds?.[0]===s.control!.model.id&&c.originIds[1]===id);const target=node?drawingID(s.id,'node',node.id):connection?drawingID(s.id,'connection',connection.id):undefined;if(target){highlight(target);const cell=graph.getCellById(target);if(cell)graph.centerCell(cell);}else status.textContent='该元素未在当前聚焦范围显示，完整定义已保留在模型查询中';});};
+  holder.querySelector<HTMLButtonElement>('[data-control-svg]')!.onclick=()=>{const blob=new Blob([new XMLSerializer().serializeToString(staticSVG)],{type:'image/svg+xml'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'-current.svg';a.click();URL.revokeObjectURL(a.href);};
+  holder.querySelector<HTMLButtonElement>('[data-control-full]')!.onclick=()=>void update({collapsed:[],expandedCalls:[]});
+  back.onclick=()=>{const previous=history.pop();if(previous)void update(previous,false);};
  }
  visibility();viewport();const resize=new ResizeObserver(()=>{if(!stopped){graph.resize(holder.clientWidth,canvas.clientHeight);viewport();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
 }

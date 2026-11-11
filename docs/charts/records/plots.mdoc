@@ -1,0 +1,43 @@
+{% section id="use:plots" title="测量与统计图" %}
+
+PlotView 引用已有 Table，将记录映射为曲线、散点、柱图或统计分布。原始行、类型、单位和来源继续保存在表中；不为画图再维护一份采样数据。数据表适合查精确值，统计图帮助比较趋势和分布。
+
+{% section id="use:plot-simple" title="简单：原始采样趋势" %}
+
+本页全部是构造的演示数据，非产品实测。每个配置有 24 条采样，其中一条没有时延字段；曲线在缺测处断开，不填成零。最小视图只需 data、mark 和 x/y 映射，单位来自 Table。
+
+{% plot id="plot:simple" /%}
+
+折线的连续 x 默认按 x 稳定排序；需要保留采样顺序时显式声明 order。图中单位、缺测、排序和统计步骤均可 query，不靠文字标签猜统计含义。
+
+{% /section %}
+{% section id="use:plot-complex" title="复杂：分面、图层与分位数" %}
+
+下面按配置分面，在同一坐标上叠加箱线图与原始散点。箱线图使用 Tukey 1.5 IQR，缺测值不参加数值统计；散点仍能追溯原始行。
+
+{% plot id="plot:distribution" /%}
+
+同一张表也可以按配置求分位数。这里明确采用线性插值 R-7，展示 P50、P90、P99；不能将这些样本统计解释为总体保证。
+
+{% plot id="plot:quantile" /%}
+
+{% /section %}
+{% section id="use:plot-records" title="原始记录" collapsed=true %}
+
+{% data-table id="table:measurements" /%}
+
+{% /section %}
+{% section id="use:plot-data" title="数据与查询" collapsed=true %}
+
+{% code file="docs/ir/authoring/measurements.json" language="json" /%}
+
+```sh
+edoc query --id plot:quantile --depth 1
+edoc read --id plot:quantile
+edoc export --view plot:distribution --format svg --output distribution.svg
+```
+
+字段映射、过滤、聚合、分箱、分位数、组合与限制见[统计图契约](../../reference/tags/engineering-charts.mdoc#ref:tag-plot)。使用 Vega-Lite 后端生成自包含 SVG，网页和 SVG 都无需远程数据或脚本。统计计算与绘图检查不代替实验设计、测量校准和验收判据。
+
+{% /section %}
+{% /section %}

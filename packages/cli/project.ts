@@ -1,3 +1,4 @@
+import {isEngineering,engineeringSVG} from '../figure/render.ts';
 import {registerSVG} from '../extensions/register/render.ts';
 import type {Register} from '../extensions/register/types.ts';
 import {fontCSS} from '../render-graph/font.ts';
@@ -6,7 +7,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync,renameSync,readFileSync} from
 import {tmpdir} from 'node:os';
 import {resolveProjectConfig,loadProject,protectOutputs} from '../core/project.ts';
 import type {ResolvedConfig} from '../core/project.ts';
-import {query,summary} from '../core/query.ts';
+import {query,queryElement,summary} from '../core/query.ts';
 import {readDocument} from '../core/read.ts';
 import {outline} from '../core/outline.ts';
 import {EdocError,failure} from '../core/errors.ts';
@@ -30,9 +31,9 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
  edoc build [--format html] [--output FILE]
  edoc validate [--format json|text]         扫描文档、发现数据并校验依赖
  edoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
- edoc query [--project PROJECT_ID] --id ID [--depth 0..10] [--max-items 1..10000] [--format json|text]
+ edoc query [--project PROJECT_ID] --id ID [--element ELEMENT] [--depth 0..10] [--max-items 1..10000] [--format json|text]
  edoc read [--project PROJECT_ID] --id ID [--scope self|subtree] [--with-clauses] [--offset 0] [--max-chars 12000] [--format json|text]
- edoc export [--project PROJECT_ID] (--view ID | --id REGISTER_ID) --format svg --output FILE
+ edoc export [--project PROJECT_ID] (--view ID | --id MODEL_ID) --format svg --output FILE
  edoc guide [--full] [--format text|json]    文档组织指南，默认简版；--full 完整版
  edoc docs [serve|outline|read|query]        定位 .mdoc 源文或按需查询工具手册
 项目命令均可使用 --config；省略时只查找当前目录下的 docs/edoc.config.js。
@@ -55,7 +56,7 @@ export async function main(argv:string[]):Promise<number>{
   if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
-  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(command==='query'?['--id','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view','--id']:[])]);
+  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view','--id']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
@@ -79,7 +80,7 @@ export async function main(argv:string[]):Promise<number>{
   }else if(command==='export')targets=[{format:'svg',file:resolve(args['--output'])}];
   protectOutputs(targets,config.configInputs);
   const book=await loadBook(config,{onInputs(inputs){protectOutputs(targets,inputs);if(!Object.keys(config!.children).length)canClean=true;}});protectOutputs(targets,book.inputs);canClean=true;const project=book.root,selected=args['--project']?book.projects.get(args['--project']):project;if(!selected)throw new EdocError([{code:'QUERY_NOT_FOUND',file:config.file,path:'/project',message:'当前组合中没有此工程：'+args['--project']}]);const graph=selected.graph;
-  if(command==='query'){process.stdout.write(JSON.stringify(query(graph,args['--id'],{depth,maxItems}),null,2)+'\n');return 0;}
+  if(command==='query'){process.stdout.write(JSON.stringify(args['--element']?queryElement(graph,args['--id'],args['--element']):query(graph,args['--id'],{depth,maxItems}),null,2)+'\n');return 0;}
   if(command==='read'){
    const result=readDocument(graph,args['--id'],{withClauses:args['--with-clauses']?true:undefined,scope:args['--scope'] as 'self'|'subtree'|undefined,offset:readOffset,maxChars:readLimit});
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':readText(result));return 0;
@@ -100,7 +101,7 @@ export async function main(argv:string[]):Promise<number>{
    const content=command==='build'&&targets.some(t=>t.format==='html')?await bookHTML(book):undefined;
    for(const [i,target]of targets.entries()){
     mkdirSync(dirname(target.file),{recursive:true});const pending=join(temporary,`document-${i}.`+target.format);
-    if(target.format==='svg'){const id=args['--id']??args['--view'],entry=graph.index.get(id);if(args['--id']&&entry?.type!=='register')failure(entry?'EXPORT_TYPE':'QUERY_NOT_FOUND',config.file,'/id','--id 必须指向寄存器定义：'+id);writeFileSync(pending,args['--id']&&entry?.type==='register'?registerSVG(entry.entity as Register,{project:graph.manifest.projectId,fontCSS:fontCSS()}):svg(await scene(graph,id,{interfaces:'expanded'})));}
+    if(target.format==='svg'){const id=args['--id']??args['--view'],entry=graph.index.get(id);if(args['--id']&&entry?.type!=='register'&&!isEngineering(graph,id))failure(entry?'EXPORT_TYPE':'QUERY_NOT_FOUND',config.file,'/id','--id 必须指向可绘图模型：'+id);writeFileSync(pending,isEngineering(graph,id)?(await engineeringSVG(graph,id,true)).replace('><title>','><style>'+fontCSS()+'</style><title>'):args['--id']&&entry?.type==='register'?registerSVG(entry.entity as Register,{project:graph.manifest.projectId,fontCSS:fontCSS()}):svg(await scene(graph,id,{interfaces:'expanded',control:'full'})));}
     else if(target.format==='html')writeFileSync(pending,content!);
     generated.push({pending,target});
    }

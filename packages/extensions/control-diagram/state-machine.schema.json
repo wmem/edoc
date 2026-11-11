@@ -1,0 +1,426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/state-machine.schema.json",
+  "type": "object",
+  "properties": {
+    "stateMachines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          },
+          "kind": {
+            "const": "state-machine"
+          },
+          "initial": {
+            "type": "string",
+            "minLength": 1
+          },
+          "states": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "kind": {
+                  "enum": [
+                    "state",
+                    "composite",
+                    "parallel",
+                    "initial",
+                    "final",
+                    "choice",
+                    "junction",
+                    "history",
+                    "fork",
+                    "join",
+                    "entry",
+                    "exit",
+                    "terminate",
+                    "submachine"
+                  ]
+                },
+                "region": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "entry": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "do": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "exit": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "history": {
+                  "enum": [
+                    "shallow",
+                    "deep"
+                  ]
+                },
+                "default": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "call": {
+                  "type": "object",
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "entries": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "returns": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "required": [
+                    "model"
+                  ],
+                  "additionalProperties": false
+                },
+                "bindings": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "owner": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "initial": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "owner"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "transitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "from": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "to": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "trigger": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "event"
+                        },
+                        "event": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "event"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "after"
+                        },
+                        "value": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "unit": {
+                          "enum": [
+                            "ns",
+                            "us",
+                            "ms",
+                            "s",
+                            "cycles"
+                          ]
+                        },
+                        "clock": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "clock"
+                        },
+                        "clock": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "edge": {
+                          "enum": [
+                            "rising",
+                            "falling"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "clock"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "completion",
+                            "always"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "change"
+                        },
+                        "expression": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "expression"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "guard": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "otherwise": {
+                  "type": "boolean"
+                },
+                "actions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "kind": {
+                  "enum": [
+                    "external",
+                    "internal",
+                    "local"
+                  ]
+                },
+                "priority": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "id",
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "for": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "id",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "semantics": {
+            "type": "object",
+            "properties": {
+              "profile": {
+                "type": "string",
+                "minLength": 1
+              },
+              "selection": {
+                "enum": [
+                  "unordered",
+                  "priority"
+                ]
+              },
+              "clock": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reset": {
+                "type": "string",
+                "minLength": 1
+              },
+              "encoding": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "completeness": {
+            "enum": [
+              "complete",
+              "partial"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "states",
+          "transitions"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "stateMachines"
+  ],
+  "additionalProperties": false
+}

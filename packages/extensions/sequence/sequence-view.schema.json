@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/sequence-view.schema.json",
+  "$defs": {
+    "view": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "$ref": "common.schema.json#/$defs/source"
+        },
+        "kind": {
+          "const": "sequence"
+        },
+        "model": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "participantOrder": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "collapsed": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "expandedCalls": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "spacing": {
+          "type": "number",
+          "minimum": 48,
+          "maximum": 1000
+        },
+        "showLabels": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "model"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

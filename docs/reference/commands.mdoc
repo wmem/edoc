@@ -36,7 +36,7 @@ docs outline 缺省 depth=0，只返回当前入口；--depth 0–10 按分支�
 
 docs read 读取 section 默认 self，返回当前正文及子章节身份，显式 subtree 才展开，分页见 read 参考。源文、目录、章节和事实查询不依赖 HTML 文件；serve 才需要预构建 HTML，仅在 127.0.0.1 提供本机阅读，默认端口 5176，允许 0 自动分配，Ctrl+C 结束。
 
-docs outline/read/query 与同名项目命令采用相同的 ID、范围、分页和退出码；--project 只选择手册内部工程。query 的 text/json 均输出 JSON。docs 不接受 --config：普通 edoc read/query/outline 查询当前项目，工具用法明确使用 edoc docs。
+docs outline/read/query 与同名项目命令采用相同的 ID、范围、分页和退出码；模型可使用 read，消息/协议局部元素与地址实例可使用 query --element，规则见[工程图契约](tags/engineering-charts.mdoc)。--project 只选择手册内部工程。query 的 text/json 均输出 JSON。docs 不接受 --config：普通 edoc read/query/outline 查询当前项目，工具用法明确使用 edoc docs。
 
 手册随工具构建生成，安装用户不需要源码仓库、Python 或浏览器；serve 只是本机静态预览，不提供在线编辑或项目查询 API。
 
@@ -111,7 +111,7 @@ edoc --help
 edoc --version
 ```
 
-export 的 --view 导出关系图，--id 导出寄存器位域图（每带 16 位），两者必须二选一。export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，默认读取源文中的[简略组织指南](../writing/agent-guide.mdoc)，--full 读取[完整推荐指南](../writing/guide.mdoc)。--format json 返回 content、source、variant（short/full）及 guideVersion。工具操作入门使用 docs，不要求先通读组织指南。
+export 的 --view 导出关系/控制视图或消息、协议、统计视图；--id 导出寄存器位域图（每带 16 位）、消息/协议模型或寄存器块/地址空间，两者必须二选一。export 支持 --project，导出完整逐信号 SVG 与字体/来源，不依赖网页当前筛选状态。guide 无需工程配置，默认读取源文中的[简略组织指南](../writing/agent-guide.mdoc)，--full 读取[完整推荐指南](../writing/guide.mdoc)。--format json 返回 content、source、variant（short/full）及 guideVersion。工具操作入门使用 docs，不要求先通读组织指南。
 
 --version 显示工具版本、IR 版本、来源提交与构建时间。docs --format json 的 build 提供 version、revision、dirty、builtAt；dirty=true 表示构建时包含未提交修改，不能仅凭提交号判定内容相同。安装版只读随包元数据，不把当前用户工程的 Git 提交当作工具来源；无 Git 信息的源码归档明确返回 revision/dirty=null，命令显示 source unknown。
 

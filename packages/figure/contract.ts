@@ -1,0 +1,3 @@
+export const engineeringTags:Record<string,any>=Object.fromEntries(['sequence-diagram','binary-diagram','binary-field-table','plot','register-map'].map(name=>[name,{render:'div',selfClosing:true,attributes:{id:{type:String,required:true},...['sequence-diagram','binary-diagram','binary-field-table'].includes(name)?{view:{type:String}}:{}}}]));
+export const engineeringTargets={'sequence-diagram':['sequence'],'binary-diagram':['binary-layout'],'binary-field-table':['binary-layout'],plot:['view'],'register-map':['register-block','address-space']} as const;
+export const engineeringResources={sequences:'sequence',binaryLayouts:'binary-layout',registerBlocks:'register-block',addressSpaces:'address-space'} as const;

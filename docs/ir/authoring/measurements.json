@@ -1,0 +1,588 @@
+{
+  "tables": [
+    {
+      "id": "table:measurements",
+      "kind": "table",
+      "label": "演示采样（构造数据，非实测）",
+      "columns": [
+        {
+          "field": "load",
+          "label": "负载",
+          "type": "number",
+          "unit": "%"
+        },
+        {
+          "field": "latency",
+          "label": "时延",
+          "type": "number",
+          "unit": "us"
+        },
+        {
+          "field": "mode",
+          "label": "配置",
+          "type": "string"
+        },
+        {
+          "field": "sample",
+          "label": "样本序号",
+          "type": "number"
+        }
+      ],
+      "rows": [
+        {
+          "id": "measurement:A:0",
+          "values": {
+            "load": 15,
+            "mode": "A",
+            "sample": 0,
+            "latency": 7.85
+          }
+        },
+        {
+          "id": "measurement:A:1",
+          "values": {
+            "load": 15,
+            "mode": "A",
+            "sample": 1,
+            "latency": 9.25
+          }
+        },
+        {
+          "id": "measurement:A:2",
+          "values": {
+            "load": 15,
+            "mode": "A",
+            "sample": 2,
+            "latency": 10.65
+          }
+        },
+        {
+          "id": "measurement:A:3",
+          "values": {
+            "load": 15,
+            "mode": "A",
+            "sample": 3,
+            "latency": 12.05
+          }
+        },
+        {
+          "id": "measurement:A:4",
+          "values": {
+            "load": 30,
+            "mode": "A",
+            "sample": 4,
+            "latency": 9.8
+          }
+        },
+        {
+          "id": "measurement:A:5",
+          "values": {
+            "load": 30,
+            "mode": "A",
+            "sample": 5,
+            "latency": 11.2
+          }
+        },
+        {
+          "id": "measurement:A:6",
+          "values": {
+            "load": 30,
+            "mode": "A",
+            "sample": 6,
+            "latency": 12.6
+          }
+        },
+        {
+          "id": "measurement:A:7",
+          "values": {
+            "load": 30,
+            "mode": "A",
+            "sample": 7,
+            "latency": 14.0
+          }
+        },
+        {
+          "id": "measurement:A:8",
+          "values": {
+            "load": 45,
+            "mode": "A",
+            "sample": 8,
+            "latency": 11.75
+          }
+        },
+        {
+          "id": "measurement:A:9",
+          "values": {
+            "load": 45,
+            "mode": "A",
+            "sample": 9,
+            "latency": 13.15
+          }
+        },
+        {
+          "id": "measurement:A:10",
+          "values": {
+            "load": 45,
+            "mode": "A",
+            "sample": 10,
+            "latency": 14.55
+          }
+        },
+        {
+          "id": "measurement:A:11",
+          "values": {
+            "load": 45,
+            "mode": "A",
+            "sample": 11
+          }
+        },
+        {
+          "id": "measurement:A:12",
+          "values": {
+            "load": 60,
+            "mode": "A",
+            "sample": 12,
+            "latency": 13.7
+          }
+        },
+        {
+          "id": "measurement:A:13",
+          "values": {
+            "load": 60,
+            "mode": "A",
+            "sample": 13,
+            "latency": 15.1
+          }
+        },
+        {
+          "id": "measurement:A:14",
+          "values": {
+            "load": 60,
+            "mode": "A",
+            "sample": 14,
+            "latency": 16.5
+          }
+        },
+        {
+          "id": "measurement:A:15",
+          "values": {
+            "load": 60,
+            "mode": "A",
+            "sample": 15,
+            "latency": 17.9
+          }
+        },
+        {
+          "id": "measurement:A:16",
+          "values": {
+            "load": 75,
+            "mode": "A",
+            "sample": 16,
+            "latency": 15.65
+          }
+        },
+        {
+          "id": "measurement:A:17",
+          "values": {
+            "load": 75,
+            "mode": "A",
+            "sample": 17,
+            "latency": 17.05
+          }
+        },
+        {
+          "id": "measurement:A:18",
+          "values": {
+            "load": 75,
+            "mode": "A",
+            "sample": 18,
+            "latency": 18.45
+          }
+        },
+        {
+          "id": "measurement:A:19",
+          "values": {
+            "load": 75,
+            "mode": "A",
+            "sample": 19,
+            "latency": 19.85
+          }
+        },
+        {
+          "id": "measurement:A:20",
+          "values": {
+            "load": 90,
+            "mode": "A",
+            "sample": 20,
+            "latency": 17.6
+          }
+        },
+        {
+          "id": "measurement:A:21",
+          "values": {
+            "load": 90,
+            "mode": "A",
+            "sample": 21,
+            "latency": 19.0
+          }
+        },
+        {
+          "id": "measurement:A:22",
+          "values": {
+            "load": 90,
+            "mode": "A",
+            "sample": 22,
+            "latency": 20.4
+          }
+        },
+        {
+          "id": "measurement:A:23",
+          "values": {
+            "load": 90,
+            "mode": "A",
+            "sample": 23,
+            "latency": 21.8
+          }
+        },
+        {
+          "id": "measurement:B:0",
+          "values": {
+            "load": 15,
+            "mode": "B",
+            "sample": 0,
+            "latency": 11.85
+          }
+        },
+        {
+          "id": "measurement:B:1",
+          "values": {
+            "load": 15,
+            "mode": "B",
+            "sample": 1,
+            "latency": 13.25
+          }
+        },
+        {
+          "id": "measurement:B:2",
+          "values": {
+            "load": 15,
+            "mode": "B",
+            "sample": 2,
+            "latency": 14.65
+          }
+        },
+        {
+          "id": "measurement:B:3",
+          "values": {
+            "load": 15,
+            "mode": "B",
+            "sample": 3,
+            "latency": 16.05
+          }
+        },
+        {
+          "id": "measurement:B:4",
+          "values": {
+            "load": 30,
+            "mode": "B",
+            "sample": 4,
+            "latency": 13.8
+          }
+        },
+        {
+          "id": "measurement:B:5",
+          "values": {
+            "load": 30,
+            "mode": "B",
+            "sample": 5,
+            "latency": 15.2
+          }
+        },
+        {
+          "id": "measurement:B:6",
+          "values": {
+            "load": 30,
+            "mode": "B",
+            "sample": 6,
+            "latency": 16.6
+          }
+        },
+        {
+          "id": "measurement:B:7",
+          "values": {
+            "load": 30,
+            "mode": "B",
+            "sample": 7,
+            "latency": 18.0
+          }
+        },
+        {
+          "id": "measurement:B:8",
+          "values": {
+            "load": 45,
+            "mode": "B",
+            "sample": 8,
+            "latency": 15.75
+          }
+        },
+        {
+          "id": "measurement:B:9",
+          "values": {
+            "load": 45,
+            "mode": "B",
+            "sample": 9,
+            "latency": 17.15
+          }
+        },
+        {
+          "id": "measurement:B:10",
+          "values": {
+            "load": 45,
+            "mode": "B",
+            "sample": 10,
+            "latency": 18.55
+          }
+        },
+        {
+          "id": "measurement:B:11",
+          "values": {
+            "load": 45,
+            "mode": "B",
+            "sample": 11
+          }
+        },
+        {
+          "id": "measurement:B:12",
+          "values": {
+            "load": 60,
+            "mode": "B",
+            "sample": 12,
+            "latency": 17.7
+          }
+        },
+        {
+          "id": "measurement:B:13",
+          "values": {
+            "load": 60,
+            "mode": "B",
+            "sample": 13,
+            "latency": 19.1
+          }
+        },
+        {
+          "id": "measurement:B:14",
+          "values": {
+            "load": 60,
+            "mode": "B",
+            "sample": 14,
+            "latency": 20.5
+          }
+        },
+        {
+          "id": "measurement:B:15",
+          "values": {
+            "load": 60,
+            "mode": "B",
+            "sample": 15,
+            "latency": 21.9
+          }
+        },
+        {
+          "id": "measurement:B:16",
+          "values": {
+            "load": 75,
+            "mode": "B",
+            "sample": 16,
+            "latency": 19.65
+          }
+        },
+        {
+          "id": "measurement:B:17",
+          "values": {
+            "load": 75,
+            "mode": "B",
+            "sample": 17,
+            "latency": 21.05
+          }
+        },
+        {
+          "id": "measurement:B:18",
+          "values": {
+            "load": 75,
+            "mode": "B",
+            "sample": 18,
+            "latency": 22.45
+          }
+        },
+        {
+          "id": "measurement:B:19",
+          "values": {
+            "load": 75,
+            "mode": "B",
+            "sample": 19,
+            "latency": 23.85
+          }
+        },
+        {
+          "id": "measurement:B:20",
+          "values": {
+            "load": 90,
+            "mode": "B",
+            "sample": 20,
+            "latency": 21.6
+          }
+        },
+        {
+          "id": "measurement:B:21",
+          "values": {
+            "load": 90,
+            "mode": "B",
+            "sample": 21,
+            "latency": 23.0
+          }
+        },
+        {
+          "id": "measurement:B:22",
+          "values": {
+            "load": 90,
+            "mode": "B",
+            "sample": 22,
+            "latency": 24.4
+          }
+        },
+        {
+          "id": "measurement:B:23",
+          "values": {
+            "load": 90,
+            "mode": "B",
+            "sample": 23,
+            "latency": 25.8
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/authoring/measurements.json",
+        "selector": "table:measurements"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "plot:simple",
+      "kind": "plot",
+      "label": "原始时延趋势",
+      "data": "table:measurements",
+      "mark": "line",
+      "transform": [
+        {
+          "filter": {
+            "field": "mode",
+            "equal": "A"
+          }
+        }
+      ],
+      "encoding": {
+        "x": {
+          "field": "sample"
+        },
+        "y": {
+          "field": "latency"
+        }
+      },
+      "source": {
+        "file": "docs/ir/authoring/measurements.json",
+        "selector": "plot:simple"
+      }
+    },
+    {
+      "id": "plot:distribution",
+      "kind": "plot",
+      "label": "不同负载下的时延分布",
+      "data": "table:measurements",
+      "facet": {
+        "field": "mode",
+        "columns": 2
+      },
+      "spec": {
+        "layer": [
+          {
+            "mark": "boxplot",
+            "encoding": {
+              "x": {
+                "field": "load",
+                "type": "ordinal"
+              },
+              "y": {
+                "field": "latency"
+              },
+              "color": {
+                "field": "mode"
+              }
+            }
+          },
+          {
+            "mark": "point",
+            "encoding": {
+              "x": {
+                "field": "load",
+                "type": "ordinal"
+              },
+              "y": {
+                "field": "latency"
+              },
+              "color": {
+                "field": "mode"
+              }
+            }
+          }
+        ]
+      },
+      "width": 350,
+      "height": 270,
+      "source": {
+        "file": "docs/ir/authoring/measurements.json",
+        "selector": "plot:distribution"
+      }
+    },
+    {
+      "id": "plot:quantile",
+      "kind": "plot",
+      "label": "时延分位数（R-7）",
+      "data": "table:measurements",
+      "transform": [
+        {
+          "quantile": "latency",
+          "probs": [
+            0.5,
+            0.9,
+            0.99
+          ],
+          "groupby": [
+            "mode"
+          ],
+          "as": [
+            "probability",
+            "latencyQ"
+          ],
+          "method": "linear"
+        }
+      ],
+      "mark": "line",
+      "encoding": {
+        "x": {
+          "field": "probability"
+        },
+        "y": {
+          "field": "latencyQ"
+        },
+        "color": {
+          "field": "mode"
+        }
+      },
+      "source": {
+        "file": "docs/ir/authoring/measurements.json",
+        "selector": "plot:quantile"
+      }
+    }
+  ]
+}

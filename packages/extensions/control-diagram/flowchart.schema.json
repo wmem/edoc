@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/flowchart.schema.json",
+  "type": "object",
+  "properties": {
+    "flowcharts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          },
+          "kind": {
+            "const": "flowchart"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "kind": {
+                  "enum": [
+                    "start",
+                    "process",
+                    "decision",
+                    "merge",
+                    "fork",
+                    "join",
+                    "end",
+                    "call",
+                    "wait",
+                    "io",
+                    "connector"
+                  ]
+                },
+                "lane": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "scope": {
+                  "enum": [
+                    "flow",
+                    "branch"
+                  ]
+                },
+                "joinSpec": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "all",
+                        "any"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "expression": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "expression"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "call": {
+                  "type": "object",
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "returns": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "required": [
+                    "model"
+                  ],
+                  "additionalProperties": false
+                },
+                "wait": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "event"
+                        },
+                        "event": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "event"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "after"
+                        },
+                        "value": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "unit": {
+                          "enum": [
+                            "ns",
+                            "us",
+                            "ms",
+                            "s",
+                            "cycles"
+                          ]
+                        },
+                        "clock": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "clock"
+                        },
+                        "clock": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "edge": {
+                          "enum": [
+                            "rising",
+                            "falling"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "clock"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "completion",
+                            "always"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "change"
+                        },
+                        "expression": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "expression"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "actions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "from": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "to": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "guard": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "otherwise": {
+                  "type": "boolean"
+                },
+                "kind": {
+                  "enum": [
+                    "control",
+                    "exception",
+                    "timeout"
+                  ]
+                },
+                "priority": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "return": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "lanes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                }
+              },
+              "required": [
+                "id",
+                "label"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "$ref": "common.schema.json#/$defs/source"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "for": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "id",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "selection": {
+            "enum": [
+              "unordered",
+              "priority"
+            ]
+          },
+          "completeness": {
+            "enum": [
+              "complete",
+              "partial"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "nodes",
+          "edges"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "flowcharts"
+  ],
+  "additionalProperties": false
+}
