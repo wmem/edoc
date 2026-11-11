@@ -1,0 +1,50 @@
+{% section id="acceptance:home" title="验收记录" %}
+
+{% directory-order items=["manual-navigation.mdoc","clauses.mdoc","drawing-reading.mdoc","drawing-projects.mdoc","drawing-reader.mdoc","drawing-interfaces.mdoc","drawing-prototype.mdoc","register-manual.mdoc","table-reading.mdoc","reading-references.mdoc","graphics-feedback-fixes.mdoc","agent-feedback.mdoc","agent-manual.mdoc","documentation-delivery.mdoc","html-install.mdoc","directory-order.mdoc","extension-contracts.mdoc","markdoc.mdoc","default-documents.mdoc","usage-organization.mdoc","p0.mdoc","v1.mdoc","graphics.mdoc","display.mdoc","organization.mdoc","waveform.mdoc","interfaces.mdoc","layout.mdoc","project-entry.mdoc","composition-pdf.mdoc","self-documentation.mdoc","documentation.mdoc","docs-root.mdoc","documentation-review.mdoc","source-inputs.mdoc","tree-labels.mdoc","book-print-index.mdoc","book-print-hierarchy.mdoc","drawing-release.mdoc"] /%}
+
+每份记录只证明对应阶段明确列出的范围。先选择本次修改相关的能力，核对实际用例与限制，不累加不同版本的测试数字作为当前结果。
+
+2026-11-03 工具统一更名为 edoc。为便于按当前源码查阅，历史说明中的工具、命令、配置和代码标识已统一新名称，阶段日期及验证结论不变；原文快照与真实归档文件名保留原名。已有工程的调整见[名称迁移](../../../reference/config.mdoc#ref:edoc-migration)。
+
+| 阶段或能力 | 记录 |
+| --- | --- |
+| 首页、源目录、阅读路径和导航整体重整 | [整体导航重整](manual-navigation.mdoc) |
+| 能力/行为概念组织及旧条款写法移除 | [条款整理与2.0变更](clauses.mdoc) |
+| 系统总图、主题与模块接线的分层修订 | [框图阅读层级修订](drawing-reading.mdoc) |
+| Drawing 独立结果检查、预算与两个真实工程 | [真实工程框图验证](drawing-projects.mdoc) |
+| 普通 Drawing 的连线标题、缩放、大图与 SVG | [普通图阅读器接入](drawing-reader.mdoc) |
+| Drawing 自动端口对齐、接口独立展开与同源导出 | [端口与接口原型](drawing-interfaces.mdoc) |
+| Drawing 内部求解原型、固定路线与明确缺口 | [通用框图原型](drawing-prototype.mdoc) |
+| 寄存器位域图、字段表与单元格独立跳转 | [寄存器手册](register-manual.mdoc) |
+| data-table表头排序、多列筛选与稳定行定位 | [表格阅读](table-reading.mdoc) |
+| 标题/代码折叠、编号与对象语义引用 | [阅读与引用修复](reading-references.mdoc) |
+| 长中文波形、默认可读视口和单框方向引线 | [图形反馈修复](graphics-feedback-fixes.mdoc) |
+| 简版指南、可读 ID、正文预检、静态 SVG 与版本来源 | [Agent 维护成本优化](agent-feedback.mdoc) |
+| 安装目录与 --help 的 Agent 源文入口 | [Agent 手册发现修复](agent-manual.mdoc) |
+| 普通安装自带手册、类型与配方 | [安装版文档交付修复](documentation-delivery.mdoc) |
+| HTML 发布、运行依赖与 Git 安装流程 | [HTML 发布与安装精简](html-install.mdoc) |
+| index 本层阅读顺序与默认追加 | [本层目录排序](directory-order.mdoc) |
+| 关系图/接口表标签与领域组织 | [标签职责收敛](extension-contracts.mdoc) |
+| Markdoc 原生语法、上下文与使用文档 | [原生兼容接入](markdoc.mdoc) |
+| README 与 docs 正式首页的默认分工 | [默认正文入口](default-documents.mdoc) |
+| 从整体认识到按需使用的文档分组 | [使用文档重组](usage-organization.mdoc) |
+| P0 协议与 V1 主链路 | [P0](p0.mdoc)、[V1](v1.mdoc) |
+| 图形路径与阅读 | [图形修复](graphics.mdoc)、[文字显示](display.mdoc)、[文档层级](organization.mdoc) |
+| 时序和接口 | [波形修复](waveform.mdoc)、[接口分组](interfaces.mdoc) |
+| 默认布线与约束 | [布局约束](layout.mdoc) |
+| JS 入口与数据发现 | [项目入口](project-entry.mdoc) |
+| 组合、独立阅读和源 PDF | [组合阅读](composition-pdf.mdoc) |
+| 工具自文档与 read | [自文档首轮](self-documentation.mdoc) |
+| 全部文档整理与同源接入 | [本次整理](documentation.mdoc) |
+| docs 目录与默认配置位置 | [目录及入口调整](docs-root.mdoc) |
+| 完整配方、事实阶段和渐进阅读审核 | [文档审核修复](documentation-review.mdoc) |
+| 同源大批量端口的输入收集 | [批量来源检查](source-inputs.mdoc) |
+| 多端点归一化与线上标题 | [标题位置修复](tree-labels.mdoc) |
+| 多篇 PDF 的对象附录 | [紧凑索引一致性](book-print-index.mdoc) |
+| 多篇 PDF 的目录与书签 | [分篇打印层级](book-print-hierarchy.mdoc) |
+
+
+- [Drawing 1.0 正式构建接入](drawing-release.mdoc)：公开输入、标准构建、原生教程与接口默认内核。
+- [条款初版历史验收](specifications.mdoc)：旧语法阶段的记录，现行语义与版本见条款整理验收。
+
+{% /section %}

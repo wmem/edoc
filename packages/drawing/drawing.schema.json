@@ -1,0 +1,869 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v1/drawing.schema.json",
+  "title": "edoc Drawing 1.0",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/connection"
+      }
+    },
+    "layout": {
+      "$ref": "#/$defs/layout"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "nodes",
+    "connections"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "nodeId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "not": {
+        "const": "root"
+      }
+    },
+    "point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "side": {
+      "enum": [
+        "top",
+        "right",
+        "bottom",
+        "left"
+      ]
+    },
+    "direction": {
+      "enum": [
+        "LR",
+        "RL",
+        "TB",
+        "BT"
+      ]
+    },
+    "origins": {
+      "$ref": "#/$defs/ids"
+    },
+    "content": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "kind": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "body",
+                "note",
+                "code"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "kind": {
+              "const": "stack"
+            },
+            "axis": {
+              "enum": [
+                "x",
+                "y"
+              ]
+            },
+            "children": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/content"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "axis",
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "annotation": {
+          "type": "string"
+        },
+        "appearance": {
+          "enum": [
+            "normal",
+            "header",
+            "slot"
+          ]
+        },
+        "originIds": {
+          "$ref": "#/$defs/origins"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "portGroup": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "ports": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "header": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "id",
+        "ports"
+      ],
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nodeId"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentId": {
+          "$ref": "#/$defs/nodeId"
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/port"
+          }
+        },
+        "portGroups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/portGroup"
+          }
+        },
+        "content": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/content"
+          }
+        },
+        "originIds": {
+          "$ref": "#/$defs/origins"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "end": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "node": {
+          "$ref": "#/$defs/nodeId"
+        },
+        "port": {
+          "$ref": "#/$defs/id"
+        },
+        "marker": {
+          "enum": [
+            "none",
+            "arrow",
+            "circle"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "node"
+      ],
+      "additionalProperties": false
+    },
+    "label": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "connection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "ends": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/end"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/label"
+          }
+        },
+        "style": {
+          "$ref": "#/$defs/id"
+        },
+        "originIds": {
+          "$ref": "#/$defs/origins"
+        }
+      },
+      "required": [
+        "id",
+        "ends"
+      ],
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/nodeId"
+        },
+        "port": {
+          "$ref": "#/$defs/id"
+        },
+        "edge": {
+          "enum": [
+            "start",
+            "center",
+            "end"
+          ]
+        }
+      },
+      "required": [
+        "node"
+      ],
+      "not": {
+        "properties": {
+          "port": true,
+          "edge": true
+        },
+        "required": [
+          "port",
+          "edge"
+        ]
+      },
+      "additionalProperties": false
+    },
+    "routeRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "end": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "required": [
+            "end"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "junction": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "required": [
+            "junction"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "junction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "path": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/routeRef"
+        },
+        "to": {
+          "$ref": "#/$defs/routeRef"
+        },
+        "via": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/point"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "spacing": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "number",
+          "minimum": 0
+        },
+        "layer": {
+          "type": "number",
+          "minimum": 0
+        },
+        "edge": {
+          "type": "number",
+          "minimum": 0
+        },
+        "port": {
+          "type": "number",
+          "minimum": 0
+        },
+        "padding": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "container": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/direction"
+        },
+        "spacing": {
+          "$ref": "#/$defs/spacing"
+        }
+      },
+      "additionalProperties": false
+    },
+    "hints": {
+      "type": "object",
+      "properties": {
+        "main": {
+          "$ref": "#/$defs/ids"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "connection": {
+                "$ref": "#/$defs/id"
+              },
+              "side": {
+                "$ref": "#/$defs/side"
+              },
+              "container": {
+                "$ref": "#/$defs/nodeId"
+              }
+            },
+            "required": [
+              "connection",
+              "side"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraint": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "order"
+            },
+            "axis": {
+              "enum": [
+                "x",
+                "y"
+              ]
+            },
+            "nodes": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/nodeId"
+              }
+            },
+            "gap": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "axis",
+            "nodes"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "align"
+            },
+            "axis": {
+              "enum": [
+                "x",
+                "y"
+              ]
+            },
+            "targets": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/target"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "axis",
+            "targets"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "place"
+            },
+            "node": {
+              "$ref": "#/$defs/nodeId"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "node",
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "size"
+            },
+            "node": {
+              "$ref": "#/$defs/nodeId"
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "node"
+          ],
+          "anyOf": [
+            {
+              "properties": {
+                "width": true
+              },
+              "required": [
+                "width"
+              ]
+            },
+            {
+              "properties": {
+                "height": true
+              },
+              "required": [
+                "height"
+              ]
+            }
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "port"
+            },
+            "node": {
+              "$ref": "#/$defs/nodeId"
+            },
+            "port": {
+              "$ref": "#/$defs/id"
+            },
+            "side": {
+              "$ref": "#/$defs/side"
+            },
+            "order": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "node",
+            "port"
+          ],
+          "anyOf": [
+            {
+              "properties": {
+                "side": true
+              },
+              "required": [
+                "side"
+              ]
+            },
+            {
+              "properties": {
+                "order": true
+              },
+              "required": [
+                "order"
+              ]
+            },
+            {
+              "properties": {
+                "offset": true
+              },
+              "required": [
+                "offset"
+              ]
+            }
+          ],
+          "dependentRequired": {
+            "offset": [
+              "side"
+            ]
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "route"
+            },
+            "connection": {
+              "$ref": "#/$defs/id"
+            },
+            "from": {
+              "$ref": "#/$defs/id"
+            },
+            "to": {
+              "$ref": "#/$defs/id"
+            },
+            "frame": {
+              "$ref": "#/$defs/id"
+            },
+            "via": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/point"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "connection",
+            "from",
+            "to",
+            "via"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "fixedRoute"
+            },
+            "connection": {
+              "$ref": "#/$defs/id"
+            },
+            "frame": {
+              "$ref": "#/$defs/id"
+            },
+            "junctions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/junction"
+              }
+            },
+            "paths": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/path"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "connection",
+            "paths"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "label"
+            },
+            "connection": {
+              "$ref": "#/$defs/id"
+            },
+            "label": {
+              "$ref": "#/$defs/id"
+            },
+            "nearEnd": {
+              "$ref": "#/$defs/id"
+            },
+            "toEnd": {
+              "$ref": "#/$defs/id"
+            },
+            "fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "connection",
+            "label",
+            "nearEnd"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/direction"
+        },
+        "routing": {
+          "enum": [
+            "orthogonal",
+            "polyline"
+          ]
+        },
+        "spacing": {
+          "$ref": "#/$defs/spacing"
+        },
+        "containers": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/container"
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constraint"
+          }
+        },
+        "hints": {
+          "$ref": "#/$defs/hints"
+        }
+      },
+      "additionalProperties": false
+    },
+    "layoutOverlay": {
+      "type": "object",
+      "properties": {
+        "layout": {
+          "$ref": "#/$defs/layout"
+        }
+      },
+      "required": [
+        "layout"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

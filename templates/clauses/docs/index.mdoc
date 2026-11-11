@@ -1,0 +1,16 @@
+{% capability id="cap:send" title="异步发送" %}
+已接受的请求在约定时限内得到一个确定结果。
+{% behavior id="behavior:timeout" title="发送超时" %}
+已接受请求到达时限仍未完成时，结束等待并通知调用方。
+{% clause id="clause:timeout" title="超时结束" %}
+必须报告超时并释放请求位置；迟到事件不得影响下一请求。
+{% /clause %}
+{% clause-list ids=["clause:deadline"] /%}
+{% /behavior %}
+{% /capability %}
+
+{% section id="interface:send" title="发送接口约定" %}
+{% clause id="clause:deadline" title="时限边界" %}
+时限从请求被接受时开始计算，恰在截止时刻的完成按超时处理。
+{% /clause %}
+{% /section %}

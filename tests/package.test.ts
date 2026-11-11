@@ -5,6 +5,7 @@ import {join,dirname,resolve,delimiter} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 import {once} from 'node:events';
+import {gzipSync,gunzipSync} from 'node:zlib';
 import {repository} from './helpers.ts';
 import {readerFixture} from './reader-fixture.ts';
 
@@ -20,6 +21,8 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.equal(JSON.parse(readFileSync(join(repository,'package.json'),'utf8')).license,'MIT');
  assert.ok(!packed.files.some((f:any)=>f.path.endsWith('.ts')&&!f.path.endsWith('.d.ts')),'运行仅用 JS，类型声明单独交付');
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/core/index.d.ts'));
+ assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/drawing/drawing.schema.json'));
+ assert.ok(!packed.files.some((f:any)=>f.path.startsWith('dist/packages/drawing-prototype/')));
  assert.ok(packed.files.some((f:any)=>f.path==='dist/manual/index.html'));
  assert.ok(packed.files.some((f:any)=>f.path==='examples/fpga-mac/docs/SPEC.mdoc'),'源文 include 引用的样例必须随包');
  assert.ok(!packed.files.some((f:any)=>/^(docs|examples)\//.test(f.path)&&f.path.includes('/output/')),'运行过文档构建也不能混入子工程 HTML');
@@ -30,32 +33,50 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(packed.files.some((f:any)=>f.path==='dist/runtime/fonts/LICENSE'));
  const bin=join(prefix,'node_modules/.bin/edoc'),project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});
  writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'edoc.config.js'),"throw Error('不应默认读取项目根配置')");writeFileSync(join(project,'README.md'),'# 仓库介绍\n\n不进入默认正式文档。');writeFileSync(join(project,'docs/index.mdoc'),'# 安装包演示\n\n普通正文。');
- assert.match(run(bin,['--version'],project),/edoc 1/);assert.match(run(bin,['guide'],project),/文档组织简略指南/);
+ assert.match(run(bin,['--version'],project),/edoc 2/);assert.match(run(bin,['guide'],project),/文档组织简略指南/);
  const location=JSON.parse(run(bin,['docs','--format','json'],project));assert.ok(existsSync(location.html));assert.ok(existsSync(location.sources));
  assert.equal(typeof location.build.version,'string');assert.equal(typeof location.build.dirty,'boolean');assert.match(location.build.revision,/^[a-f0-9]{40,64}$/);assert.ok(location.build.builtAt);
  assert.equal(JSON.parse(run(bin,['guide','--full','--format','json'],project)).variant,'full');
  for(const file of [location.entry,location.readme,location.usage])assert.ok(existsSync(file));
  assert.ok(run(bin,['--help'],project).includes(location.entry));
- assert.match(readFileSync(location.entry,'utf8'),/最小工作流/);
+ assert.match(readFileSync(location.entry,'utf8'),/快速开始/);
  assert.match(readFileSync(location.readme,'utf8'),/docs\/index\.mdoc/);
  for(const cmd of ['read','outline','query','serve'])assert.match(run(bin,['docs',cmd,'--help'],project),/源文主入口/);
  const shallow=JSON.parse(run(bin,['docs','outline'],project));assert.equal(shallow.maxDepth,0);assert.ok(shallow.chapters.every((n:any)=>!n.children.length));
  const all=JSON.parse(run(bin,['docs','outline','--all'],project));assert.ok(all.chapters.some((n:any)=>n.children.length));assert.equal(all.maxDepth,undefined);
- assert.match(run(bin,['docs','outline','--format','text'],project),/use:home/);
+ assert.match(run(bin,['docs','outline','--format','text'],project),/manual:home/);
  const wrongId=spawnSync(bin,['docs','read','--id',shallow.chapters[0].id],{cwd:project,encoding:'utf8'});assert.equal(wrongId.status,3);assert.match(wrongId.stderr,/sectionId/);
  // 安装源文及 include/code 依赖可独立加载；不借助仓库外的 examples。
  assert.ok(JSON.parse(run(bin,['outline','--config',join(location.sources,'edoc.config.js'),'--depth','0'],project)).chapters.length>0);
  assert.equal(JSON.parse(run(bin,['docs','read','--id','ref:config-data'],project)).id,'ref:config-data');
- assert.ok(packed.files.some((f:any)=>f.path==='templates/specifications/docs/index.mdoc'));
- const specs=JSON.parse(run(bin,['docs','read','--id','example:clear','--with-specs'],project));
- assert.match(specs.content,/上一笔请求未确认完成/);assert.match(specs.content,/例外/);assert.equal(specs.specifications.length,2);
- assert.equal(JSON.parse(run(bin,['docs','query','--id','example:clock'],project)).references[0].entity.class,'applies-common');
+ assert.ok(!packed.files.some((f:any)=>f.path.startsWith('docs/usage/')),'源目录随主导航重整，不保留第二套旧入口');
+ assert.equal(JSON.parse(run(bin,['docs','read','--id','use:home'],project)).source.file,'docs/index.mdoc');
+ assert.equal(JSON.parse(run(bin,['guide','--format','json'],project)).source,'docs/writing/agent-guide.mdoc');
+ assert.equal(JSON.parse(run(bin,['guide','--full','--format','json'],project)).source,'docs/writing/guide.mdoc');
+ const roots=JSON.parse(run(bin,['docs','outline','--format','json'],project)).chapters;
+ assert.deepEqual(roots.map((n:any)=>n.label),['edoc 文档','快速开始','编写与组织文档','图表','工程数据与多工程组合','阅读、查询与发布','查询参考','edoc 开发']);
+ assert.ok(packed.files.some((f:any)=>f.path==='templates/clauses/docs/index.mdoc'));
+ assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/clause/clause.schema.json'));
+ const clauses=JSON.parse(run(bin,['docs','read','--project','behavior-contract-demo','--id','demo:timeout'],project));
+ assert.match(clauses.content,/迟到/);assert.match(clauses.content,/时限/);assert.ok(clauses.clauses.length>=2);
+ assert.equal(JSON.parse(run(bin,['docs','query','--project','behavior-contract-demo','--id','demo:deadline'],project)).references[0].entity.class,'applies-clause');
+ const removed=spawnSync(bin,['docs','read','--id','use:home','--with-specs'],{cwd:project,encoding:'utf8'});assert.notEqual(removed.status,0);assert.match(removed.stderr,/未知/);
+ assert.ok(!packed.files.some((f:any)=>f.path.includes('extensions/specification/')||f.path==='docs/charts/specifications.mdoc'));
  assert.equal(JSON.parse(run(bin,['docs','query','--id','system:producer'],project)).target.entity.label,'生产者');
  assert.match(JSON.parse(run(bin,['docs','read','--id','use:registers:create'],project)).content,/register-diagram/);
  assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:full64.data'],project)).registerField.resetText,'0xFEDCBA9876543210');
  assert.equal(JSON.parse(run(bin,['docs','query','--id','manual:instance1'],project)).cellLinks.source.route.target,'detail');
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/extensions/register/register.schema.json'));
- assert.ok(packed.files.some((f:any)=>f.path==='docs/usage/rendering/registers.mdoc'));
+ assert.ok(packed.files.some((f:any)=>f.path==='docs/charts/registers.mdoc'));
+
+ cpSync(join(location.root,'templates/clauses/docs/index.mdoc'),join(project,'docs/index.mdoc'));
+ const installedContract=JSON.parse(run(bin,['read','--id','behavior:timeout'],project));assert.equal(installedContract.semanticKind,'behavior');assert.equal(installedContract.clauses.length,2);assert.match(installedContract.content,/截止时刻/);
+ writeFileSync(join(project,'docs/index.mdoc'),'{% specification id="old" title="旧写法" %}原文{% /specification %}');
+ const oldSource=spawnSync(bin,['validate'],{cwd:project,encoding:'utf8'});assert.equal(oldSource.status,1);assert.match(oldSource.stderr,/REMOVED_SYNTAX/);
+ writeFileSync(join(project,'docs/index.mdoc'),'# 安装版机器条款');
+ writeFileSync(join(project,'docs/edoc.config.js'),`export default {data:{clauses:[{id:'installed:clause',kind:'clause',label:'机器要求',body:{format:'markdoc',content:'完整前提和例外。'},source:{file:'source.mdoc'}}]}};`);
+ assert.equal(JSON.parse(run(bin,['query','--id','installed:clause'],project)).target.semanticKind,'clause');
+ assert.equal(JSON.parse(run(bin,['read','--id','installed:clause'],project)).clauses[0].id,'installed:clause');
 
  writeFileSync(join(project,'docs/edoc.config.js'),"throw Error('工具手册不得执行当前工程配置')");
  const server=spawn(bin,['docs','serve','--port','0'],{cwd:project,stdio:['ignore','pipe','pipe']});
@@ -81,16 +102,30 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  // 不依赖HTML或查询索引：从安装目录README沿.mdoc链接提取最小配方。
  const readme=readFileSync(location.readme,'utf8'),entryLink=readme.match(/\[docs\/index\.mdoc\]\(([^)]+)\)/)!;
  assert.ok(entryLink);const entry=readFileSync(resolve(dirname(location.readme),entryLink[1]),'utf8');
- const tutorialLink=entry.match(/\[最小配置\]\(([^)#]+)(?:#[^)]*)?\)/)!;assert.ok(tutorialLink);
- const tutorial=readFileSync(resolve(dirname(location.entry),tutorialLink[1]),'utf8');
+ const startLink=entry.match(/\[快速开始\]\(([^)#]+)(?:#[^)]*)?\)/)!;assert.ok(startLink);
+ const startPath=resolve(dirname(location.entry),startLink[1]),start=readFileSync(startPath,'utf8');
+ const tutorialLink=start.match(/\[生成第一份文档\]\(([^)#]+)(?:#[^)]*)?\)/)!;assert.ok(tutorialLink);
+ const tutorial=readFileSync(resolve(dirname(startPath),tutorialLink[1]),'utf8');
  const configRecipe=tutorial.match(/```js\n([\s\S]*?)```/)!,proseRecipe=tutorial.match(/```markdown\n([\s\S]*?)```/)!;assert.ok(configRecipe&&proseRecipe);
- assert.match(readFileSync(join(location.root,'AGENTS.md'),'utf8'),/源文主入口/);
+ assert.match(readFileSync(join(location.root,'AGENTS.md'),'utf8'),/\[手册首页\]\(docs\/index\.mdoc\)/);
  const textProject=join(root,'from-installed-mdoc');mkdirSync(join(textProject,'docs'),{recursive:true});writeFileSync(join(textProject,'docs/edoc.config.js'),configRecipe[1]);writeFileSync(join(textProject,'docs/index.mdoc'),proseRecipe[1]);
- const indexPath=join(location.root,'dist/manual/index.json.gz'),originalIndex=readFileSync(indexPath);rmSync(indexPath);rmSync(location.html);
+ const indexPath=join(location.root,'dist/manual/index.json.gz'),originalIndex=readFileSync(indexPath);
+ const oldIndex=JSON.parse(gunzipSync(originalIndex).toString('utf8'));assert.equal(oldIndex.version,2);oldIndex.version=1;writeFileSync(indexPath,gzipSync(JSON.stringify(oldIndex)));
+ const incompatible=spawnSync(bin,['docs','read','--id','use:home'],{cwd:project,encoding:'utf8'});assert.equal(incompatible.status,1);assert.match(incompatible.stderr,/MANUAL_VERSION/);
+ rmSync(indexPath);rmSync(location.html);
  assert.ok(run(bin,['--help'],textProject).includes(location.entry));run(bin,[],textProject);assert.match(readFileSync(join(textProject,'output/index.html'),'utf8'),/工程手册/);
  writeFileSync(indexPath,originalIndex);writeFileSync(location.html,originalHTML);
  writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');
  run(bin,[],project);assert.ok(existsSync(join(project,'output/index.html')));
+ // 安装包中的Schema、Worker入口和标准构建直接承载原生框图，不访问源码目录。
+ mkdirSync(join(project,'docs/ir'),{recursive:true});
+ const drawingFile=join(project,'docs/ir/native.json');cpSync(join(repository,'docs/ir/authoring/board-map.json'),drawingFile);
+ writeFileSync(join(project,'docs/index.mdoc'),'{% relation-diagram id="manual:drawing-board-map" /%}');
+ run(bin,['validate'],project);run(bin,['build'],project);
+ assert.match(readFileSync(join(project,'output/index.html'),'utf8'),/board-map-example/);
+ const drawingQuery=JSON.parse(run(bin,['query','--id','manual:drawing-board-map'],project));assert.equal(drawingQuery.target.entity.drawing.schemaVersion,'1.0');
+ run(bin,['export','--view','manual:drawing-board-map','--format','svg','--output','native.svg'],project);assert.match(readFileSync(join(project,'native.svg'),'utf8'),/data-connection="board-bus"/);
+ rmSync(drawingFile);
  writeFileSync(join(project,'docs/index.mdoc'),'{% section id="installed:read" title="安装包章节" %}原始 **说明**。{% /section %}');
  const section=JSON.parse(run(bin,['read','--id','installed:read'],project));assert.match(section.content,/原始 \*\*说明\*\*/);assert.equal(section.scope,'self');
  assert.equal(JSON.parse(run(bin,['outline','--id','installed:read','--depth','0'],project)).chapters[0].sectionId,'installed:read');
@@ -105,7 +140,12 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  writeFileSync(join(prefix,'docs/index.mdoc'),'---\n{"title":"独立元数据配方"}\n---\n# {% $meta.title %}');run(bin,[],prefix);assert.match(readFileSync(join(prefix,'output/index.html'),'utf8'),/独立元数据配方/);
  cpSync(join(repository,'docs/support/recipes/reader-note.config.js'),join(prefix,'docs/edoc.config.js'));
  writeFileSync(join(prefix,'docs/index.mdoc'),'{% reader-note tone="info" %}\n{% slot "title" %}\n独立 Schema 配方\n{% /slot %}\n普通说明。\n{% /reader-note %}');run(bin,[],prefix);assert.match(readFileSync(join(prefix,'output/index.html'),'utf8'),/独立 Schema 配方/);
- writeFileSync(join(prefix,'consumer.mts'),`import {Markdoc,resolveProjectConfig} from 'edoc';\nimport type {Node,RelationView,Table,MarkdocOptions} from 'edoc';\nconst node:Node={id:'n',kind:'node',label:'模块'};\nconst view:RelationView={id:'v',kind:'architecture',include:{objects:[node.id],relations:[]}};\nconst table:Table={id:'t',kind:'table',label:'表',columns:[],rows:[]};\nconst options:MarkdocOptions={variables:{x:1},tokenizer:{html:false,allowComments:true}};\n// @ts-expect-error 原生 tokenizer 选项也保持精确类型。\nconst badOptions:MarkdocOptions={tokenizer:{html:"no"}};\n// @ts-expect-error 不允许将字符串当作端口宽度，验证声明不是 any。\nconst bad:Node={id:'bad',kind:'node',label:'错误',ports:[{id:'p',label:'p',direction:'in',width:'8'}]};\nconsole.log(Markdoc.parse('正文'),resolveProjectConfig,view,table,options,bad);\n`);
+ writeFileSync(join(prefix,'consumer.mts'),`import {Markdoc,resolveProjectConfig} from 'edoc';\nimport type {Node,RelationView,Table,MarkdocOptions,Drawing,Clause,ReadOptions} from 'edoc';\nconst drawing:Drawing={schemaVersion:'1.0',id:'d',nodes:[{id:'n',label:'原生模块'}],connections:[]};
+const clause:Clause={id:'c',kind:'clause',label:'要求',body:{format:'markdoc',content:'必须保留。'},source:{file:'source.mdoc'}};
+const reading:ReadOptions={withClauses:true};
+// @ts-expect-error 旧 SDK 字段已删除。
+const removedReading:ReadOptions={withSpecs:true};
+const node:Node={id:'n',kind:'node',label:'模块'};\nconst view:RelationView={id:'v',kind:'architecture',include:{objects:[node.id],relations:[]}};\nconst table:Table={id:'t',kind:'table',label:'表',columns:[],rows:[]};\nconst options:MarkdocOptions={variables:{x:1},tokenizer:{html:false,allowComments:true}};\n// @ts-expect-error 原生 tokenizer 选项也保持精确类型。\nconst badOptions:MarkdocOptions={tokenizer:{html:"no"}};\n// @ts-expect-error 不允许将字符串当作端口宽度，验证声明不是 any。\nconst bad:Node={id:'bad',kind:'node',label:'错误',ports:[{id:'p',label:'p',direction:'in',width:'8'}]};\nconsole.log(Markdoc.parse('正文'),resolveProjectConfig,view,table,options,bad);\n`);
  for(const [module,moduleResolution]of [['NodeNext','NodeNext'],['ESNext','Bundler']]){
   writeFileSync(join(prefix,'tsconfig.json'),JSON.stringify({compilerOptions:{strict:true,noEmit:true,skipLibCheck:false,module,moduleResolution,target:'ES2023'},include:['consumer.mts']}));
   run(process.execPath,[join(repository,'node_modules/typescript/bin/tsc'),'-p',join(prefix,'tsconfig.json')],prefix);
@@ -141,11 +181,11 @@ test('Git 打包执行 prepare 后可全局安装，最终安装无需开发依�
  const installed=join(prefix,'lib/node_modules/edoc'),bin=join(prefix,'bin/edoc');
  for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','typescript','fontkit'])assert.ok(!existsSync(join(installed,'node_modules',name)),name+' 不应留在最终全局安装中');
  const project=join(root,'project');mkdirSync(join(project,'docs'),{recursive:true});writeFileSync(join(project,'docs/edoc.config.js'),'export default {};');writeFileSync(join(project,'docs/index.mdoc'),'# Git 安装生成\n\n中文正文。');
- assert.match(run(bin,['--version'],project),/edoc 1/);run(bin,[],project);assert.match(readFileSync(join(project,'output/index.html'),'utf8'),/Git 安装生成/);
+ assert.match(run(bin,['--version'],project),/edoc 2/);run(bin,[],project);assert.match(readFileSync(join(project,'output/index.html'),'utf8'),/Git 安装生成/);
  const location=JSON.parse(run(bin,['docs','--format','json'],project));assert.equal(location.entry,join(installed,'docs/index.mdoc'));
  assert.equal(location.build.revision,run('git',['rev-parse','HEAD']).trim());assert.equal(location.build.dirty,false);assert.ok(existsSync(join(installed,'LICENSE')));
  assert.ok(run('edoc',['--help'],project,{...process.env,PATH:join(prefix,'bin')+delimiter+process.env.PATH}).includes(location.entry));
- assert.ok(existsSync(location.entry));assert.match(readFileSync(join(installed,'AGENTS.md'),'utf8'),/源文主入口/);
+ assert.ok(existsSync(location.entry));assert.match(readFileSync(join(installed,'AGENTS.md'),'utf8'),/\[手册首页\]\(docs\/index\.mdoc\)/);
  assert.match(run(bin,['docs','read','--id','ref:config-data','--format','text'],project),/context.references/);
  const fixture=readerFixture(undefined,join(root,'with-pdf'));run(bin,['--config',join(fixture.root,'edoc.config.js')],project);assert.match(readFileSync(join(fixture.root,'output/index.html'),'utf8'),/pdfWorker/);
 });

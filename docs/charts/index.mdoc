@@ -1,0 +1,22 @@
+{% section id="use:rendering" title="图表" %}
+
+{% directory-order items=["diagrams/","tables.mdoc","registers.mdoc","state.mdoc","waveforms.mdoc"] /%}
+
+按要解释的问题选择图或表，再准备相应数据。框图呈现组成与关系，表格保存可查询记录，寄存器位域图、状态图和波形各自描述不同的问题。
+
+| 你要表达什么 | 阅读入口 |
+| --- | --- |
+| 模块组成、连接关系、接线与接口展开 | [框图、接线与接口](diagrams/index.mdoc) |
+| 参数、对象字段、记录及筛选排序 | [数据表格](tables.mdoc) |
+| 寄存器位分布、访问属性和定义复位 | [寄存器手册](registers.mdoc) |
+| 什么条件触发状态变化 | [状态图](state.mdoc) |
+| 信号随时间怎样变化 | [时序图](waveforms.mdoc) |
+
+每篇教程给出用途、实际效果、可运行写法与边界。数据可以直接声明，也可从网表、CSV或RTL提取；[工程数据接入](../engineering/data.mdoc)介绍来源与转换，[查询参考](../reference/index.mdoc)集中维护精确字段。
+
+{% section id="use:state-wave" title="状态图与时序图如何选择" %}
+
+状态图描述状态及迁移条件，时序图描述信号随时间的变化。两者可以解释同一设计的不同方面，不能因画出了规范波形就认为执行了仿真。
+
+{% /section %}
+{% /section %}

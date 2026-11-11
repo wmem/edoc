@@ -9,6 +9,8 @@ import {anchor} from '../core/identity.ts';
 import {Graph as X6} from '@antv/x6';
 import type {Scene} from '../render-graph/index.ts';
 import {styles} from '../render-graph/styles.ts';
+import {drawDrawing} from './drawing-scene.ts';
+import {drawingSelection} from '../drawing/reader-scene.ts';
 // 构建时注入纯数据，浏览器不读取旁路 JSON、不使用动态 import。
 declare global {interface Window {EdocReady:boolean; EdocGraphs:X6[];}}
 export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:string,detail?:unknown)=>void;signal?:AbortSignal;cleanup?:(fn:()=>void)=>void})=>void;
@@ -38,6 +40,9 @@ function initialize(holder:HTMLElement){
  const graph=new X6({container:canvas,width:canvas.clientWidth,height,background:{color:'#f8fafc'},panning:true,mousewheel:{enabled:true,modifiers:['ctrl','meta'],minScale:.15,maxScale:4},interacting:false});
  window.EdocGraphs.push(graph);
  const cellID=(base:string)=>{let id=base;while(graph.getCellById(id))id+='#';return id;};
+ const labelCells=new Set<string>();
+ let connectionCells:Map<string,string[]>;
+ if(s.drawing&&s.drawingInput){connectionCells=drawDrawing(graph,s,cellID,labelCells);}else{
  for(const n of s.nodes){
   const heading=nodeHeading(n),markup:any[]=[{tagName:'rect',selector:'body'},...heading.markup];
   const attrs:any={body:{fill:'#fff',stroke:'#93a9bd',strokeWidth:1.3,rx:10,ry:10},...heading.attrs};
@@ -46,7 +51,7 @@ function initialize(holder:HTMLElement){
  }
  for(const n of s.nodes)if(n.parentId&&graph.getCellById(n.parentId))graph.getCellById(n.parentId).addChild(graph.getCellById(n.id));
  for(const n of s.nodes)if(s.nodes.some(child=>child.parentId===n.id)){const parent=graph.getCellById(n.id);parent.setZIndex(-1);parent.attr('body/fill','#f1f6f9');}
- const connectionCells=new Map<string,string[]>();
+ connectionCells=new Map<string,string[]>();
  addPortLeads(graph,s);
  for(const net of s.nets){
   const style=styles[net.class]??styles.other;
@@ -59,11 +64,12 @@ function initialize(holder:HTMLElement){
   });
   const box=net.labelBox,markup:any[]=[{tagName:'rect',selector:'body'}],attrs:any={body:{fill:'#f8fafc',stroke:'none',rx:4,ry:4}};
   box.lines.forEach((line,i)=>{markup.push({tagName:'text',selector:'line'+i});attrs['line'+i]={refX:0,refY:0,text:line,x:box.width/2,y:18+i*20,textAnchor:'middle',fontSize:14,fill:style.color,fontFamily:'Noto Sans SC'};});
-  const label=graph.addNode({id:cellID('label:'+net.id),zIndex:2,x:box.x,y:box.y,width:box.width,height:box.height,markup,attrs,data:{entityId:net.id}});cells.push(label.id);
+  const label=graph.addNode({id:cellID('label:'+net.id),zIndex:2,x:box.x,y:box.y,width:box.width,height:box.height,markup,attrs,data:{entityId:net.id}});cells.push(label.id);labelCells.add(label.id);
   connectionCells.set(net.id,cells);
  }
- function highlight(id:string){select(id);const adjacent=s.nets.filter(n=>n.id===id||n.endpoints.some(p=>p===id||s.nodes.find(n=>n.id===id)?.ports.some(port=>port.id===p))).map(n=>n.id);const owners=new Set(s.nets.filter(n=>adjacent.includes(n.id)).flatMap(n=>n.endpoints.map(p=>s.nodes.find(n=>n.id===p||n.ports.some(port=>port.id===p))?.id)));for(const cell of graph.getEdges())cell.attr('line/opacity',cell.getData()?.portLead?(cell.getData()?.entityId===id||cell.getData()?.ownerId===id?1:.18):adjacent.includes(cell.getData()?.entityId)?1:.18);for(const n of s.nodes)graph.getCellById(n.id).attr('body/stroke',owners.has(n.id)||n.id===id?'#0a8aa5':'#b9c7d3');}
- graph.on('node:click',({node,e})=>highlight((e.target as Element).closest('[port]')?.getAttribute('port')??node.getData()?.entityId??node.id));graph.on('edge:click',({edge})=>highlight(edge.getData()?.entityId??edge.id));
+ }
+ function highlight(id:string){select(id,drawingSelection(s,id));const adjacent=s.nets.filter(n=>n.id===id||n.endpoints.some(p=>p===id||s.nodes.find(n=>n.id===id)?.ports.some(port=>port.id===p))).map(n=>n.id);const owners=new Set(s.nets.filter(n=>adjacent.includes(n.id)).flatMap(n=>n.endpoints.map(p=>s.nodes.find(n=>n.id===p||n.ports.some(port=>port.id===p))?.id)));for(const cell of graph.getEdges())cell.attr('line/opacity',cell.getData()?.portLead?(cell.getData()?.entityId===id||cell.getData()?.ownerId===id?1:.18):adjacent.includes(cell.getData()?.entityId)?1:.18);for(const n of s.nodes)graph.getCellById(n.id).attr('body/stroke',owners.has(n.id)||n.id===id?'#0a8aa5':'#b9c7d3');}
+ graph.on('node:click',({node,e})=>highlight((e.target as Element).closest('[data-source-port]')?.getAttribute('data-source-port')??(e.target as Element).closest('[port]')?.getAttribute('port')??node.getData()?.entityId??node.id));graph.on('edge:click',({edge})=>highlight(edge.getData()?.entityId??edge.id));
  let viewportMode:'readable'|'fit'|'actual'='readable';
  const viewport=()=>readableViewport(graph,s,holder,viewportMode);
  const fit=()=>{viewportMode='fit';viewport();};
@@ -87,18 +93,21 @@ function initialize(holder:HTMLElement){
  holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const clone=holder.querySelector('.static-svg svg')!.cloneNode(true) as SVGSVGElement;const style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
  const filtered=new Set<string>(s.visibleClasses?s.nets.filter(n=>!s.visibleClasses!.includes(n.class)).map(n=>n.class):[]),collapsed=new Set<string>();
  let showRelationLabels=s.display.showRelationLabels;
- function visibility(){for(const edge of graph.getEdges())if(edge.getData()?.portLead)edge.setVisible(graph.getCellById(edge.getData().ownerId).isVisible());for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));const cells=connectionCells.get(net.id)!;for(const [i,id]of cells.entries())graph.getCellById(id).setVisible(!hide&&(i!==cells.length-1||showRelationLabels));}}
+ function visibility(){for(const edge of graph.getEdges())if(edge.getData()?.portLead)edge.setVisible(graph.getCellById(edge.getData().ownerId).isVisible());for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));const cells=connectionCells.get(net.id)!;for(const id of cells)graph.getCellById(id).setVisible(!hide&&(!labelCells.has(id)||showRelationLabels));}}
  const staticSVG=holder.querySelector('.static-svg svg')!;
+ const syncDrawingDisplay=()=>{if(!s.drawingInput)return;const metadata=staticSVG.querySelector('metadata');if(metadata){const payload=JSON.parse(metadata.textContent!);payload.display={...payload.display,showRelationLabels,showPortAttributes:portAttributes?.checked??s.display.showPortAttributes};metadata.textContent=JSON.stringify(payload);}};
  const portAttributes=holder.querySelector<HTMLInputElement>('[data-display="port-attributes"]');
  if(portAttributes)portAttributes.onchange=()=>{
   for(const n of s.nodes)n.ports.forEach((_p,i)=>graph.getCellById(n.id).attr('a'+i+'/display',portAttributes.checked?'':'none'));
   staticSVG.querySelectorAll('[data-port-annotation]').forEach(e=>e.setAttribute('display',portAttributes.checked?'':'none'));
+  syncDrawingDisplay();
  };
  const relationLabels=holder.querySelector<HTMLInputElement>('[data-display="relation-labels"]');
  if(relationLabels)relationLabels.onchange=()=>{
   showRelationLabels=relationLabels.checked;visibility();
   for(const edge of graph.getEdges())edge.setLabels(edge.getLabels().map(label=>({...label,attrs:{...label.attrs,label:{...label.attrs?.label,display:showRelationLabels?'':'none'}}})));
   staticSVG.querySelectorAll('[data-relation-label]').forEach(e=>e.setAttribute('display',showRelationLabels?'':'none'));
+  syncDrawingDisplay();
  };
  for(const cls of new Set(s.nets.map(n=>n.class))){const label=document.createElement('label');const check=document.createElement('input');check.type='checkbox';check.checked=!filtered.has(cls);check.dataset.class=cls;const key=document.createElement('span');key.style.cssText='display:inline-block;width:22px;border-top:2px '+((styles[cls]??styles.other).dash?'dashed':'solid')+' '+(styles[cls]??styles.other).color;label.append(check,key,document.createTextNode(cls));holder.querySelector('.filters')!.append(label);check.onchange=()=>{check.checked?filtered.delete(cls):filtered.add(cls);visibility();};}
  for(const group of s.groups.filter(g=>g.members.some(id=>s.nodes.some(n=>n.id===id||n.ports.some(p=>p.id===id))))){

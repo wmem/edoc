@@ -8,7 +8,7 @@ import {bookNavigation,pageGraph,pageId,pageTitle} from '../core/book.ts';
 import {routeHash,targetKey} from '../core/routes.ts';
 import type {ReaderData} from '../core/reader-model.ts';
 import {localDocumentLink} from '../core/documents.ts';
-import {specificationNamespace} from '../extensions/specification/prepare.ts';
+import {clauseNamespace} from '../extensions/clause/prepare.ts';
 import {renderDocument} from '../doc-theme/render.ts';
 import {anchor,resolveHTMLAnchor} from '../core/identity.ts';
 import {preflightBook} from '../core/document-preflight.ts';
@@ -19,20 +19,20 @@ import {licenses} from './licenses.ts';
 import {assertSelfContained} from './index.ts';
 const directory=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url);
 const json=(value:unknown)=>JSON.stringify(value).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
-export async function compileBook(book:Book,options:{headingLevel?:(project:string,page:string,id:string,level:number)=>number}={}):Promise<ReaderData>{
+export async function compileBook(book:Book,options:{scene?:typeof import('../render-graph/scene.ts').scene;headingLevel?:(project:string,page:string,id:string,level:number)=>number}={}):Promise<ReaderData>{
  preflightBook(book);
  const data:ReaderData={title:book.root.config.title,home:{project:book.root.config.projectId,id:pageId(book.root.documents.documents[0].file)},navigation:bookNavigation(book),pages:Object.create(null),projects:Object.create(null),pdfFiles:Object.create(null)};
  const filePayloads=new Map<string,string>();
  for(const node of book.projects.values()){
   const project=node.config.projectId,sections:Record<string,{page:string;anchor:string}>=Object.create(null);
-  for(const document of node.documents.documents){const id=pageId(document.file);if(Object.hasOwn(data.pages,targetKey(project,id)))failure('PAGE_DUPLICATE',document.file,'','文档路由重复：'+id);const collect=(tag:any,namespace='')=>{if(tag.type==='tag'&&['section','specification'].includes(tag.tag)){sections[tag.attributes.id]={page:id,anchor:namespace+anchor(tag.attributes.id)};if(tag.tag==='specification')namespace=specificationNamespace(tag.attributes.id);}for(const child of [...Object.values(tag.slots??{}),...tag.children??[]])collect(child,namespace);};collect(document.ast);
+  for(const document of node.documents.documents){const id=pageId(document.file);if(Object.hasOwn(data.pages,targetKey(project,id)))failure('PAGE_DUPLICATE',document.file,'','文档路由重复：'+id);const collect=(tag:any,namespace='')=>{if(tag.type==='tag'&&['section','clause'].includes(tag.tag)){sections[tag.attributes.id]={page:id,anchor:namespace+anchor(tag.attributes.id)};if(tag.tag==='clause')namespace=clauseNamespace(tag.attributes.id);}for(const child of [...Object.values(tag.slots??{}),...tag.children??[]])collect(child,namespace);};collect(document.ast);
    data.pages[targetKey(project,id)]={id,project,title:pageTitle(document),file:document.file,html:'',scenes:{},outline:[]};}
   const attachments:typeof node.graph.attachments=Object.create(null);for(const [key,attachment]of Object.entries(node.graph.attachments??{})){const identity=realpathSync(resolve(node.config.root,attachment.file));let payload=filePayloads.get(identity);if(!payload){payload='pdf-'+filePayloads.size;filePayloads.set(identity,payload);data.pdfFiles[payload]=attachment.data;}attachments![key]={...attachment,data:'',payload};}
   data.projects[project]={id:project,title:node.config.title,irVersion:node.graph.manifest.irVersion,records:Object.fromEntries([...node.graph.index].map(([id,e])=>[id,{type:e.type,location:{...e.location,file:isAbsolute(e.location.file)?relative(node.config.root,e.location.file).split('\\').join('/'):e.location.file},...(e.ownerId?{ownerId:e.ownerId}:{}),...(e.semanticKind?{semanticKind:e.semanticKind}:{})}])),entities:Object.fromEntries([...node.graph.index].map(([id,entry])=>[id,entry.entity])),relations:Object.fromEntries(node.graph.connections),sections,attachments:attachments!};
  }
  for(const node of book.projects.values())for(const document of node.documents.documents){
   const project=node.config.projectId,id=pageId(document.file),page=data.pages[targetKey(project,id)];
-  const rendered=await renderDocument(pageGraph(node,document),page.title,{compactIndex:true,headingLevel:options.headingLevel?(heading,level)=>options.headingLevel!(project,id,heading,level):undefined,projectLink(alias){const child=node.children.get(alias)!;return {project:child.config.projectId,page:pageId(child.documents.documents[0].file),title:child.config.title};},documentLink(href,source){
+  const rendered=await renderDocument(pageGraph(node,document),page.title,{scene:options.scene,compactIndex:true,headingLevel:options.headingLevel?(heading,level)=>options.headingLevel!(project,id,heading,level):undefined,projectLink(alias){const child=node.children.get(alias)!;return {project:child.config.projectId,page:pageId(child.documents.documents[0].file),title:child.config.title};},documentLink(href,source){
    const link=localDocumentLink(node.config.root,source||document.file,href);if(!link)return href;
    const target=pageId(link.file);if(!Object.hasOwn(data.pages,targetKey(project,target)))failure('DOCUMENT_LINK',source,'','链接文档未参与发布：'+link.file);
    return routeHash({kind:'page',project,id:target,...(link.anchor?{anchor:link.anchor}:{})});
@@ -61,8 +61,8 @@ export async function compileBook(book:Book,options:{headingLevel?:(project:stri
  return data;
 }
 export const resolvePageAnchor=resolveHTMLAnchor;
-export async function bookHTML(book:Book):Promise<string>{
- const data=await compileBook(book),hasPdf=Object.values(data.projects).some(p=>Object.keys(p.attachments).length),hasInterfaces=Object.values(data.pages).some(p=>Object.values(p.scenes).some(s=>s.interfaceModel));
+export async function bookHTML(book:Book,options:{scene?:typeof import('../render-graph/scene.ts').scene}={}):Promise<string>{
+ const data=await compileBook(book,options),hasPdf=Object.values(data.projects).some(p=>Object.keys(p.attachments).length),hasInterfaces=Object.values(data.pages).some(p=>Object.values(p.scenes).some(s=>s.interfaceModel));
  if(hasPdf){const root=dirname(require.resolve('pdfjs-dist/package.json'));data.pdfWorker=readFileSync(resolve(root,'build/pdf.worker.min.mjs'),'utf8');data.pdfSupport=Object.create(null);for(const name of ['cmaps','standard_fonts','wasm','iccs'])for(const file of readdirSync(resolve(root,name)))if(!file.startsWith('LICENSE')&&!file.startsWith('quickjs'))data.pdfSupport![name+'/'+file]=readFileSync(resolve(root,name,file)).toString('base64');}
  const script=await browserScript('reader-'+hasPdf+'-'+hasInterfaces,'reader-entry',{__EDOC_PDF__:String(hasPdf),__EDOC_INTERFACES__:String(hasInterfaces)});
  const css=readFileSync(resolve(directory,'../doc-theme/style.css'),'utf8')+readFileSync(resolve(directory,'../doc-theme/reader.css'),'utf8');

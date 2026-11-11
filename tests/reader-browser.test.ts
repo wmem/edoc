@@ -76,7 +76,7 @@ test('390px页头完整来源路径自动折行，正文与桌面阅读不被撑
  const p=readerFixture(t),source='docs/components/acquisition/behaviors/sampling_publication_exception_guarantees.mdoc';
  p.write('docs/edoc.config.js',"export default {projectId:'wrap',title:'来源路径回归',documents:'docs/index.mdoc'};");
  p.write('docs/index.mdoc','# 阅读入口\n\n[采样、发布与异常保证](components/acquisition/behaviors/sampling_publication_exception_guarantees.mdoc)');
- p.write(source,'{% section id="sampling" title="采样、发布与异常保证" %}\n{% specification id="sampling:guarantee" title="保证" %}\n采样与发布保持完整约束，异常情况明确报告。\n{% /specification %}\n\n[返回入口](../../../index.mdoc)\n{% /section %}');
+ p.write(source,'{% section id="sampling" title="采样、发布与异常保证" %}\n{% clause id="sampling:guarantee" title="保证" %}\n采样与发布保持完整约束，异常情况明确报告。\n{% /clause %}\n\n[返回入口](../../../index.mdoc)\n{% /section %}');
  const config=await resolveProjectConfig(join(p.root,'docs/edoc.config.js')),book=await loadBook(config);
  const file=join(p.root,'wrap.html');writeFileSync(file,await bookHTML(book));
  const browser=await chromium.launch({executablePath,args:['--no-sandbox']});t.after(()=>browser.close());
@@ -84,7 +84,7 @@ test('390px页头完整来源路径自动折行，正文与桌面阅读不被撑
  const ready=()=>page.waitForFunction(()=>window.EdocReady);
  await page.goto(pathToFileURL(file).href);await ready();await page.locator('#reader').getByRole('link',{name:'采样、发布与异常保证',exact:true}).click();await ready();
  const dimensions=()=>page.evaluate(()=>{
-  const metadata=document.querySelector<HTMLElement>('#reader header.cover p')!,spec=document.querySelector<HTMLElement>('#reader .specification')!;
+  const metadata=document.querySelector<HTMLElement>('#reader header.cover p')!,spec=document.querySelector<HTMLElement>('#reader .clause')!;
   const range=document.createRange();range.selectNodeContents(metadata);const lines=[...range.getClientRects()];
   return {page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth,text:metadata.textContent,lines:lines.length,
    sourceRight:Math.max(...lines.map(rect=>rect.right)),paragraphRight:metadata.getBoundingClientRect().right,

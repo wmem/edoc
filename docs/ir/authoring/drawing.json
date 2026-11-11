@@ -1,0 +1,97 @@
+{
+  "views": [
+    {
+      "id": "manual:drawing-auto",
+      "kind": "architecture",
+      "label": "自动布局 · 模块与接口",
+      "include": {
+        "objects": [],
+        "relations": []
+      },
+      "drawing": {
+        "schemaVersion": "1.0",
+        "id": "module-links",
+        "nodes": [
+          {
+            "id": "host",
+            "label": "主机",
+            "ports": [
+              {
+                "id": "p",
+                "label": "数据接口"
+              }
+            ]
+          },
+          {
+            "id": "engine",
+            "label": "处理模块",
+            "ports": [
+              {
+                "id": "host",
+                "label": "数据接口"
+              },
+              {
+                "id": "media",
+                "label": "媒体接口"
+              }
+            ]
+          },
+          {
+            "id": "media",
+            "label": "外设",
+            "ports": [
+              {
+                "id": "p",
+                "label": "媒体接口"
+              }
+            ]
+          }
+        ],
+        "connections": [
+          {
+            "id": "host-data",
+            "ends": [
+              {
+                "id": "a",
+                "node": "host",
+                "port": "p"
+              },
+              {
+                "id": "b",
+                "node": "engine",
+                "port": "host"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "业务帧"
+              }
+            ]
+          },
+          {
+            "id": "media-data",
+            "ends": [
+              {
+                "id": "a",
+                "node": "engine",
+                "port": "media"
+              },
+              {
+                "id": "b",
+                "node": "media",
+                "port": "p"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "MAC / PHY"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

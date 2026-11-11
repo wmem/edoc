@@ -1,0 +1,27 @@
+{% section id="dev:history" title="设计依据与历史记录" %}
+
+{% directory-order items=["design/","reviews/","acceptance/","regression/","history/"] /%}
+
+本组保存需求依据、设计取舍、问题调查和验证证据。先按当前问题选择主题，再核对记录日期和适用范围；这里不是新的使用教程。
+
+{% section id="dev:requirements" title="需求依据" %}
+
+[设计与需求](design/index.mdoc)先给出当前有效的[需求基线](design/requirements.mdoc)，再进入相关设计。[原始V1方案](design/original-v1.mdoc)及其[来源](design/original-source.mdoc)保留快照身份和原文。原始要求及当前仍有效的质量边界不能因归档而降低。
+
+组织工程文档的方法见[推荐指南](../../writing/guide.mdoc)；该指南不是工具开发历史的一部分。
+
+{% /section %}
+{% section id="dev:history-records" title="调查、验收与回归" %}
+
+| 需要查什么 | 入口 |
+| --- | --- |
+| 为什么作出某项设计选择 | [设计与需求](design/index.mdoc) |
+| 问题如何发生，哪些验证曾遗漏 | [问题审查](reviews/index.mdoc) |
+| 某阶段实际验证了什么，证据边界是什么 | [验收记录](acceptance/index.mdoc) |
+| 完整样例、历史操作环境和开发回归 | [样例与开发回归](regression/index.mdoc) |
+| 已被替代的早期入口与协议 | [历史协议](history/index.mdoc) |
+
+当前字段和用法从[查询参考](../../reference/index.mdoc)取得，当前实现职责从[架构与边界](../architecture.mdoc)进入。完整样例的事实继续在各自来源唯一维护。
+
+{% /section %}
+{% /section %}

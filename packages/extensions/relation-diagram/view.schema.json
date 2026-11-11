@@ -260,6 +260,9 @@
           },
           "source": {
             "$ref": "common.schema.json#/$defs/source"
+          },
+          "drawing": {
+            "$ref": "drawing.schema.json"
           }
         },
         "required": [

@@ -1,3 +1,4 @@
+import {validateDrawing} from '../../drawing/validate.ts';
 import type {Graph,Node,Port,Group,Interface,Connection,RelationView,RecordEntry} from '../../core/types.ts';
 import {validationContext} from '../../core/validation-context.ts';
 import {validateViewLayout} from '../../core/view-layout.ts';
@@ -37,6 +38,11 @@ export function validateRelationData(graph:Graph){
     }
     if (entry.type === 'view') {
       const view = entry.entity as RelationView;
+      if(view.drawing){
+        if(!graph.manifest.requiredFeatures?.includes('native-drawing'))report(entry,'IR_FEATURE_REQUIRED','/drawing','原生绘图需要声明native-drawing');
+        if(view.include.objects.length||view.include.relations.length||view.layout||view.display?.interfaceMode||view.display?.interfaceOverrides)report(entry,'DRAWING_VIEW_CONFLICT','/drawing','drawing不能与工程include、外层layout或接口展开设置同时声明');
+        try{validateDrawing(view.drawing);}catch(error){const e=error as import('../../drawing/types.ts').DrawingError;report(entry,e.code,'/drawing'+e.path,e.message+(e.ids.length?'：'+e.ids.join('、'):''));}
+      }
       validateViewLayout(graph,entry,(code,path,message)=>report(entry,code,path,message));
       view.include.objects.forEach((id, i) => reference(entry, id, `/include/objects/${i}`, ['node', 'port', 'group','interface']));
       view.include.relations.forEach((id, i) => reference(entry, id, `/include/relations/${i}`, ['connection']));

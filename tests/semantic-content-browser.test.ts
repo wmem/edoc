@@ -40,7 +40,7 @@ test('语义合同离线导航：原文返回、折叠定位、只读复用与�
  check(await page.locator('#reader [data-clause="demo:late-isolation"]').evaluate(d=>(d as HTMLDetailsElement).open),'目标条款应打开');
  const duplicates=await page.locator('#reader').evaluate(r=>{const ids=[...r.querySelectorAll('[id]')].map(e=>e.id);return ids.filter((id,i)=>ids.indexOf(id)!==i);});
  check(duplicates.length===0,'重复 DOM 锚点');
- await page.locator('[data-reading-scope="spec"]').getByRole('button',{name:'折叠条款',exact:true}).click();
+ await page.locator('[data-reading-scope="clause"]').getByRole('button',{name:'折叠条款',exact:true}).click();
  check(await late.evaluate(d=>(d as HTMLDetailsElement).open),'条款折叠不应改变章节折叠');
  await page.locator('#toc').getByRole('link',{name:'沿行为审阅合同',exact:true}).click();await ready();
  check(await page.locator('#reader [data-clause="demo:one-result"]').count()===1,'审阅页只读复用');

@@ -1,0 +1,20 @@
+{
+  "schemaVersion":"1.0",
+  "id":"board-overview",
+  "nodes":[
+    {"id":"bottom","label":"底板 BOTTOM"},
+    {"id":"top","label":"顶板 TOP"},
+    {"id":"fpga","parentId":"bottom","label":"PG2T390HX FPGA","ports":[{"id":"spi","label":"SPI"},{"id":"sdio","label":"SDIO"},{"id":"rmii","label":"RMII"}]},
+    {"id":"mcu","parentId":"bottom","label":"GD32F427IGH6 MCU","ports":[{"id":"spi","label":"SPI"},{"id":"sdio","label":"SDIO"}]},
+    {"id":"bottom-btb","parentId":"bottom","label":"底板 BTB","ports":[{"id":"host","label":"RMII 板内侧"},{"id":"rmii","label":"RMII 板间侧"}]},
+    {"id":"top-btb","parentId":"top","label":"顶板 BTB","ports":[{"id":"rmii","label":"RMII 板间侧"},{"id":"phy","label":"RMII 板内侧"}]},
+    {"id":"phy","parentId":"top","label":"LAN8670D0 T1S PHY","ports":[{"id":"rmii","label":"RMII"}],"content":[{"id":"notes","kind":"stack","axis":"y","children":[{"id":"note","kind":"text","role":"note","text":"单路接口示意"},{"id":"trace","kind":"text","role":"note","text":"来源由上层提供"}]}]}
+  ],
+  "connections":[
+    {"id":"spi","ends":[{"id":"fpga","node":"fpga","port":"spi"},{"id":"mcu","node":"mcu","port":"spi"}],"labels":[{"id":"name","text":"SPI"}]},
+    {"id":"sdio","ends":[{"id":"fpga","node":"fpga","port":"sdio"},{"id":"mcu","node":"mcu","port":"sdio"}],"labels":[{"id":"name","text":"SDIO 4-bit"}]},
+    {"id":"rmii-bottom","ends":[{"id":"fpga","node":"fpga","port":"rmii"},{"id":"btb","node":"bottom-btb","port":"host"}]},
+    {"id":"rmii-btb","ends":[{"id":"bottom","node":"bottom-btb","port":"rmii"},{"id":"top","node":"top-btb","port":"rmii"}],"labels":[{"id":"name","text":"跨板 RMII"}]},
+    {"id":"rmii-top","ends":[{"id":"btb","node":"top-btb","port":"phy"},{"id":"phy","node":"phy","port":"rmii"}]}
+  ]
+}

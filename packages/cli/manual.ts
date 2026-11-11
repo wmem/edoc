@@ -11,7 +11,7 @@ import {buildInfo} from '../core/build-info.ts';
 
 export function manualLocations(){
  const root=fileURLToPath(new URL(import.meta.url.endsWith('.ts')?'../../':'../../../',import.meta.url));
- return {root,readme:resolve(root,'README.md'),entry:resolve(root,'docs/index.mdoc'),usage:resolve(root,'docs/usage/index.mdoc'),sources:resolve(root,'docs'),html:resolve(root,'dist/manual/index.html')};
+ return {root,readme:resolve(root,'README.md'),entry:resolve(root,'docs/index.mdoc'),usage:resolve(root,'docs/index.mdoc'),sources:resolve(root,'docs'),html:resolve(root,'dist/manual/index.html')};
 }
 const help=`edoc 自带工具手册（不读取当前项目配置）
 源文主入口：${manualLocations().entry}
@@ -20,7 +20,7 @@ const help=`edoc 自带工具手册（不读取当前项目配置）
  edoc docs --format json                  输出手册位置和工程身份
  edoc docs serve [--port 5176]             本机 HTTP 阅读，Ctrl+C 结束
  edoc docs outline [--project ID] [--id SECTION_ID] [--depth 0..10 | --all] [--format json|text]
- edoc docs read --id ID [--project ID] [--scope self|subtree] [--with-clauses|--with-specs] [--offset 0] [--max-chars 12000] [--format json|text]
+ edoc docs read --id ID [--project ID] [--scope self|subtree] [--with-clauses] [--offset 0] [--max-chars 12000] [--format json|text]
  edoc docs query --id ID [--project ID] [--depth 0..10] [--max-items 1..10000] [--format json|text]
 目录默认 depth=0；--all 显式返回全量。读取使用 sectionId，不使用导航 id/anchor。
 入门：edoc docs read --id use:home --format text
@@ -34,9 +34,9 @@ export async function manualMain(argv:string[]):Promise<number>{
   if((argv.length===1&&['--help','-h'].includes(argv[0]))||(['serve','outline','read','query'].includes(argv[0])&&argv.slice(1).some(t=>['--help','-h'].includes(t)))){process.stdout.write(help);return 0;}
   const command=!argv.length||argv[0].startsWith('--')?'location':argv[0],tokens=command==='location'?argv:argv.slice(1);
   if(!['location','serve','outline','read','query'].includes(command))throw new UsageError('未知手册命令；使用 edoc docs --help');
-  const allowed=new Set(command==='location'?['--format']:command==='serve'?['--port']:['--format','--project','--id',...(['outline','query'].includes(command)?['--depth']:[]),...(command==='outline'?['--all']:[]),...(command==='query'?['--max-items']:[]),...(command==='read'?['--scope','--offset','--max-chars','--with-specs','--with-clauses']:[])]);
+  const allowed=new Set(command==='location'?['--format']:command==='serve'?['--port']:['--format','--project','--id',...(['outline','query'].includes(command)?['--depth']:[]),...(command==='outline'?['--all']:[]),...(command==='query'?['--max-items']:[]),...(command==='read'?['--scope','--offset','--max-chars','--with-clauses']:[])]);
   const args:Record<string,string>=Object.create(null);
-  for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key)||Object.hasOwn(args,key))throw new UsageError('未知或重复选项：'+key);if(key==='--all'||key==='--with-specs'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(key+' 缺少值');args[key]=tokens[i++];}
+  for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key)||Object.hasOwn(args,key))throw new UsageError('未知或重复选项：'+key);if(key==='--all'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(key+' 缺少值');args[key]=tokens[i++];}
   if(args['--all']&&args['--depth']!==undefined)throw new UsageError('--all 与 --depth 不能同时指定');
   format=args['--format']??(['read','query','outline'].includes(command)?'json':'text');if(!['text','json'].includes(format))throw new UsageError('--format 只接受 text/json');
   const number=(key:string,fallback:number,min:number,max:number)=>{const raw=args[key];if(raw===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(raw)||+raw<min||+raw>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +raw;};
@@ -60,7 +60,7 @@ export async function manualMain(argv:string[]):Promise<number>{
   const index=resolve(directory,'index.json.gz');
   if(!existsSync(index))failure('MANUAL_MISSING',index,'','缺少预构建手册索引；源文入口见 edoc docs --help，源码仓库可运行 npm run build:package');
   const manual:Manual=JSON.parse(gunzipSync(readFileSync(index)).toString('utf8'));
-  if(manual.version!==1)failure('MANUAL_VERSION',directory,'','手册索引版本不支持，请重新安装完整版本');
+  if(manual.version!==2)failure('MANUAL_VERSION',directory,'','手册索引版本不支持，请重新安装完整版本');
   if(command==='location'){
    const location={title:manual.title,...manualLocations(),build:buildInfo(),url:pathToFileURL(html).href,projects:Object.keys(manual.projects)};
    process.stdout.write(format==='json'?JSON.stringify(location,null,2)+'\n':`${manual.title}\n源文主入口：${location.entry}\n包说明：${location.readme}\n使用目录：${location.usage}\n直接阅读 .mdoc，按相对链接进入；源文目录：${location.sources}\n\n入门：edoc docs read --id use:home --format text\n最小配置：edoc docs read --id use:first-build --format text\n目录：edoc docs outline（默认浅层；--all 返回完整目录）\n读取使用 sectionId；工具用法使用 docs，项目内容使用普通 read/query/outline。\n\n供人阅读的 HTML：${location.url}\n本机网页阅读：edoc docs serve\n`);return 0;
@@ -70,7 +70,7 @@ export async function manualMain(argv:string[]):Promise<number>{
    process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':outlineText(result.chapters).join('\n')+'\n');return 0;
   }
   if(command==='query'){process.stdout.write(JSON.stringify(manualQuery(manual,args['--id'],{project:args['--project'],depth,maxItems}),null,2)+'\n');return 0;}
-  const result=manualRead(manual,args['--id'],{project:args['--project'],withSpecs:args['--with-specs']?true:undefined,withClauses:args['--with-clauses']?true:undefined,scope:args['--scope'] as 'self'|'subtree'|undefined,offset,maxChars});
+  const result=manualRead(manual,args['--id'],{project:args['--project'],withClauses:args['--with-clauses']?true:undefined,scope:args['--scope'] as 'self'|'subtree'|undefined,offset,maxChars});
   process.stdout.write(format==='json'?JSON.stringify(result,null,2)+'\n':readText(result));return 0;
  }catch(error){
   if(error instanceof UsageError){process.stderr.write(error.message+'\n');return 2;}

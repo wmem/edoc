@@ -1,0 +1,173 @@
+{% section id="ref:graph" title="图形参考" %}
+
+RelationView 是关系图视图，不是所有图表的公共视图。数据放在 views 中，query 类型为 view，正文使用 relation-diagram。必需 id、kind、include；label、layout、display、source 可选。kind 为 architecture/interface/wiring/state。include.objects 与 include.relations 引用本工程稳定 ID，不复制数据。
+
+{% section id="ref:drawing" title="RelationView.drawing" %}
+
+原生绘图使用 IR 1.5 的 native-drawing 能力。项目配置数据自动声明所需能力；直接交付IR时在requiredFeatures中声明native-drawing。正文沿用relation-diagram，不增加独立标签。Drawing.schemaVersion为1.0，类型与JSON Schema在packages/drawing唯一维护。
+
+| 字段 | 内容 |
+| --- | --- |
+| schemaVersion、id | 1.0及绘图身份 |
+| nodes | id、label、parentId、ports、portGroups、content、originIds |
+| connections | id、ends、labels、style、originIds；ends含id、node、可选port/marker |
+| layout | direction、routing、spacing、containers、constraints、hints |
+| constraints | 带唯一id的place、size、order、align、port、route、fixedRoute、label |
+
+parentId表达真实显示包含，不能有循环；portGroups是显示分组，不创建工程协议。content为text或有序stack，不执行HTML/JS。匿名slot不显示端口文字，适合模块关系线的独立锚点。style引用内置关系样式；未知值明确报错。
+
+place坐标相对父内容区，根节点相对根坐标；port.offset是整条边的0～1比例。align.targets可引用节点边缘或端口。route和fixedRoute的frame为root或包含相应端点的容器，点坐标相对该内容区；fixedRoute使用端点/分叉ID和全部折点，不能创造虚假的电气合并。全部硬约束都验证，不能静默放宽；hints.main和channels是可报告回退的偏好。
+
+视图drawing与工程include范围、外层layout、接口展开设置互斥；include仍显式写空数组。局部绘图ID不进入工程全局对象索引，query读取view即可取得完整输入，网页选择可查看局部对象来源及几何。完整示例见[原生框图教程](../charts/diagrams/drawing.mdoc)。
+
+{% /section %}
+
+{% section id="ref:graph-display" title="display" %}
+
+| 字段 | 类型与用途 |
+| --- | --- |
+| showPortAttributes | boolean，整行端口附注，默认 false |
+| showRelationLabels | boolean，线上关系标题，默认 true |
+| showInterfaceDetails | boolean，接口分组的 role 与第二行附注，默认 true；false 时仅保留分组名和展开箭头，收回附注宽度与额外行距，多接入槽位仍保留必要空间 |
+| portAttributes | 不重复的非空字符串数组，选择 attributes 中的 Ball/Pin/功能等字段，不控制整行显隐 |
+| classes | 不重复的非空字符串数组，HTML 初始类别选中状态，不截断完整静态输出 |
+| collapsedGroups | 不重复的 Group ID 数组，当前视图中初始折叠的旧逻辑集合 |
+| interfaceMode | collapsed/expanded；接口投影默认逐信号 expanded |
+| interfaceOverrides | 接口 ID 到 collapsed/expanded 的对象，按接口覆盖初始折叠状态 |
+
+端口名称与真实位置保留；属性包含方向、位宽、时钟域和选定扩展。工具栏开关逐图独立。网页下载的完整逐信号 SVG 和当前视图 SVG 都沿用当前文字开关；CLI export 使用视图配置中的文字设置。完整/当前视图描述内容范围，不表示是否重置文字状态。
+
+showInterfaceDetails 只控制 Node.interfaces 的分组显示，不控制旧逻辑 Group 或普通端口附注。网页“分组附注”切换触发共享布局，展开、折叠和筛选保留该设置；完整静态图与打印同步更新。隐藏不删除角色、协议、成员或内部关系，仍可通过 query、属性面板及 SVG 元数据查看。实际示例见[隐藏分组附注](../charts/diagrams/interfaces.mdoc#use:interface-details)。
+
+关系标题直接放在所属线段上，以背景留白保持可读并避开其他关系；不集中排成脱离路径的文字列。隐藏标题只隐藏文字，端点和路径仍保留，完整属性可通过选择对象查询。
+
+普通架构图不会只因对象新增 interfaces 就自动改用接口投影。接口视图、显式接口显示设置或直接引用接口时才启用相应流程。
+
+{% /section %}
+
+{% section id="ref:interfaces" title="Node.interfaces" %}
+
+接口必需 id、label、非空 members，protocol、role、attributes、source 可选。members 只引用本 Node 的真实 Port，第一版同一 Port 不能属于多个接口。协议和角色是项目描述，不生成缺失信号。
+
+接口本身可被 view.include.objects、interface-table 标签或 query 引用。连接端点仍为原 Node/Port，不能换成接口 ID。网页可独立展开一端、两端或全部接口，投影后保留原关系身份和多端点分支。
+
+共享时钟等保留独立 Port 与显式 clockDomainId，不为多个接口复制真实信号。默认 SVG 保留视图定义内的逐信号内容；网页另有显式当前视图 SVG，沿用当前接口展开状态，不冒充完整逐信号输出。
+
+第一版没有嵌套协议通道、跨接口端口别名或“接口视图内旧 Group 粗线总览”。布局失败保留上一个成功画面；生成完整静态图失败仍须修正，不以折叠图替代。
+
+{% /section %}
+
+{% section id="ref:graph-layout" title="layout" %}
+
+| 字段 | 契约 |
+| --- | --- |
+| direction | LR/RL/TB/BT |
+| routing | orthogonal/polyline，当前组合差异见下方已知缺口 |
+| portOrder | 真实端口 ID 顺序 |
+| interfaceOrder | 接口 ID 顺序 |
+| interfaceSides | 接口 ID 到 left/right 的映射 |
+| positions | {objectId,x,y} 节点位置数组 |
+| constraints | order/align 相对约束 |
+| relationHints | 原 Connection ID 到显示主干、边和通道提示 |
+
+约束对象的 type 为 order/align，axis 使用 x/y，nodes 至少两个不重复、同父容器的 Node。order.gap 缺省 80，最小 16，表示最小间距；align.axis 是中心坐标对齐轴。它们与已有固定位置冲突时明确报错。
+
+direction 显式指定时采用 LR/RL/TB/BT；未声明方向且没有 positions、constraints、relationHints 的非 wiring 小图（最多12节点、无父子容器）比较 LR/TB 候选，优先适合典型正文比例的布局，其余保留 LR 回退。routing 缺省 orthogonal。自动候选不覆盖作者意图，也不保证所有图都无需调整。未写入 portOrder/interfaceOrder 的成员保留声明中的相对顺序。interfaceSides 只控制对应接口及其成员的 left/right；普通 Node 端点的边通过 relationHints.endpointSides 声明，不把 Node ID 填入接口映射。
+
+节点尺寸根据标题和端口文字计算，标题必要时换行且保留原名称；固定位置的已有带端口节点保留较宽的基础尺寸，避免改变原布局的占位假设。来源、端点和查询身份不受显示尺寸变化影响。
+
+positions 的 objectId、x、y 是视图内布局提示，不是浏览器屏幕坐标；工具会整体平移以保留边界、标题和父框留白。完整的接口排序、侧边和局部展开对照见[图形进阶配方](../charts/diagrams/graph-options.mdoc#use:graph-options-create)。
+
+relationHints 以当前视图中的原 Connection ID 为键。backbone 为多端点选择显示主干；channel 仅接受两端点关系，不能用于三端点 Net。字段和组合限制见 {% reference id="ref:relation-hints" label="relationHints 字段" /%}，可运行的数据见 {% reference id="ref:layout-example" label="主干与通道完整示例" /%}。
+
+无任意折点字段，也没有已完成的全组件项目默认/引用覆盖链。静态引用与循环在 validate 检查，尺寸与实际路径问题在 build/export 检查。
+
+{% section id="ref:graph-routing" title="routing 的已知实现差异" %}
+
+orthogonal 与 polyline 都是当前接受的值。自动路由分支会将 polyline 传给 ELK；固定位置、相对约束、层级、自环及多端点等图会进入专用路由分支，当前该分支未统一处理 polyline。
+
+因此不能仅凭填写 polyline 就宣称这些组合已得到相同的折线路由能力。这是待修复的实现/契约差异，不是本次补文档主动缩小原能力要求，也不是要求后续继续忽略该字段。此次组合探针和实际范围见 {% reference id="acceptance:routing-audit" label="路由组合核验" /%}；自动布局可按需使用 polyline，需要这些复杂组合时仍需检查实际结果。
+
+{% /section %}
+
+{% section id="ref:relation-hints" title="relationHints 字段与限制" %}
+
+relationHints 是对象，键必须是本视图 include.relations 中已有的 Connection ID。每个值可包含下列字段，未知字段报错：
+
+| 字段 | 类型、适用范围和效果 |
+| --- | --- |
+| backbone | 两个不同的原关系端点 ID 数组，两个 ID 都必须属于该关系；选择显示主干，不改变全部端点 |
+| endpointSides | 端点 ID 到 left/right/top/bottom 的对象；键只能是本关系真实的 Node 端点，不能是 Port、接口或未参与端点的所属 Node |
+| channel | left/right/top/bottom；只适用于 endpoints 恰好两个的关系；多端点设置此字段即报 LAYOUT_CHANNEL，即使同时有 backbone 也不例外 |
+| priority | main/normal，表示布线优先级偏好 |
+
+显式 endpointSides 必须满足，不能覆盖真实 Port 的固定边；通道和优先级为偏好，无法满足会说明原因，无合法路径时仍失败。仅有真实 Port 端点时用端口/接口布局控制边，不把所属模块 ID 当作 Node 端点填入 endpointSides。
+
+接口折叠时，提示继续引用原 Connection ID；具有专属 relationHints 的关系保留独立显示线，不与其他信号聚合后丢掉原提示。
+
+顺序与对齐的 constraints 适用于同一父容器内的 Node；relationHints 引用原关系。两者只声明展示意图，不定义新的工程连接。完整可复制例子见 {% reference id="ref:layout-example" /%}。
+
+{% /section %}
+
+{% section id="ref:layout-example" title="主干与通道完整示例" %}
+
+前置：已有[数据教程的 objects.json](../engineering/data.mdoc#use:standard-data)和[绘图教程的配置](../charts/diagrams/architecture.mdoc#use:architecture)。先把下面内容保存为 docs/ir/authoring/topology.json，增加一个观察点、一条两端点反馈和一条三端点时钟关系：
+
+{% code file="docs/ir/authoring/topology.json" language="json" /%}
+
+再将下面完整视图定义保存为 docs/ir/authoring/layout.json。视图也可作为标准数据被扫描，不需要改动已有配置或再抄对象：
+
+{% code file="docs/ir/authoring/layout.json" language="json" /%}
+
+在自己的 docs/index.mdoc 写入并运行 edoc：
+
+```text {% process=false %}
+{% relation-diagram id="system:routing" /%}
+```
+
+{% relation-diagram id="system:routing" /%}
+
+数据主线从生产者右侧进入消费者左侧；两端点反馈偏好下方通道；三端点时钟使用 backbone，观察点仍保留为第三端点。显示主干不表示电气走线拓扑。执行 edoc query --id system:clock 可核对三个完整端点。
+
+{% /section %}
+
+{% /section %}
+
+{% section id="ref:graph-operations" title="图形阅读、分组与导出" %}
+
+| 操作 | 当前行为 |
+| --- | --- |
+| 适配画布 / 清晰阅读 | 分别查看完整范围或恢复 1:1 比例；大图可拖动平移 |
+| ＋ / －、Ctrl/Command 加滚轮 | 调整缩放，不改变工程数据 |
+| 大图查看 | 扩大当前图，Esc 退出；键盘焦点保留在大图操作区域 |
+| 选择 / 清除高亮 | 选择节点、端口、接口或关系查看来源及邻接关系；清除高亮恢复显示 |
+| 类别筛选 | 只改变当前网页显示，不删除原关系或完整静态输出 |
+| Group 总览 | 临时查看逻辑集合；模块协议使用 Node.interfaces，不用 Group 代替归属 |
+| 接口总览 / 全部展开 | 作用于当前图；单个接口也可独立合并/展开，选中聚合线可展开两端并查组成连接 |
+| 图中定位信号 | 图内选中真实信号后，在操作区展开所属接口并滚到该图 |
+| SVG / 当前视图 SVG | 完整逐信号导出与当前接口展开投影分开；文字开关按显示参考的规则处理 |
+
+Node.parentId、Group 和 Node.interfaces 的同源创建与实际操作见[图形分组与接口显示](../charts/diagrams/graph-options.mdoc)。Group 初始状态用 collapsedGroups，接口初始状态用 interfaceMode/Overrides；两者不能混用。临时选择和缩放不会写回源文件。
+
+初始图优先保证主要标题/端口名至少约12px，附注仍使用较小字号。整体放不下时明确提示局部显示，保留平移和完整适配入口；不会删去节点或关系。显式选择完整适配后，窗口变化仍沿用总览模式；选择清晰阅读后维持1:1。接口展开保留已有缩放和操作模块位置。
+
+kind=interface 中没有可见对端的端口使用短边界引线，in 向内、out 向外、inout 双向，unknown/passive 无箭头；有真实连接的端口不重复引线。多位端口名称旁显示 [N-1:0]，widthExpr 显示参数范围。聚合接口的粗引线表示成员流向，混合流向不等于成员为RTL inout；展开头部不冒充一个真实信号。引线属于展示几何，不是 Connection，SVG 与网页共用同一结果。见[单框组件](../charts/diagrams/interfaces.mdoc#use:interface-boundary)。
+
+{% section id="ref:graph-classes" title="关系类别与预设线型" %}
+
+| class | 当前预设 |
+| --- | --- |
+| data | 蓝色实线 |
+| control | 紫色虚线 |
+| clock | 橙色短虚线 |
+| reset | 红紫色点划组合 |
+| event | 绿色点线 |
+| power | 红色长虚线 |
+| configuration | 橄榄色点划组合 |
+| other 或未知 class | 灰色虚线 |
+
+class 是开放字符串，未知类仍有自己的分类名称，样式回落到 other。粗的接口聚合线由显示投影生成，不是新的电气连接。当前没有每个视图任意指定颜色/线型的公开字段；portAttributes 也不是样式容器。
+
+{% /section %}
+{% /section %}
+{% /section %}

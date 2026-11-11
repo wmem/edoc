@@ -1,4 +1,4 @@
-import {specimen} from './specification-fixture.ts';
+import {specimen} from './clause-fixture.ts';
 export const tableData={objects:[{id:'device',kind:'node',label:'投影对象',attributes:{count:12}}],tables:[{
  id:'T',kind:'table',label:'测试参数表',columns:[{field:'name',label:'项目',type:'string'},{field:'value',label:'数量',type:'number'},{field:'flag',label:'启用',type:'boolean'},{field:'meta',label:'补充',type:'json'},{field:'note',label:'备注',type:'string'}],rows:[
   {id:'r0',values:{name:'U10',value:10,flag:true,meta:{group:'core'},note:'unknown'}},

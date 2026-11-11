@@ -20,9 +20,9 @@ test('guide 无需项目配置，默认简版，--full 读取同源完整版',()
  assert.equal(plain.status,0,plain.stderr);assert.equal(json.status,0,json.stderr);
  assert.equal(JSON.parse(json.stdout).content,plain.stdout);
  assert.equal(JSON.parse(json.stdout).variant,'short');
- assert.equal(plain.stdout,readFileSync(join(repository,'docs/usage/engineering/agent-guide.mdoc'),'utf8'));
+ assert.equal(plain.stdout,readFileSync(join(repository,'docs/writing/agent-guide.mdoc'),'utf8'));
  const full=run(['guide','--full','--format','json']);assert.equal(full.status,0,full.stderr);
- assert.equal(JSON.parse(full.stdout).variant,'full');assert.equal(JSON.parse(full.stdout).content,readFileSync(join(repository,'docs/usage/engineering/guide.mdoc'),'utf8'));
+ assert.equal(JSON.parse(full.stdout).variant,'full');assert.equal(JSON.parse(full.stdout).content,readFileSync(join(repository,'docs/writing/guide.mdoc'),'utf8'));
  for(const args of [['--full','--full'],['--full','true']])assert.equal(run(['guide',...args]).status,2);
  assert.equal(run(['guide','--config','x']).status,2);
 });
@@ -102,7 +102,7 @@ test('CLI 直接重读相同路径的 IR，失败后不会回退旧查询', t =>
 });
 test('CLI 帮助、版本与可执行文件入口', () => {
   assert.match(run(['--help']).stdout, /不要求 manifest/);
-  assert.match(run(['--version']).stdout, /1.0.0/);
+  assert.match(run(['--version']).stdout, /2.0.0/);
   const executable = spawnSync(join(repository, 'packages/cli/edoc.ts'), ['--version'], { encoding: 'utf8', timeout: 10000 });
   assert.equal(executable.status, 0, executable.stderr);
 });

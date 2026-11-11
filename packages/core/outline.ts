@@ -21,11 +21,11 @@ export function prepareOutline(graph:Graph){
   nodes(node).map(text).join('');
  const minimum=(node:any):number=>{
   const levels:number[]=[];
-  const visit=(n:any)=>{if(n.type==='tag'&&['section','specification'].includes(n.tag))return;if(n.type==='heading')levels.push(n.attributes.level);nodes(n).forEach(visit);};
+  const visit=(n:any)=>{if(n.type==='tag'&&['section','clause'].includes(n.tag))return;if(n.type==='heading')levels.push(n.attributes.level);nodes(n).forEach(visit);};
   nodes(node).forEach(visit);return levels.length?Math.min(...levels):1;
  };
  for(const {file,ast,locations} of documents){
-  type Scope={section?:OutlineEntry;rawBase:number;headings:OutlineEntry[];specification?:boolean};
+  type Scope={section?:OutlineEntry;rawBase:number;headings:OutlineEntry[];clause?:boolean};
   const add=(node:any,label:string,id:string,kind:OutlineEntry['kind'],level:number,parent?:OutlineEntry)=>{
    const namespace=node.attributes.__edocNamespace??'';id=namespace+id;
    const entry:OutlineEntry={id,label,kind,level,depth:parent?parent.depth+1:0,
@@ -35,22 +35,22 @@ export function prepareOutline(graph:Graph){
    node.attributes.__edocOutlineId=id;return entry;
   };
   const walk=(node:any,scope:Scope)=>{
-   if(node.type==='tag'&&['section','specification'].includes(node.tag)){
-    const spec=node.tag==='specification'||!!node.attributes.__edocSpecification;
+   if(node.type==='tag'&&['section','clause'].includes(node.tag)){
+    const spec=node.tag==='clause'||!!node.attributes.__edocClause;
     const parent=spec?scope.headings.at(-1)??scope.section:scope.section;
     const entry=add(node,node.attributes.title??node.attributes.id,anchor(node.attributes.id),'section',(parent?.level??0)+1,parent);
-    if(scope.specification||spec&&node.attributes.__edocNamespace)entry.local=true;
+    if(scope.clause||spec&&node.attributes.__edocNamespace)entry.local=true;
     entry.sectionId=node.attributes.id;
     if(node.attributes.__edocSemanticKind)entry.semanticKind=node.attributes.__edocSemanticKind;
     entry.collapsed=node.attributes.collapsed===true;
-    const child:Scope={section:entry,rawBase:minimum(node),headings:[],specification:scope.specification||spec};
+    const child:Scope={section:entry,rawBase:minimum(node),headings:[],clause:scope.clause||spec};
     nodes(node).forEach((n:any)=>walk(n,child));return;
    }
    if(node.type==='heading'){
     const level=scope.section?scope.section.level+1+node.attributes.level-scope.rawBase:node.attributes.level;
     while(scope.headings.length&&scope.headings.at(-1)!.level>=level)scope.headings.pop();
     const parent=scope.headings.at(-1)??scope.section;
-    const entry=add(node,text(node).trim(),(()=>{if(typeof node.attributes.id==='string')return node.attributes.id;const base='heading-'+text(node).toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'');const key=(node.attributes.__edocNamespace??'')+base;const n=(usedHeadings.get(key)??0)+1;usedHeadings.set(key,n);return base+(n>1?'-'+n:'');})(),'heading',level,parent);if(scope.specification)entry.local=true;scope.headings.push(entry);
+    const entry=add(node,text(node).trim(),(()=>{if(typeof node.attributes.id==='string')return node.attributes.id;const base='heading-'+text(node).toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'');const key=(node.attributes.__edocNamespace??'')+base;const n=(usedHeadings.get(key)??0)+1;usedHeadings.set(key,n);return base+(n>1?'-'+n:'');})(),'heading',level,parent);if(scope.clause)entry.local=true;scope.headings.push(entry);
    }
    nodes(node).forEach((n:any)=>walk(n,scope));
   };

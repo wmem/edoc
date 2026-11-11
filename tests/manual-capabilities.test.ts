@@ -36,7 +36,7 @@ test('公共展示字段在正式参考有入口，能力清单的教程、参�
  const register=json('packages/extensions/register/register.schema.json').properties.registers.items.properties;
  check(Object.keys(register),'ref:register-shape');check(Object.keys(register.fields.items.properties),'ref:register-shape');
  for(const [name,tag]of Object.entries(tags))check(Object.keys(tag.attributes??{}),['section','columns','panel','tabs','tab'].includes(name)?'ref:markdoc-structure':['reference','page','attachment'].includes(name)?'ref:markdoc-links':['include','code'].includes(name)?'ref:markdoc-files':'ref:tag-'+name);
- const document=book.root.documents.documents.find(d=>d.file==='docs/usage/reference/capabilities.mdoc')!;
+ const document=book.root.documents.documents.find(d=>d.file==='docs/reference/capabilities.mdoc')!;
  let rows=0;
  for(const table of [...document.ast.walk()].filter(n=>n.type==='table'))for(const row of [...table.walk()].filter(n=>n.type==='tr')){
   const cells=row.children.filter((n:any)=>n.type==='td');if(!cells.length)continue;assert.equal(cells.length,4);rows++;

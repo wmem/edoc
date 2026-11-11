@@ -1,0 +1,35 @@
+{
+  "schemaVersion":"1.0",
+  "id":"fixed-tree",
+  "nodes":[
+    {"id":"a","label":"时钟源","ports":[{"id":"p","label":"参考输出"}]},
+    {"id":"b","label":"接收器一","ports":[{"id":"p","label":"参考输入"}]},
+    {"id":"c","label":"接收器二","ports":[{"id":"p","label":"参考输入"}]}
+  ],
+  "connections":[
+    {"id":"clock","ends":[{"id":"a","node":"a","port":"p"},{"id":"b","node":"b","port":"p","marker":"arrow"},{"id":"c","node":"c","port":"p","marker":"arrow"}],"labels":[{"id":"name","text":"共享参考时钟"}]}
+  ],
+  "layout":{
+    "routing":"orthogonal",
+    "constraints":[
+      {"id":"place-a","type":"place","node":"a","x":0,"y":40},
+      {"id":"place-b","type":"place","node":"b","x":500,"y":40},
+      {"id":"place-c","type":"place","node":"c","x":500,"y":280},
+      {"id":"size-a","type":"size","node":"a","width":160,"height":160},
+      {"id":"size-b","type":"size","node":"b","width":160,"height":160},
+      {"id":"size-c","type":"size","node":"c","width":160,"height":160},
+      {"id":"port-a","type":"port","node":"a","port":"p","side":"right","offset":0.5},
+      {"id":"port-b","type":"port","node":"b","port":"p","side":"left","offset":0.5},
+      {"id":"port-c","type":"port","node":"c","port":"p","side":"left","offset":0.5},
+      {
+        "id":"locked-clock-tree","type":"fixedRoute","connection":"clock","frame":"root",
+        "junctions":[{"id":"branch","x":300,"y":120}],
+        "paths":[
+          {"id":"source","from":{"end":"a"},"to":{"junction":"branch"}},
+          {"id":"first","from":{"junction":"branch"},"to":{"end":"b"}},
+          {"id":"second","from":{"junction":"branch"},"to":{"end":"c"},"via":[{"x":300,"y":360}]}
+        ]
+      }
+    ]
+  }
+}

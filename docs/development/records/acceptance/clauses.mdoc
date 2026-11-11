@@ -1,0 +1,30 @@
+{% section id="accept:clauses" title="能力、行为与条款整理及旧写法移除" %}
+
+2026-11-11，用户明确批准移除旧 specification / spec-list，不保留兼容写法。该决定替代此前保留兼容入口的约定；按破坏性版本 2.0.0 交付。本文记录工具及虚构示例的验证，不代表任何 FPGA、MCU 或驱动实现已经满足产品要求。
+
+{% section id="accept:clauses:organization" title="唯一主教程与概念边界" %}
+
+[能力、行为与条款](../../../writing/semantic-content.mdoc)归入“编写与组织正文”，按概念定义、能力与行为边界、本地条款与主题规范、归属/适用/展示/导航、写法与同源实例、完整读取组织。撤下旧兼容教程和旧标签参考，属性与机器格式只在[标签契约](../../../reference/tags/semantic-content.mdoc)维护。
+
+参考 Agent-C 的概念定义：Specification 是规范总称，Capability 是有意义的高内聚承诺，Behavior 是完整合同，Clause 是要求表达单位；Component 与 Test 通过实现和验证关联它们，不强制一一对应。不引入 Catalog、条款继承、隐式覆盖或优先级，不要求使用者启用 Agent-C。普通正文的正式承诺仍有效，接口、协议与格式可按独立主题维护。
+
+{% /section %}
+{% section id="accept:clauses:implementation" title="公开模型统一与旧入口拒绝" %}
+
+唯一写法为 capability / behavior / clause / clause-list；集合为有序 ids。机器资源为 clauses、kind/type 为 clause，IR 1.6 增加 clauses 必需能力；实现位于 packages/extensions/clause。SDK 使用 withClauses，CLI 使用 --with-clauses；读取结果使用 clauses、clauseFor 和 applications，不保留旧镜像字段。随包手册索引版本升为2，旧索引明确拒绝，避免错误读取旧集合结构。
+
+旧标签、common/specific、旧资源与能力、SDK withSpecs、CLI --with-specs 均明确失败，包括隐藏分支及自动扫描的数据文件。不能通过自定义标签重新注册旧名称。process=false 代码示例与历史原文允许展示旧字面写法；波形 semantic="specification" 仍表示规范示意，与条款语法无关。历史设计与阶段验收保留当时身份，不是现行用法。
+
+原文身份、定义侧变量/partial、完整条件与例外、有序适用关系、来源、统一分页、正反查询、离线原文跳转与返回、逐条/批量折叠、重复图表和表行的 DOM 隔离均保留。条款原文及引用实例不因显示次数复制工程身份；显示折叠不裁剪 read 内容。
+
+{% /section %}
+{% section id="accept:clauses:verification" title="验证与交付范围" %}
+
+- 类型检查通过。tests/clause.test.ts 与 tests/semantic-content.test.ts 的17项通过，覆盖来源上下文、机器条款、IR版本/能力门槛、完整读取/分页、适用关系、隐藏依赖、输出保护、旧入口拒绝，以及可独立运行的最小模板。
+- CLI、Schema、正文/原生 Markdoc、工程加载、目录、正文预检、read、正式手册、寄存器和阅读结构相关回归通过。目录回归明确检查新教程的归属、章节顺序与旧入口撤除；所有作者源文仍被正式手册或源码示例接入。
+- 已有 Chromium 验证条款与语义示例的离线导航、折叠、原文返回、局部锚点、Tabs/波形/接口及重复表行；同时检查对象引用、阅读控制、表格筛选、目录、侧栏、PDF返回、寄存器、正式手册与390px窄屏。浏览器使用 EDOC_CHROMIUM 显式指定已安装版本，没有安装或更改全局浏览器。
+- 正式文档校验、安装包构建及实际 npm 包的仓库外安装通过；独立 Git 快照的 prepare/打包/临时前缀安装通过，不修改实际仓库提交或全局 npm 环境。随包 JS、声明、源文、手册和查询入口均参加验证。
+- 使用 playwright-cli 检查正式教程的概念表、页内目录和同源示例入口，并检查行为页的本地条款、引用原文、返回及窄屏。预览服务继续提供手册；未提交、推送或发布远程版本，未迁移其他工程的有效合同。
+
+{% /section %}
+{% /section %}

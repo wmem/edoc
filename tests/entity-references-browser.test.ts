@@ -4,7 +4,7 @@ import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {chromium} from 'playwright';
-import {specimen} from './specification-fixture.ts';
+import {specimen} from './clause-fixture.ts';
 import {bookHTML} from '../packages/pack-html/book.ts';
 import {query} from '../packages/core/query.ts';
 import {routeHash} from '../packages/core/routes.ts';

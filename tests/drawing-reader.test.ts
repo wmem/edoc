@@ -1,0 +1,58 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {chromium} from 'playwright';
+import {DOMParser} from '@xmldom/xmldom';
+import {fixture} from './helpers.ts';
+import {solveDrawing} from '../packages/drawing/solve.ts';
+import {drawingID,drawingReaderScene,drawingSelection} from '../packages/drawing/reader-scene.ts';
+import type {Drawing} from '../packages/drawing/types.ts';
+import {svg} from '../packages/render-graph/index.ts';
+import {bookHTML} from '../packages/pack-html/book.ts';
+import {loadBook} from '../packages/core/book.ts';
+import {resolveProjectConfig} from '../packages/core/project.ts';
+const read=(name:string)=>JSON.parse(readFileSync(new URL(`../docs/support/proposals/drawing/${name}.json`,import.meta.url),'utf8'));
+const four=():Drawing=>({schemaVersion:'1.0',id:'four',nodes:[{id:'n',label:'四侧端口',ports:['top','right','bottom','left'].map(id=>({id})),content:[{id:'body',kind:'text',text:'框内正文\n第二行说明'}]}],connections:[],layout:{constraints:[{id:'size',type:'size',node:'n',width:400,height:240},...(['top','right','bottom','left']as const).map(side=>({id:side,type:'port'as const,node:'n',port:side,side,offset:side==='left'||side==='right'?.7:.5}))]}});
+
+test('普通 Drawing 阅读适配保留四侧端口、内容、局部身份与原始几何',async()=>{
+  const input=four(),geometry=await solveDrawing(input),before=structuredClone(geometry),s=drawingReaderScene(input,geometry,'view:first','四侧端口');
+  assert.deepEqual(geometry,before);assert.equal(s.drawing,geometry);assert.equal(new Set(s.nodes[0].ports.map(p=>p.side)).size,4);
+  assert.equal(s.drawing!.nodes[0].contents[0].lines.length,2);
+  assert.notEqual(drawingID('view:first','port','n','top'),drawingID('view:other','port','n','top'));
+  assert.equal((drawingSelection(s,s.nodes[0].id)as any).type,'绘图模块');assert.equal((drawingSelection(s,s.nodes[0].ports[0].id)as any).type,'绘图端口锚点');
+});
+test('普通图 SVG 可隐藏全部连线标题，保留固定树、箭头和不冲突的实例标记',async()=>{
+  const input=read('fixed-route'),geometry=await solveDrawing(input),before=structuredClone(geometry);
+  const s=drawingReaderScene(input,geometry,'view:fixed','固定路线',{showRelationLabels:false}),first=svg(s,false,'first'),second=svg(s,false,'second');
+  assert.deepEqual(geometry,before);assert.match(first,/data-relation-label="clock" display="none"/);assert.equal((first.match(/marker-end=/g)??[]).length,2);
+  const marker=(text:string)=>/marker id="([^"]+)"/.exec(text)![1];assert.notEqual(marker(first),marker(second));
+});
+test('原生普通图的标题开关、缩放、大图、平移、下载和四侧内容可离线使用',{timeout:60000},async t=>{
+  const automatic=read('automatic');automatic.connections[0].labels.push({id:'extra',text:'辅助标注'});
+  const data:Record<string,Drawing>={'drawing:auto':automatic,'drawing:controlled':{...read('automatic'),...read('controlled')},'drawing:fixed':read('fixed-route'),'drawing:four':four()};
+  const scenes=new Map(await Promise.all(Object.entries(data).map(async([id,input])=>[id,drawingReaderScene(input,await solveDrawing(input),id,id)]as const)));
+  const f=fixture(t);f.edit('objects',d=>d.objects=[]);f.edit('relations',d=>d.relations=[]);f.edit('views',d=>d.views=Object.keys(data).map(id=>({id,kind:'architecture',include:{objects:[],relations:[]}})));
+  writeFileSync(join(f.root,'docs/ordinary.mdoc'),'{% section id="ordinary" title="普通图阅读" %}\n'+Object.keys(data).map(id=>`{% relation-diagram id="${id}" /%}`).join('\n')+'\n{% /section %}');f.edit('manifest',d=>d.entryDocuments=['docs/ordinary.mdoc']);
+  const file=join(f.workspace,'ordinary.html');writeFileSync(file,await bookHTML(await loadBook(await resolveProjectConfig(join(f.root,'edoc.config.js'))),{scene:async(_g,id)=>structuredClone(scenes.get(id)!)}));
+  const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true,viewport:{width:1600,height:1100}}),page=await context.newPage(),errors:string[]=[],external:string[]=[];
+  page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/^https?:/.test(r.url()))external.push(r.url());});await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocGraphs?.length>=2);
+  const first=page.locator('[data-diagram="drawing:auto"]'),second=page.locator('[data-diagram="drawing:controlled"]'),labels=first.locator('[data-display="relation-labels"]');
+  const paths=()=>page.evaluate(()=>window.EdocGraphs[0].getEdges().map(e=>({source:e.getSourcePoint(),target:e.getTargetPoint(),vertices:e.getVertices()})));
+  const before=await paths();await labels.uncheck();assert.deepEqual(await paths(),before);assert.equal(await second.locator('[data-display="relation-labels"]').isChecked(),true);
+  assert.equal(await page.evaluate(()=>window.EdocGraphs[0].getNodes().filter(n=>n.getData()?.role==='relation-label'&&n.isVisible()).length),0);
+  assert.equal(await first.locator('.static-svg [data-relation-label]:not([display="none"])').count(),0);
+  const zoom=await page.evaluate(()=>window.EdocGraphs[0].zoom());await first.locator('[data-action="plus"]').click();assert.ok(await page.evaluate(()=>window.EdocGraphs[0].zoom())>zoom);await first.locator('[data-action="minus"]').click();
+  await first.locator('[data-action="expand"]').click();assert.equal(await first.getAttribute('aria-modal'),'true');await page.keyboard.press('Escape');assert.equal(await first.getAttribute('aria-modal'),null);
+  await first.locator('[data-action="fit"]').click();await first.locator('[data-action="read"]').click();assert.equal(await page.evaluate(()=>window.EdocGraphs[0].zoom()),1);
+  await first.locator('.canvas').scrollIntoViewIfNeeded();const canvas=await first.locator('.canvas').boundingBox(),translation=await page.evaluate(()=>window.EdocGraphs[0].translate());await page.mouse.move(canvas!.x+20,canvas!.y+20);await page.mouse.down();await page.mouse.move(canvas!.x+60,canvas!.y+50,{steps:5});await page.mouse.up();assert.notDeepEqual(await page.evaluate(()=>window.EdocGraphs[0].translate()),translation);
+  await first.locator('[data-display="port-attributes"]').check();
+  const pending=page.waitForEvent('download');await first.locator('[data-action="svg"]').click();const download=await pending,target=join(f.workspace,'ordinary.svg');await download.saveAs(target);const content=readFileSync(target,'utf8'),doc=new DOMParser().parseFromString(content,'image/svg+xml'),metadata=JSON.parse(doc.getElementsByTagName('metadata')[0].textContent!);
+  assert.equal(metadata.display.showRelationLabels,false);assert.equal(metadata.display.showPortAttributes,true);assert.deepEqual(metadata.scene,JSON.parse(JSON.stringify(scenes.get('drawing:auto')!.drawing)));assert.match(content,/data:font\/woff2;base64,/);
+  await labels.check();assert.equal(await page.evaluate(()=>window.EdocGraphs[0].getNodes().filter(n=>n.getData()?.role==='relation-label'&&n.isVisible()).length),4);
+  await first.locator('.canvas').getByText('PG2T390HX FPGA',{exact:true}).click();const selected=JSON.parse(await page.locator('#properties').innerText());assert.equal(selected.type,'绘图模块');assert.equal(selected.input.id,'fpga');
+  const last=page.locator('[data-diagram="drawing:four"]');await last.scrollIntoViewIfNeeded();await page.waitForFunction(()=>window.EdocGraphs.some(g=>g.container.closest('figure')?.getAttribute('data-diagram')==='drawing:four'));assert.ok(((await last.locator('[data-drawing-content]').textContent())??'').includes('第二行说明'));
+  const ports=await page.evaluate(()=>{const g=window.EdocGraphs.find(g=>g.container.closest('figure')?.getAttribute('data-diagram')==='drawing:four')!;return g.getNodes().find(n=>n.getData()?.entityId)!.getPorts().map(p=>p.args);});assert.equal(ports.length,4);
+  await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+});

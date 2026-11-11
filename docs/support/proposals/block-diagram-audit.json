@@ -1,0 +1,33 @@
+{
+  "objects": [
+    {"id":"audit:bottom","kind":"node","label":"底板 BOTTOM"},
+    {"id":"audit:top","kind":"node","label":"顶板 TOP"},
+    {"id":"audit:bottom.a","kind":"node","label":"底板芯片 A","parentId":"audit:bottom"},
+    {"id":"audit:bottom.b","kind":"node","label":"底板芯片 B","parentId":"audit:bottom"},
+    {"id":"audit:top.a","kind":"node","label":"顶板芯片 A","parentId":"audit:top"},
+    {"id":"audit:top.b","kind":"node","label":"顶板芯片 B","parentId":"audit:top"},
+    {"id":"audit:producer","kind":"node","label":"上方器件","ports":[{"id":"audit:producer.p","label":"数据接口","direction":"out"}]},
+    {"id":"audit:consumer","kind":"node","label":"下方器件","ports":[{"id":"audit:consumer.p","label":"数据接口","direction":"in"}]}
+  ],
+  "relations": [
+    {"id":"audit:spi","kind":"connection","class":"data","label":"SPI","endpoints":["audit:bottom.a","audit:top.a"]},
+    {"id":"audit:clock","kind":"connection","class":"clock","label":"参考时钟","endpoints":["audit:top.b","audit:bottom.b"]},
+    {"id":"audit:data","kind":"connection","class":"data","label":"数据总线","endpoints":["audit:producer.p","audit:consumer.p"],"direction":{"sources":["audit:producer.p"],"targets":["audit:consumer.p"]}}
+  ],
+  "views": [
+    {
+      "id":"audit:automatic","kind":"architecture","label":"默认层级布局：检查两个板框是否重叠",
+      "include":{"objects":["audit:bottom","audit:top","audit:bottom.a","audit:bottom.b","audit:top.a","audit:top.b"],"relations":["audit:spi","audit:clock"]}
+    },
+    {
+      "id":"audit:constraints","kind":"architecture","label":"相同事实：增加板框顺序与中心对齐",
+      "include":{"objects":["audit:bottom","audit:top","audit:bottom.a","audit:bottom.b","audit:top.a","audit:top.b"],"relations":["audit:spi","audit:clock"]},
+      "layout":{"constraints":[{"type":"order","axis":"x","nodes":["audit:bottom","audit:top"],"gap":120},{"type":"align","axis":"y","nodes":["audit:bottom","audit:top"]}]}
+    },
+    {
+      "id":"audit:vertical","kind":"architecture","label":"纵向真实端口：检查接口所在侧边",
+      "include":{"objects":["audit:producer","audit:consumer"],"relations":["audit:data"]},
+      "layout":{"direction":"TB","routing":"orthogonal"}
+    }
+  ]
+}

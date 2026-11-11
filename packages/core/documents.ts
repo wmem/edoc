@@ -10,7 +10,7 @@ import {builtinTags,referenceTargets,targetChecks} from './extension-contracts.t
 import {directoryOrders} from './directory-order.ts';
 export const tags=builtinTags;
 export type DocumentReference={id:string;tag:string;file:string;line:number;project?:string;target?:string};
-export type DocumentPlan={media?:Map<string,import('./media.ts').ImageAsset>;documents:{file:string;hidden?:boolean;ast:any;scopes?:WeakMap<object,any>;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config;scopes?:WeakMap<object,any>;options?:MarkdocOptions;projectRoots?:string[];preparedSpecifications?:Set<string>;renderScopes?:Map<string,any>};
+export type DocumentPlan={media?:Map<string,import('./media.ts').ImageAsset>;documents:{file:string;hidden?:boolean;ast:any;scopes?:WeakMap<object,any>;locations:WeakMap<object,{file:string;line:number}>}[];files:string[];references:DocumentReference[];checks?:{node:any;file:string;line:number;documentFile?:string;direct?:boolean}[];warnings?:any[];pending?:Promise<unknown>[];markdoc?:import('@markdoc/markdoc').Config;scopes?:WeakMap<object,any>;options?:MarkdocOptions;projectRoots?:string[];preparedClauses?:Set<string>;renderScopes?:Map<string,any>};
 // 正文解析不再要求先建立工程数据图；先完整展开 include，再收集所有 Tabs/折叠中的引用。
 export function scanDocuments(projectRoot:string,entryDocuments:string[],options:{projectRoots?:string[];markdoc?:MarkdocOptions;configFile?:string;virtual?:{file:string;content:string;line?:number}}={}):DocumentPlan{
  const roots=(options.projectRoots??[]).filter(p=>resolve(p)!==resolve(projectRoot)).map(p=>existsSync(p)?realpathSync(p):resolve(p));
@@ -19,7 +19,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const locations=new WeakMap<object,{file:string;line:number}>(),files=new Set<string>(),checks:NonNullable<DocumentPlan['checks']>=[],warnings:any[]=[],pending:Promise<unknown>[]=[];
  const enqueue=(promise:Promise<unknown>)=>{pending.push(promise);void promise.catch(()=>{});};
  const configured=options.markdoc??{},base=nativeConfig(configured,tags);
- for(const key of Object.keys(configured.tags??{}))if(Object.hasOwn(tags,key)||Object.hasOwn(Markdoc.tags,key))failure('CONFIG_FIELD',options.configFile??'<markdoc>','/markdoc/tags/'+key,'扩展标签不能覆盖原生或 edoc 保留名称：'+key);
+ for(const key of Object.keys(configured.tags??{}))if(Object.hasOwn(tags,key)||Object.hasOwn(Markdoc.tags,key)||['specification','spec-list'].includes(key))failure('CONFIG_FIELD',options.configFile??'<markdoc>','/markdoc/tags/'+key,'扩展标签不能覆盖原生或 edoc 保留名称：'+key);
  const location=(node:any,cfg:any)=>({file:node.location?.file??cfg.__edocFile,line:(node.location?.start.line??0)+1});
  const track=(node:any,cfg:any)=>{const source=location(node,cfg);locations.set(node,source);checks.push({node,...source,documentFile:cfg.__edocDocument,direct:cfg.__edocChain.length===1});return node;};
  function rawFile(file:string,chain:string[]){
@@ -35,7 +35,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  }
  function inspect(ast:any,cfg:any){
   // 仅显式 process=false 的围栏隔离；其余保留原生 process=true 行为。
-  for(const node of ast.walk())if(node.type==='fence'&&node.attributes.process===false)node.children=[];
+  for(const node of ast.walk())if(node.type==='fence'&&node.attributes.process===false)node.children=[];else if(node.type==='tag'&&['specification','spec-list'].includes(node.tag)){const source=location(node,cfg);failure('REMOVED_SYNTAX',source.file,`#L${source.line}`,'已移除 '+node.tag+'；请改用 clause / clause-list，集合字段使用 ids');}
   const result=validateMarkdoc(ast,cfg,cfg.__edocFile),collect=(items:any[])=>warnings.push(...items.filter(e=>e.error.level==='warning'));
   if(result&&typeof result.then==='function')enqueue(result.then(collect));else collect(result);
  }
@@ -46,22 +46,22 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
   engineAttributes(node,cfg);
   const semantic=node.type==='tag'&&['capability','behavior','clause'].includes(node.tag)?node.tag:undefined;
   if(semantic&&(['id','title'].some(key=>typeof node.attributes[key]!=='string'||!node.attributes[key].trim()))){const source=location(node,cfg);failure('CONTENT_ID',source.file,`#L${source.line}`,'语义正文需要非空 id 和 title');}
-  if(cfg.__edocSpecificationDepth&&node.type==='tag'&&['specification','spec-list','clause','clause-list','capability','behavior'].includes(node.tag)){const source=location(node,cfg);failure('SPECIFICATION_NESTING',source.file,`#L${source.line}`,'条款正文不能嵌套规范、行为、能力或适用列表');}
+  if(cfg.__edocClauseDepth&&node.type==='tag'&&['clause','clause-list','capability','behavior'].includes(node.tag)){const source=location(node,cfg);failure('CLAUSE_NESTING',source.file,`#L${source.line}`,'条款正文不能嵌套规范、行为、能力或适用列表');}
   let childConfig=cfg;
   if(node.type==='tag'&&['section','capability','behavior'].includes(node.tag))childConfig={...childConfig,__edocSectionOwner:node.attributes.id};
   if(semantic==='capability'||semantic==='behavior')childConfig={...childConfig,__edocSemanticOwner:node.attributes.id,...(semantic==='behavior'?{__edocBehavior:node.attributes.id}:{})};
-  if(node.type==='tag'&&['specification','clause'].includes(node.tag))childConfig={...childConfig,__edocSpecificationDepth:(cfg.__edocSpecificationDepth??0)+1};
+  if(node.type==='tag'&&['clause'].includes(node.tag))childConfig={...childConfig,__edocClauseDepth:(cfg.__edocClauseDepth??0)+1};
   const children=node.type==='fence'&&node.attributes.process===false?[]:node.transformChildren(childConfig);
   const slots=Object.fromEntries(Object.entries(node.slots).map(([key,slot]:[string,any])=>[key,slot.transform(childConfig)]));
   const copy=Object.assign(new Markdoc.Ast.Node(),node,{children,slots,attributes:{...node.attributes}});
   if(semantic){
-   copy.tag=semantic==='clause'?'specification':'section';
+   copy.tag=semantic==='clause'?'clause':'section';
    copy.attributes={...copy.attributes,__edocSemanticKind:semantic,__edocSourceTag:node.tag,__edocOriginalAttributes:{...node.attributes},__edocOwnerId:cfg.__edocSemanticOwner??cfg.__edocSectionOwner};
   }
   if(node.type==='tag'&&node.tag==='clause-list'){
    const target=node.attributes.for??cfg.__edocBehavior,source=location(node,cfg);
    if(typeof target!=='string'||!target.trim())failure('CLAUSE_APPLICATION',source.file,`#L${source.line}`,'clause-list 需要所在 behavior 或显式 for');
-   copy.tag='spec-list';copy.attributes={for:target,...(node.attributes.ids!==undefined?{common:node.attributes.ids,specific:[]}:{}),collapsed:node.attributes.collapsed,__edocClauseList:true,__edocSourceTag:node.tag,__edocOriginalAttributes:{...node.attributes}};
+   copy.tag='clause-list';copy.attributes={for:target,...(node.attributes.ids!==undefined?{ids:node.attributes.ids}:{}),collapsed:node.attributes.collapsed,__edocSourceTag:node.tag,__edocOriginalAttributes:{...node.attributes}};
   }
   if(node.type==='link')copy.attributes={...copy.attributes,__edocSourceFile:location(node,cfg).file};
   if(copy.type==='text'&&copy.attributes.content&&typeof copy.attributes.content.then==='function')enqueue(Promise.resolve(copy.attributes.content).then(value=>{copy.attributes={...copy.attributes,content:value};}));
@@ -115,7 +115,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const documents:DocumentPlan['documents']=[],seen=new Set<string>();
  for(let i=0;i<entries.length;i++){
   const file=entries[i],identity=options.virtual?.file===file?"virtual:"+file:realpathSync(projectPath(projectRoot,projectRoot,file));if(seen.has(identity))continue;seen.add(identity);
-  const raw=rawFile(file,[]),cfg={...projection,__edocFile:file,__edocDocument:file,__edocChain:raw.chain,__edocSpecificationDepth:options.virtual?.file===file?1:0};inspect(raw.ast,cfg);
+  const raw=rawFile(file,[]),cfg={...projection,__edocFile:file,__edocDocument:file,__edocChain:raw.chain,__edocClauseDepth:options.virtual?.file===file?1:0};inspect(raw.ast,cfg);
   const ast=Markdoc.transform(raw.ast,cfg);documents.push({file,ast,locations,scopes});
   // 同时发现条件隐藏的文档链接，依赖校验不由当前显示分支决定。
   for(const check of checks)if(check.node.type==='link'){const href=check.node.attributes.href;if(typeof href==='string'&&!/^(#|https?:|mailto:)/i.test(href)){const target=localDocumentLink(projectRoot,check.file,href);if(target&&!entries.includes(target.file))entries.push(target.file);}}
@@ -123,7 +123,7 @@ export function scanDocuments(projectRoot:string,entryDocuments:string[],options
  const references:DocumentReference[]=[];
  for(const {node,file,line}of checks){
   if(node.type==='tag'&&(Object.hasOwn(referenceTargets,node.tag??'')||['reference','page','attachment'].includes(node.tag??'')))references.push({id:node.attributes.id,tag:node.tag!,file,line,...(node.attributes.project!==undefined?{project:node.attributes.project}:{}),...(node.attributes.target!==undefined?{target:node.attributes.target}:{})});
-  if(node.type==='tag'&&node.tag==='spec-list'){for(const id of [node.attributes.for,...node.attributes.common??[],...node.attributes.specific??[]])references.push({id,tag:node.tag,file,line});}
+  if(node.type==='tag'&&node.tag==='clause-list'){for(const id of [node.attributes.for,...node.attributes.ids??[]])references.push({id,tag:node.tag,file,line});}
   if(node.type==='image'||node.type==='tag'&&base.tags?.[node.tag!]?.render==='img'){
    const src=node.type==='image'?node.attributes.src:node.transformAttributes(base).src;
    try{const target=projectPath(projectRoot,projectRoot,src);requireFile(target);files.add(src);}catch(error){if(error instanceof EdocError)throw new EdocError(error.diagnostics.map(d=>({...d,code:d.code==='PATH_SCOPE'?'DOCUMENT_IMAGE':d.code,file,path:`#L${line}`})));throw error;}

@@ -1,50 +1,67 @@
 {% section id="manual:home" title="edoc 文档" %}
 
-{% directory-order items=["usage/","development/"] /%}
+{% directory-order items=["start/","writing/","charts/","engineering/","reading/","reference/","development/"] /%}
 
-edoc 以 Markdown 为正文基础，扩展页面编排、数据图表和原文引用，生成带导航与查询能力的离线文档。先了解它能表达什么，再按需要学习用法；普通正文和页面编排不需要工程数据。
+edoc 将 Markdown / Markdoc 正文、工程数据和配置生成可导航、可查询的离线 HTML。作者和 Agent 维护源内容，工具负责排版、绘图与阅读交互。
 
-本文件也是安装包中的 .mdoc 源文主入口。Agent 可以直接读取，沿本文相对链接进入教程；不需要查阅 HTML、配置当前项目或读取工具开发规则。正文、片段、配方、引用的样例与模板随包交付，按需打开即可。
+{% section id="use:home" title="认识 edoc，从这里开始" %}
 
-普通链接相对当前文件；主手册 include/code 标签中的 file 相对安装包根，独立子工程按自己的配置根定位。路径规则见[正文文件契约](usage/reference/markdoc.mdoc#ref:markdoc-files)。
+可以只写 Markdown 说明，再按需要加入页面编排、能力与行为合同、图表和原文证据；普通正文不需要工程数据。数据图表让同一份事实用于显示与查询，配置决定入口、展示范围和输出。
 
-## 最小工作流
-
-在自己的项目创建 docs/index.mdoc，写普通 Markdown 正文；创建 docs/edoc.config.js，内容为 export default {}；回到项目根执行 edoc，生成 output/index.html。首次使用不需要 IR、转换器或浏览器。完整步骤见[最小配置](usage/start/02-first-document.mdoc#use:first-build)。需要图表时再通过配置或 docs/ir 提供数据，按[能力索引](usage/reference/capabilities.mdoc)选择扩展。
-
-## 选择阅读路线
-
-| 你的任务 | 从这里开始 |
+| 你现在要做什么 | 从这里开始 |
 | --- | --- |
-| 第一次了解工具，建立整体认识 | [认识 edoc](usage/overview.mdoc) |
-| 准备动手生成第一份文档 | [快速开始](usage/start/index.mdoc) |
-| 按任务选择正文、图表、维护与发布用法 | [使用文档](usage/index.mdoc) |
-| 让 Agent 组织或维护工程文档 | [给 Agent 的文档组织简略指南](usage/engineering/agent-guide.mdoc) |
-| 已经知道要配置什么，查字段或语法 | [查询参考](usage/reference/index.mdoc) |
-| 修改工具、检查实现或查看设计依据 | [开发文档](development/index.mdoc) |
+| 首次安装，生成自己的第一份文档 | [快速开始](start/index.mdoc) |
+| 安排文章和目录，编写正文、行为要求与引用 | [编写与组织文档](writing/index.mdoc) |
+| 描述模块、接口、记录、寄存器或状态与波形 | [图表](charts/index.mdoc) |
+| 转换原始数据或组合多个独立工程 | [工程数据与多工程组合](engineering/index.mdoc) |
+| 操作网页、按ID读取与查询、分发离线文件 | [阅读、查询与发布](reading/index.mdoc) |
+| 已经知道问题，直接查属性、命令和限制 | [查询参考](reference/index.mdoc) |
+| 修改edoc源码，核对设计依据与验证方法 | [edoc 开发](development/index.mdoc) |
 
-使用文档先解释能力与输入，再展示实际效果和完整例子。已经知道需求时，可用[能力索引](usage/reference/capabilities.mdoc)直达教程或字段，不必通读整本。所有图表均由正式渲染器生成。
+第一次使用，沿“快速开始 → 编写与组织文档”前进，再按自己的任务选择图表或数据接入。已有工程可直接进入对应主题，精确字段通过参考查询。组织方法见[文档组织简略指南](writing/agent-guide.mdoc)，需要时再读[完整指南](writing/guide.mdoc)。
 
-## 先区分三类输入
+Agent也从本页进入；随包源文的定位与outline/read/query操作统一见[查询与维护](reading/query.mdoc)。工具源码维护约定从[开发规则](development/agent-rules.mdoc)进入。
 
-正文解释用途、机制和边界；工程数据保存精确事实；配置组织入口、视图和输出。已有网表或 RTL 时，由项目转换函数提供标准数据，工具不猜测工程语义。
+{% /section %}
+{% section id="use:overview" title="几种实际效果" %}
 
-教程图复用仓库原有虚构样例，不能用于真实硬件设计。MAC RTL 只有接口声明，波形属于规范示意，覆盖映射不代表执行了仿真。
+Markdown正文与代码、页面编排、数据驱动图表、引用与证据都可在本手册直接操作。下面示例展示同源数据怎样在不同表达中保持一致；完整的操作方法从上面的主题入口继续。
 
-## 给 Agent 的短路径
+{% section id="use:overview:layout" title="正文可以按阅读任务编排" %}
 
-先执行 edoc --help 或 edoc docs 定位源文入口，也可使用 docs 命令按章节读取。目录默认 depth=0；text 同时显示可读取的 sectionId，JSON 的 id/anchor 是网页导航身份，不传给 read：
+下面两栏都只写正文，不需要数据文件。教程还提供可操作的 Tabs 和折叠示例。
 
-```sh
-edoc docs outline --format text
-edoc docs outline --id use:home --depth 1
-edoc docs read --id use:first-build --format text
-edoc docs read --id ref:config-data --format json
-edoc docs query --id board:net.FLASH_SCK --depth 1
-```
+{% columns ratio="2:1" %}
+{% panel title="主要说明" %}
+先解释读者需要理解的内容。这里可以继续写 **Markdown**、列表与链接。
+{% /panel %}
+{% panel title="按需细节" %}
+[查看页面编排](writing/page-layout.mdoc)，需要时再展开参考。
+{% /panel %}
+{% /columns %}
 
-read 默认只返回当前 section 正文，并列出子章节 ID；需要哪节再读取，显式 subtree 才展开，留意 range/nextOffset 分页。完整手册目录使用 edoc docs outline --all；按关键词查找时，edoc docs --format json 的 sources 指向随包源文，可用 rg/grep 搜索。
+要精确了解每个内置标签的职责、输入和边界，按需查[标签职责](reference/tags/index.mdoc)。
 
-自己的工程使用不带 docs 的 outline/read/query，按所需范围读取正文与事实，修改源文件后重新校验。人可用 edoc docs serve 阅读网页；只有发布的 HTML 时，使用页面搜索、目录和对象详情，网页不会在本机提供 CLI 服务。
+{% /section %}
 
+{% section id="use:overview:data" title="同一份事实可以同时出现在图和表里" %}
+
+图展示生产与消费的关系，表读取同一批对象的名称。更改源对象后重新生成，两处一起更新；不手工维护两份数值或生成的 SVG。
+
+{% relation-diagram id="system:overview" /%}
+{% data-table id="system:modules" /%}
+
+关系图还能表达真实端口与多端点连接、接口总览与展开、状态迁移，这些能力都从[关系图](charts/diagrams/index.mdoc)进入。信号随时间的变化使用[时序图](charts/waveforms.mdoc)，寄存器定义使用[位域图与字段表](charts/registers.mdoc)，结构化记录使用[表格](charts/tables.mdoc)。本例为虚构数据，不代表真实工程或仿真结果。
+
+{% /section %}
+
+{% section id="use:overview:evidence" title="解释可以直接连接原文证据" %}
+
+{% attachment id="location" target="detail" label="打开 PDF 第 2 页的示例区域" /%}，再用浏览器返回本页。原文件随 HTML 携带；这是核对证据，不是把原文内容复制进正文。
+
+生成的网页还提供左侧文档树、右侧本页目录、搜索和对象详情。HTML 保留交互，原始 PDF 附件在页面内独立阅读；不提供整本文档 PDF 导出。具体用法分别见[引用与定位](writing/references.mdoc)和[阅读、查询与发布](reading/index.mdoc)。
+
+{% /section %}
+
+{% /section %}
 {% /section %}

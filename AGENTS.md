@@ -1,6 +1,6 @@
 # edoc 的 Agent 入口
 
-调用已安装的 edoc 为其他项目维护文档时，先读 [README.md](README.md) 和[源文主入口](docs/index.mdoc)，按任务进入[使用文档](docs/usage/index.mdoc)。这些 .mdoc 随安装包交付，可直接读取；也可用 edoc --help 定位，或 edoc docs read 按章节查阅，不读取生成 HTML 作为知识源。
+调用已安装的 edoc 为其他项目维护文档时，先读 [README.md](README.md) 和[手册首页](docs/index.mdoc)，按首页任务进入对应主题。这些 .mdoc 随安装包交付，可直接读取；也可用 edoc --help 定位，或 edoc docs read 按章节查阅，不读取生成 HTML 作为知识源。
 
 维护 edoc 源码时，先读 README.md，然后读取[完整维护规则](docs/development/agent-rules.mdoc)，并按其中要求阅读需求基线和推荐指南。完整维护规则只在该文档维护，本文件保留 Agent 约定的入口名称。
 

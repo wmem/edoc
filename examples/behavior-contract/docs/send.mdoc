@@ -1,0 +1,56 @@
+{% capability id="demo:send" title="异步发送" %}
+
+调用方提交一帧数据后，可以继续处理其他工作；接口通过完成通知告知发送结果。接收失败的请求不会进入等待，也不会在稍后收到完成通知。已经接受的请求则在约定的时间边界内结束。
+
+这项能力由下面三个行为共同构成。提交决定请求是否成立，完成和超时决定已接收请求的结果。结果编码、时间计算和最终通知的共同规则只在[接口约定](interface.mdoc)定义；每个行为就地补充自己的条件与条款。
+
+{% behavior id="demo:submit" title="提交发送请求" %}
+
+调用方交付一帧有效数据。接口有空闲请求位置时接收它，并开始本次请求的生命周期；没有位置时立即拒绝，由调用方决定是否稍后重试。拒绝不会改变已经接收的请求。
+
+{% clause id="demo:submit-result" title="接收与拒绝的判定" %}
+
+提交返回 0 表示请求已被接受；参数无效返回 -EINVAL；当前已有未结束请求时返回 -EAGAIN。非零返回的请求不得产生后续完成通知，也不得改变当前请求的状态或数据。
+
+{% /clause %}
+
+{% clause-list ids=["demo:result-codes","demo:deadline"] /%}
+{% /behavior %}
+
+{% behavior id="demo:complete" title="发送完成" %}
+
+已经接受的请求在完成时限到来前获得发送结果时，接口结束该请求并通知调用方。请求位置随后可以接受新的提交；旧请求的通知不能被当成新请求的结果。
+
+{% clause id="demo:completion" title="完成结果与请求身份" %}
+
+完成通知必须携带原请求的身份与最终状态。只有在完成时限之前观察到的完成结果才能结束等待中的请求；时限边界按引用的时间条款判定。
+
+{% /clause %}
+
+{% clause-list ids=["demo:result-codes","demo:deadline","demo:one-result"] /%}
+{% /behavior %}
+
+{% behavior id="demo:timeout" title="发送超时" %}
+
+已经接受的请求等待到完成时限仍未得到结果时，接口按超时结束并通知调用方。调用方此后可以提交新请求。旧请求迟到的完成事件不会再改变已经报告的结果，也不会影响新请求。
+
+{% clause id="demo:timeout-result" title="超时结束" %}
+
+到达完成时限时仍处于等待的请求，必须报告 -ETIMEDOUT 并释放请求位置。此条款只适用于已被接受的请求；提交时已经被拒绝的请求不进入超时流程。
+
+{% /clause %}
+
+{% section id="demo:late-completion" title="迟到结果的边界" collapsed=true %}
+
+请求位置可能已经被下一次提交复用，因此区分请求身份与位置十分必要。下面的规则保持旧结果与新请求彼此独立。
+
+{% clause id="demo:late-isolation" title="旧请求不得影响新请求" %}
+
+请求超时后到达的完成事件不得再次通知调用方，不得占用或释放新请求的位置，也不得改变新请求的状态。判断依据是原请求身份，不能只比较当前位置。
+
+{% /clause %}
+{% /section %}
+
+{% clause-list ids=["demo:result-codes","demo:deadline","demo:one-result"] /%}
+{% /behavior %}
+{% /capability %}

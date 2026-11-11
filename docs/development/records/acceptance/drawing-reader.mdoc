@@ -1,0 +1,45 @@
+{% section id="acceptance:drawing-reader" title="普通 Drawing 的图形阅读器接入" %}
+
+阶段记录：本页保留原型阶段的验证背景；当前正式入口、实现包及接入边界见[Drawing 1.0 正式构建接入](drawing-release.mdoc)。
+
+2026-11-10，用户指出原型首页的普通图没有连线标题、缩放和大图控件。原因是三份 Drawing 被当作 Markdown SVG 图片插入，绕过了已有关系图阅读器。本轮将它们接入原生 relation-diagram 的容器与普通图控件。此记录补充[端口与接口原型](drawing-interfaces.mdoc)，不改变接口投影、展开或导出的定义。
+
+{% section id="acceptance:drawing-reader.controls" title="控件由谁控制" %}
+
+| 能力 | 控制位置与行为 |
+| --- | --- |
+| 连线标题 | 视图 display.showRelationLabels 决定初始状态；网页逐图切换，只隐藏标题及其底色，保留连接、坐标和范围 |
+| 缩放、平移 | 普通图阅读器提供 ＋/－、Ctrl/Meta 加滚轮及拖动画布，不需要声明 interfaces |
+| 适配与清晰阅读 | 适配完整图形；清晰阅读使用 1:1 比例，默认可读模式按实际标题/端口字号保住主要文字 |
+| 大图 | 复用已有对话框、键盘与 Escape 退出行为 |
+| SVG | 导出完整求解范围及当前文字状态，保留字体和原始几何，不按当前屏幕裁剪 |
+
+普通图和接口图共用已有工具栏。接口图另有接口总览、独立展开和当前视图导出；基本阅读控件不依赖接口的存在。普通静态图片仍按图片展示，不能由文件扩展名为 SVG 推导它具有图形阅读控件。
+
+{% /section %}
+{% section id="acceptance:drawing-reader.implementation" title="实现与模型边界" %}
+
+packages/drawing-prototype/reader-scene.ts 将已求解的 DrawingScene 适配为阅读 Scene，并保留原始 Drawing。packages/doc-theme/drawing-scene.ts 按完整几何创建 X6 节点、四侧锚点、框内文字、路径、标记与多个线上标题；缩放、平移、选择、类别筛选、开关和下载仍由原有普通图控制器管理。X6 不重新布局或路由。
+
+显示身份使用视图 ID、对象类型和局部 ID 的结构化编码。选择纯绘图对象时展示绘图输入、求解几何与 originIds，不将这些锚点注册为工程引脚或电气连接。开发页仅以空范围视图作为原生容器，通过显式 scene 求解器注入几何；没有新增公开资源、配置字段或正文标签。
+
+SVG 与网页消费同一份几何。隐藏标题不改写输入或求解结果；导出同步更新显示元数据。每份 SVG 的 marker 使用实例身份，避免多个内联图之间的引用冲突。普通图按实际端口字号选择初始可读比例，原有普通图与接口图的默认策略保持原样。
+
+运行 `node scripts/drawing-prototype.ts` 重新生成 output/drawing-prototype/index.html。首页三图已使用阅读器；独立 automatic.svg、controlled.svg、fixed-route.svg 及 Scene JSON 继续保留。其他阶段的几何求解与兼容缺口仍见[原型范围](drawing-interfaces.mdoc#acceptance:drawing-interfaces.pending)。
+
+{% /section %}
+{% section id="acceptance:drawing-reader.validation" title="验证与当前限制" %}
+
+新增 tests/drawing-reader.test.ts 覆盖四侧端口、多行正文、视图身份隔离、固定树与箭头、SVG marker 隔离，并在离线浏览器验证：
+
+- 同一连接有多个标题时全部随开关隐藏，其他图不受影响，线路端点与折点保持不变。
+- ＋/－、适配、1:1 阅读、大图及 Escape、实际鼠标拖动可用。
+- 下载包含当前文字状态、内嵌字体和完整原始几何；属性面板明确显示绘图对象。
+- 四侧端口与框内多行文字完整，390px 页面不产生横向溢出。
+
+本轮还检查既有图形/接口模型、普通与接口浏览器回归、类型、文档和安装包构建，并使用 playwright-cli 检查实际审阅页面与独立 SVG。没有据此宣称任意图的自动布局已经可读，也没有迁移 KY3134 的完整硬件图。
+
+纯 Drawing 的阅读交互仍属于开发原型的显式接入；生产工程的默认渲染后端及公开输入保持原样。视口可以隐藏超出屏幕的局部内容，使用平移、适配或大图查看完整范围，导出始终保留完整图形。
+
+{% /section %}
+{% /section %}

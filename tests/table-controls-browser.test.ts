@@ -7,7 +7,7 @@ import {chromium,type Locator} from 'playwright';
 import {tableFixture} from './table-controls-fixture.ts';
 import {bookHTML} from '../packages/pack-html/book.ts';
 import {html} from '../packages/pack-html/index.ts';
-import {specimen} from './specification-fixture.ts';
+import {specimen} from './clause-fixture.ts';
 import type {Table} from '../packages/core/types.ts';
 const readingConfig=(await import(new URL('../docs/support/recipes/table-reading.config.js',import.meta.url).href)).default as {data:{tables:Table[]}};
 const names=(holder:Locator)=>holder.locator('tbody tr:not([hidden])').evaluateAll(rows=>rows.map(row=>row.querySelector('td')!.textContent));
@@ -36,14 +36,14 @@ test('单文档HTML也可筛选排序，并可通过行锚点恢复被筛掉的�
 });
 test('Spec内重复表各自筛选，局部行链接展开并解除本实例筛选',{timeout:60000},async t=>{
  const p=tableFixture(t);p.write('docs/index.mdoc',`{% section id="behavior" title="行为" %}
-{% spec-list for="behavior" common=["RULE"] /%}
-{% spec-list for="behavior" /%}
-{% /section %}`);p.write('docs/specs.mdoc',`{% specification id="RULE" title="带表条款" %}
+{% clause-list for="behavior" ids=["RULE"] /%}
+{% clause-list for="behavior" /%}
+{% /section %}`);p.write('docs/specs.mdoc',`{% clause id="RULE" title="带表条款" %}
 {% data-table id="T" /%}
 
 [本行](#r1)
-{% /specification %}`);
- const file=join(p.root,'spec.html');writeFileSync(file,await bookHTML(await p.load()));const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const page=await browser.newPage({offline:true,viewport:{width:1440,height:1000}});await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);await page.getByRole('button',{name:'展开 Spec',exact:true}).click();const specs=page.locator('#reader details.specification'),first=specs.nth(0).locator('.data-table'),second=specs.nth(1).locator('.data-table');
+{% /clause %}`);
+ const file=join(p.root,'spec.html');writeFileSync(file,await bookHTML(await p.load()));const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const page=await browser.newPage({offline:true,viewport:{width:1440,height:1000}});await page.goto(pathToFileURL(file).href);await page.waitForFunction(()=>window.EdocReady);await page.getByRole('button',{name:'展开条款',exact:true}).click();const specs=page.locator('#reader details.clause'),first=specs.nth(0).locator('.data-table'),second=specs.nth(1).locator('.data-table');
  await filter(first,'数量',{'最小值':'3'});assert.deepEqual(await names(first),['U10']);assert.equal((await names(second)).length,5);await specs.first().getByRole('link',{name:'本行',exact:true}).click();await page.waitForFunction(()=>window.EdocReady);assert.equal((await names(first)).length,5);assert.ok(await first.getByText('为显示目标行，已清除本表筛选。',{exact:true}).isVisible());const ids=await page.locator('#reader [id]').evaluateAll(nodes=>nodes.map(n=>n.id));assert.equal(new Set(ids).size,ids.length);
 });
 test('千行真实DOM的排序/筛选、固定表头、尾行定位与390px，记录当前环境响应',{timeout:60000},async t=>{

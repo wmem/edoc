@@ -47,22 +47,22 @@ th[align=left],td[align=left]{text-align:left}th[align=center],td[align=center]{
 .viewport-note{margin:0;padding:8px 12px;font-size:13px;color:#365c72;background:#edf5fa}
 
 /* 规范块使用代码阅读的视觉边界，内部富文本与图表仍可操作。 */
-.spec-list { margin-block: 1em; }
-details.specification { margin: 14px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #f7f9fc; min-width: 0; overflow-wrap: anywhere; }
-.specification > summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; background: #edf2f7; list-style: none; font-weight: 400; }
-.specification > summary::-webkit-details-marker { display: none; }
-.specification > summary::before { content: '›'; font: 20px/1 monospace; color: #52677a; flex: 0 0 auto; }
-.specification[open] > summary { border-bottom: 1px solid #d8e1eb; border-radius: 8px 8px 0 0; }
-.specification[open] > summary::before { transform: rotate(90deg); }
-.specification-caption { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 10px; row-gap: 2px; flex: 1; min-width: 0; }
-.specification-kind { color: #52677a; font: 11px/1.6 Consolas, 'Noto Sans SC', monospace; letter-spacing: .02em; }
-.specification-title { font-size: 14px; color: #23405c; }
-.specification-id { color: #60778c; background: transparent; padding: 0; white-space: normal; }
-.specification-origin { flex: 0 0 auto; font-size: 12px; font-weight: 400; }
-.specification-body { padding: 4px 18px 12px; font: 13px/1.85 ui-monospace, Consolas, 'Noto Sans SC', monospace; min-width: 0; }
-.specification-meta { color: #60778c; font-size: 11px; margin: 8px 0 14px; overflow-wrap: anywhere; }
-.specification-heading { font-size: 13px; font-weight: 700; margin: 18px 0 8px; color: #284c69; }
-.specification-body > :last-child { margin-bottom: 0; }
+.clause-list { margin-block: 1em; }
+details.clause { margin: 14px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #f7f9fc; min-width: 0; overflow-wrap: anywhere; }
+.clause > summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; background: #edf2f7; list-style: none; font-weight: 400; }
+.clause > summary::-webkit-details-marker { display: none; }
+.clause > summary::before { content: '›'; font: 20px/1 monospace; color: #52677a; flex: 0 0 auto; }
+.clause[open] > summary { border-bottom: 1px solid #d8e1eb; border-radius: 8px 8px 0 0; }
+.clause[open] > summary::before { transform: rotate(90deg); }
+.clause-caption { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 10px; row-gap: 2px; flex: 1; min-width: 0; }
+.clause-kind { color: #52677a; font: 11px/1.6 Consolas, 'Noto Sans SC', monospace; letter-spacing: .02em; }
+.clause-title { font-size: 14px; color: #23405c; }
+.clause-id { color: #60778c; background: transparent; padding: 0; white-space: normal; }
+.clause-origin { flex: 0 0 auto; font-size: 12px; font-weight: 400; }
+.clause-body { padding: 4px 18px 12px; font: 13px/1.85 ui-monospace, Consolas, 'Noto Sans SC', monospace; min-width: 0; }
+.clause-meta { color: #60778c; font-size: 11px; margin: 8px 0 14px; overflow-wrap: anywhere; }
+.clause-heading { font-size: 13px; font-weight: 700; margin: 18px 0 8px; color: #284c69; }
+.clause-body > :last-child { margin-bottom: 0; }
 /* 本页阅读设置与标题分组；编号不写入源标题。 */
 .heading-number { color: #607b90; font-weight: 500; margin-right: .5em; white-space: nowrap; }
 .content-kind-label { display: inline-block; margin-right: .7em; padding: 1px 7px; border: 1px solid #bfd5df; border-radius: 4px; color: #35677b; background: #edf6f8; font: 12px/1.6 'Noto Sans SC', sans-serif; vertical-align: middle; }
@@ -89,8 +89,8 @@ details.reading-controls { margin: 0 0 16px; border: 1px solid #d8e3ec; border-r
 .reading-control-row button:disabled { color: #91a1af; cursor: default; }
 .reading-numbering { display: flex; align-items: center; gap: 5px; padding-top: 6px; border-top: 1px solid #e2eaf1; margin-top: 8px; }
 header.cover > .reading-controls { margin-bottom: 16px; }
-@media(max-width:750px) { .specification > summary { padding: 10px; gap: 8px; } .specification-caption { display: block; } .specification-caption > * { display: block; } .specification-body { padding-inline: 12px; } }
-@media print { .reading-controls { display: none!important; } details.specification > .specification-body,details.heading-section > .heading-content,details.code-block > pre { display: block!important; } }
+@media(max-width:750px) { .clause > summary { padding: 10px; gap: 8px; } .clause-caption { display: block; } .clause-caption > * { display: block; } .clause-body { padding-inline: 12px; } }
+@media print { .reading-controls { display: none!important; } details.clause > .clause-body,details.heading-section > .heading-content,details.code-block > pre { display: block!important; } }
 
 /* 目录保持单行，在自身区域滚动，不把正文撑出视口。 */
 nav.sidebar { display: flex; flex-direction: column; overflow: hidden; }

@@ -4,7 +4,7 @@ import Markdoc from '@markdoc/markdoc';
 import readerNote from './support/recipes/reader-note.config.js';
 
 // Markdoc 只提取 Frontmatter 原文；本例选择 JSON，并显式提供变量。
-const originalSnapshot=Markdoc.parse(readFileSync(new URL('./development/design/_partials/original-v1.mdoc',import.meta.url),'utf8'),{file:'docs/development/design/_partials/original-v1.mdoc'});
+const originalSnapshot=Markdoc.parse(readFileSync(new URL('./development/records/design/_partials/original-v1.mdoc',import.meta.url),'utf8'),{file:'docs/development/records/design/_partials/original-v1.mdoc'});
 // 保留历史源文件原字节；由原生 AST 配置显式声明历史代码示例为字面内容。
 for(const node of originalSnapshot.walk())if(node.type==='fence'){node.attributes.process=false;node.children=[];}
 
@@ -15,7 +15,7 @@ export default {
   projectId: 'edoc-manual',
   title: 'edoc 使用与开发文档',
   // 正文范围与资源片段分开；各层阅读顺序在对应 index.mdoc 中定义。
-  documents: ['docs/index.mdoc', 'docs/usage', 'docs/development'],
+  documents: ['docs/index.mdoc', 'docs/start', 'docs/writing', 'docs/charts', 'docs/engineering', 'docs/reading', 'docs/reference', 'docs/development'],
   markdoc: {
     variables: {native: {product: 'edoc', edition: 'full', meta: nativeMeta}},
     functions: {

@@ -4,7 +4,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {chromium,type Page} from 'playwright';
-import {specimen} from './specification-fixture.ts';
+import {specimen} from './clause-fixture.ts';
 import {bookHTML} from '../packages/pack-html/book.ts';
 import {html} from '../packages/pack-html/index.ts';
 

@@ -1,0 +1,206 @@
+{% section id="design:diagram-model" title="框图与接口的开源选型及 Agent 数据模型" %}
+
+2026-11-10 研究与建议，尚未实施模型迁移或组件替换。用户的目标是整体设计好框图、接口及特殊布局能力，并且适合 Agent 生成和维护数据。本文在[框图能力审查](../reviews/block-diagram-capability.mdoc)之上研究组件、模型和验证方法；上一轮列出的布局参数是候选项，不能替代这次整体模型设计，也尚未成为公开契约。
+
+用户随后确认先设计通用“图形如何布局、如何画线”的底座，当前方案见[布局与布线模型](drawing-contract.mdoc)。本文的接口、引脚等语义研究保留为上层参考，其扩充不作为绘图内核设计前置；下文研究结论和候选能力不冒充已实现契约。
+
+建议固定的架构是：**简洁且可校验的作者数据 → 独立语义模型 → 视图投影 → 布局图 → 共享几何场景 → 网页与 SVG**。优先复用 ELK 的布局能力，交互组件通过适配层接入。作者输入不直接采用 ELK、X6 或其他画布的序列化数据。
+
+“一次设计好”应落实为先把对象边界、语义、作者格式、特殊布局与完整验收场景共同评审，再实现。研究能识别遗漏并缩小候选范围；当前证据不足以宣称任意组件已在本项目全部场景通过验证。
+
+{% section id="design:diagram-model.components" title="开源组件比较" %}
+
+以下分别标明组件职责。许可证按本轮上游仓库或包元数据核查，实际采用时以选定版本的文件为准；功能表是源码和文档调查，不是全部组件的实机横向评分。
+
+| 候选 | 职责及许可标识 | 值得复用的能力 | 对 edoc 的判断 |
+| --- | --- | --- | --- |
+| [ELK / elkjs](https://github.com/kieler/elkjs) | 布局后端；EPL-2.0 可选 | 端口约束、复合层级、跨层连线、布局参数与路径结果 | 首选布局后端；必须核实具体算法及版本，图模型接受一种结构不代表该算法能处理 |
+| [Sprotty](https://sprotty.org/docs/ref/smodel/) / [GLSP](https://eclipse.dev/glsp/documentation/sourcemodel/) | 图形框架和模型架构；Eclipse 许可体系 | 源模型与图形模型分离，节点、端口、标签、compartment，模型转换与交互协议 | 最值得借鉴整体分层；Sprotty 可列为渲染候选，GLSP 的编辑服务器不是只读文档发布的必要依赖 |
+| [AntV X6](https://github.com/antvis/X6) | 交互画布；MIT | 节点、四侧端口、嵌套、交互；有[官方 ELK 接入示例](https://x6.antv.vision/demos/showcase/practices/elk/) | 现有基准渲染器可以保留；上轮发现的左右端口限制属于 edoc 当前 Scene 和投影，并非 X6 本身只能左右 |
+| [JointJS 与 layout-elk](https://docs.jointjs.com/learn/features/automatic-layouts/elk/) | SVG 图形组件和 ELK 接入包；MPL-2.0，elkjs 单独许可 | 官方开源接入已覆盖嵌套容器、端口、标签和可配置的布局结果导入 | 最值得与现有 X6 比较的替代实现；标签尺寸仍由应用提供，多端点与来源仍需 edoc 自己建模 |
+| [React Flow](https://reactflow.dev/learn/layouting/layouting) | React 节点界面；核心 MIT | 多 Handle、子流程、自定义节点与丰富交互，布局通过外部库组合 | 适合节点编辑应用；采用它仍需解决工程接口、Net 和避障，不构成自动补齐这些能力的理由 |
+| [maxGraph](https://github.com/maxGraph/maxGraph) | 图形编辑框架；Apache-2.0 | 丰富的几何、布局和交互，适合构建编辑器 | 可作编辑器方向参考；其图元模型也不能直接承担工程语义和 Agent 作者输入 |
+| [HDElk](https://davidthings.github.io/hdelk/tutorial) | 简洁 JSON 到 SVG 的框图工具；Apache-2.0 | 很少字段即可定义节点、端口、连接、嵌套和四侧端口 | 最值得借鉴作者输入的简洁性；协议、精确引脚、来源和严格诊断还需扩展 |
+| [d3-hwschematic](https://github.com/Nic30/d3-hwschematic) | 硬件层级图查看器；仓库标 EPL-2.0，package.json 仍标 EPL-1.0 | 层级展开、硬件端口、总线/超边显示，ELK 与硬件元数据结合 | 最贴近硬件图的参考之一；应研究其接口和投影，不直接把带 hwMeta 的布局数据变成通用作者格式；许可元数据差异需在选定版本核清 |
+| [netlistsvg](https://github.com/nturley/netlistsvg) | 网表到电路 SVG；MIT | Yosys JSON、信号位映射、split/join、符号皮肤和 ELK | 适合 RTL 网表适配参考；它的输入为综合工具生成数据，不适合作为 Agent 手写宏观框图的统一格式 |
+| [libavoid](https://www.adaptagrams.org/documentation/libavoid.html) / [libavoid-js](https://github.com/aksem/libavoid-js) | 独立避障布线器；JS 包标 LGPL-2.1-or-later | 固定图形位置下的正交/折线路由、连接点和分叉 | 可列为精确布局的路由候选；不是节点自动布局器，WASM 内嵌、内存管理与离线运行需验证 |
+
+JointJS 的商业版本与开源核心要分开核查。其当前官方文档明确将 `@joint/layout-elk` 标为开源，不能因为其他布局属于 JointJS+ 就断言 ELK 接入也必须付费。另一方面，[官方限制](https://docs.jointjs.com/learn/features/automatic-layouts/elk/#limitations)包括 link-to-link 不参与布局、某些坐标系转换需调用方处理；不能据此省略 edoc 的语义与几何适配。
+
+HDElk 的端口可以用短字符串，也能用独立 id/label，适合借鉴“简单写法和完整写法投影成同一模型”。其 inPorts/outPorts 同时影响显示侧边的做法，需要在 edoc 中分开：方向是工程事实，摆在左边或上边是显示意图。[HDElk 教程](https://davidthings.github.io/hdelk/tutorial)展示了这些写法，但没有证明它已满足本项目全部事实校验。
+
+本轮没有按星数或 README 的外观截图选型，也没有安装上述新依赖。实现与维护代价的判断为工程推断，最终需要同一组真实输入的对照验证。
+
+{% /section %}
+{% section id="design:diagram-model.references" title="哪些现成模型值得借鉴" %}
+
+| 模型或标准 | 借鉴内容 | 用在什么层 |
+| --- | --- | --- |
+| [GLSP Source Model / Graphical Model](https://eclipse.dev/glsp/documentation/sourcemodel/) | 工程数据与用于展示的图形模型分离，由转换器连接 | 整体架构；不是把服务端协议加到离线网页 |
+| [Sprotty SModel](https://sprotty.org/docs/ref/smodel/) | 稳定 ID、节点/端口/标签、内部 compartment 和模型索引 | 显示投影与微布局；它的 SEdge 为 sourceId/targetId 两端点，不能直接取代完整 Net |
+| [ELK JSON](https://eclipse.dev/elk/documentation/tooldevelopers/graphdatastructure/jsonformat.html) | 嵌套节点、端口、标签、路径 sections 和明确坐标系 | 生成的布局输入/输出；文字尺寸需调用方提供，不是作者必须填写的事实 |
+| [IP-XACT 用户指南](https://www.accellera.org/images/downloads/standards/ip-xact/IPXACT-2022_user_guide.pdf) | 协议接口、接口角色、逻辑信号到实际端口的 portMaps、组件实例与互连 | 硬件/RTL 接口语义；借鉴概念与适配能力，不要求所有文档改写为完整 XML |
+| [SysML v2](https://www.omg.org/sysml/sysmlv2/) | 定义与实例、组成与连接、接口和文本建模的严格语义 | 系统级语义边界和类型设计参考；完整生命周期建模超出当前框图内核的必要复杂度 |
+| [D2](https://d2lang.com/tour/containers/) / [Mermaid](https://mermaid.js.org/syntax/flowchart.html) | 简短的声明式文本与结构表达 | 作者体验参考；短语法不自动带来引脚、协议和 Net 的精确语义 |
+
+这些模型各有用途，没有一个同时承担工程事实、作者体验、布局和最终绘制。IP-XACT 标准及资料是语义参考，不把它称为可直接安装的开源图形组件；SysML 规范与具体工具实现也分别评估。
+
+{% /section %}
+{% section id="design:diagram-model.agent" title="Agent 作者输入的设计原则" %}
+
+建议优先采用 **JSON + JSON Schema + 图语义校验**。这是本项目的工程建议，尚未通过跨模型生成实验得出“JSON 一定优于其他语法”的结论。JSON 的优势在于现有解析和 Schema 工具可复用、没有执行任意脚本的需要、错误可定位到明确的属性路径。JSON Schema 只负责形状与字段约束，悬空引用、归属、协议映射和相互矛盾的布局还需要语义校验器。
+
+作者只声明节点、接口、连接、来源与必要的视图意图。坐标、字体度量、节点尺寸、端口槽位、分叉节点、线上标签几何和绘图库属性由工具生成。工具内部可以使用复杂模型，不能让 Agent 为画一个 SPI 框图先填写几十个渲染字段。
+
+| 设计点 | 对 Agent 的具体要求 |
+| --- | --- |
+| 最小必填 | 简单节点为稳定 ID 与名称；有接口时声明接口 ID，连接引用已有端点；未要求时自动布局 |
+| 稳定身份 | ID 与 label 分离；重命名和移动显示分组不改变身份；并行连接也有各自显式 ID |
+| 单源与引用 | 已有网表、RTL 或配置通过 Adapter 导入，作者只补知识与视图，不复制全量 pin 或第二套连接 |
+| 明确默认 | 未知角色与方向保留 unknown，未声明侧边由布局器选择；不得为了补全字段而猜测 |
+| 统一表达 | 简写和完整形式生成同一语义；短语法不得偷偷创建不存在的端口或连接 |
+| 小范围编辑 | 同类对象和关系独立记录，增加一个模块不会重排全部数组或重生成 ID；明确分文件及引用规则 |
+| 严格诊断 | 结构、引用、类型、来源和布局分别报错，提供文件、JSON Pointer、对象 ID 和相关约束 |
+| 受控扩展 | 常用语义有正式字段；厂商或项目扩展进入命名空间和明确 Schema，避免全部塞进任意 attributes |
+| 确定性 | 相同输入、工具版本、字体和设置下结果可重现；显式记录布局参数和版本，不依赖网页临时状态 |
+
+作者文件可以与源 Adapter 配合，纯说明图也可以独立使用；不强制每个项目先维护三份人工数据。作者数据、归一化 IR、布局图与 Scene 是职责分层，后几层通常由构建生成。
+
+以下只展示候选作者体验，**不是当前 edoc API 或完整待定 Schema**。接口在 owner 内的键是局部稳定 ID，结构化端点避免靠点号拆字符串猜归属；未写方向和角色就保持未知。
+
+```json {% process=false %}
+{
+  "nodes": [
+    {"id":"bottom","label":"底板"},
+    {
+      "id":"fpga","parentId":"bottom","label":"PG2T390HX FPGA",
+      "interfaces":{"spi":{"protocol":"SPI"},"sdio":{"protocol":"SDIO"}}
+    },
+    {
+      "id":"mcu","parentId":"bottom","label":"GD32F427IGH6 MCU",
+      "interfaces":{"spi":{"protocol":"SPI"},"sdio":{"protocol":"SDIO"}}
+    }
+  ],
+  "links": [
+    {
+      "id":"fpga-mcu-spi","kind":"interface-link",
+      "ends":[{"node":"fpga","interface":"spi"},{"node":"mcu","interface":"spi"}]
+    },
+    {
+      "id":"fpga-mcu-sdio","kind":"interface-link",
+      "ends":[{"node":"fpga","interface":"sdio"},{"node":"mcu","interface":"sdio"}]
+    }
+  ]
+}
+```
+
+Agent 不需要为这两条连接添加假引脚、假方向和坐标。已有精确信号时，通过接口成员或信号映射引用原 Port/Net，生成接口图和信号详图；协议模板只描述类型约束，不凭协议名自动证明实际 PCB 接出了哪些线。
+
+未来的校验错误应能表达为“`/links/1/ends/1/interface` 引用 MCU 上不存在的接口，已声明接口为 spi、sdio”，让 Agent 定点修复；不能只输出画布初始化失败。当前作者示例仅为设计说明，本轮没有实现其 Schema，也没有测量 LLM 生成成功率。
+
+{% /section %}
+{% section id="design:diagram-model.semantic" title="建议一次明确的语义边界" %}
+
+现有 Node/Port/Interface/Connection 核心可以复用，但需要修正上一轮“数据模型基本够用”的宽泛判断：**能描述端口组，不等于已经完整描述协议接口、映射和多层抽象。** 以下是建议的概念模型，最终字段与兼容映射应在实现前定稿。
+
+| 概念 | 意义与约束 | 容易混淆的边界 |
+| --- | --- | --- |
+| Node / Block | 板卡、芯片、功能模块、连接器或软件组件的稳定实体；parentId 表达组成 | 同一实体的不同视图分组不应反复改动其物理组成 |
+| Port / Pin | 节点实际的信号端点或物理引脚，带已知方向、位宽、来源等 | 画布锚点不是工程引脚；物理 pin 编号与逻辑信号名分别保存 |
+| Interface | 节点上的协议/业务接口；可先只有宏观定义，后续关联已知信号与映射 | 一条 SPI 接口包含不同方向的信号，不能给整个接口强行套一个 in/out |
+| InterfaceType / ComponentType | 可复用的接口或组件定义，实例通过显式参数与来源引用 | 复用协议不等于复制一套臆测引脚；未知宽度和角色继续未知 |
+| SignalNet | 一个信号网络及全部真实端点；保留多端点和必要的方向信息 | 共享时钟的一条 Net，与多条独立数据线的显示总线不同 |
+| InterfaceLink / Relation | 协议接口互连、宏观功能或管理关系，并有明确语义类型 | 一条宏观接口连线不声明其全部成员是同一个电气网络 |
+| Mapping / Binding | 接口逻辑信号到实际端口/Net、连接器对应、层级边界或实现路径的显式映射 | 映射、可达功能路径和直接电气连接分别定义，不自动跨越有源器件 |
+| View | 显示范围、聚合粒度、类别、布局与解释文字的引用 | 视图的删隐和折叠不改变原事实或完整查询身份 |
+
+需要把下列问题纳入同一次模型评审：
+
+- **归属与成员关系分开**：Port 有唯一 owner；多个接口可以显式引用共享时钟等事实，是否允许共享成员由契约定义，不能复制物理 pin 来满足树形显示。嵌套接口/子通道也应有明确表达，例如 AXI 的不同通道。
+- **抽象程度与完整程度分开**：宏观已确认有 SDIO，并不意味着已经提供全部引脚映射；提供了一部分成员也不证明协议完整。可表达未提供、部分已知和完整有据的状态，不能自动填全。
+- **类型与实例分开**：同型号六路 PHY 应复用类型并保留六个实例身份；“六颗合成一框”属于视图聚合，不能把六颗器件合成一个事实。
+- **显示方向与工程方向分开**：后端需要 source/target 来排版时，只产生布局方向；unknown、双向、开漏和多驱动端点的工程含义保持原样。
+- **构型与显示状态分开**：未装配选件、软件形态和网页折叠分别建模。/NC 不能因图上出现而变为已装配，筛选也不能成为 BOM 事实。
+- **并行关系保留身份**：相同两颗芯片之间的 SPI、SDIO、GPIO 不是重复边；标签和类别不用于替代稳定连接 ID。
+- **信号切片与引脚映射明确**：位宽、lane、bit range、差分对和连接器 pin 映射应引用来源，不能从画线宽度或端口顺序推导电气关系。
+
+协议兼容检查只在协议、角色、宽度和映射事实充分时进行。资料不完整时报告检查边界，不能把“未发现冲突”写成协议或电路已经验证。
+
+{% /section %}
+{% section id="design:diagram-model.pipeline" title="内部模型及组件的接合方式" %}
+
+| 层次 | 保存内容 | 主要来源或参考 |
+| --- | --- | --- |
+| 作者模型 | 少量节点、接口、连接和必要知识；可以引用源 Adapter 产出的对象 | HDElk 的简洁性，edoc 的文档与来源约定 |
+| 语义 IR | 稳定实体、端口、接口、Net、映射、类型、构型和来源的归一化事实 | IP-XACT / SysML 的概念边界，edoc query |
+| 视图投影 | 本图对象、接口粒度、折叠后的显示节点/锚点/边，以及双向来源映射 | GLSP 的模型分离，Sprotty 的标签与 compartment |
+| 布局图 | 嵌套结构、尺寸、端口、标签、布局约束和暂时的布局方向 | ELK Graph；由工具生成 |
+| Scene | 节点与端口几何、路径 sections、真实分叉、标签、回溯身份 | edoc 共享几何；与具体交互库隔离 |
+| 渲染与阅读 | 网页 SVG/画布、选择、来源、缩放、展开、静态 SVG | X6、JointJS、Sprotty 或内部 SVG 适配器 |
+
+显示对象与原事实之间必须支持多对多映射：一条 Net 可能绘成多段路径；多个独立 Net 也可能折叠成一个明确标识的接口总线。选中聚合线能返回全部原关系，展开后恢复原端点；布局辅助节点和层级穿越点不进入工程事实查询。
+
+接口折叠、主干、路径段和分叉应由显示投影与布局适配器处理，Agent 无须生成临时槽位和虚拟 junction。完整静态 SVG 与交互页面消费同一套几何及身份映射，不能让客户端另外路由一套线来补救。
+
+特殊布局以语义参数进入 View：图和容器方向、相对顺序、对齐、端口侧边/次序、间距、主路径、反馈通道，最后提供精确位置和路径引导。参数属于可校验展示契约；普通图的避框、标签与可追踪性仍由工具默认保证。
+
+{% /section %}
+{% section id="design:diagram-model.evidence" title="本轮核查及关键反例" %}
+
+本轮查阅官方文档、上游源码/包元数据和 edoc 当前实现，未安装新组件、未更换依赖、未迁移项目。上一轮已有复合层级与真实规模探针；本轮补查多端点支持，避免从模型宣称直接推导算法能力。
+
+ELK JSON 文档允许 sources/targets 多端点，同时提醒具体算法不一定支持。使用 edoc 当前安装的 elkjs 0.12.1、默认 layered、四个普通节点和一条边实测：
+
+| 输入 | 当前结果 |
+| --- | --- |
+| sources=[a]，targets=[b] | 返回一段 sections |
+| sources=[a]，targets=[b,c] | 拒绝：Passed edge is not 'simple' |
+| sources=[a,b]，targets=[c,d] | 同样拒绝 |
+
+此结果只针对所列版本、算法和直接输入，不代表 ELK 所有算法都不支持超边，也不能通过升级版本猜测已解决。语义 IR 必须继续保留完整 Net；后端适配需要受控降解为绘制结构并还原真实分叉，不把它改写成互不相关的工程连接。[ELK JSON 契约](https://eclipse.dev/elk/documentation/tooldevelopers/graphdatastructure/jsonformat.html)明确区分图格式和算法支持范围。
+
+另已核查：X6 官方支持四侧端口和 ELK 接入；Sprotty 的核心 SEdge 也是两端点；JointJS ELK 接入不替调用方测量端口文字；libavoid-js 的示例依赖单独 WASM 资源。它们各能解决一部分问题，没有一个仓库的 JSON 可直接替代整个作者模型和语义层。
+
+上游还存在嵌套容器端口与跨层连接的具体[问题报告](https://github.com/eclipse-elk/elk/issues/1192)。这是选型测试输入的线索，不把报告当成本项目已经复现或当前安装版本必然失败的结论。选定版本后应复跑对应组合。
+
+{% /section %}
+{% section id="design:diagram-model.decision" title="推荐选择与决策门槛" %}
+
+推荐先确定独立作者模型与语义 IR，采用 ELK 作为首选布局后端，现有 X6 作为基准渲染器。**优先验证 JointJS + layout-elk 能否显著减少层级/端口/标签的接入代码**；Sprotty 是模型驱动渲染的候选，GLSP 主要借鉴架构。框图与接口数据保持相同，组件对照只替换适配层，不先重写全工程。
+
+这是基于已知功能与现有代码的建议，不是“已经证明 X6 最好”或“必须保留 X6”。如果 JointJS 或 Sprotty 在同例质量、离线发布、静态输出和维护代价上明显更优，可以更换。当前根因包括数据投影和布线，把交互组件名字换掉也不能代替这些层的设计。
+
+首轮只保留两条落地路线作实测：现有 X6 + 完整 ELK 接入，以及 JointJS + 官方 layout-elk。Sprotty 作为体系结构参考和备用路线；libavoid 在精确固定位置路由确有缺口时单独验证。这样比较完整方案，不需要同时维护十种组件的演示工程。
+
+| 冻结设计前必须通过的样例 | 要证明什么 |
+| --- | --- |
+| 六节点两板的默认图，以及混合板内/板间方向 | 默认层级可用，特殊布局参数有效，同级板框不重叠 |
+| FPGA–MCU 的 SPI、SDIO、GPIO | 并行接口、未知角色、接口到成员映射及标签清楚 |
+| 两侧 BTB 的 RMII、SerDes、I2C、IRQ | 四侧端口、次序、跨板对齐、边界路径和真实连接器身份 |
+| 一条共享时钟、双向 I2C、独立并行数据 Net | 多端点、未知/双向关系与总线聚合不混淆 |
+| 同型号多个 PHY 与接口子通道 | 类型复用、实例身份、嵌套接口、共享成员的规则明确 |
+| /NC、部分映射、未解析位宽和资料缺口 | 合法未知和真正错误能区分，不臆测工程事实 |
+| 折叠/展开、筛选、局部详图与完整 SVG | 多对多来源映射、完整性及状态投影正确 |
+| 固定节点、端口与特殊路径 | 硬约束可满足或有具体错误，默认模式也保持同样正确性标准 |
+| 长中文/英文名称及真实 36 框/75 关系 | 字体、标签、性能、完整图阅读与局部追踪均通过 |
+| 悬空引用、冲突、重命名、移动分组和追加模块 | 稳定 ID、诊断定位、Agent 小范围修复与差异可审阅 |
+| 单 HTML 离线、静态 SVG、窄屏及计算取消 | 不依赖外部服务，内嵌字体/资源可用，交互与导出一致 |
+
+Agent 适配性应另设固定任务集：从相同需求生成最小图、补一个接口、拆分视图、修复给定错误、修改名称但保持 ID。记录语法/语义一次通过率、错误修复轮次、输入和输出量、无关差异以及是否修改了事实；数据短不等于正确率高。本轮没有开展跨 Agent 或跨模型盲测，不给出未经实验的成功率评分。
+
+{% /section %}
+{% section id="design:diagram-model.compatibility" title="需要单独评审的模型变化" %}
+
+以下会超出上一轮纯布局扩展，必须在实施前明确批准并提供版本与迁移方案。本次仅提出建议，没有静默改写现有契约。
+
+| 原契约 | 候选变化 | 理由及影响 |
+| --- | --- | --- |
+| Interface 是非空 Port 成员组，Connection 端点只接受 Node/Port | 为抽象协议接口及 InterfaceLink 增加明确类型/端点表达 | 避免伪造一个信号 Port 来表示尚无成员的 SPI；需扩展 Schema、校验、query、投影和旧数据迁移，不能假装只是可选显示字段 |
+| 同一 Port 只属于一个 Interface | 允许有据的共享成员及接口子通道，ownership 与 membership 分离 | 支持共享时钟等真实情况；需定义折叠、显示槽位及歧义处理，旧输入不能改变含义 |
+| 归一化对象与视图是主要输入形式 | 增加严格、简洁的作者层及类型复用，编译到完整 IR | 降低 Agent 的重复字段与绘图噪声；已有 Adapter/配置入口继续可用，不能要求迁移后手抄全部事实 |
+| 渲染器与布局适配已有实现选择 | 通过共同输入比较 X6 与 JointJS/Sprotty | 更换组件属于独立实现决策，作者输入和工程身份保持稳定；不能用 UI JSON 成为新的主模型 |
+
+下一步应完成概念模型、JSON Schema 草案、错误分类与上述验收输入，再进行两条路线的受控验证；通过后冻结作者契约和后端适配界面，按依赖实施。此次研究阶段的成果是选择依据和整体设计建议，尚未证明新的模型及组件组合已可用于正式发布。
+
+{% /section %}
+{% /section %}

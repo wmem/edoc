@@ -1,0 +1,20 @@
+{
+  "layout":{
+    "direction":"TB",
+    "routing":"orthogonal",
+    "containers":{"bottom":{"direction":"LR"},"top":{"direction":"LR"}},
+    "spacing":{"node":60,"edge":20,"port":28,"padding":40},
+    "constraints":[
+      {"id":"board-order","type":"order","axis":"y","nodes":["top","bottom"],"gap":120},
+      {"id":"bottom-order","type":"order","axis":"x","nodes":["fpga","mcu"],"gap":100},
+      {"id":"fpga-position","type":"place","node":"fpga","x":80,"y":80},
+      {"id":"fpga-size","type":"size","node":"fpga","width":240,"height":160},
+      {"id":"bottom-facing-port","type":"port","node":"bottom-btb","port":"rmii","side":"top","offset":0.5},
+      {"id":"top-facing-port","type":"port","node":"top-btb","port":"rmii","side":"bottom","offset":0.5},
+      {"id":"btb-alignment","type":"align","axis":"x","targets":[{"node":"bottom-btb","port":"rmii"},{"node":"top-btb","port":"rmii"}]},
+      {"id":"sdio-channel","type":"route","connection":"sdio","from":"fpga","to":"mcu","frame":"bottom","via":[{"x":400,"y":40}]},
+      {"id":"sdio-label","type":"label","connection":"sdio","label":"name","nearEnd":"mcu"}
+    ],
+    "hints":{"main":["rmii-bottom","rmii-btb","rmii-top"],"channels":[{"connection":"spi","side":"right","container":"bottom"}]}
+  }
+}

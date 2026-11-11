@@ -39,7 +39,7 @@ function checkAnchors(node:ProjectNode,errors:Diagnostic[],deferred:Diagnostic[]
   pages.set(id,page);
   walk(document.ast,element=>{
    const {type,tag,attributes:a={}}=element;
-   if(type==='tag'&&['section','specification'].includes(tag)){sections.add(a.id);return;}
+   if(type==='tag'&&['section','clause'].includes(tag)){sections.add(a.id);return;}
    if(type==='tag'&&tag==='register-field-table'){const register=graph.index.get(a.id)?.entity;if(register&&'fields' in register)for(const field of register.fields)page.ids.add(anchor(field.id));return;}
    if(type==='tag'&&tag==='data-table'){
     const table=graph.index.get(a.id)?.entity;if(table&&'rows' in table)for(const row of table.rows??[])page.ids.add(anchor(row.id));return;

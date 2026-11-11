@@ -1,0 +1,33 @@
+{% section id="use:publish" title="离线 HTML 与单图 SVG" %}
+
+选择输出前，先区分整本文档和单张图。HTML 提供按篇阅读和交互，SVG 用于分享单张完整矢量图；它们共用源正文和数据。
+
+{% section id="use:publish:html" title="生成和分发 HTML" %}
+
+在工程根执行：
+
+```sh
+edoc
+```
+
+默认生成 output/index.html。HTML 携带正文、数据、字体、脚本和附件，按篇阅读；文件大小仍随内容和附件增长。复制这一文件后无需源目录或服务端即可查看。包括 PDF 附件在内的 HTML 构建均不需要 Chromium。
+
+修改源文件后重新构建。工具仓库的 npm run docs:dev 只负责手册静态预览，不能把它误认为所有用户工程都必须提供的启动包装脚本。
+
+{% /section %}
+
+{% section id="use:publish:svg" title="导出单张图" %}
+
+已有[两节点关系图](../charts/diagrams/architecture.mdoc#use:architecture)的工程可以执行：
+
+```sh
+edoc export --view system:overview --format svg --output output/overview.svg
+```
+
+网页也提供逐图 SVG 按钮。接口图的完整逐信号 SVG 与“当前视图 SVG”范围不同，见[接口输出规则](../reference/graph.mdoc#ref:interfaces)。只想输出部分事实时，应声明一个范围明确的视图，保留原始查询。
+
+{% /section %}
+
+文档只发布 HTML，不提供整本 PDF 导出。HTML 可携带原始 PDF 并定位阅读，见[原文附件](../writing/references.mdoc#use:pdf)。浏览器自行打印只针对当前文章，不保证完整导出全部 Tab、折叠内容或其他文章。
+
+{% /section %}

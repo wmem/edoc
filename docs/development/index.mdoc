@@ -1,19 +1,19 @@
-{% section id="dev:home" title="开发文档" %}
+{% section id="dev:home" title="edoc 开发" %}
 
-{% directory-order items=["architecture.mdoc","contributing.mdoc","extensions.mdoc","api.mdoc","environment.mdoc","agent-rules.mdoc","history.mdoc","design/","reviews/","acceptance/","regression/","history/"] /%}
+{% directory-order items=["architecture.mdoc","contributing.mdoc","extensions.mdoc","api.mdoc","environment.mdoc","agent-rules.mdoc","records/"] /%}
 
-本区服务 edoc 维护者。使用工具先读[使用文档](../usage/index.mdoc)；不要把开发历史当成用户的入门前置条件。
+本组服务修改edoc的维护者。使用工具从[首页](../index.mdoc)选择任务；当前实现的精确契约见[查询参考](../reference/index.mdoc)。
 
-1. [架构与边界](architecture.mdoc)：数据、正文、查询和渲染如何协作。
-2. [开发与验证](contributing.mdoc)：如何修改工具并验证受影响能力。
-3. [设计与历史索引](history.mdoc)：需求依据、历史验收和回归资料。
+| 当前任务 | 阅读入口 |
+| --- | --- |
+| 理解模块职责及实现边界 | [架构与边界](architecture.mdoc) |
+| 修改工具、构建并选择验证范围 | [开发与验证](contributing.mdoc) |
+| 增加或维护渲染扩展 | [维护一种渲染扩展](extensions.mdoc) |
+| 使用底层接口或恢复工程 | [核心API与恢复](api.mdoc) |
+| 核对开发环境 | [环境与可移植性](environment.mdoc) |
+| Agent维护工具源码 | [Agent维护规则](agent-rules.mdoc) |
+| 查需求依据、设计取舍或历史验证证据 | [设计依据与历史记录](records/index.mdoc) |
 
-新增或修改图表标签时，先读[维护一种渲染扩展](extensions.mdoc)，明确输入、输出与功能边界，再接入公共链路。
-
-按修改任务继续查[需求与设计](design/index.mdoc)、[问题审查](reviews/index.mdoc)、[验收记录](acceptance/index.mdoc)、[样例回归](regression/index.mdoc)、[历史协议](history/index.mdoc)、[环境](environment.mdoc)和[核心 API](api.mdoc)。Agent 维护规则在[独立入口](agent-rules.mdoc)，不混入普通使用教程。
-
-侧边目录按同一方向安排：先架构与开发验证，再 API、环境及维护规则，最后进入设计依据、问题、验收、回归和历史协议。阅读顺序由本页的 directory-order 声明，不在配置中逐篇枚举。
-
-使用契约集中在[查询参考](../usage/reference/index.mdoc)。实现文档解释为什么和在哪里修改，不再复制完整字段表。
+历史记录保留当时的日期、环境和结论，不作为当前用法或完成状态。当前维护任务需要设计依据时，再进入相应记录；有效需求继续约束实现。
 
 {% /section %}

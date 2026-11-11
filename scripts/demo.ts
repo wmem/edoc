@@ -44,7 +44,7 @@ const constraintSource='examples/gallery/constraints.json',constraintData=JSON.p
 resources.views.push(...constraintData.views.map((v:any)=>({...v,source:{file:constraintSource,selector:v.id}})));
 function json(file:string,data:unknown){writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
 for(const [type,items]of Object.entries(resources))json(join(ir,type+'.json'),{[type]:items});
-json(join(ir,'manifest.json'),{irVersion:'1.2',requiredFeatures:['interface-groups','layout-intent'],projectId:'edoc-graphics-demo',adapterVersion:'gallery-1.0',resources:Object.keys(resources).map(type=>({type,path:type+'.json'})),entryDocuments:['docs/development/regression/graphics.mdoc','examples/fpga-mac/docs/SPEC.mdoc','examples/fpga-mac/docs/VERIFY.mdoc']});
+json(join(ir,'manifest.json'),{irVersion:'1.2',requiredFeatures:['interface-groups','layout-intent'],projectId:'edoc-graphics-demo',adapterVersion:'gallery-1.0',resources:Object.keys(resources).map(type=>({type,path:type+'.json'})),entryDocuments:['docs/development/records/regression/graphics.mdoc','examples/fpga-mac/docs/SPEC.mdoc','examples/fpga-mac/docs/VERIFY.mdoc']});
 const graph=loadIR(ir,{projectRoot:root});
 const target=join(output,'demo.html'),pending=target+'.pending';
 try{writeFileSync(pending,await html(graph,'edoc · 图形能力 Demo',{compactIndex:true}));renameSync(pending,target);}catch(error){rmSync(target,{force:true});throw error;}finally{rmSync(pending,{force:true});}

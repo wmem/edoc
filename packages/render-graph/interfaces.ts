@@ -29,7 +29,7 @@ export function initialInterfaceState(model:InterfaceModel):InterfaceState{
  return {modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,model.view.display?.interfaceOverrides?.[i.id]??model.view.display?.interfaceMode??'expanded']))),classes:model.view.display?.classes??null,showInterfaceDetails:model.view.display?.showInterfaceDetails??true};
 }
 
-export async function interfaceScene(model:InterfaceModel,state=initialInterfaceState(model)):Promise<Scene>{
+export function projectInterfaces(model:InterfaceModel,state=initialInterfaceState(model)){
  const showInterfaceDetails=state.showInterfaceDetails??model.view.display?.showInterfaceDetails??true;
  const hintFor=(id:string)=>Object.hasOwn(model.view.layout?.relationHints??{},id)?model.view.layout!.relationHints![id]:undefined;
  const visible=new Set(model.visiblePorts),interfaces:SceneInterface[]=[],byPort=new Map<string,SceneInterface>();
@@ -98,8 +98,13 @@ export async function interfaceScene(model:InterfaceModel,state=initialInterface
  // 时钟域名称不由显示投影推断，沿用构建时收集的标签。
  for(const n of fakeNodes)for(const p of n.ports??[])if(p.clockDomainId&&!index.has(p.clockDomainId))add(p.clockDomainId,{id:p.clockDomainId,kind:'node',label:model.domains[p.clockDomainId]??p.clockDomainId},'node');
  const graph:Graph={index,connections:new Map(connections.map(r=>[r.id,r])),adjacency:new Map(),projectRoot:'',irDirectory:'',manifest:{irVersion:'1.1',projectId:'display',resources:[],entryDocuments:[]}};
- const result=await layoutScene(graph,view.id,hints);
+ hints.portMeta=Object.fromEntries(portMeta);
+ return {graph,view,hints,interfaces,portMeta,finish(result:Scene){
  for(const n of result.nodes)for(const p of n.ports)Object.assign(p,portMeta.get(p.id));
- for(const net of result.nets){const b=projected.find(b=>b.id===net.id)!;if(projectionWarnings.has(net.id))net.layoutWarnings=[...net.layoutWarnings??[],...projectionWarnings.get(net.id)!];Object.assign(net,{bundle:b.bundle,sourceRelations:b.relations,originalEndpoints:Object.fromEntries(b.relations.map(r=>[r.id,r.endpoints])),interfaceIds:interfaces.filter(i=>b.relations.some(r=>r.endpoints.some(p=>i.members.includes(p)))).map(i=>i.id)});}
- result.interfaceModel=model;result.interfaceState={modes,classes:state.classes,showInterfaceDetails};result.interfaces=interfaces;result.internalRelations=internal;return decoratePortLeads(result);
+ for(const net of result.nets){const b=projected.find(b=>b.id===net.id)!;if(projectionWarnings.has(net.id))net.layoutWarnings=[...net.layoutWarnings??[],...projectionWarnings.get(net.id)!];Object.assign(net,{bundle:b.bundle,sourceRelations:b.relations,originalEndpoints:Object.fromEntries(b.relations.map(r=>[r.id,r.endpoints])),endpointMap:Object.fromEntries(b.relations.map(r=>[r.id,Object.fromEntries(r.endpoints.map(id=>[id,b.slots.get(endpoint(id))??endpoint(id)]))])),interfaceIds:interfaces.filter(i=>b.relations.some(r=>r.endpoints.some(p=>i.members.includes(p)))).map(i=>i.id)});}
+ if(result.drawing)for(const c of result.drawing.connections){const b=projected.find(b=>b.id===c.id)!;c.originIds=b.relations.map(r=>r.id);}
+ result.interfaceModel=model;result.interfaceState={modes,classes:state.classes,showInterfaceDetails};result.interfaces=interfaces;result.internalRelations=internal;if(result.layoutEngine==='drawing')for(const n of result.nodes)for(const p of n.ports.filter(p=>p.interfaceHeader&&p.collapsed)){const slots=n.ports.filter(s=>s.interfaceId===p.id&&s.slot);if(slots.length)p.padHeight=Math.max(...slots.map(s=>s.y))-Math.min(...slots.map(s=>s.y))+16;}
+ return decoratePortLeads(result);
+ }};
 }
+export async function interfaceScene(model:InterfaceModel,state=initialInterfaceState(model),layout=layoutScene):Promise<Scene>{const p=projectInterfaces(model,state);return p.finish(await layout(p.graph,p.view.id,p.hints));}

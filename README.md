@@ -4,7 +4,7 @@
 
 ## 使用说明与 Agent 入口
 
-文档主入口是 [docs/index.mdoc](docs/index.mdoc)，安装包也携带同一份源文。Agent 可以从安装目录直接读取它，沿相对链接进入[使用文档](docs/usage/index.mdoc)、教程与字段参考，无需读取 HTML，也无需先克隆仓库或配置当前项目。
+文档主入口是 [docs/index.mdoc](docs/index.mdoc)，安装包也携带同一份源文。Agent 可以从安装目录直接读取它，沿相对链接进入相应教程与字段参考，无需读取 HTML，也无需先克隆仓库或配置当前项目。
 
 `edoc --help` 和 `edoc docs` 会显示实际安装目录中的 .mdoc 入口；`edoc docs --format json` 返回 root、readme、entry、usage 和 sources 路径。全局包通常位于 `npm root -g` 输出目录下的 edoc 文件夹。
 
@@ -16,7 +16,7 @@ edoc docs read --id use:first-build --format text
 edoc docs outline --format text
 ```
 
-手册目录默认只显示浅层，继续按 sectionId 和 --depth 展开；--all 显式返回完整目录。查工具用法使用 docs，查自己的工程使用普通 read/query/outline。文档组织原则按需读[简略指南](docs/usage/engineering/agent-guide.mdoc)；工具源码维护才进入开发文档。
+手册目录默认只显示浅层，继续按 sectionId 和 --depth 展开；--all 显式返回完整目录。查工具用法使用 docs，查自己的工程使用普通 read/query/outline。文档组织原则按需读[简略指南](docs/writing/agent-guide.mdoc)；工具源码维护才进入开发文档。
 
 `edoc guide` 直接输出简略组织指南，`edoc guide --full` 获取完整方法。工具用法从上述文档入口进入。
 
@@ -26,7 +26,7 @@ edoc docs outline --format text
 
 ```sh
 npm pack git+ssh://git@github.com/wmem/edoc.git
-npm install -g ./edoc-1.0.0.tgz
+npm install -g ./edoc-2.0.0.tgz
 edoc --version
 ```
 
@@ -34,7 +34,7 @@ edoc --version
 
 安装后运行 `edoc docs` 定位随包源文；人在浏览器中阅读可用 `edoc docs serve`。Agent 从 docs/index.mdoc 或 `edoc docs read --id use:home --format text` 入门，无需克隆仓库。
 
-当前使用上述两步流程绕过 npm 11.12.1 的 Git 全局预构建问题，无需修改 npm 全局配置。原因与升级方式见[安装说明](docs/usage/start/01-install.mdoc#use:install:git-preparation)。
+当前使用上述两步流程绕过 npm 11.12.1 的 Git 全局预构建问题，无需修改 npm 全局配置。原因与升级方式见[安装说明](docs/start/01-install.mdoc#use:install:git-preparation)。
 
 ## 源码开发：环境与编译
 
@@ -45,7 +45,7 @@ npm ci
 npm run build:package
 ```
 
-编译结果在 dist/。源码开发可用 npm run edoc -- --help 查看命令；安装到其他工程的方法见[安装说明](docs/usage/start/01-install.mdoc)。
+编译结果在 dist/。源码开发可用 npm run edoc -- --help 查看命令；安装到其他工程的方法见[安装说明](docs/start/01-install.mdoc)。
 
 ## 生成和阅读正式文档
 
@@ -69,10 +69,9 @@ npm run docs:dev
 
 ## 使用与维护入口
 
-- [认识 edoc](docs/usage/overview.mdoc)：Markdown 基础、扩展渲染及各类输入的整体关系。
-- [使用文档](docs/usage/index.mdoc)：上手、正文组织、功能教程和查询参考。
-- [开发文档](docs/development/index.mdoc)：实现、构建与验证、设计依据。
-- [源码维护规则](AGENTS.md)和[文档组织简略指南](docs/usage/engineering/agent-guide.mdoc)：分别面向维护工具与组织工程文档。
+- [正式手册](docs/index.mdoc)：认识工具，按任务进入上手、正文组织、图表、工程组合、阅读发布和查询参考。
+- [文档组织简略指南](docs/writing/agent-guide.mdoc)：组织工程文档的方法，完整原则按需深入。
+- [edoc 开发](docs/development/index.mdoc)：当前实现、开发验证及设计依据；[源码维护规则](AGENTS.md)提供Agent入口。
 
 修改工具后按[开发与验证](docs/development/contributing.mdoc)选择相关检查，先确认类型与行为，再检查网页、SVG 和 PDF 附件的实际阅读效果。
 

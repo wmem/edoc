@@ -58,8 +58,8 @@ export function bookNavigation(book:Book):Navigation[]{
 export function pageTitle(document:LoadedProject['documents']['documents'][number]):string{
  const plain=(v:any):string=>typeof v==='string'||typeof v==='number'?String(v):Array.isArray(v)?v.map(plain).join(''):'';
  const text=(node:any):string=>node.type==='text'||node.type==='code'?plain(node.attributes.content):[...Object.values(node.slots??{}),...node.children??[]].map(text).join('');
- const nodes=[...document.ast.walk()],heading=nodes.find(n=>n.type==='heading'),section=nodes.find(n=>n.type==='tag'&&['section','specification'].includes(n.tag));
- const first=nodes.find(n=>n.type==='heading'||n.type==='tag'&&['section','specification'].includes(n.tag)&&n.attributes.title);return first?.type==='heading'?text(first).trim():first?.attributes.title??(heading?text(heading).trim():undefined)??section?.attributes.title??document.file;
+ const nodes=[...document.ast.walk()],heading=nodes.find(n=>n.type==='heading'),section=nodes.find(n=>n.type==='tag'&&['section','clause'].includes(n.tag));
+ const first=nodes.find(n=>n.type==='heading'||n.type==='tag'&&['section','clause'].includes(n.tag)&&n.attributes.title);return first?.type==='heading'?text(first).trim():first?.attributes.title??(heading?text(heading).trim():undefined)??section?.attributes.title??document.file;
 }
 export type OutlineOptions={project?:string;id?:string;depth?:number};
 export function projectOutline(book:Book,options:OutlineOptions={}){

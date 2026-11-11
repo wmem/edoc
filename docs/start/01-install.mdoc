@@ -1,0 +1,76 @@
+{% section id="use:install" title="安装与运行环境" %}
+
+需要 Node.js 24 或更新版本、npm、Git，以及 [GitHub 仓库](https://github.com/wmem/edoc.git)的 SSH 访问权限。当前推荐先从 Git SSH 打包 tgz，再全局安装。在同一目录依次执行：
+
+```sh
+npm pack git+ssh://git@github.com/wmem/edoc.git
+npm install -g ./edoc-2.0.0.tgz
+edoc --version
+```
+
+第一步在 npm 临时目录完成源码构建，并将 tgz 写入当前目录；打包成功后再执行第二步。文件名随版本变化，以 npm pack 输出为准。第二步仍是全局安装，安装后的包名和命令名均为 edoc，之后可从任意目录使用命令。
+
+Git 打包需要下载构建依赖，不能禁用 prepare 脚本；安装已生成的 tgz 不需要再次编译前端或手册。最终安装只保留运行依赖，无需准备浏览器。团队或 CI 也可把该包安装为项目本地依赖，见[本地依赖与固定版本](#use:install:local)。
+
+{% section id="use:install:git-preparation" title="为什么先打包，以及如何升级" %}
+
+2026-11-05，在 Node.js 24.15.0 / npm 11.12.1 下复现了直接 Git 全局安装失败：npm 把外层 global/prefix 设置传入 Git 预构建子进程，临时源码没有本地 Vite 等开发依赖，构建报 git dep preparation failed 或 ERR_MODULE_NOT_FOUND。该问题尚未修复，当前不推荐直接将 Git 地址交给 npm install -g。
+
+先 npm pack Git 源，再全局安装 tgz，分开了源码预构建与全局部署，无需调整 npm 全局配置。单条 Git 全局安装仍是后续目标；目前没有建立预编译发布分支。
+
+升级时重新打包目标版本，再安装新生成的 tgz；需要固定版本时，在 npm pack 的 Git 地址后增加 #提交号。不要在打包失败后把旧 tgz 当作本次新产物。构建流程已用本地 Git 传输和隔离全局 prefix 验证；远程仓库及目标版本能否访问仍取决于实际环境。诊断及验证边界见[Git 全局安装复核](../development/records/reviews/git-install.mdoc)。
+
+{% /section %}
+
+{% section id="use:install:manual" title="安装后直接读工具手册" %}
+
+安装包自带 .mdoc 源文、所引用的样例和模板，以及完整 HTML 和章节/事实索引，无需克隆仓库或准备 Python。从任意目录运行：
+
+```sh
+edoc --help
+edoc docs
+edoc docs serve
+```
+
+--help 和 docs 都输出安装目录中的 docs/index.mdoc 源文主入口。Agent 可以直接读取它，沿相对链接学习用法，不用查 HTML；包根 README 与 AGENTS.md 也指向同一入口。docs serve 供人在 http://127.0.0.1:5176/ 阅读网页，Ctrl+C 结束，--port 可换端口。
+
+Agent 直接查询工具用法，不读取当前项目配置：
+
+```sh
+edoc docs outline --depth 0
+edoc docs read --id use:home --format text
+edoc docs read --id use:first-build --format text
+edoc docs query --id system:producer
+```
+
+普通 edoc read/query/outline 仍读取自己的项目。edoc guide 返回简略文档组织指南，edoc guide --full 返回完整方法，按需查阅；使用入门从 .mdoc 主入口开始。目录默认浅层，读取使用 sectionId，完整目录显式指定 --all。源文路径可通过 edoc docs --format json 的 entry、usage、sources 字段取得，供直接打开或 rg 搜索；不需要在安装目录再次构建。
+
+{% /section %}
+
+{% section id="use:install:local" title="项目本地依赖与固定版本" %}
+
+普通正文可只使用全局 CLI。配置需要 import {Markdoc} from 'edoc'、使用 TypeScript API，或团队希望固定同一版本时，将工具安装到项目开发依赖。在工程根执行：
+
+```sh
+npm install --save-dev git+ssh://git@github.com/wmem/edoc.git
+npx edoc --version
+npx edoc
+```
+
+本地 edoc 模块才可被当前工程配置 import；全局命令不会自动成为项目模块。已有全局命令时也优先使用 npx edoc 或 npm script，避免调用另一版本。
+
+可在 Git 地址后增加 #提交号 固定评审过的版本；或将 npm pack 生成的包安装为本地依赖。提交 package.json 和 package-lock.json，CI 用 npm ci 恢复，再用 npx edoc validate 和 npx edoc 构建。不要在首次 Git 源安装时禁用 prepare；已经生成的发布包不需要用户编译前端或手册。
+
+升级时更新固定版本和锁文件，先校验再生成，核对目录、必要的 query/read、关键图形与 PDF 原文位置。本工具不自动迁移项目源文件。
+
+{% /section %}
+
+{% section id="use:install:dependencies" title="安装体积与运行依赖" %}
+
+最终安装不包含 Playwright、Chromium、Vite、X6 开发包或完整字体库。前端预编译，字体只携带当前字重使用的 WOFF2 子集及许可证；生成 HTML 与 SVG 不需要本机浏览器。PDF.js 仍用于原始附件校验和内嵌阅读，仅有附件的 HTML 才加入 PDF 阅读资源。
+
+运行依赖仍采用[安装精简验收](../development/records/acceptance/html-install.mdoc)中的分工；该记录约 108 MiB 的旧总量不包含本次新增的完整手册与类型声明。最新安装结果见[文档交付修复验收](../development/records/acceptance/documentation-delivery.mdoc)。大小随版本和平台变化；Git 预构建临时开发依赖和 npm 缓存不计入最终全局安装体积。
+
+{% /section %}
+
+{% /section %}

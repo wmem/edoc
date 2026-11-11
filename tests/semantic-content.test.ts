@@ -74,7 +74,7 @@ test('便携手册与项目读取一致，页面条款复用不复制身份',asy
  let content='',offset=0;
  do{const part=readDocument(book.root.graph,'beh:timeout',{offset,maxChars:37}),saved=manualRead(manual,'beh:timeout',{offset,maxChars:37});assert.equal(saved.content,part.content);content+=part.content;offset=part.range.nextOffset??-1;}while(offset!==-1);
  assert.equal(content,live.content,'聚合后统一分页，不丢失也不重复条款');
- for(const options of [{},{withClauses:true},{withClauses:false},{withSpecs:true}]){
+ for(const options of [{},{withClauses:true},{withClauses:false}]){
   const project=readDocument(book.root.graph,'review',options),saved=manualRead(manual,'review',options);
   assert.equal(saved.content,project.content);assert.deepEqual(saved.clauses,project.clauses,'普通审阅页的聚合元数据一致');
  }
@@ -94,7 +94,7 @@ test('显式局部读取保留未展开提示，引用不接受缺失身份或�
  assert.equal(partial.scope,'self');assert.equal(partial.children[0].id,'timeout:details');
  assert.ok(!partial.content.includes('MUST 不再报告成功'));
  const missing=specimen(t,body.replace('ids=["clause:errors"]','ids=["missing"]'));
- await assert.rejects(missing.load(),/SPECIFICATION_REFERENCE|CLAUSE_REFERENCE/);
+ await assert.rejects(missing.load(),/CLAUSE_REFERENCE/);
  const orphan=specimen(t,'{% clause-list ids=["clause:errors"] /%}');
  await assert.rejects(orphan.load(),/CLAUSE_APPLICATION/);
  const duplicate=specimen(t,body.replace('ids=["clause:errors"]','ids=["clause:terminal"]'));
@@ -103,7 +103,7 @@ test('显式局部读取保留未展开提示，引用不接受缺失身份或�
 
 test('隐藏分支依赖仍被校验，变量与片段中的语义归属保持',async t=>{
  const p=specimen(t,body.replace('{% clause-list ids=["clause:errors"] /%}','{% if false %}{% clause-list ids=["missing"] /%}{% /if %}'));
- await assert.rejects(p.load(),/SPECIFICATION_REFERENCE|CLAUSE_REFERENCE/);
+ await assert.rejects(p.load(),/CLAUSE_REFERENCE/);
  const variable=specimen(t,'{% capability id="cap:v" title="变量示例" %}\n{% partial file="behavior" variables={id:"beh:v"} /%}\n{% /capability %}');
  mkdirSync(join(variable.root,'docs/_partials'));
  writeFileSync(join(variable.root,'docs/_partials/behavior.mdoc'),'{% behavior id=$id title="变量行为" %}变量来源。{% clause-list ids=["clause:errors"] /%}{% /behavior %}');

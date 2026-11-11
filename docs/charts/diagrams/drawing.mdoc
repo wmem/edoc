@@ -1,0 +1,46 @@
+{% section id="use:drawing" title="模块框图与布局" %}
+
+原生框图适合表达模块组成、接口关系和容器边界。作者与 Agent 维护结构化数据，edoc 负责测量、布局、布线、独立检查和网页/SVG输出。数据可以由工程适配器投影生成，位置和路线不写回原理图、网表或 RTL。
+
+{% section id="use:drawing.auto" title="先使用自动布局" %}
+
+在 views 中声明 drawing，正文仍使用 relation-diagram。drawing.schemaVersion 为 1.0；nodes 定义框及可选端口，connections 引用明确的端点。省略 layout 时自动布局，不要求作者填写坐标。完整数据和此图来自同一份声明。
+
+{% relation-diagram id="manual:drawing-auto" /%}
+
+{% section id="use:drawing.auto-source" title="自动布局的完整数据" collapsed=true %}
+
+{% code file="docs/ir/authoring/drawing.json" language="json" /%}
+
+{% /section %}
+
+模块 ID 在当前 drawing 内唯一，端口 ID 在所属模块内唯一，连接端 ID 在所属连接内唯一。连线通过 node 和可选 port 引用端点，不从名称相同推断相连。未知方向不加箭头，箭头只由 ends.marker 声明。
+
+{% /section %}
+{% section id="use:drawing.board-map" title="参考：两板模块地图" %}
+
+下面是参考 KY3134 已审阅画法的虚构简化示例：板卡各自成框，底板主控居中，外设就近分区，两侧连接器位于相向板边。先看模块便能理解组成，再用每对模块一条接口关系说明互联。该示例不代表 KY3134 实际器件、接线或接口数量。
+
+{% relation-diagram id="manual:drawing-board-map" /%}
+
+这类版面可以声明布局意图，不必完全依赖自动分层。place 相对父容器内容区，size 指定尺寸，port 指定侧边、顺序或整条边的比例偏移，fixedRoute 指定完整路线；仍执行包含、端点、文字、穿框、正交性及独立连接间距检查。不能通过固定路径绕过正确性。
+
+{% section id="use:drawing.map-source" title="模块地图的完整数据" collapsed=true %}
+
+{% code file="docs/ir/authoring/board-map.json" language="json" /%}
+
+{% /section %}
+
+{% /section %}
+{% section id="use:drawing.boundaries" title="工程事实、接口与交付" %}
+
+视图 drawing 是显示数据，工程事实继续由项目的权威源维护。originIds 保留来源身份，局部显示节点不注册为新增电气器件。query 查询 view 时返回完整 drawing；网页可选择框、锚点和连线查看输入与几何。来源身份不能替代项目适配器对真实通道或引脚的核对。
+
+drawing 的布局放在 drawing.layout，视图 include 保持空数组，不同时填写外层 layout 或接口展开设置；工具拒绝互相冲突的两套定义。已有 Node.interfaces 继续用于工程接口合并/展开，成员和聚合事实的规则不变，两类输入共用绘图内核。
+
+原生框图使用 orthogonal。polyline 尚未在此契约实现，显式请求会报错，不静默忽略；这不改变其他工程关系视图的既有路由能力。工具不能承诺任意自动图都无需调整。
+
+网页支持连线标题开关、类别筛选、缩放、平移、大图和 SVG 导出。布局失败给出诊断，离线接口重算失败保留最近一次成功画面。使用标准 edoc validate、build 和 export，无需原型脚本或自定义求解器注入；字段见[Drawing参考](../../reference/graph.mdoc#ref:drawing)。
+
+{% /section %}
+{% /section %}

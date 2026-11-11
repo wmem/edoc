@@ -34,9 +34,10 @@ export function splitPath(points:Point[]):{hub:Point;first:Point[];last:Point[]}
 }
 
 // 固定位置/层级包围框不能复用移动前的 ELK 路径；在矩形可见网格上求带折点代价的最短路。
-export function orthogonal(start:Point,end:Point,obstacles:Rect[],used:Point[][]=[],options:{contacts?:Point[]}={}):Point[]{
- const xs=[...new Set([start.x,end.x,...used.flatMap(path=>path.flatMap(p=>[p.x-12,p.x,p.x+12])),...obstacles.flatMap(r=>[r.x-24,r.x,r.x+r.width,r.x+r.width+24]),Math.min(start.x,end.x,...obstacles.map(r=>r.x))-60,Math.max(start.x,end.x,...obstacles.map(r=>r.x+r.width))+60])].sort((a,b)=>a-b);
- const ys=[...new Set([start.y,end.y,...used.flatMap(path=>path.flatMap(p=>[p.y-12,p.y,p.y+12])),...obstacles.flatMap(r=>[r.y-24,r.y,r.y+r.height,r.y+r.height+24]),Math.min(start.y,end.y,...obstacles.map(r=>r.y))-60,Math.max(start.y,end.y,...obstacles.map(r=>r.y+r.height))+60])].sort((a,b)=>a-b);
+export function orthogonal(start:Point,end:Point,obstacles:Rect[],used:Point[][]=[],options:{contacts?:Point[];clearance?:number}={}):Point[]{
+ const clearance=options.clearance??8,step=Math.max(12,clearance+4);
+ const xs=[...new Set([start.x,end.x,...used.flatMap(path=>path.flatMap(p=>[p.x-step,p.x,p.x+step])),...obstacles.flatMap(r=>[r.x-24,r.x,r.x+r.width,r.x+r.width+24]),Math.min(start.x,end.x,...obstacles.map(r=>r.x))-60,Math.max(start.x,end.x,...obstacles.map(r=>r.x+r.width))+60])].sort((a,b)=>a-b);
+ const ys=[...new Set([start.y,end.y,...used.flatMap(path=>path.flatMap(p=>[p.y-step,p.y,p.y+step])),...obstacles.flatMap(r=>[r.y-24,r.y,r.y+r.height,r.y+r.height+24]),Math.min(start.y,end.y,...obstacles.map(r=>r.y))-60,Math.max(start.y,end.y,...obstacles.map(r=>r.y+r.height))+60])].sort((a,b)=>a-b);
  const w=xs.length,h=ys.length,count=w*h,point=(cell:number)=>({x:xs[cell%w],y:ys[Math.floor(cell/w)]});
  const valid=new Uint8Array(count);for(let i=0;i<count;i++)valid[i]=obstacles.some(r=>inside(point(i),r))?0:1;
  const begin=ys.indexOf(start.y)*w+xs.indexOf(start.x),finish=ys.indexOf(end.y)*w+xs.indexOf(end.x);
@@ -52,11 +53,11 @@ export function orthogonal(start:Point,end:Point,obstacles:Rect[],used:Point[][]
    let penalty=0,blocked=false;
    for(const path of used){
     // 交叉只允许穿过直线内部；不能贴上另一关系的端点或折角，造成假分叉。
-    if(path.some(p=>!options.contacts?.some(c=>same(c,p))&&crosses(a,b,{x:p.x-8,y:p.y-8,width:16,height:16})))blocked=true;
+    if(path.some(p=>!options.contacts?.some(c=>same(c,p))&&crosses(a,b,{x:p.x-clearance,y:p.y-clearance,width:clearance*2,height:clearance*2})))blocked=true;
     for(let i=1;i<path.length;i++){const c=path[i-1],d=path[i];
      const horizontal=a.y===b.y&&c.y===d.y,vertical=a.x===b.x&&c.x===d.x;
      const overlap=horizontal?Math.min(Math.max(a.x,b.x),Math.max(c.x,d.x))-Math.max(Math.min(a.x,b.x),Math.min(c.x,d.x)):vertical?Math.min(Math.max(a.y,b.y),Math.max(c.y,d.y))-Math.max(Math.min(a.y,b.y),Math.min(c.y,d.y)):0;
-     if(overlap>.001&&((horizontal&&Math.abs(a.y-c.y)<7.99)||(vertical&&Math.abs(a.x-c.x)<7.99)))blocked=true;
+     if(overlap>.001&&((horizontal&&Math.abs(a.y-c.y)<clearance-.01)||(vertical&&Math.abs(a.x-c.x)<clearance-.01)))blocked=true;
      if(!horizontal&&!vertical&&crosses(a,b,{x:Math.min(c.x,d.x)-.1,y:Math.min(c.y,d.y)-.1,width:Math.abs(c.x-d.x)+.2,height:Math.abs(c.y-d.y)+.2}))penalty+=45;
     }
    }

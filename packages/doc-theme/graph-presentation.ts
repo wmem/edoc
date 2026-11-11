@@ -16,7 +16,8 @@ export function addPortLeads(graph:Graph,scene:Scene){
 // 初始显示保住12px主要文字；完整适配是用户可选择的另一种总览。
 export function readableViewport(graph:Graph,scene:Scene,holder:HTMLElement,mode:'readable'|'fit'|'actual'='readable'){
  graph.zoomToFit({padding:26,maxScale:1});
- const fitted=graph.zoom(),mainSize=Math.min(...scene.nodes.flatMap(n=>[n.titleSize,...n.ports.filter(p=>!p.slot).map(()=>14)]),14),minimum=mode==='actual'?1:Math.min(1,12/mainSize);
+ const sizes=scene.drawing&&scene.drawingInput?scene.drawing.nodes.flatMap(n=>[n.title.size,...n.ports.filter(p=>p.text.size).map(p=>p.text.size)]):scene.nodes.flatMap(n=>[n.titleSize,...n.ports.filter(p=>!p.slot).map(()=>14)]);
+ const fitted=graph.zoom(),mainSize=Math.min(...sizes,14),minimum=mode==='actual'?1:Math.min(1,12/mainSize);
  if(mode!=='fit'&&fitted<minimum){
   graph.zoomTo(minimum);const x=Math.min(...scene.nodes.map(n=>n.x-30)),y=Math.min(...scene.nodes.map(n=>n.y));
   graph.translate(26-x*minimum,26-y*minimum);

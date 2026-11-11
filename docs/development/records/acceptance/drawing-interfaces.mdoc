@@ -1,0 +1,69 @@
+{% section id="acceptance:drawing-interfaces" title="Drawing 端口对齐与接口交互原型" %}
+
+阶段记录：本页保留原型阶段的验证背景；当前正式入口、实现包及接入边界见[Drawing 1.0 正式构建接入](drawing-release.mdoc)。
+
+2026-11-10，用户审阅首版 Demo 后指出直连出现多余弯折，并要求承载现有接口合并/展开。用户批准修订方案后，本轮修正端口布局，并把新求解器接入现有接口投影、原生正文和 X6 交互。此记录替代[首版原型](drawing-prototype.mdoc)中有关自动多端点与接口接入的未完成状态；其他未验证范围继续保留。
+
+后续首页的三份普通图也已接入缩放、大图和连线标题控件，见[普通图阅读器接入](drawing-reader.mdoc)。
+
+{% section id="acceptance:drawing-interfaces.changes" title="修改与兼容边界" %}
+
+默认布局现在向 ELK 提供测量后的真实端口位置。两板自动样例中的 SPI、SDIO 两端 y 一致，路线由原来的四点折线变为两点直线，输入没有增加 align。四个方向的成对端口也有直连回归；跨容器对齐后保留连接模块的阅读顺序，避免端口对齐把模块推到目标另一侧。显式对齐和固定坐标仍优先于自动阅读顺序。
+
+跨层连接把后代端口的位置投影为容器边界上的临时布局锚点，让根布局也能对齐真实接线位置。它不创建工程接口或端口，不写回 Drawing；跨板 RMII 与顶板 RMII 在自动样例中也保持直线。板内扇出仍允许在避障需要时弯折，不以牺牲模块间距强求全部直连。
+
+接口的工程事实和聚合规则继续由原有实现维护。packages/render-graph/interfaces.ts 提取 projectInterfaces，返回显示投影及完成映射的 finish；原后端仍是默认值。新增端点映射 endpointMap，记录每条原关系的每个原端点对应哪个显示端点。原关系、完整端点、部分成员范围、内部关系和来源继续保留。
+
+Drawing 增加通用 portGroups，以及端口 annotation、appearance。新桥接层 packages/drawing-prototype/interface-scene.ts 将既有投影转为 Drawing，再将结果转回现有 Scene。分组标题、成员、附注和独立槽位参加尺寸与位置计算；合并组的接入区域按实际槽位范围绘制。自动多端连接先求主干，再为其余端点选取合法接入点，产生显式分叉，不重复绘制共享线段。
+
+外部 JSON 仍先由 validate.ts 进行 Schema 校验。浏览器求解入口 solver.ts 只接受由工程投影生成的类型化输入，执行同一份引用与几何检查，不依赖文件系统或浏览器动态编译 Schema。网页沿用现有接口选择、独立展开、筛选、来源查询、缩放、大图、返回恢复和导出控件。
+
+本轮通过 bookHTML 的显式 scene 求解器注入构建开发验证页，并以 Scene.layoutEngine 标识网页重算所用后端。没有新增公开 IR 版本、工程配置字段或正文标签；默认工程不自动切换到新内核。分类未知时沿用原有 other 外观回退，保留原始分类事实。
+
+{% /section %}
+{% section id="acceptance:drawing-interfaces.review" title="复现与审阅" %}
+
+在 edoc 源码仓库根运行：
+
+```sh
+node scripts/drawing-prototype.ts
+```
+
+产物仍为 output/drawing-prototype/index.html。首页保留两板自动、受控和固定路线，并链接“接口合并、展开与导出”文章。新文章复用 examples/gallery/interfaces.json 的三个模块、四个接口及 17 条连接；生成时重定位来源路径，不手工维护第二份事实。额外的三端时钟用例引用原有时钟端口与一个观察模块，没有声明方向，绘图不补箭头。
+
+审阅时分别点击控制接口两端的展开箭头，可以得到全合并、仅 A 展开、仅 B 展开和全展开；DMA 接口保持独立。点击名称查看接口及成员，点击聚合线查看组成关系。接口总览、全部展开、分类过滤和附注开关均触发新内核重算。页面默认保住文字可读尺寸，完整图较宽时可平移或使用“大图查看”和“适配画布”。
+
+当前视图 SVG 按当前展开与分类状态输出；SVG（逐信号）按原视图完整范围展开，不受当前分类过滤截断。浏览器实测关闭 data 后，当前文件保留两个聚合显示连接、仅含 control 成员；完整文件仍有全部 17 条逐信号连接。两份文件都保留完整原事实及内嵌字体。
+
+{% /section %}
+{% section id="acceptance:drawing-interfaces.validation" title="验证依据" %}
+
+本轮回归入口：
+
+```sh
+node scripts/check-drawing-proposal.mjs
+node --test tests/drawing-prototype.test.ts tests/drawing-interfaces.test.ts
+node --test tests/graph.test.ts tests/layout.test.ts tests/quality.test.ts tests/interface.test.ts
+node --test tests/drawing-interfaces-browser.test.ts tests/interface-browser.test.ts
+```
+
+浏览器测试使用已有 Chromium，运行前按本机路径设置 EDOC_CHROMIUM，不安装或下载浏览器。新增回归覆盖四接口的 16 种状态及附注开关组合、四方向端口对齐、原始端点映射、未知分类、第三端点、内部关系、部分成员与未知宽度。浏览器用例检查离线重算、双实例独立状态、快速请求、筛选、查询与返回、两类真实下载，以及失败时保持画布、开关和完整静态图。
+
+另外使用 playwright-cli 检查 1600×1100 和 390×844 页面、实际点击四种控制接口状态、断网重算、独立 SVG 字体加载后的可见文字边界。几何检查与视觉检查分别进行，普通图片正常加载不作为交互或可读性的替代证据。
+
+本轮结果：77 项模型/绘图/接口回归、6 项新旧接口浏览器回归和 4 项手册回归通过；类型检查、设计资源自检、正式文档校验/构建及安装包构建通过。边界仍以下节列出的未完成范围为准。
+
+{% /section %}
+{% section id="acceptance:drawing-interfaces.pending" title="当前仍未完成的范围" %}
+
+- 带分组/附注的上下侧端口排版、容器自身端口、容器正文与子图联合排版、polyline、精确标签 fraction 仍未接入原型；需要这些输入时明确失败。
+- Drawing 分组顺序与独立 port.order 的联合覆盖尚未实现，明确报错；原有视图 portOrder/interfaceOrder 已在投影阶段排序后传入，不受此限制。
+- 新桥接层尚未实现旧版嵌套 positions 的坐标转换、Node 端点 endpointSides；明确报 DRAWING_CAPABILITY，不默默改为默认值。原后端仍可使用原有能力。
+- 完整约束后验校验、最小冲突诊断、预算/取消、自动布局可读性评分和所有复杂间距组合仍待完善。
+- 自动连接树已覆盖本轮三端及独立固定树，尚未完成任意端数、反馈、自环和深层嵌套的系统验收。
+- 真实 36 框/75 关系与 KY3134 完整硬件资料尚未迁移；现有公开 API 和正式教程仍沿用原后端。本轮接口适配不表示所有关系图类型已迁移。
+
+下一步应在这些兼容与几何缺口逐项验收后，再决定正式后端切换和公开契约版本。不能因原型展示成功而自动替换生产视图。
+
+{% /section %}
+{% /section %}

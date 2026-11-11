@@ -1,0 +1,26 @@
+{% section id="ref:tag-relation-diagram" title="relation-diagram：结构与连接图" %}
+
+表达“有哪些对象、它们怎样连接或迁移”。视图可直接提供Drawing显示结构，也可引用Node/Port/Connection工程事实；两种输入都使用本标签，不能在同一视图混用两套布局声明。统计指标图表与数字时序不属于此标签。
+
+```text {% process=false %}
+{% relation-diagram id="system:overview" /%}
+```
+
+id 必需，指向当前工程的关系视图，TypeScript 类型为 RelationView，query 返回类型为 view。标签不直接接受 Node、Interface、Table 或 Waveform。
+
+| 数据 | 职责 | 精确契约 |
+| --- | --- | --- |
+| Drawing | 模块框图的显示节点、端点、容器、约束与路线；通过RelationView.drawing提供 | [Drawing](../graph.mdoc#ref:drawing) |
+| Node、Port、Group、Interface | 对象、端口、逻辑选集、接口成员归属 | [对象](../ir.mdoc#ref:objects)、[接口](../graph.mdoc#ref:interfaces) |
+| Connection | 原始连接及完整端点 | [连接](../ir.mdoc#ref:connections) |
+| RelationView | 选择对象与连接，声明 kind、layout、display | [关系视图](../graph.mdoc) |
+
+工程对象和连接分别放在objects、relations中，视图放在views；直接Drawing也放在views，include使用空数组，不要求另建电气对象。这些输入可来自多份 IR 或配置中的 views；这些字段属于关系图数据，不是所有扩展都必须提供的公共模型。完整创建步骤及实际效果见[关系图教程](../../charts/diagrams/index.mdoc)。
+
+一个模块有多组总线时，用 Node.interfaces 声明各自的真实成员，视图 display 控制初始展开；不是通过 interface-table 控制。网页支持独立展开一端或多端，始终保留真实信号和关系身份，操作见[接口图教程](../../charts/diagrams/interfaces.mdoc)。
+
+静态 SVG 输出该视图范围内的完整逐信号图；当前视图 SVG 显式导出当前展开状态。图内筛选不修改源连接。可用 query 查询视图、对象与关系，用 source 追溯依据。
+
+不存在的 ID、错误类型、无效端点及布局契约错误会报错；不会根据名称补造接口或连接。视图可以选择空范围，此时得到没有对象的图，不自动猜测范围。
+
+{% /section %}

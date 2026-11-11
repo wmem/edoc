@@ -1,6 +1,6 @@
 {
   "name": "edoc",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -37,7 +37,7 @@
     "test:reader-browser": "node --test tests/reader-browser.test.ts",
     "docs:build": "node packages/cli/edoc.ts",
     "docs:dev": "node scripts/docs.ts",
-    "test:specification": "node --test tests/specification.test.ts tests/specification-browser.test.ts",
+    "test:clause": "node --test tests/clause.test.ts tests/clause-browser.test.ts",
     "test:semantic-content": "node --test tests/semantic-content.test.ts tests/semantic-content-browser.test.ts",
     "demo:contracts": "node packages/cli/edoc.ts build --config examples/behavior-contract/docs/edoc.config.js",
     "test:read": "node --test tests/read.test.ts",
@@ -77,7 +77,8 @@
     "AGENTS.md",
     "docs",
     "examples",
-    "templates"
+    "templates",
+    "packages/drawing/drawing.schema.json"
   ],
   "exports": {
     ".": {

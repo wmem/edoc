@@ -1,0 +1,761 @@
+{
+  "views": [
+    {
+      "id": "manual:drawing-board-map",
+      "kind": "architecture",
+      "label": "两板模块地图（虚构简化示例）",
+      "include": {
+        "objects": [],
+        "relations": []
+      },
+      "drawing": {
+        "schemaVersion": "1.0",
+        "id": "board-map-example",
+        "nodes": [
+          {
+            "id": "top",
+            "label": "顶板 · 扩展板"
+          },
+          {
+            "id": "bottom",
+            "label": "底板 · 主控板"
+          },
+          {
+            "id": "top-btb",
+            "label": "BTB · 顶板",
+            "parentId": "top",
+            "ports": [
+              {
+                "id": "t1-bus/1",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "t1s-bus/1",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "gpio-bus/1",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "board-bus/0",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "bottom-btb",
+            "label": "BTB · 底板",
+            "parentId": "bottom",
+            "ports": [
+              {
+                "id": "board-bus/1",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "fpga-btb/1",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "t1",
+            "label": "T1-1\nPHY",
+            "parentId": "top",
+            "ports": [
+              {
+                "id": "t1-bus/0",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "t1s",
+            "label": "T1S-1\nPHY",
+            "parentId": "top",
+            "ports": [
+              {
+                "id": "t1s-bus/0",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "gpio",
+            "label": "GPIO 管理",
+            "parentId": "top",
+            "ports": [
+              {
+                "id": "gpio-bus/0",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "fpga",
+            "label": "FPGA\n主处理器",
+            "parentId": "bottom",
+            "ports": [
+              {
+                "id": "fpga-btb/0",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "mcu-fpga/1",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "ddr-bus/0",
+                "label": "",
+                "appearance": "slot"
+              },
+              {
+                "id": "eth-bus/0",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "mcu",
+            "label": "MCU\n管理处理器",
+            "parentId": "bottom",
+            "ports": [
+              {
+                "id": "mcu-fpga/0",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "ddr",
+            "label": "DDR4",
+            "parentId": "bottom",
+            "ports": [
+              {
+                "id": "ddr-bus/1",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          },
+          {
+            "id": "ethernet",
+            "label": "以太网 PHY",
+            "parentId": "bottom",
+            "ports": [
+              {
+                "id": "eth-bus/1",
+                "label": "",
+                "appearance": "slot"
+              }
+            ]
+          }
+        ],
+        "connections": [
+          {
+            "id": "t1-bus",
+            "ends": [
+              {
+                "id": "0",
+                "node": "t1",
+                "port": "t1-bus/0"
+              },
+              {
+                "id": "1",
+                "node": "top-btb",
+                "port": "t1-bus/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "SGMII"
+              }
+            ]
+          },
+          {
+            "id": "t1s-bus",
+            "ends": [
+              {
+                "id": "0",
+                "node": "t1s",
+                "port": "t1s-bus/0"
+              },
+              {
+                "id": "1",
+                "node": "top-btb",
+                "port": "t1s-bus/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "RMII"
+              }
+            ]
+          },
+          {
+            "id": "gpio-bus",
+            "ends": [
+              {
+                "id": "0",
+                "node": "gpio",
+                "port": "gpio-bus/0"
+              },
+              {
+                "id": "1",
+                "node": "top-btb",
+                "port": "gpio-bus/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "I²C"
+              }
+            ]
+          },
+          {
+            "id": "board-bus",
+            "ends": [
+              {
+                "id": "0",
+                "node": "top-btb",
+                "port": "board-bus/0"
+              },
+              {
+                "id": "1",
+                "node": "bottom-btb",
+                "port": "board-bus/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "板间互联"
+              }
+            ]
+          },
+          {
+            "id": "fpga-btb",
+            "ends": [
+              {
+                "id": "0",
+                "node": "fpga",
+                "port": "fpga-btb/0"
+              },
+              {
+                "id": "1",
+                "node": "bottom-btb",
+                "port": "fpga-btb/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "数据 / 管理"
+              }
+            ]
+          },
+          {
+            "id": "mcu-fpga",
+            "ends": [
+              {
+                "id": "0",
+                "node": "mcu",
+                "port": "mcu-fpga/0"
+              },
+              {
+                "id": "1",
+                "node": "fpga",
+                "port": "mcu-fpga/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "SPI / SDIO"
+              }
+            ]
+          },
+          {
+            "id": "ddr-bus",
+            "ends": [
+              {
+                "id": "0",
+                "node": "fpga",
+                "port": "ddr-bus/0"
+              },
+              {
+                "id": "1",
+                "node": "ddr",
+                "port": "ddr-bus/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "DDR4"
+              }
+            ]
+          },
+          {
+            "id": "eth-bus",
+            "ends": [
+              {
+                "id": "0",
+                "node": "fpga",
+                "port": "eth-bus/0"
+              },
+              {
+                "id": "1",
+                "node": "ethernet",
+                "port": "eth-bus/1"
+              }
+            ],
+            "labels": [
+              {
+                "id": "name",
+                "text": "RGMII"
+              }
+            ]
+          }
+        ],
+        "layout": {
+          "direction": "TB",
+          "spacing": {
+            "padding": 28,
+            "port": 24,
+            "edge": 16
+          },
+          "constraints": [
+            {
+              "id": "top-position",
+              "type": "place",
+              "node": "top",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "bottom-position",
+              "type": "place",
+              "node": "bottom",
+              "x": 0,
+              "y": 540
+            },
+            {
+              "id": "top-btb/position",
+              "type": "place",
+              "node": "top-btb",
+              "x": 20,
+              "y": 300
+            },
+            {
+              "id": "top-btb/size",
+              "type": "size",
+              "node": "top-btb",
+              "width": 900,
+              "height": 64
+            },
+            {
+              "id": "bottom-btb/position",
+              "type": "place",
+              "node": "bottom-btb",
+              "x": 20,
+              "y": 20
+            },
+            {
+              "id": "bottom-btb/size",
+              "type": "size",
+              "node": "bottom-btb",
+              "width": 900,
+              "height": 64
+            },
+            {
+              "id": "t1/position",
+              "type": "place",
+              "node": "t1",
+              "x": 20,
+              "y": 60
+            },
+            {
+              "id": "t1/size",
+              "type": "size",
+              "node": "t1",
+              "width": 180,
+              "height": 100
+            },
+            {
+              "id": "t1s/position",
+              "type": "place",
+              "node": "t1s",
+              "x": 290,
+              "y": 60
+            },
+            {
+              "id": "t1s/size",
+              "type": "size",
+              "node": "t1s",
+              "width": 180,
+              "height": 100
+            },
+            {
+              "id": "gpio/position",
+              "type": "place",
+              "node": "gpio",
+              "x": 650,
+              "y": 60
+            },
+            {
+              "id": "gpio/size",
+              "type": "size",
+              "node": "gpio",
+              "width": 180,
+              "height": 100
+            },
+            {
+              "id": "fpga/position",
+              "type": "place",
+              "node": "fpga",
+              "x": 350,
+              "y": 280
+            },
+            {
+              "id": "fpga/size",
+              "type": "size",
+              "node": "fpga",
+              "width": 240,
+              "height": 160
+            },
+            {
+              "id": "mcu/position",
+              "type": "place",
+              "node": "mcu",
+              "x": 40,
+              "y": 310
+            },
+            {
+              "id": "mcu/size",
+              "type": "size",
+              "node": "mcu",
+              "width": 180,
+              "height": 100
+            },
+            {
+              "id": "ddr/position",
+              "type": "place",
+              "node": "ddr",
+              "x": 720,
+              "y": 310
+            },
+            {
+              "id": "ddr/size",
+              "type": "size",
+              "node": "ddr",
+              "width": 180,
+              "height": 100
+            },
+            {
+              "id": "ethernet/position",
+              "type": "place",
+              "node": "ethernet",
+              "x": 380,
+              "y": 600
+            },
+            {
+              "id": "ethernet/size",
+              "type": "size",
+              "node": "ethernet",
+              "width": 180,
+              "height": 100
+            },
+            {
+              "id": "t1-bus/0/anchor",
+              "type": "port",
+              "node": "t1",
+              "port": "t1-bus/0",
+              "side": "bottom",
+              "offset": 0.5
+            },
+            {
+              "id": "t1-bus/1/anchor",
+              "type": "port",
+              "node": "top-btb",
+              "port": "t1-bus/1",
+              "side": "top",
+              "offset": 0.1
+            },
+            {
+              "id": "t1-bus/route",
+              "type": "fixedRoute",
+              "connection": "t1-bus",
+              "frame": "top",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "t1s-bus/0/anchor",
+              "type": "port",
+              "node": "t1s",
+              "port": "t1s-bus/0",
+              "side": "bottom",
+              "offset": 0.5
+            },
+            {
+              "id": "t1s-bus/1/anchor",
+              "type": "port",
+              "node": "top-btb",
+              "port": "t1s-bus/1",
+              "side": "top",
+              "offset": 0.4
+            },
+            {
+              "id": "t1s-bus/route",
+              "type": "fixedRoute",
+              "connection": "t1s-bus",
+              "frame": "top",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "gpio-bus/0/anchor",
+              "type": "port",
+              "node": "gpio",
+              "port": "gpio-bus/0",
+              "side": "bottom",
+              "offset": 0.5
+            },
+            {
+              "id": "gpio-bus/1/anchor",
+              "type": "port",
+              "node": "top-btb",
+              "port": "gpio-bus/1",
+              "side": "top",
+              "offset": 0.8
+            },
+            {
+              "id": "gpio-bus/route",
+              "type": "fixedRoute",
+              "connection": "gpio-bus",
+              "frame": "top",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "board-bus/0/anchor",
+              "type": "port",
+              "node": "top-btb",
+              "port": "board-bus/0",
+              "side": "bottom",
+              "offset": 0.5
+            },
+            {
+              "id": "board-bus/1/anchor",
+              "type": "port",
+              "node": "bottom-btb",
+              "port": "board-bus/1",
+              "side": "top",
+              "offset": 0.5
+            },
+            {
+              "id": "board-bus/route",
+              "type": "fixedRoute",
+              "connection": "board-bus",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "fpga-btb/0/anchor",
+              "type": "port",
+              "node": "fpga",
+              "port": "fpga-btb/0",
+              "side": "top",
+              "offset": 0.5
+            },
+            {
+              "id": "fpga-btb/1/anchor",
+              "type": "port",
+              "node": "bottom-btb",
+              "port": "fpga-btb/1",
+              "side": "bottom",
+              "offset": 0.5
+            },
+            {
+              "id": "fpga-btb/route",
+              "type": "fixedRoute",
+              "connection": "fpga-btb",
+              "frame": "bottom",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "mcu-fpga/0/anchor",
+              "type": "port",
+              "node": "mcu",
+              "port": "mcu-fpga/0",
+              "side": "right",
+              "offset": 0.5
+            },
+            {
+              "id": "mcu-fpga/1/anchor",
+              "type": "port",
+              "node": "fpga",
+              "port": "mcu-fpga/1",
+              "side": "left",
+              "offset": 0.5
+            },
+            {
+              "id": "mcu-fpga/route",
+              "type": "fixedRoute",
+              "connection": "mcu-fpga",
+              "frame": "bottom",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "ddr-bus/0/anchor",
+              "type": "port",
+              "node": "fpga",
+              "port": "ddr-bus/0",
+              "side": "right",
+              "offset": 0.5
+            },
+            {
+              "id": "ddr-bus/1/anchor",
+              "type": "port",
+              "node": "ddr",
+              "port": "ddr-bus/1",
+              "side": "left",
+              "offset": 0.5
+            },
+            {
+              "id": "ddr-bus/route",
+              "type": "fixedRoute",
+              "connection": "ddr-bus",
+              "frame": "bottom",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            },
+            {
+              "id": "eth-bus/0/anchor",
+              "type": "port",
+              "node": "fpga",
+              "port": "eth-bus/0",
+              "side": "bottom",
+              "offset": 0.5
+            },
+            {
+              "id": "eth-bus/1/anchor",
+              "type": "port",
+              "node": "ethernet",
+              "port": "eth-bus/1",
+              "side": "top",
+              "offset": 0.5
+            },
+            {
+              "id": "eth-bus/route",
+              "type": "fixedRoute",
+              "connection": "eth-bus",
+              "frame": "bottom",
+              "paths": [
+                {
+                  "id": "line",
+                  "from": {
+                    "end": "0"
+                  },
+                  "to": {
+                    "end": "1"
+                  },
+                  "via": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

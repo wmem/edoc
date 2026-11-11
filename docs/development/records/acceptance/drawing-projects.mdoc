@@ -1,0 +1,57 @@
+{% section id="acceptance:drawing-projects" title="Drawing 独立检查与真实工程验证" %}
+
+阶段记录：本页保留原型阶段的验证背景；当前正式入口、实现包及接入边界见[Drawing 1.0 正式构建接入](drawing-release.mdoc)。
+
+本轮执行用户批准的内核正确性与真实规模验收，并增加 KY3133 FPGA 整体框图供共同审阅。不承担旧布局参数兼容，旧项目由 Agent 按[新契约](../design/drawing-contract.mdoc)升级。本轮仍使用显式 Scene 注入，没有发布新的正文标签，也没有切换所有旧图的默认引擎。
+
+本页记录内核与全量数据验证阶段。用户随后指出总图被接线干扰，阅读层级已按[后续修订](drawing-reading.mdoc)调整；下文36框75交互及8框7交互保留为完整接线压力验证，不再是默认系统总图。
+
+{% section id="acceptance:drawing-projects.kernel" title="求解与结果检查" %}
+
+通用模型、布局器、路由器和结果检查器各自独立。`verifyDrawingScene` 消费 Drawing 与最终 Scene，不读取布局器中间变量，也不相信结果里已有的 satisfiedConstraints。固定位置/尺寸、相对顺序、对齐、端口侧边/顺序/整边比例、经过点、完整固定路线和标签参考端/弧长比例均在最终坐标中核对；只有通过检查的约束 ID 才进入清单。约束错误提供对象和 JSON Pointer。
+
+结果检查还覆盖来源与包含关系、全部端点挂接、路线连通、框和文字边界、兄弟框重叠、穿框/穿字、独立连接重合/假分叉/平行间距，以及标签互相遮挡和遮挡其他连接。自动正交路由与 fixedRoute 使用同一检查标准，通道偏好不能放宽硬要求。
+
+四侧端口组支持标题、附注、独立折叠槽位及组内顺序；容器自身端口和正文与子图分区测量。精确标签比例沿指定两端之间的唯一连接树计算。上下侧分组在普通 Drawing 阅读器中验证；已有工程 Interface 的合并/展开桥接仍采用其原有左右侧呈现，本轮没有宣称该旧桥接的任意四侧交互已完成。
+
+二端图可以使用 ELK compound 联合布局与路由，保留其跨层 section 与所属坐标区；不再丢弃全部路线后对大图逐线全局搜索。接口分组、多端点和精确位置/路线继续走受控求解路径。后端选择依据能力与规模，所有结果通过同一检查。通道不足时只增加空白并重新验证，不减少边或解除约束；任意图可解与任意组合美观仍没有保证。
+
+Node 入口使用 worker_threads，网页接口重算使用随 HTML 内联的 Blob Worker。默认预算 15 秒，终止工作线程落实超时和取消；界面事件循环不会被同步路由长期占用。取消/失败不提交新的 Scene，网页保留上一成功画面并显示失败。Scene 的 durationMs 是求解时间，不包含 Worker 启动、文档编译和网页绘制。
+
+{% /section %}
+{% section id="acceptance:drawing-projects.sources" title="真实工程输入与显示范围" %}
+
+验收适配器位于 scripts/drawing-projects.ts，仅从明确传入的项目根目录读取。它不修改两个项目的原理图、网表、RTL、权威定义或依赖，不将本地原型当作已经发布的新版本。
+
+| 视图 | 来源与范围 |
+| --- | --- |
+| KY3134 自动/意图总图 | board/v01/definition/architecture.json；两板容器、34模块、75交互完整保留 |
+| KY3134 管理/调试 | 同源 management 平面：13框、15交互 |
+| KY3134 供电/参考时钟 | 同源 support 平面：17框、19交互；这是模块级支撑接线，尚非展开全部稳压器的逐级电源树 |
+| KY3133 FPGA 整体 | docs/board-architecture-data.mjs 从当前生产装配生成；8框、7交互，含原定义的 clocks 关系 |
+| KY3133 datapath 三种展开 | 同源数据、APB寄存器、运行控制视图；分别6框5交互、4框3交互、5框4交互 |
+
+KY3134 全部9条跨板连接仍从底板BTB到顶板BTB。每个BTB的9种逻辑接口各投影内外两侧显示锚点，共18个；两侧保留同一原接口身份，不新增物理pin，不短接两条独立关系。只有原定义 flow=forward 的端点显示箭头，未知方向保留。
+
+KY3133 保留 board → system → spi → frames 的真实包含关系，media 是 system 的另一支。管理/统计、时钟/复位/IO与重复队列均为有来源的归组。双向帧交互保留 projectsRelations，不能由单根显示线推断逐信号方向。核对入口包括 ethernet_board、ethernet_system、ethernet_spi、ethernet_datapath 的生产装配，以及 gate RTL 的 MAC 接口；本轮没有修改 RTL，也不重签 FPGA 行为或实板验证结果。
+
+生成页携带可折叠的模块、交互与来源清单，Scene 和 SVG 保留 originIds。完整总图不因分主题阅读而删减。75条交互适配屏幕后文字较小，需要缩放/平移追踪；主题视图帮助集中阅读，但不代替完整图。几何检查通过与整体布局是否符合用户习惯分别审阅。
+
+{% /section %}
+{% section id="acceptance:drawing-projects.reproduce" title="复现、检查与限制" %}
+
+在 edoc 源码根运行，工程路径由调用者显式提供：
+
+```sh
+node scripts/drawing-prototype.ts --hardware-root "$EDOC_HARDWARE_PROJECT" --fpga-root "$EDOC_FPGA_PROJECT"
+node --test tests/drawing-projects.test.ts tests/drawing-verification.test.ts
+```
+
+真实项目回归要求设置上述两个环境变量，否则明确 skip，不能将跳过当作通过。生成物仍位于 output/drawing-prototype：index.html 为原生离线文档，hardware-*.svg/json 与 fpga-*.svg/json 为完整导出；.project/inputs 保存本轮生成输入与来源清单，不作为第二份手工维护定义。
+
+回归覆盖逐类硬约束的伪造满足清单、取消/预算后重新求解、四侧分组、容器正文与端口、完整36框75交互/BTB映射及FPGA层级。已有接口全部16种状态、多端点、固定树和普通图回归继续执行。浏览器分别检查离线接口重算、失败保持旧场景、来源查询、当前/逐信号导出，以及普通图文字开关、缩放、平移和大图。真实硬件/FPGA页面使用 playwright-cli 和现有 Chromium 查看整图与局部；SVG 独立检查，不能用构建或用例数量代替可读性结论。
+
+未完成范围继续明确保留：polyline、同连接多份经过点要求的联合求解、图形编辑/拖动后保存布局、所有旧项目自动迁移、公开Schema与默认引擎切换。本轮没有降低这些候选需求，也不把来源定义中的待确认装配或电气问题判为已解决。
+
+{% /section %}
+{% /section %}

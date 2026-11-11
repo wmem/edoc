@@ -1,0 +1,48 @@
+{% section id="acceptance:drawing-reading" title="系统框图的阅读层级修订" %}
+
+阶段记录：本页保留原型阶段的验证背景；当前正式入口、实现包及接入边界见[Drawing 1.0 正式构建接入](drawing-release.mdoc)。
+
+2026-11-10 用户确认绘图能力可以继续使用，但完整接线干扰了系统框图阅读。本轮依据[框图阅读层级](../design/diagram-reading-levels.mdoc)直接调整工程显示投影，继续在原生文档审阅，不改原理图、网表或RTL；后续总图实施另有下文记录的通用容器边界修复。
+
+后续澄清以原资料包系统图的组织方式为参照，不要求原样复刻形状和配色。当前默认入口已恢复为一张完整的主要功能模块总图；最初拆出的四幅关系图转为补充分部视图。总图按两板分区、底板FPGA居中、外围按面板相对分区、两侧BTB长条关联组织，仍沿用当前硬件事实而不照抄旧图标签。
+
+2026-11-11 用户确认当前两板模块地图效果可以，并同意作为 edoc 文档参考；[参考说明](../design/diagram-reading-levels.mdoc#design:diagram-reading-levels.board-map-reference)记录画法、原生生成链路与原型边界。该确认不扩大本页的电气、实物或正式版接入验收范围。
+
+{% section id="acceptance:drawing-reading.scope" title="本轮改变了什么" %}
+
+旧36框75交互仍完整保留，但移入“完整接线压力验证”，不再用它作为产品总览的阅读判据。原始工程事实和下级完整输出责任不变。系统总图不画电源扇出，公共时钟与运行控制分别在专题或下级展开；接口文字不同时在两个端口和线上重复。
+
+硬件首页进一步按用户要求改为两板模块地图，共27个显示模块和两板容器、30条接口关系。底板FPGA居中，T1/T1S逐内部通道展开，两侧BTB在相向板边形成水平长条；隐藏所有线后节点分布保持不变。此前14个显示模块的归组继续用于分部视图；板间、底板业务、管理配置及顶板组成在“硬件分部关系”中补充阅读。具体复用器、电平转换、redriver、继电器和装配条件在“硬件模块与专题接线”中展开，不将全部75条原交互塞回总图。
+
+FPGA功能总图以Host Bridge、帧处理与转发、MAC/媒体、寄存器管理与统计四部分说明协作。省略board/system/spi包装和公共时钟扇出，来源保留实际实例路径；帧处理内部、APB访问与运行控制分别展开，具体组件名字作为职责名称的补充。该投影不改变RTL包含关系。
+
+{% /section %}
+{% section id="acceptance:drawing-reading.sources" title="后续Agent修改入口" %}
+
+| 工程 | 权威事实 | 本轮显示配置 |
+| --- | --- | --- |
+| KY3134 | board/v01/definition/architecture.json | board/v01/definition/board-map.json：默认模块地图、通道选择器、位置/尺寸/槽位/固定路径；architecture-views.json：补充分部视图及专题范围 |
+| KY3133 | docs/board-architecture-data.mjs及生产装配 | docs/architecture-views.json：功能总图范围、职责名称、包装省略和局部侧边 |
+| edoc | Drawing/Scene契约 | scripts/drawing-board-map.ts与scripts/drawing-projects.ts只读上述定义，scripts/drawing-prototype.ts生成审阅文档 |
+
+同一功能线可以投影多个原交互，但不是共用Net或直接引脚连接。每个归组列出真实成员，每条线保留完整来源；无明确方向的聚合不补箭头。源数据与显示投影分别维护，不根据图上折点反推电路。
+
+项目维护入口已说明这些职责。本轮没有安装或发布新的edoc，也没有声称两个项目已锁定使用原型版本；正式项目的渲染切换继续按发布与升级范围单独处理。
+
+{% /section %}
+{% section id="acceptance:drawing-reading.checks" title="验证范围" %}
+
+运行真实工程回归，核对内部通道正常编号、T1S面板反序未套入图号、居中FPGA、板边BTB比例、每对模块仅一条关系、隐藏线后几何不变、模块来源或省略归属、每条聚合关系的原交互集合、总图无电源/时钟接线、跨板只经过BTB，以及原75交互压力图继续完整。FPGA功能层级省略与真实来源归属分别检查。全部新视图经过同一独立几何检查。
+
+用playwright-cli及现有Chromium检查新硬件与FPGA页、正常/大图视口、模块选择、标题开关和SVG导出，并独立查看静态SVG。阅读判断关注能否识别模块、追踪协作和找到模块接线；几何通过不代签用户的主观布局审阅。
+
+完整总图实施时修复了一处联合布局问题：无显式端口的容器被统一设为FIXED_POS，后端隐式边界端点因此把宽窄两板挤成对角排列。最小两容器用例证明其根因；改为无显式端口时FREE，有显式端口仍FIXED_POS。回归检查TB上下顺序、横向范围重叠以及全部几何与来源，不放宽作者声明的锚点约束。
+
+模块地图使用原生place/size/port/fixedRoute，不依赖外部绘图。匿名槽位的无正文叶框不再预留端口文字行，标题居中；尺寸不足仍报错。固定位置在差分求解后保留原始精确值，避免浮点抵消导致正交路径末端出现极小斜段。仅有少量匿名槽位关系的无固定几何图也采用联合布局，回归覆盖三条关系的可布线性。
+
+相关来源回归、类型与文档校验、文档构建及原生阅读器离线交互回归继续执行。纯文档投影不重签RTL功能、时序或实板资格。供电专题仍为模块级接线，不冒充已经补齐全部稳压器的逐级电源树。
+
+复现仍使用[真实工程验证中的命令](drawing-projects.mdoc#acceptance:drawing-projects.reproduce)，需要显式设置两个工程路径。审阅HTML保持位于output/drawing-prototype/index.html。
+
+{% /section %}
+{% /section %}

@@ -1,6 +1,6 @@
 import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {specimen} from './specification-fixture.ts';
+import {specimen} from './clause-fixture.ts';
 import {samplePdf} from './reader-fixture.ts';
 export const registerData={registers:[
  {id:'reg:CTRL',kind:'register',label:'CTRL',width:32,gapPolicy:'reserved',description:'虚构控制寄存器。',source:{file:'contract.txt',selector:'CTRL',attachment:{id:'original',target:'detail'}},fields:[

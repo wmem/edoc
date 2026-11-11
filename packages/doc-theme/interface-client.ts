@@ -2,6 +2,8 @@ import {nodeHeading,addPortLeads,readableViewport} from './graph-presentation.ts
 import {portLabel} from '../render-graph/ports.ts';
 import {drawnPaths} from '../render-graph/net-tree.ts';
 import {Graph as X6} from '@antv/x6';
+import {solveDrawingInBrowser} from './drawing-executor.ts';
+import {drawingInterfaceScene} from '../drawing/interface-scene.ts';
 import {interfaceScene,initialInterfaceState} from '../render-graph/interfaces.ts';
 import type {InterfaceState} from '../render-graph/interfaces.ts';
 import type {Scene} from '../render-graph/scene.ts';
@@ -14,6 +16,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
  holder.dataset.initialized='true';holder.dataset.busy='false';
  let current:Scene=data.scenes[holder.dataset.diagram!],state=initialInterfaceState(current.interfaceModel!),desired=structuredClone(state),revision=0,committed=0,running=false,desiredFocus:string|undefined;
  const selection=document.createElement('div');selection.className='interface-selection';selection.hidden=true;
+ const solve=current.layoutEngine==='drawing'?(model:Parameters<typeof drawingInterfaceScene>[0],state:InterfaceState)=>drawingInterfaceScene(model,state,d=>solveDrawingInBrowser(d,{signal})):interfaceScene;
  const model=current.interfaceModel!,canvas=holder.querySelector<HTMLElement>('.canvas')!,status=holder.querySelector<HTMLElement>('.interface-status')!,actions=document.querySelector<HTMLElement>('#selection-actions')!;
  const attributes=holder.querySelector<HTMLInputElement>('[data-display="port-attributes"]')!,labels=holder.querySelector<HTMLInputElement>('[data-display="relation-labels"]');
  const details=holder.querySelector<HTMLInputElement>('[data-display="interface-details"]')!;
@@ -68,9 +71,9 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
    const version=revision,target=structuredClone(desired),focusId=desiredFocus,old=current.nodes.find(n=>n.id===focusId),zoom=graph.zoom(),translation=graph.translate(),point=old?{x:old.x*zoom+translation.tx,y:old.y*zoom+translation.ty}:undefined,started=performance.now();
    status.textContent='正在重新布局接口与连线…';
    try{
-    const result=await interfaceScene(model,target);if(signal?.aborted)return;if(version!==revision)continue;
+    const result=await solve(model,target);if(signal?.aborted)return;if(version!==revision)continue;
     // 完整静态图与当前图一起提交，避免失败或过期请求留下两套文字状态。
-    const full=result.display.showInterfaceDetails!==printDetails?await interfaceScene(model,{modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,'expanded' as const]))),classes:null,showInterfaceDetails:result.display.showInterfaceDetails}):undefined;
+    const full=result.display.showInterfaceDetails!==printDetails?await solve(model,{modes:Object.fromEntries(model.nodes.flatMap(n=>(n.interfaces??[]).map(i=>[i.id,'expanded' as const]))),classes:null,showInterfaceDetails:result.display.showInterfaceDetails}):undefined;
     if(signal?.aborted)return;if(version!==revision)continue;
     if(full){const nextSVG=new DOMParser().parseFromString(renderSVG({...full,display:{...full.display,showPortAttributes:attributes.checked,showRelationLabels:relationLabelsVisible()}},'',current.id+'-instance-'+holder.dataset.instance),'image/svg+xml').documentElement;staticSVG.replaceWith(nextSVG);staticSVG=nextSVG;printDetails=result.display.showInterfaceDetails;}
     error='';current=result;state=result.interfaceState!;draw();const node=current.nodes.find(n=>n.id===focusId);if(point&&node)graph.translate(point.x-node.x*zoom,point.y-node.y*zoom);else viewport();

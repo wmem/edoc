@@ -1,0 +1,25 @@
+{% section id="ref:home" title="查询参考" %}
+
+{% directory-order items=["capabilities.mdoc","config.mdoc","commands.mdoc","markdoc-native.mdoc","tags/","markdoc.mdoc","ir.mdoc","graph.mdoc","pdf.mdoc","examples.mdoc","errors.mdoc"] /%}
+
+已经知道问题时，按下面条目查字段与语法，无需顺序通读。第一次了解功能先读[认识 edoc](../index.mdoc)，需要操作方法时进入[图表](../charts/index.mdoc)。各条目的稳定 section ID 可由 edoc docs read 直接读取。
+
+| 要查什么 | 参考 |
+| --- | --- |
+| 当前能表达什么、教程及实际例子在哪里 | [能力索引](capabilities.mdoc) |
+| 入口、默认值、数据函数、输出 | [配置](config.mdoc) |
+| 构建、校验、目录、正文与对象查询 | [命令](commands.mdoc) |
+| 变量、函数、条件、partial、table、slot 和注解 | [Markdoc 原生语法](markdoc-native.mdoc) |
+| 内置标签分别解决什么问题、输入什么数据 | [标签职责](tags/index.mdoc) |
+| section、布局、图表和跳转标签 | [正文语法](markdoc.mdoc) |
+| 规范正文、行为约束、同源复用 | [能力、行为与条款](tags/semantic-content.mdoc#ref:semantic-content) |
+| 对象、端口、关系、表和时序 | [数据契约](ir.mdoc) |
+| 图形字段、接口与布局约束 | [图形参考](graph.mdoc) |
+| PDF 附件、稳定位置与返回 | [PDF 参考](pdf.mdoc) |
+| 真实渲染的详图、表格与覆盖关联 | [样例查询](examples.mdoc) |
+| 校验失败与能力边界 | [错误与限制](errors.mdoc) |
+| 完整可复制的创建方法 | [投影表](ir.mdoc#ref:table-example)、[规范波形](ir.mdoc#ref:waveform-example)、[主干与通道](graph.mdoc#ref:layout-example) |
+
+例如查工具的数据配置：edoc docs read --id ref:config-data。项目正文使用普通 edoc read；查询准确字段时，不读取整份生成 HTML。
+
+{% /section %}

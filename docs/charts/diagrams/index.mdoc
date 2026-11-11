@@ -1,0 +1,25 @@
+{% section id="use:diagrams" title="框图、接线与接口" %}
+
+{% directory-order items=["drawing.mdoc","architecture.mdoc","wiring.mdoc","interfaces.mdoc","display.mdoc","graph-options.mdoc","layout.mdoc"] /%}
+
+先说明模块组成与关系，再按需要进入真实端点或逐信号接口。下面的图都用relation-diagram展示；选择输入时看数据由谁维护、是否需要共享工程对象，不按底层布局实现来划分阅读任务。
+
+按当前要理解的问题选择一篇短教程，无需顺序通读：
+
+| 你要看什么 | 阅读入口 |
+| --- | --- |
+| 模块组成、板卡布局或精确控制路线 | [模块框图与布局](drawing.mdoc) |
+| 模块有哪些职责、怎样协作 | [架构图：模块与关系](architecture.mdoc) |
+| 信号接到哪些端口、多端点怎样表示 | [接线图：端点与分支](wiring.mdoc) |
+| 多组总线先总览、再展开逐信号 | [接口合并与展开](interfaces.mdoc) |
+| 隐藏附注、筛选类别、导出完整图 | [显示设置与完整导出](display.mdoc) |
+| 父子框、逻辑集合、接口顺序与初始状态 | [图形分组与接口显示](graph-options.mdoc) |
+| 默认布局不够清楚时声明展示意图 | [需要时调整布局](layout.mdoc) |
+
+模块框图使用视图内的Drawing描述框、端口、容器和连线；自动布局是起点，也可声明对齐、位置和路线。Drawing是显示结构，不把显示节点自动注册为电气器件。
+
+已有工程对象与真实连接时，Node、Port、Interface、Connection保存事实，RelationView选择范围；图、表和查询共用这些身份。架构图、接线图和接口图沿这条路径，接口合并/展开仍保持逐信号原关系。两类输入都在views中，由relation-diagram引用；创建方式见对应教程，精确边界见[标签契约](../../reference/tags/relation-diagram.mdoc)。
+
+接口表使用 interface-table 整理已有端口，始终生成表格，见[接口表契约](../../reference/tags/interface-table.mdoc)。数字波形则用[时序图](../waveforms.mdoc)描述信号随时间的变化，不属于节点关系模型。
+
+{% /section %}
