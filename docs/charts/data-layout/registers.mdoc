@@ -240,7 +240,7 @@ COUNT 没有 reset，表示“未声明”；EVENT 用 unknown 显式声明未�
 
 {% section id="use:registers:wide" title="64 位与窄屏" %}
 
-工具按容器宽度自动切为每带 32、16 或 8 位，不把整幅图缩小到文字无法阅读。↔ 表示同一字段跨带，各片段指向同一身份。下面省略 gapPolicy，因此空洞是“未声明位”。
+工具默认沿 32 位字边界显示，高、低 32 位各成一带；窄屏在图内横向滚动，避免把完整字段拆成许多 8 位小段。↔ 仅在字段真正跨越 32 位边界时出现，各片段指向同一身份。悬停图中字段时会高亮其下方字段表的对应行。下面省略 gapPolicy，因此空洞是“未声明位”。
 
 {% register-diagram id="manual:status64" /%}
 {% register-field-table id="manual:status64" /%}

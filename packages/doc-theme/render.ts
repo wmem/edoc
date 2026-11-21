@@ -2,7 +2,7 @@ import {engineeringSVG,engineeringHTML} from '../figure/render.ts';
 import {binaryFieldTable} from '../extensions/binary-layout/render.ts';
 import {registerMapTable} from '../extensions/register-map/render.ts';
 import type {BinaryView} from '../core/types.ts';
-import {registerDiagramHTML,registerFieldTable} from '../extensions/register/render.ts';
+import {registerDiagramHTML,registerFieldTable,registerFieldTableHTML} from '../extensions/register/render.ts';
 import type {Register} from '../extensions/register/types.ts';
 import {readingOutline,headingGroups} from './reading-structure.ts';
 import {presentationGraph} from '../extensions/clause/prepare.ts';
@@ -36,11 +36,11 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
  for(const {ast}of plan.documents)for(const node of ast.walk())if(typeof node.attributes.id==='string')usedIds.add(node.attributes.id);
  const codeId=()=>{let id:string;do{id='reading-code-'+(++codeCounter);}while(usedIds.has(id));usedIds.add(id);return id;};
  const heading=(id:string,level:number,body:string,section=false,kind?:string)=>{level=options.headingLevel?.(id,level)??level;const tag='h'+Math.min(level+1,6);return `<${tag} data-heading-level="${level}"${section?' data-section-title':''}${level+1>6?` aria-level="${level+1}"`:''}>${kind?`<span class="content-kind-label">${kind==='capability'?'能力':'行为'}</span>`:''}${reading.numbers.has(id)?`<span class="heading-number" aria-hidden="true">${esc(reading.numbers.get(id))}</span>`:''}${body}</${tag}>`;};
- function renderTable(table:Table,scope:string,a:{sortable?:boolean;filterable?:boolean}){
+ function renderTable(table:Table,scope:string,a:{sortable?:boolean;filterable?:boolean},custom?:(rowNamespace:string)=>string){
   const key=JSON.stringify([scope,table.id]),instance=tableInstances.get(key)??0;tableInstances.set(key,instance+1);let rowNamespace='';
   if(instance)do{rowNamespace='table-instance-'+(++tableCounter)+'-';}while(table.rows.some(row=>usedIds.has(scope+rowNamespace+anchor(row.id))));
   for(const row of table.rows)usedIds.add(scope+rowNamespace+anchor(row.id));
-  return tableHTML(graph,table,{sortable:a.sortable,filterable:a.filterable,rowNamespace});
+  return custom?custom(rowNamespace):tableHTML(graph,table,{sortable:a.sortable,filterable:a.filterable,rowNamespace});
  }
  function render(tree:any,fold=true,scope=''):string{
   if(tree===null||tree===undefined||tree===false)return '';
@@ -82,7 +82,7 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
    if(type==='binary-field-table')return binaryFieldTable(graph,id,a.view?graph.index.get(a.view)!.entity as BinaryView:{});
    if(type==='data-table')return renderTable(graph.index.get(id)!.entity as Table,scope,a);
    if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId);
-   if(type==='register-field-table')return renderTable(registerFieldTable(graph.index.get(id)!.entity as Register,graph),scope,{});
+   if(type==='register-field-table'){const register=graph.index.get(id)!.entity as Register;return renderTable(registerFieldTable(register,graph),scope,{},rowNamespace=>registerFieldTableHTML(register,graph,{rowNamespace}));}
    if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
    if(type==='state-diagram'||type==='flowchart'){const target=a.view??id;return relationDiagramHTML(target,scenes[target],printScenes[target],++counter);}
    if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);

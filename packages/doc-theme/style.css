@@ -156,26 +156,58 @@ nav.sidebar > * { flex-shrink: 0; }
  .table-sort { background: transparent; }
 }
 
-/* 寄存器位带按容器换行，不缩小字号；各分段始终指向同一字段实体。 */
-.register-diagram { container-type: inline-size; margin: 18px 0; min-width: 0; width: 100%; }
-.register-actions { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
-.register-actions span { flex: 1; }
-.register-actions button { font-size: 12px; padding: 3px 8px; }
-.register-scroll { overflow: auto; max-width: 100%; margin-top: 10px; }
+/* 寄存器按完整 32 位连续绘制，内容区不足时仅在图内滚动，不重新切碎位带。 */
+.register-diagram { margin: 18px 0 8px; min-width: 0; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fafcfe; }
+.register-diagram figcaption { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin: 0 0 8px; color: var(--ink); font-size: 14px; }
+.register-diagram figcaption span { color: var(--muted); font-size: 12px; }
+.register-actions { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.register-actions span { flex: 1; min-width: 0; }
+.register-actions button { font-size: 12px; padding: 3px 9px; flex: 0 0 auto; }
+.register-scroll { overflow-x: auto; overflow-y: hidden; max-width: 100%; margin-top: 10px; background: white; border: 1px solid #dce7ef; border-radius: 5px; }
 .register-scroll svg { display: block; max-width: none; }
+.register-variant { width: max-content; }
+.register-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .register-scroll a:focus-visible { outline: 2px solid var(--accent); }
-.register-variant { display: none; }
-.register-8 { display: block; }
-@container (min-width:528px) { .register-8 { display: none; } .register-16 { display: block; } }
-@container (min-width:1040px) { .register-16 { display: none; } .register-32 { display: block; } }
-.register-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 4px 0; padding: 0; font-size: 12px; }
+.register-diagram [data-register-field].register-corresponding rect { stroke: #087d9b; stroke-width: 2.5px; }
+.register-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 10px 0 0; padding: 0; font-size: 12px; }
 .register-legend li { min-width: 0; overflow-wrap: anywhere; }
+.register-legend a { display: inline-block; border-radius: 3px; padding: 1px 3px; }
+.register-legend a.register-corresponding { background: #dceef5; }
 .register-legend span,.register-gap-note,.register-source,.register-value-note { color: var(--muted); font-size: 12px; }
-.register-gap-note { margin: 8px 0; }
+.register-gap-note { margin: 7px 0 0; }
 .register-description { white-space: pre-wrap; }
 .register-field-detail dl { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px 18px; }
 .register-field-detail dd { margin: 0; overflow-wrap: anywhere; }
-@media print { .register-actions { display: none; } .register-scroll { overflow: visible; } }
+.register-field-table { margin-top: 8px; min-width: 0; }
+.register-field-mobile-hint { display: none; }
+.register-field-table table { margin: 0; }
+.register-field-table th { min-width: 0; }
+.register-field-table th:first-child { min-width: 150px; }
+.register-field-table th:nth-child(2) { min-width: 75px; }
+.register-field-table th:nth-child(3) { min-width: 100px; }
+.register-field-table th:last-child { min-width: 210px; }
+.register-field-table td { vertical-align: top; }
+.register-field-table td:nth-child(2),.register-field-table td:nth-child(3) { white-space: nowrap; }
+.register-field-name { font-weight: 600; display: block; overflow-wrap: anywhere; }
+.register-field-bits { display: block; color: var(--muted); font-size: 11px; font-family: Consolas, monospace; margin-top: 2px; }
+.register-field-description { display: block; white-space: pre-wrap; }
+.register-field-reset { overflow-wrap: anywhere; }
+.register-field-origin { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+.register-field-origin > summary { font-weight: 400; width: fit-content; }
+.register-field-origin p { margin: 4px 0; }
+.register-field-table tr.register-corresponding td { background: #e8f5fa; }
+@media (max-width:750px) {
+ .register-diagram { padding: 10px; }
+ .register-actions { align-items: flex-start; }
+ .register-field-table th:first-child { min-width: 135px; }
+ .register-field-mobile-hint { display: block; margin: 5px 0; font-size: 11px; color: var(--muted); }
+}
+@media print {
+ .register-actions { display: none; }
+ .register-scroll { overflow: visible; border: 0; }
+ .register-diagram { break-inside: avoid; }
+ .register-field-table .data-table-scroll { overflow: visible; }
+}
 
 .engineering-figure { margin: 18px 0; border: 1px solid #d5dfeb; border-radius: 8px; overflow: hidden; background: white; }
 .engineering-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:9px; background:#f3f6fa; border-bottom:1px solid #d5dfeb; }
@@ -205,3 +237,11 @@ nav.sidebar > * { flex-shrink: 0; }
 .register-map-table[data-map-mode="registers"] th:nth-last-child(2){min-width:160px}
 .register-map-table th:last-child{min-width:260px}
 .register-map-table[data-map-mode="regions"] th:first-child{min-width:140px}
+
+/* 地址映射表保留既有 mode 语义，仅改善行区分和列标题浏览。 */
+.register-map-table table { margin: 0; }
+.register-map-table thead th { position: sticky; top: 0; z-index: 1; }
+.register-map-table tbody tr:nth-child(even) { background: #f7fafc; }
+.register-map-table td { vertical-align: top; }
+.register-map-table td:first-child { font-weight: 600; }
+@media print { .register-map-table thead th { position: static; } }
