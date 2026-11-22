@@ -6,13 +6,14 @@ import {routeHash} from '../../core/routes.ts';
 import {entitySource,resolveLinkTarget} from '../../core/link-target.ts';
 import {anchor} from '../../core/identity.ts';
 import {esc} from '../../core/html.ts';
+import {registerPresentationId} from './presentation.ts';
 
 const colors=['#dcebf5','#e1efe7','#f8eddb','#eae6f6'];
 const fieldHref=(project:string,id:string)=>esc(routeHash({kind:'entity',project,id}));
 
 // 默认按 32 位字边界组织，而不是随容器宽度拆成 8 位小段。
 // 视口不足时由 HTML 容器滚动，SVG 本身始终保留连续的位布局。
-export function registerSVG(register:Register,options:{project?:string;bitsPerRow?:number;fontCSS?:string;licenses?:unknown}={}){
+export function registerSVG(register:Register,options:{project?:string;bitsPerRow?:number;presentationId?:string;fontCSS?:string;licenses?:unknown}={}){
  const bits=options.bitsPerRow??32,cell=bits>=24?22:bits>=16?30:34,padding=10,laneHeight=86;
  const projection=registerProjection(register),width=Math.min(bits,register.width)*cell+padding*2;
  const lanes:{high:number;low:number}[]=[];
@@ -34,18 +35,19 @@ export function registerSVG(register:Register,options:{project?:string;bitsPerRo
    const body='<title>'+esc(segment.label)+' ['+fieldRange(segment)+']'+(field?' · '+(field.access??'访问未声明')+' · 复位 '+resetText(field.reset):' · 不赋予访问或复位属性')+'</title>'
     +'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="36" rx="2" fill="'+(field?colors[index%colors.length]:segment.kind==='reserved'?'#eef1f3':'#fff5df')+'" stroke="'+(field?'#7796ac':'#9ca8af')+'"'+(segment.kind==='unspecified'?' stroke-dasharray="4 3"':'')+'/>'
     +'<text x="'+(x+w/2)+'" y="'+(y+23)+'" text-anchor="middle" font-size="12" fill="#193b53">'+esc(label)+'</text>';
-   parts.push(field?'<a href="'+fieldHref(options.project??'',field.id)+'" data-register-field="'+esc(field.id)+'" aria-label="'+esc(field.label)+' ['+fieldRange(field)+']">'+body+'</a>':'<g data-register-gap="'+segment.kind+'">'+body+'</g>');
+   parts.push(field?'<g data-register-field="'+esc(field.id)+'"'+(options.presentationId?' role="button" tabindex="0"':'')+' aria-label="'+esc(field.label)+' ['+fieldRange(field)+']">'+body+'</g>':'<g data-register-gap="'+segment.kind+'">'+body+'</g>');
   }
  });
- return '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'" role="img" aria-label="'+esc(register.label)+' '+register.width+'位寄存器位域图"><style>'+esc(options.fontCSS??'')+"text{font-family:'Noto Sans SC',Arial,sans-serif}</style><metadata>"+esc(JSON.stringify({register,projection,...(options.licenses?{licenses:options.licenses}:{})}))+'</metadata>'+parts.join('')+'</svg>';
+ return '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'" role="'+(options.presentationId?'group':'img')+'" aria-label="'+esc(register.label)+' '+register.width+'位寄存器位域图"><style>'+esc(options.fontCSS??'')+"text{font-family:'Noto Sans SC',Arial,sans-serif}</style><metadata>"+esc(JSON.stringify({projectId:options.project,register,projection,...(options.licenses?{licenses:options.licenses}:{})}))+'</metadata>'+parts.join('')+'</svg>';
 }
-export function registerDiagramHTML(register:Register,project:string){
+export function registerDiagramHTML(register:Register,project:string,presentationId=registerPresentationId(project,register.id)){
  const projection=registerProjection(register);
- return '<figure class="register-diagram" data-register="'+esc(register.id)+'">'
+ return '<figure class="register-diagram" data-register="'+esc(register.id)+'" data-register-project="'+esc(project)+'" data-register-presentation="'+esc(presentationId)+'">'
   +'<figcaption><strong>'+esc(register.label)+'</strong><span>'+register.width+' bit</span></figcaption>'
   +'<div class="register-actions"><span>高位在左，连续 32 位；可左右滚动，窄字段编号对应下方表格</span><button type="button" data-register-export>导出 SVG</button></div>'
-  +'<div class="register-scroll" tabindex="0" aria-label="寄存器位域图，可左右滚动查看全部位"><div class="register-variant" data-register-bits="32">'+registerSVG(register,{project,bitsPerRow:32})+'</div></div>'
-  +'<ul class="register-legend">'+projection.fields.map((field,index)=>'<li><a href="'+fieldHref(project,field.id)+'" data-register-field="'+esc(field.id)+'"><code>F'+(index+1)+'</code> '+esc(field.label)+' <span>['+fieldRange(field)+']</span></a></li>').join('')+'</ul>'
+  +'<div class="register-scroll" tabindex="0" aria-label="寄存器位域图，可左右滚动查看全部位"><div class="register-variant" data-register-bits="32">'+registerSVG(register,{project,bitsPerRow:32,presentationId})+'</div></div>'
+  +'<ul class="register-legend">'+projection.fields.map((field,index)=>'<li><button type="button" data-register-field="'+esc(field.id)+'"><code>F'+(index+1)+'</code> '+esc(field.label)+' <span>['+fieldRange(field)+']</span></button></li>').join('')+'</ul>'
+  +'<p class="register-location-status" data-register-status role="status" hidden></p>'
   +'<p class="register-gap-note">'+(register.gapPolicy==='reserved'?'空洞按已声明策略标为保留位':'空洞标为未声明位，不认定为保留位')+'；不补写访问属性或复位值。</p></figure>';
 }
 // 字段事实始终由 Register 投影，不创建独立 Table/Row 实体。
@@ -57,22 +59,22 @@ export function registerFieldTable(register:Register,graph:Graph):Table{
  })};
 }
 // 专用阅读表将位段合在一列、来源收进详情，仍使用原有 data-table 排序和筛选能力。
-export function registerFieldTableHTML(register:Register,graph:Graph,options:{rowNamespace?:string}={}){
- const rows=registerFieldTable(register,graph).rows;
+export function registerFieldTableHTML(register:Register,graph:Graph,options:{rowNamespace?:string;presentationId?:string}={}){
+ const rows=registerFieldTable(register,graph).rows,presentationId=options.presentationId??registerPresentationId(graph.manifest.projectId,register.id);
  const body=rows.map(row=>{
   const field=graph.index.get(row.id)?.type==='register-field'?graph.index.get(row.id)!.entity as RegisterField:undefined;
   const value=row.values!;
-  const name=field?'<a class="register-field-name" href="'+fieldHref(graph.manifest.projectId,field.id)+'">'+esc(field.label)+'</a>':'<span class="register-field-name">'+esc(String(value.name))+'</span>';
+  const name=field?'<span class="register-field-name">'+esc(field.label)+'</span>':'<span class="register-field-name">'+esc(String(value.name))+'</span>';
   const origin=field&&entitySource(graph,field.id)?'<details class="register-field-origin"><summary>查看来源</summary>'+registerSourceHTML(graph,field.id)+'</details>':'';
   const id=esc((options.rowNamespace??'')+anchor(row.id));
-  return '<tr id="'+id+'"'+(field?' data-register-field-row="'+esc(field.id)+'"':' data-register-gap-row')+'>'
+  return '<tr id="'+id+'"'+(field?' data-register-field-row="'+esc(field.id)+'" tabindex="-1"':' data-register-gap-row')+'>'
     +'<td>'+name+'<span class="register-field-bits">['+esc(String(value.bits))+']</span></td>'
     +'<td><code>'+esc(String(value.access))+'</code></td>'
     +'<td><span class="register-field-reset" data-reset-state="'+resetState(field?.reset)+'">'+esc(String(value.reset))+'</span></td>'
-    +'<td><span class="register-field-description">'+esc(String(value.description))+'</span>'+origin+'</td></tr>';
+    +'<td><span class="register-field-description">'+esc(String(value.description))+'</span>'+(field?'<a class="register-field-detail-link" href="'+fieldHref(graph.manifest.projectId,field.id)+'" aria-label="'+esc(field.label)+' 查看详情">查看详情</a>':'')+origin+'</td></tr>';
  }).join('');
- return '<div class="data-table register-field-table" data-register-table="'+esc(register.id)+'" data-table="'+esc('register-field-table:'+register.id)+'" data-sortable="true" data-filterable="true">'
-  +'<p class="register-field-mobile-hint">左右滑动表格查看全部字段信息；点字段名进入完整定义。</p>'
+ return '<div class="data-table register-field-table" data-register-table="'+esc(register.id)+'" data-register-project="'+esc(graph.manifest.projectId)+'" data-register-presentation="'+esc(presentationId)+'" data-table="'+esc('register-field-table:'+presentationId)+'" data-sortable="true" data-filterable="true">'
+  +'<p class="register-field-mobile-hint">左右滑动表格查看全部字段信息；点击图或图例定位本表；“查看详情”进入独立字段定义。</p>'
   +'<div class="data-table-scroll"><table><caption>'+esc(register.label)+' · 字段定义</caption>'
   +'<colgroup><col data-field="name" data-type="string"/><col data-field="access" data-type="string"/><col data-field="reset" data-type="string"/><col data-field="description" data-type="string"/></colgroup>'
   +'<thead><tr><th>字段与位段</th><th>访问</th><th>定义复位</th><th>说明 / 来源</th></tr></thead><tbody>'+body+'</tbody></table></div></div>';

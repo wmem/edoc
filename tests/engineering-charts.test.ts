@@ -7,14 +7,14 @@ import { readDocument } from '../packages/core/read.ts';
 import type { PlotView, ResourceType, Sequence } from '../packages/core/types.ts';
 import { binaryProjection } from '../packages/extensions/binary-layout/model.ts';
 import { plotProjection, quantile } from '../packages/extensions/plot/model.ts';
-import { intervalsOverlap, registerMapProjection } from '../packages/extensions/register-map/model.ts';
+import { intervalsOverlap, registerMapProjection, registerLeafProjection } from '../packages/extensions/register-map/model.ts';
 import { sequenceProjection } from '../packages/extensions/sequence/model.ts';
 import { engineeringSVG } from '../packages/figure/render.ts';
 function data() {
   const result: Record<string, any[]> = {};
   for (const name of ['sequences', 'binary-layouts', 'register-maps', 'measurements']) {
     const d = JSON.parse(readFileSync('docs/ir/authoring/' + name + '.json', 'utf8'));
-    for (const [key, value] of Object.entries(d)) result[key] = [...(result[key] ?? []), ...(value as any[])];
+    for (const [key, value] of Object.entries(d)) if(Array.isArray(value)) result[key] = [...(result[key] ?? []), ...(value as any[])];
   }
   return result;
 }
@@ -26,7 +26,7 @@ const load = (d = data()) => graphFromResources(Object.entries(d).map(([type, it
   file: 'models.json'
 })), {
   projectId: 'charts',
-  irVersion: '1.8',
+  irVersion: '2.0',
   resources: [],
   entryDocuments: [],
   requiredFeatures: ['sequences', 'binary-layouts', 'plots', 'register-maps', 'registers']
@@ -41,10 +41,10 @@ const rejects = (modify: (d: ReturnType<typeof data>) => void, code: string) => 
 };
 test('地址精确到 64 bit、嵌套数组实例和定义身份保持独立', () => {
   const g = load(),
-    result = queryElement(g, 'space:csr', '["device","ports",2,"ctrl"]') as any;
+    result = queryElement(g, 'space:csr', JSON.stringify([{kind:'region',regionId:'device'},{kind:'entry',entryId:'ports',index:2},{kind:'entry',entryId:'ctrl'}])) as any;
   assert.equal(result.address, '0x1000000000000300');
-  assert.equal(result.definition, 'reg:port-ctrl');
-  assert.equal(registerMapProjection(g, 'space:csr').total, '8');
+  assert.equal(result.definitionId, 'reg:port-ctrl');
+  assert.equal(registerLeafProjection(g, 'space:csr').directRegisterTotal, '8');
   assert.equal(query(g, 'block:port', {
     depth: 1
   }).expansion.items.length, 2);
@@ -303,20 +303,22 @@ test('海量实例查询不先展开，空子块不触发长循环', () => {
   const d = data();
   d.registerBlocks[1].entries[0].count = 1000000000;
   d.registerBlocks[1].size = '0x100000000000';
+  d.addressSpaces[0].regions[0].size = '0x100000000000';
   d.addressSpaces[0].addressWidth = 128;
   const g = load(d),
-    p = registerMapProjection(g, 'space:csr', 5);
+    p = registerLeafProjection(g, 'space:csr', 5);
   assert.equal(p.rows.length, 5);
-  assert.equal(p.total, '2000000000');
+  assert.equal(p.directRegisterTotal, '2000000000');
   assert.ok(p.truncated);
-  const last = queryElement(g, 'space:csr', '["device","ports",999999999,"status"]') as any;
-  assert.equal(last.definition, 'reg:port-status');
+  const last = queryElement(g, 'space:csr', JSON.stringify([{kind:'region',regionId:'device'},{kind:'entry',entryId:'ports',index:999999999},{kind:'entry',entryId:'status'}])) as any;
+  assert.equal(last.definitionId, 'reg:port-status');
   assert.equal(last.address, '0x1000003B9ACA0004');
   const empty = data();
   empty.registerBlocks[0].entries = [];
   empty.registerBlocks[1].entries[0].count = 1000000000;
   empty.registerBlocks[1].size = '0x100000000000';
-  assert.equal(registerMapProjection(load(empty), 'space:csr').rows.length, 0);
+  empty.addressSpaces[0].regions[0].size = '0x100000000000';
+  assert.equal(registerLeafProjection(load(empty), 'space:csr').rows.length, 0);
 });
 test('所有图元及声明式处理都落实到后端，样本数与统计结果可核对', async () => {
   for (const mark of ['point', 'bar', 'area', 'rule', 'errorbar', 'boxplot'] as const) {
@@ -737,136 +739,11 @@ test('分面空样本聚合保留显式作用域，兄弟图层过滤互不影�
   assert.deepEqual(rows.filter(r => r.__edoc_leaf.endsWith('/layer/0')).map(r => [r[key], r.n]), [['A', 0], ['B', 1]]);
   assert.deepEqual(rows.filter(r => r.__edoc_leaf.endsWith('/layer/1')).map(r => [r[key], r.value]), [['A', 1]]);
 });
-test('地址校验使用每个实际上下文，独立块仍按8bit且拒绝在该单位下重叠', async () => {
-  const d = {
-      registers: [{
-        id: 'reg32',
-        kind: 'register',
-        label: '寄存器',
-        width: 32,
-        fields: []
-      }],
-      registerBlocks: [{
-        id: 'inner',
-        kind: 'register-block',
-        entries: [{
-          id: 'a',
-          register: 'reg32',
-          offset: '0'
-        }, {
-          id: 'b',
-          register: 'reg32',
-          offset: '1'
-        }]
-      }, {
-        id: 'outer',
-        kind: 'register-block',
-        entries: [{
-          id: 'nested',
-          block: 'inner',
-          offset: '0'
-        }]
-      }],
-      addressSpaces: [{
-        id: 'word-space',
-        kind: 'address-space',
-        addressUnitBits: 32,
-        mappings: [{
-          id: 'mapped',
-          block: 'outer',
-          base: '4096'
-        }]
-      }]
-    },
-    g = load(d);
-  assert.deepEqual(registerMapProjection(g, 'word-space').rows.map(r => [r.address, r.span]), [['0x1000', '0x1'], ['0x1001', '0x1']]);
-  assert.equal((queryElement(g, 'word-space', '["mapped","nested","b"]') as any).address, '0x1001');
-  await engineeringSVG(g, 'word-space');
-  assert.throws(() => query(g, 'inner'), (e: any) => e.code === 'ADDRESS_OVERLAP');
-  await assert.rejects(() => engineeringSVG(g, 'outer'), (e: any) => e.code === 'ADDRESS_OVERLAP');
-  for (const unit of [8, 1]) {
-    const bad = structuredClone(d);
-    bad.addressSpaces.push({
-      ...bad.addressSpaces[0],
-      id: 'other-space',
-      addressUnitBits: unit
-    });
-    assert.throws(() => load(bad), (e: any) => e.diagnostics?.some((d: any) => d.code === 'ADDRESS_OVERLAP'));
-  }
-  const unmapped = structuredClone(d);
-  unmapped.addressSpaces = [];
-  assert.throws(() => load(unmapped), (e: any) => e.diagnostics?.some((d: any) => d.code === 'ADDRESS_OVERLAP'));
-  const bit = structuredClone(d);
-  bit.registerBlocks[0].entries[1].offset = '4';
-  bit.addressSpaces[0].addressUnitBits = 1;
-  assert.throws(() => load(bit), (e: any) => e.diagnostics?.some((d: any) => d.code === 'ADDRESS_OVERLAP'));
-});
-test('仅引用字寻址空间的独立工程可以构建，不预先按8bit投影无关块', async t => {
-  const {
-      mkdtempSync,
-      mkdirSync,
-      writeFileSync,
-      rmSync
-    } = await import('node:fs'),
-    {
-      tmpdir
-    } = await import('node:os'),
-    {
-      join,
-      resolve
-    } = await import('node:path'),
-    {
-      spawnSync
-    } = await import('node:child_process');
-  const root = mkdtempSync(join(tmpdir(), 'edoc-word-map-'));
-  t.after(() => rmSync(root, {
-    recursive: true,
-    force: true
-  }));
-  mkdirSync(join(root, 'docs'));
-  const facts = {
-    registers: [{
-      id: 'reg',
-      kind: 'register',
-      label: '寄存器',
-      width: 32,
-      fields: []
-    }],
-    registerBlocks: [{
-      id: 'block',
-      kind: 'register-block',
-      entries: [{
-        id: 'first',
-        register: 'reg',
-        offset: '0'
-      }, {
-        id: 'second',
-        register: 'reg',
-        offset: '1'
-      }]
-    }],
-    addressSpaces: [{
-      id: 'space',
-      kind: 'address-space',
-      addressUnitBits: 32,
-      mappings: [{
-        id: 'instance',
-        block: 'block',
-        base: '0'
-      }]
-    }]
-  };
-  writeFileSync(join(root, 'docs/edoc.config.js'), 'export default ' + JSON.stringify({
-    data: facts
-  }) + ';');
-  writeFileSync(join(root, 'docs/index.mdoc'), '{% register-map id="space" /%}');
-  const result = spawnSync(process.execPath, [resolve('packages/cli/edoc.ts'), 'build'], {
-    cwd: root,
-    encoding: 'utf8',
-    timeout: 30000
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(readFileSync(join(root, 'output/index.html'), 'utf8'), /地址单位 32 bit/);
+test('IR2 独立 Block 原生单位不受外层空间改变', () => {
+ const d=data();d.addressSpaces[0].addressUnitBits=32;
+ const g=load(d),direct=queryElement(g,'space:csr',JSON.stringify([{kind:'region',regionId:'device'},{kind:'entry',entryId:'ports',index:2},{kind:'entry',entryId:'ctrl'}])) as any;
+ assert.equal(direct.address,'0x10000000000000C0');
+ assert.equal((queryElement(g,'block:port',JSON.stringify([{kind:'entry',entryId:'status'}])) as any).relativeOffset.address,'0x4');
 });
 test('optional文字条件接受同名场景键，嵌套实例隔离，未知键明确诊断', () => {
   const child = {

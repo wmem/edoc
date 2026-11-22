@@ -14,7 +14,7 @@ import {repository} from './helpers.ts';
 
 test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读取可用',{timeout:60000},async()=>{
  const book=await loadBook(await resolveProjectConfig(join(repository,'docs/edoc.config.js'))),graph=book.root.graph;
- assert.equal(book.projects.size,4);assert.equal(book.projects.get('manual-component')?.documents.documents.length,1);assert.ok(book.projects.has('document-first-demo'));assert.ok(book.projects.has('behavior-contract-demo'));
+ assert.equal(book.projects.size,6);assert.equal(book.projects.get('manual-component')?.documents.documents.length,1);assert.ok(book.projects.has('document-first-demo'));assert.ok(book.projects.has('behavior-contract-demo'));assert.ok(book.projects.has('address-v2-composed'));assert.ok(book.projects.has('uart-ip'));
  const navigation=projectOutline(book),flatten=(entries:any[]):any[]=>entries.flatMap(e=>[e,...flatten(e.children)]),all=flatten(navigation.chapters);
  for(const label of ['查询参考','edoc 开发','生成第一份文档','接口合并与展开'])assert.ok(all.some(n=>n.label===label),label);
  const home=all.find(n=>n.sectionId==='manual:home')!,branches=navigation.chapters.filter((n:any)=>n.page!==home.page);

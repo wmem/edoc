@@ -1,0 +1,171 @@
+{
+  "irVersion": "2.0",
+  "registers": [
+    {
+      "id": "uart:ctrl",
+      "kind": "register",
+      "label": "SoC 本地同名 CTRL",
+      "width": 8,
+      "fields": [
+        {
+          "id": "uart:enable",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/uart.json",
+        "selector": "uart:ctrl"
+      }
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "uart:csr",
+      "kind": "register-block",
+      "label": "SoC 本地同名块",
+      "size": "0x10",
+      "entries": [
+        {
+          "id": "ctrl",
+          "register": "uart:ctrl",
+          "offset": "0"
+        }
+      ]
+    }
+  ],
+  "addressSpaces": [
+    {
+      "id": "soc:apb",
+      "kind": "address-space",
+      "label": "SoC 字节空间",
+      "addressWidth": 64,
+      "addressUnitBits": 8,
+      "base": "0",
+      "size": "0x10000000000000000",
+      "regions": [
+        {
+          "id": "uart0",
+          "kind": "resource",
+          "label": "UART0",
+          "base": "0x1000000000001000",
+          "size": "0x1000",
+          "target": {
+            "project": "uart-ip",
+            "id": "uart:csr"
+          }
+        },
+        {
+          "id": "uart1",
+          "kind": "resource",
+          "label": "UART1",
+          "base": "0x1000000000002000",
+          "size": "0x1000",
+          "target": {
+            "project": "uart-ip",
+            "id": "uart:csr"
+          }
+        },
+        {
+          "id": "ip-window",
+          "kind": "window",
+          "label": "IP Window",
+          "base": "0x1000000000003000",
+          "size": "0x100",
+          "target": {
+            "project": "uart-ip",
+            "id": "uart:bus"
+          },
+          "targetBase": "0"
+        },
+        {
+          "id": "local",
+          "kind": "resource",
+          "label": "本地同名模板",
+          "base": "0",
+          "size": "0x10",
+          "target": {
+            "id": "uart:csr"
+          }
+        },
+        {
+          "id": "reserved",
+          "kind": "reserved",
+          "label": "规划保留",
+          "base": "0x8000",
+          "size": "0x100",
+          "description": "留给后续模块；未声明访问属性。"
+        },
+        {
+          "id": "ram",
+          "kind": "resource",
+          "label": "RAM 切片",
+          "base": "0xA000",
+          "size": "0x100",
+          "resourceOffset": "0x200",
+          "target": {
+            "id": "soc:ram"
+          }
+        }
+      ]
+    },
+    {
+      "id": "soc:cpu",
+      "kind": "address-space",
+      "label": "CPU 字空间",
+      "addressWidth": 64,
+      "addressUnitBits": 32,
+      "base": "0",
+      "size": "0x10000000000000000",
+      "regions": [
+        {
+          "id": "apb",
+          "kind": "window",
+          "label": "CPU→APB",
+          "base": "0x4000",
+          "size": "0xC00",
+          "target": {
+            "id": "soc:apb"
+          },
+          "targetBase": "0x1000000000001000"
+        }
+      ]
+    },
+    {
+      "id": "soc:large",
+      "kind": "address-space",
+      "label": "符号阵列空间",
+      "addressWidth": 64,
+      "addressUnitBits": 8,
+      "base": "0",
+      "size": "0x10000000000000000",
+      "regions": [
+        {
+          "id": "uarts",
+          "kind": "resource",
+          "label": "UART 阵列",
+          "base": "0x1000000000000000",
+          "size": "0x1000",
+          "stride": "0x1000",
+          "count": 1000000000,
+          "target": {
+            "project": "uart-ip",
+            "id": "uart:csr"
+          }
+        }
+      ]
+    }
+  ],
+  "memories": [
+    {
+      "kind": "memory",
+      "id": "soc:ram",
+      "label": "SoC RAM",
+      "memoryType": "ram",
+      "capacityBytes": "0x1000",
+      "description": "CPU 使用的片上 RAM，当前空间映射容量的一部分。"
+    }
+  ]
+}

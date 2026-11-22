@@ -14,7 +14,7 @@ test('CLI与浏览器共用寄存器SVG入口按XML转义字体，完整保留�
   t.after(() => rmSync(root, {recursive: true, force: true}));
   mkdirSync(join(root, 'docs'));
   const register: Register = {id: 'reg', kind: 'register', label: '控制寄存器', width: 32, fields: []};
-  writeFileSync(join(root, 'docs/edoc.config.js'), 'export default ' + JSON.stringify({data: {registers: [register], registerBlocks: [{id: 'map', kind: 'register-block', entries: [{id: 'ctrl', register: 'reg', offset: '0'}]}]}}) + ';');
+  writeFileSync(join(root, 'docs/edoc.config.js'), 'export default ' + JSON.stringify({data: {registers: [register], registerBlocks: [{id: 'map', kind: 'register-block', label: '字体布局', entries: [{id: 'ctrl', register: 'reg', offset: '0'}]}]}}) + ';');
   writeFileSync(join(root, 'docs/index.mdoc'), '{% section id="home" title="字体SVG回归" %}\n{% register-map id="map" /%}\n{% /section %}');
   const outputs: {name: string; xml: string}[] = [];
   for (const id of ['map', 'reg']) {

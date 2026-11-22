@@ -154,7 +154,8 @@
           "register": "fpga:version",
           "offset": "0x4"
         }
-      ]
+      ],
+      "addressUnitBits": 8
     },
     {
       "id": "fpga:channel",
@@ -173,7 +174,8 @@
           "register": "fpga:threshold",
           "offset": "0x4"
         }
-      ]
+      ],
+      "addressUnitBits": 8
     }
   ],
   "addressSpaces": [
@@ -183,19 +185,31 @@
       "label": "虚构 FPGA 采样器寄存器空间",
       "addressUnitBits": 8,
       "addressWidth": 32,
-      "mappings": [
+      "base": "0",
+      "size": "0x100000000",
+      "regions": [
         {
           "id": "global",
-          "block": "fpga:global",
-          "base": "0x40000000"
+          "base": "0x40000000",
+          "label": "全局控制区",
+          "kind": "resource",
+          "size": "0x100",
+          "target": {
+            "id": "fpga:global"
+          }
         },
         {
           "id": "channel0",
           "label": "通道 0 采样区",
-          "block": "fpga:channel",
-          "base": "0x40000100"
+          "base": "0x40000100",
+          "kind": "resource",
+          "size": "0x100",
+          "target": {
+            "id": "fpga:channel"
+          }
         }
       ]
     }
-  ]
+  ],
+  "irVersion": "2.0"
 }

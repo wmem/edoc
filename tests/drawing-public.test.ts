@@ -10,7 +10,7 @@ import {bookHTML} from '../packages/pack-html/book.ts';
 import {scene,svg} from '../packages/render-graph/index.ts';
 import {verifyDrawingScene} from '../packages/drawing/verify.ts';
 const view=()=>JSON.parse(readFileSync(new URL('../docs/ir/authoring/board-map.json',import.meta.url),'utf8')).views[0];
-function native(t:any){const f=fixture(t);f.edit('views',d=>d.views=[view()]);f.edit('manifest',d=>{d.irVersion='1.5';d.requiredFeatures=[...d.requiredFeatures??[],'native-drawing'];d.entryDocuments=['docs/native.mdoc'];});writeFileSync(join(f.root,'docs/native.mdoc'),'{% section id="native" title="原生绘图" %}\n{% relation-diagram id="manual:drawing-board-map" /%}\n{% /section %}');return f;}
+function native(t:any){const f=fixture(t);f.edit('views',d=>d.views=[view()]);f.edit('manifest',d=>{d.irVersion='2.0';d.requiredFeatures=[...d.requiredFeatures??[],'native-drawing'];d.entryDocuments=['docs/native.mdoc'];});writeFileSync(join(f.root,'docs/native.mdoc'),'{% section id="native" title="原生绘图" %}\n{% relation-diagram id="manual:drawing-board-map" /%}\n{% /section %}');return f;}
 
 test('原生框图通过标准项目加载、构建及查询，无自定义scene注入',async t=>{
   const f=native(t),config=await resolveProjectConfig(join(f.root,'edoc.config.js')),project=await loadProject(config);
@@ -33,9 +33,9 @@ for(const [name,mutate,code]of [
  ['混用接口展开',(v:any)=>v.display={interfaceMode:'collapsed'},'DRAWING_VIEW_CONFLICT'],
  ['悬空显示端点',(v:any)=>v.drawing.connections[0].ends[0].node='missing','DRAWING_REFERENCE'],
  ['端口越界比例',(v:any)=>v.drawing.layout.constraints.find((r:any)=>r.type==='port').offset=2,'SCHEMA'],
- ['拼错布局字段',(v:any)=>v.drawing.layout.spacng={},'DRAWING_SCHEMA'],
+ ['拼错布局字段',(v:any)=>v.drawing.layout.spacng={},'SCHEMA'],
  ['不再接受草案版本',(v:any)=>v.drawing.schemaVersion='drawing-draft-1','SCHEMA']
-]as const)test('原生视图拒绝'+name,t=>{const f=native(t);f.edit('views',d=>mutate(d.views[0]));expectCode(f.load,code);});
+]as const)test('原生视图拒绝'+name,t=>{const f=native(t);f.edit('views',d=>mutate(d.views[0]));expectCode(f.load,code,name==='拼错布局字段'?'/views/0/drawing/layout/spacng':undefined);});
 
 test('公共构建入口保留固定路线的失败，不回退自动布局',async t=>{
  const f=native(t);f.edit('views',d=>{const x=d.views[0].drawing;x.layout.constraints.find((r:any)=>r.type==='fixedRoute').paths[0].via=[{x:99,y:99}];});

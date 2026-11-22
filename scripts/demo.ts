@@ -42,9 +42,11 @@ const interfaceData=JSON.parse(readFileSync(join(root,'examples/gallery/interfac
 for(const type of ['objects','relations','views'])resources[type].push(...interfaceData[type]);
 const constraintSource='examples/gallery/constraints.json',constraintData=JSON.parse(readFileSync(join(root,constraintSource),'utf8'));
 resources.views.push(...constraintData.views.map((v:any)=>({...v,source:{file:constraintSource,selector:v.id}})));
+const hierarchySource='docs/ir/authoring/state-hierarchy.json',hierarchy=JSON.parse(readFileSync(join(root,hierarchySource),'utf8'));
+resources.stateMachines.push(...hierarchy.stateMachines.map((e:any)=>({...e,source:e.source??{file:hierarchySource,selector:e.id}})));
 function json(file:string,data:unknown){writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
 for(const [type,items]of Object.entries(resources))json(join(ir,type+'.json'),{[type]:items});
-json(join(ir,'manifest.json'),{irVersion:'1.2',requiredFeatures:['interface-groups','layout-intent'],projectId:'edoc-graphics-demo',adapterVersion:'gallery-1.0',resources:Object.keys(resources).map(type=>({type,path:type+'.json'})),entryDocuments:['docs/development/records/regression/graphics.mdoc','examples/fpga-mac/docs/SPEC.mdoc','examples/fpga-mac/docs/VERIFY.mdoc']});
+json(join(ir,'manifest.json'),{irVersion:'2.0',requiredFeatures:['interface-groups','layout-intent','state-machines'],projectId:'edoc-graphics-demo',adapterVersion:'gallery-1.0',resources:Object.keys(resources).map(type=>({type,path:type+'.json'})),entryDocuments:['docs/development/records/regression/graphics.mdoc','examples/fpga-mac/docs/SPEC.mdoc','examples/fpga-mac/docs/VERIFY.mdoc']});
 const graph=loadIR(ir,{projectRoot:root});
 const target=join(output,'demo.html'),pending=target+'.pending';
 try{writeFileSync(pending,await html(graph,'edoc · 图形能力 Demo',{compactIndex:true}));renameSync(pending,target);}catch(error){rmSync(target,{force:true});throw error;}finally{rmSync(pending,{force:true});}

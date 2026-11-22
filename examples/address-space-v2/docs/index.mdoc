@@ -1,0 +1,24 @@
+{% section id="demo:address-home" title="单工程 SoC 地址资源" %}
+
+UART 的寄存器布局只有 0x100 字节，项目仍为它分配 0x1000 字节；分配尾部不能再放其他资源，也不能据此推断尾部可访问。RAM 是同一具名存储实体，本例从其内部 0x200 字节处映射 0x1000 字节。
+
+{% section id="demo:allocation" title="项目地址分配" %}
+
+APB 按字节寻址；CPU 的一个地址单位为 32 bit。CPU Window 对 APB 做线性位坐标转换，不推断 byte enable 或事务合法性。范围采用半开区间；下表另显示包含在范围内的末地址供核对。
+
+{% register-map id="demo:apb" mode="regions" /%}
+{% register-map id="demo:cpu" mode="regions" /%}
+
+{% /section %}
+{% section id="demo:registers" title="UART 寄存器布局" %}
+
+布局偏移由 UART 模板定义，实例地址由地址空间计算。32 位事务、低字优先和完整寄存器一致读取均为本虚构例子的显式访问声明；64 位位图本身不证明这些能力。
+
+{% register-map id="demo:uart" mode="registers" /%}
+{% register-diagram id="demo:ctrl" /%}
+{% register-field-table id="demo:ctrl" /%}
+{% register-diagram id="demo:counter" /%}
+{% register-field-table id="demo:counter" /%}
+
+{% /section %}
+{% /section %}

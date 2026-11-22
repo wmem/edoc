@@ -21,11 +21,13 @@ export default {
 
 {% include project="component" /%}
 
+地址资源也可在文章或 Section 中显式挂载[IR 目录与虚拟页](../reference/resource-navigation.mdoc)，不改变这里的真实文件目录和子工程组合方式。
+
 每个工程保留自己的配置根、正文和 docs/ir。子工程可以独立生成；父配置不会变成只有目录的容器。
 
 {% /section %}
 
-{% section id="use:weak-links" title="跨工程只做弱跳转" %}
+{% section id="use:weak-links" title="文档跨工程弱跳转" %}
 
 ```text {% process=false %}
 {% reference project="board" id="device:controller" label="核对控制器" /%}
@@ -34,6 +36,8 @@ export default {
 project 使用稳定 projectId，不是父子别名或磁盘路径。只查当前产物中已有的目标，不读取外部配置、正文或 IR。目标未包含时提示“当前生成的页面中没有此内容”，保留当前文章。
 
 例如点击 {% reference project="not-in-this-manual" id="device:controller" label="未包含目标的示例" /%}。这不会令独立构建失败。本地数据和渲染引用仍然严格校验。
+
+地址资源的 AddressRegion.target.project 属于强引用，必须显式组合目标工程，且定义、类型、范围与 Window 环路都通过校验后才能构建。它不会改变正文链接的弱跳转规则；实际 UART/IP 与 SoC 组合见[跨工程地址资源](../reference/ir.mdoc#ref:address-projects)。
 
 {% /section %}
 

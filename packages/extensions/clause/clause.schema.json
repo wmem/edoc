@@ -1,6 +1,6 @@
 {
  "$schema":"https://json-schema.org/draft/2020-12/schema",
- "$id":"https://edoc.local/schema/v1/clause.schema.json",
+ "$id":"https://edoc.local/schema/v2/clause.schema.json",
  "type":"object",
  "properties":{"clauses":{"type":"array","items":{
   "type":"object","properties":{

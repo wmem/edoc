@@ -30,4 +30,4 @@ for(const p of pins){
 }
 const projection=JSON.parse(readFileSync(join(root,'docs/projections.json'),'utf8')),views=JSON.parse(readFileSync(join(root,'docs/views.json'),'utf8'));
 save('objects.json',{objects:[...objects.values(),...projection.groups]});save('relations.json',{relations:[...relations.values()]});save('views.json',views);save('tables.json',{tables:projection.tables});
-save('manifest.json',{irVersion:'1.0',projectId:'demo-board',adapterVersion:'1.0',resources:['objects','relations','views','tables'].map(type=>({type,path:type+'.json'})),entryDocuments:['docs/README.md','docs/ARCH.mdoc']});
+save('manifest.json',{irVersion:'2.0',projectId:'demo-board',adapterVersion:'1.0',resources:['objects','relations','views','tables'].map(type=>({type,path:type+'.json'})),entryDocuments:['docs/README.md','docs/ARCH.mdoc']});

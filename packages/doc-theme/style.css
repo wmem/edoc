@@ -171,8 +171,8 @@ nav.sidebar > * { flex-shrink: 0; }
 .register-diagram [data-register-field].register-corresponding rect { stroke: #087d9b; stroke-width: 2.5px; }
 .register-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 10px 0 0; padding: 0; font-size: 12px; }
 .register-legend li { min-width: 0; overflow-wrap: anywhere; }
-.register-legend a { display: inline-block; border-radius: 3px; padding: 1px 3px; }
-.register-legend a.register-corresponding { background: #dceef5; }
+.register-legend button { display: inline-block; border-radius: 3px; padding: 1px 3px; }
+.register-legend button.register-corresponding { background: #dceef5; }
 .register-legend span,.register-gap-note,.register-source,.register-value-note { color: var(--muted); font-size: 12px; }
 .register-gap-note { margin: 7px 0 0; }
 .register-description { white-space: pre-wrap; }
@@ -245,3 +245,13 @@ nav.sidebar > * { flex-shrink: 0; }
 .register-map-table td { vertical-align: top; }
 .register-map-table td:first-child { font-weight: 600; }
 @media print { .register-map-table thead th { position: static; } }
+
+/* 字段动作仅定位本组表格；独立详情是字段行中的次要入口。 */
+.register-legend button{border:0;background:transparent;padding:2px;color:var(--accent);text-align:left;font-size:12px}
+.register-legend button:hover{text-decoration:underline}.register-legend button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.register-scroll [data-register-field][role=button]{cursor:pointer}.register-scroll [data-register-field]:focus-visible{outline:2px solid var(--accent)}
+.register-scroll [data-register-field]:focus-visible rect{stroke:#076d8c;stroke-width:3px}
+.register-field-table tr.register-selected td{background:#e3f3fa}.register-field-table tr.register-selected td:first-child{box-shadow:inset 4px 0 #087d9b}
+.register-field-table tr[data-register-field-row]:focus{outline:3px solid #087d9b;outline-offset:-3px}
+.register-field-detail-link{display:inline-block;font-size:11px;margin-left:.6rem;text-decoration:underline}
+.register-location-status{padding:8px 10px;background:#e8f5fa;border-left:3px solid #087d9b;font-size:12px;overflow-wrap:anywhere}

@@ -97,7 +97,7 @@ export function projectInterfaces(model:InterfaceModel,state=initialInterfaceSta
  fakeNodes.forEach(n=>{add(n.id,n,'node');n.ports!.forEach(p=>add(p.id,p,'port',n.id));});connections.forEach(r=>add(r.id,r,'connection'));add(view.id,view,'view');
  // 时钟域名称不由显示投影推断，沿用构建时收集的标签。
  for(const n of fakeNodes)for(const p of n.ports??[])if(p.clockDomainId&&!index.has(p.clockDomainId))add(p.clockDomainId,{id:p.clockDomainId,kind:'node',label:model.domains[p.clockDomainId]??p.clockDomainId},'node');
- const graph:Graph={index,connections:new Map(connections.map(r=>[r.id,r])),adjacency:new Map(),projectRoot:'',irDirectory:'',manifest:{irVersion:'1.1',projectId:'display',resources:[],entryDocuments:[]}};
+ const graph:Graph={index,connections:new Map(connections.map(r=>[r.id,r])),adjacency:new Map(),projectRoot:'',irDirectory:'',manifest:{irVersion:'2.0',projectId:'display',resources:[],entryDocuments:[]}};
  hints.portMeta=Object.fromEntries(portMeta);
  return {graph,view,hints,interfaces,portMeta,finish(result:Scene){
  for(const n of result.nodes)for(const p of n.ports)Object.assign(p,portMeta.get(p.id));

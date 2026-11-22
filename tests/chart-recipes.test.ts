@@ -96,8 +96,8 @@ for (const recipe of recipes) {
       assert.equal(facts.binaryLayout.rows.find((row: any) => row.id === 'length').offset.value, 8);
     } else if (recipe.kind === 'register-block') {
       assert.equal(facts.registerMap.addressUnitBits, 8);
-      assert.deepEqual(facts.registerMap.rows.map((row: any) => [row.offset, row.span, row.definition]),
-        [['0x0', '0x4', 'recipe:control']]);
+      assert.deepEqual(facts.registerMap.rows.map((row: any) => [row.relativeOffset.address, row.range.sizeBits, row.definitionId]),
+        [['0x0', '0x20', 'recipe:control']]);
     } else if (recipe.kind === 'plot' && recipe.id === 'recipe:plot') {
       assert.equal(facts.plot.inputCount, 2);
       assert.deepEqual(facts.plot.projection.rows.map((row: any) => [row.values.elapsed, row.values.latency]), [[0, 8], [1, 12]]);
@@ -147,7 +147,7 @@ test('教学控制接口总览、单端及全展开均保持控制在左且保�
   const graph = graphFromResources(Object.entries(data).map(([type, values]) => ({
     type: type as import('../packages/core/types.ts').ResourceType,
     data: {[type]: values}, file: 'structure-system.json'
-  })), {projectId: 'tutorial', irVersion: '1.8', requiredFeatures: ['interface-groups', 'layout-intent'], resources: [], entryDocuments: []}, {root: repository, strict: true});
+  })), {projectId: 'tutorial', irVersion: '2.0', requiredFeatures: ['interface-groups', 'layout-intent'], resources: [], entryDocuments: []}, {root: repository, strict: true});
   const model = prepareInterfaceModel(graph, 'study:control')!;
   for (const expanded of [[], ['study:host.control'], ['study:recorder.control'], ['study:host.control', 'study:recorder.control']]) {
     const state = initialInterfaceState(model);

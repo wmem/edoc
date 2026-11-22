@@ -64,7 +64,7 @@ export function tableControls(root:HTMLElement,options:{state?:TableSnapshot[];o
    headers[index].replaceChildren(heading);
   });
   update(!!sort,false);
-  controllers.push({snapshot,reveal(target){const row=target.closest('tr');if(row&&rows.some(r=>r.element===row)){if(row.hidden){filters.clear();hidePanel();note.textContent='为显示目标行，已清除本表筛选。';note.hidden=false;update();}row.style.scrollMarginTop=((table.tHead?.getBoundingClientRect().height??0)+8)+'px';}},dispose(){disposed=true;hidePanel();tools.remove();panel.remove();note.remove();empty.remove();rows.forEach(row=>{row.element.hidden=false;tbody.append(row.element);});headers.forEach((th,i)=>{th.innerHTML=originalHeaders[i];th.removeAttribute('aria-sort');delete th.dataset.columnType;});}});
+  controllers.push({snapshot,reveal(target){const row=target.closest('tr');if(row&&rows.some(r=>r.element===row)){if(row.hidden){const value=rows.find(r=>r.element===row)!;for(const [index,column]of columns.entries()){const filter=filters.get(column.field);if(filter&&!matchesTableFilter(value.cells[index],column.type,filter))filters.delete(column.field);}hidePanel();note.textContent='为显示目标行，已清除影响目标行的筛选；其余筛选与排序保留。';note.hidden=false;update();}row.style.scrollMarginTop=((table.tHead?.getBoundingClientRect().height??0)+8)+'px';}},dispose(){disposed=true;hidePanel();tools.remove();panel.remove();note.remove();empty.remove();rows.forEach(row=>{row.element.hidden=false;tbody.append(row.element);});headers.forEach((th,i)=>{th.innerHTML=originalHeaders[i];th.removeAttribute('aria-sort');delete th.dataset.columnType;});}});
  }
  return {snapshot:()=>controllers.map(c=>c.snapshot()),reveal(target){controllers.forEach(c=>c.reveal(target));},dispose(){controllers.forEach(c=>c.dispose());}};
 }

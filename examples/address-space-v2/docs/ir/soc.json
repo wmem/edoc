@@ -1,0 +1,144 @@
+{
+  "irVersion": "2.0",
+  "registers": [
+    {
+      "id": "demo:ctrl",
+      "kind": "register",
+      "label": "CTRL",
+      "width": 32,
+      "fields": [
+        {
+          "id": "demo:ctrl.en",
+          "label": "EN",
+          "lsb": 0,
+          "msb": 0,
+          "access": "RW",
+          "enums": {
+            "0": "禁用",
+            "1": "使能"
+          },
+          "readEffect": "none",
+          "writeEffect": "normal"
+        }
+      ]
+    },
+    {
+      "id": "demo:counter",
+      "kind": "register",
+      "label": "COUNTER64",
+      "width": 64,
+      "fields": [
+        {
+          "id": "demo:counter.value",
+          "label": "VALUE",
+          "lsb": 0,
+          "msb": 63,
+          "access": "RO"
+        }
+      ]
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "demo:uart",
+      "kind": "register-block",
+      "label": "UART CSR 模板",
+      "addressUnitBits": 8,
+      "size": "0x100",
+      "accessPolicy": {
+        "allowedTransferBits": [
+          32
+        ],
+        "alignment": "4",
+        "byteOrder": "little",
+        "readConsistency": "whole-register",
+        "splitOrder": "low-first"
+      },
+      "entries": [
+        {
+          "id": "ctrl",
+          "register": "demo:ctrl",
+          "offset": "0"
+        },
+        {
+          "id": "counter",
+          "register": "demo:counter",
+          "offset": "8"
+        }
+      ]
+    }
+  ],
+  "memories": [
+    {
+      "id": "demo:ram",
+      "kind": "memory",
+      "label": "片内 RAM",
+      "capacityBytes": "0x10000",
+      "memoryType": "ram"
+    }
+  ],
+  "addressSpaces": [
+    {
+      "id": "demo:apb",
+      "kind": "address-space",
+      "label": "APB 字节空间",
+      "addressWidth": 32,
+      "addressUnitBits": 8,
+      "base": "0",
+      "size": "0x10000",
+      "regions": [
+        {
+          "id": "uart",
+          "kind": "resource",
+          "label": "UART0",
+          "base": "0x1000",
+          "size": "0x1000",
+          "alignment": "0x1000",
+          "target": {
+            "id": "demo:uart"
+          }
+        },
+        {
+          "id": "sram",
+          "kind": "resource",
+          "label": "RAM 窗口",
+          "base": "0x4000",
+          "size": "0x1000",
+          "resourceOffset": "0x200",
+          "target": {
+            "id": "demo:ram"
+          }
+        },
+        {
+          "id": "reserved",
+          "kind": "reserved",
+          "label": "规划保留",
+          "base": "0x8000",
+          "size": "0x1000"
+        }
+      ]
+    },
+    {
+      "id": "demo:cpu",
+      "kind": "address-space",
+      "label": "CPU 32 bit 地址单位空间",
+      "addressWidth": 32,
+      "addressUnitBits": 32,
+      "base": "0",
+      "size": "0x10000",
+      "regions": [
+        {
+          "id": "apb",
+          "kind": "window",
+          "label": "CPU 到 APB 窗口",
+          "base": "0x1000",
+          "size": "0x4000",
+          "target": {
+            "id": "demo:apb"
+          },
+          "targetBase": "0"
+        }
+      ]
+    }
+  ]
+}

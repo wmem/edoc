@@ -14,7 +14,7 @@ const load = () => {
   const data = dataset();
   const graph = graphFromResources(Object.entries(data).map(([type, values]) => ({
     type: type as ResourceType, data: {[type]: values}, file
-  })), {projectId: 'records-tutorials', irVersion: '1.8', requiredFeatures: ['plots'], resources: [], entryDocuments: []}, {root: process.cwd(), strict: true});
+  })), {projectId: 'records-tutorials', irVersion: '2.0', requiredFeatures: ['plots'], resources: [], entryDocuments: []}, {root: process.cwd(), strict: true});
   const view = (id: string): PlotView => data.views.find((view: PlotView) => view.id === id);
   return {data, graph, view};
 };

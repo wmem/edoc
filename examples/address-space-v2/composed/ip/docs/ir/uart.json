@@ -1,0 +1,67 @@
+{
+  "irVersion": "2.0",
+  "registers": [
+    {
+      "id": "uart:ctrl",
+      "kind": "register",
+      "label": "UART CTRL · 64 位",
+      "width": 64,
+      "fields": [
+        {
+          "id": "uart:enable",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/uart.json",
+        "selector": "uart:ctrl"
+      }
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "uart:csr",
+      "kind": "register-block",
+      "label": "UART 原生字节布局",
+      "addressUnitBits": 8,
+      "size": "0x100",
+      "entries": [
+        {
+          "id": "ctrl",
+          "register": "uart:ctrl",
+          "offset": "8"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/uart.json",
+        "selector": "uart:csr"
+      }
+    }
+  ],
+  "addressSpaces": [
+    {
+      "id": "uart:bus",
+      "kind": "address-space",
+      "label": "IP 半字空间",
+      "addressWidth": 32,
+      "addressUnitBits": 16,
+      "base": "0",
+      "size": "0x100",
+      "regions": [
+        {
+          "id": "csr",
+          "kind": "resource",
+          "label": "IP CSR",
+          "base": "0",
+          "size": "0x80",
+          "target": {
+            "id": "uart:csr"
+          }
+        }
+      ]
+    }
+  ]
+}

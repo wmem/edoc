@@ -1,9 +1,13 @@
+import {resourceTarget,resourceRoute,resourceContext,routeResource} from '../core/resource-pages.ts';
+import {assertResourceContext} from '../core/resource-context.ts';
 import {engineeringSVG,engineeringHTML} from '../figure/render.ts';
 import {binaryFieldTable} from '../extensions/binary-layout/render.ts';
 import {registerMapTable} from '../extensions/register-map/render.ts';
 import type {BinaryView} from '../core/types.ts';
 import {registerDiagramHTML,registerFieldTable,registerFieldTableHTML} from '../extensions/register/render.ts';
 import type {Register} from '../extensions/register/types.ts';
+import {planRegisterPresentations} from '../extensions/register/presentation.ts';
+import type {RegisterPresentationRequest} from '../extensions/register/presentation.ts';
 import {readingOutline,headingGroups} from './reading-structure.ts';
 import {presentationGraph} from '../extensions/clause/prepare.ts';
 import {clauseHTML} from '../extensions/clause/render.ts';
@@ -23,6 +27,7 @@ import {relationDiagramHTML} from '../extensions/relation-diagram/render.ts';
 import {interfaceTableHTML} from '../extensions/relation-diagram/interface-table.ts';
 export {tableHTML,field} from '../extensions/data-table/render.ts';
 export async function renderDocument(graph:Graph,title:string,options:{scene?:typeof scene;compactIndex?:boolean;headingLevel?:(id:string,level:number)=>number;projectLink?:(alias:string)=>{project:string;page:string;title:string};documentLink?:(href:string,source:string)=>string}={}){
+ assertResourceContext(graph);
  graph=presentationGraph(graph);
  const aliases=new Map<string,string|undefined>();
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
@@ -30,7 +35,7 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
  for(const id of usedViews){scenes[id]=await (options.scene??scene)(graph,id);printScenes[id]=scenes[id].control?await (options.scene??scene)(graph,id,{control:'full'}):scenes[id].interfaceModel?await (options.scene??scene)(graph,id,{interfaces:'expanded'}):scenes[id];}
  const figures=new Map<string,{current:string;full:string}>();
  for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['sequence-diagram','binary-diagram','plot','register-map'].includes(node.tag)){const id=node.attributes.view??node.attributes.id;if(node.tag==='register-map'&&node.attributes.mode&&node.attributes.mode!=='all')continue;if(!figures.has(id)){const current=await engineeringSVG(graph,id);figures.set(id,{current,full:await engineeringSVG(graph,id,true)});}}
- const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0,tableCounter=0;const tableInstances=new Map<string,number>();
+ const plan=prepareOutline(graph),headings=new Map(plan.all.map(e=>[e.id,e]));let counter=0,wave=0,codeCounter=0,tableCounter=0;let registerPresentations=new Map<any,string>();const tableInstances=new Map<string,number>();
  const specIds=new Set(plan.all.filter(e=>e.sectionId&&graph.index.get(e.sectionId)?.type==='clause').map(e=>e.id));
  const reading=readingOutline(plan.roots,title,specIds),usedIds=new Set(plan.all.map(e=>e.id));
  for(const {ast}of plan.documents)for(const node of ast.walk())if(typeof node.attributes.id==='string')usedIds.add(node.attributes.id);
@@ -52,7 +57,12 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
   if(typeof n!=='string')throw new Error('Markdoc 扩展标签须输出语义 HTML 标签名');
   if(n.startsWith('ed-')){
    const type=n.slice(3),id=a.id;
-   if(type==='directory-order')return '';
+   if(type==='directory-order'||type==='resource-content')return '';
+   if(type==='resource-directory'||type==='resource-link'){
+    const target=type==='resource-directory'?{kind:'definition',project:a.project??graph.manifest.projectId,id}:resourceTarget(a.target,graph.manifest.projectId);
+    const resolved=routeResource(resourceContext(graph),resourceRoute(target as any,a.mount)),route={...resolved.route,...(a.anchor?{anchor:a.anchor}:{})};
+    return '<a class="resource-entry" href="'+esc(routeHash(route))+'">'+esc(a.label??(type==='resource-directory'?'浏览 '+resolved.view.title+' 资源目录':resolved.view.title))+'</a>';
+   }
    if(type==='heading-group'){
     const [caption,...content]=tree.children;if(!Markdoc.Tag.isTag(caption))throw new Error('标题分组缺少标题节点');
     return `<details id="${esc(id)}" class="heading-section heading-anchor${a.class?' '+esc(a.class):''}" data-heading-section open><summary>${heading(id,a.outlineLevel,render(caption.children,true,scope))}</summary><div class="heading-content">${render(content,true,scope)}</div></details>`;
@@ -81,8 +91,8 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
    if(['sequence-diagram','binary-diagram','plot','register-map'].includes(type)){const key=a.view??id,figure=figures.get(key)!;return engineeringHTML(key,figure.current,figure.full,type==='register-map'?registerMapTable(graph,id,a):'');}
    if(type==='binary-field-table')return binaryFieldTable(graph,id,a.view?graph.index.get(a.view)!.entity as BinaryView:{});
    if(type==='data-table')return renderTable(graph.index.get(id)!.entity as Table,scope,a);
-   if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId);
-   if(type==='register-field-table'){const register=graph.index.get(id)!.entity as Register;return renderTable(registerFieldTable(register,graph),scope,{},rowNamespace=>registerFieldTableHTML(register,graph,{rowNamespace}));}
+   if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId,registerPresentations.get(tree));
+   if(type==='register-field-table'){const register=graph.index.get(id)!.entity as Register;return renderTable(registerFieldTable(register,graph),scope,{},rowNamespace=>registerFieldTableHTML(register,graph,{rowNamespace,presentationId:registerPresentations.get(tree)}));}
    if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
    if(type==='state-diagram'||type==='flowchart'){const target=a.view??id;return relationDiagramHTML(target,scenes[target],printScenes[target],++counter);}
    if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);
@@ -120,6 +130,15 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
  };
  // 先并行完成转换，再按源文顺序渲染，避免异步Schema改变重复表的首处锚点。
  const trees=await Promise.all(plan.documents.map(async({ast})=>settled(await Markdoc.transform(ast,config))));
+ const registerRequests:RegisterPresentationRequest<any>[]=[];
+ const collectRegisters=(tree:any,scope:string)=>{
+  if(Array.isArray(tree)){tree.forEach(node=>collectRegisters(node,scope));return;}
+  if(!Markdoc.Tag.isTag(tree))return;
+  if(tree.name==='ed-register-diagram'||tree.name==='ed-register-field-table')registerRequests.push({node:tree,register:tree.attributes.id,kind:tree.name==='ed-register-diagram'?'diagram':'table',scope,name:tree.attributes.presentation});
+  collectRegisters(tree.children,tree.name==='ed-section'&&tree.attributes.clause?scope+'/'+tree.attributes.bodyNamespace:scope);
+ };
+ trees.forEach((tree,index)=>collectRegisters(tree,pageId(plan.documents[index].file)));
+ registerPresentations=planRegisterPresentations(graph.manifest.projectId,registerRequests);
  const chapters=plan.documents.map(({file},index)=>`<article data-source="${esc(file)}">${render(trees[index])}</article>`).join('');
  const allEntities=Object.fromEntries([...graph.index].map(([id,e])=>[id,e.entity]));
  const existing=new Set([...chapters.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://edoc.local/schema/v1/register.schema.json",
+  "$id": "https://edoc.local/schema/v2/register.schema.json",
   "type": "object",
   "properties": {
     "registers": {
@@ -110,6 +110,31 @@
                       ],
                       "additionalProperties": false
                     }
+                  ]
+                },
+                "enums": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+                  },
+                  "additionalProperties": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "readEffect": {
+                  "enum": [
+                    "none",
+                    "clear"
+                  ]
+                },
+                "writeEffect": {
+                  "enum": [
+                    "normal",
+                    "w1c",
+                    "w1s",
+                    "pulse"
                   ]
                 }
               },

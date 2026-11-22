@@ -102,7 +102,7 @@ test('CLI 直接重读相同路径的 IR，失败后不会回退旧查询', t =>
 });
 test('CLI 帮助、版本与可执行文件入口', () => {
   assert.match(run(['--help']).stdout, /不要求 manifest/);
-  assert.match(run(['--version']).stdout, /2.0.0/);
+  assert.match(run(['--version']).stdout, /3\.0\.0/);
   const executable = spawnSync(join(repository, 'packages/cli/edoc.ts'), ['--version'], { encoding: 'utf8', timeout: 10000 });
   assert.equal(executable.status, 0, executable.stderr);
 });

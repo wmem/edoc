@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://edoc.local/schema/v1/register-block.schema.json",
+  "$id": "https://edoc.local/schema/v2/register-block.schema.json",
   "type": "object",
   "properties": {
     "registerBlocks": {
@@ -18,8 +18,16 @@
           "source": {
             "$ref": "common.schema.json#/$defs/source"
           },
+          "description": {
+            "type": "string"
+          },
           "kind": {
             "const": "register-block"
+          },
+          "addressUnitBits": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4096
           },
           "size": {
             "type": "string",
@@ -50,16 +58,16 @@
                   "type": "string",
                   "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
                 },
+                "span": {
+                  "type": "string",
+                  "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+                },
                 "count": {
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 9007199254740991
                 },
                 "stride": {
-                  "type": "string",
-                  "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
-                },
-                "span": {
                   "type": "string",
                   "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
                 }
@@ -74,6 +82,9 @@
                   "required": [
                     "register"
                   ],
+                  "properties": {
+                    "register": {}
+                  },
                   "not": {
                     "required": [
                       "block"
@@ -81,15 +92,15 @@
                     "properties": {
                       "block": {}
                     }
-                  },
-                  "properties": {
-                    "register": {}
                   }
                 },
                 {
                   "required": [
                     "block"
                   ],
+                  "properties": {
+                    "block": {}
+                  },
                   "not": {
                     "required": [
                       "register"
@@ -97,22 +108,63 @@
                     "properties": {
                       "register": {}
                     }
-                  },
-                  "properties": {
-                    "block": {}
                   }
                 }
               ]
             }
           },
-          "description": {
-            "type": "string",
-            "minLength": 1
+          "accessPolicy": {
+            "type": "object",
+            "properties": {
+              "allowedTransferBits": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              },
+              "alignment": {
+                "type": "string",
+                "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+              },
+              "byteOrder": {
+                "enum": [
+                  "little",
+                  "big"
+                ]
+              },
+              "splitOrder": {
+                "enum": [
+                  "low-first",
+                  "high-first"
+                ]
+              },
+              "readConsistency": {
+                "enum": [
+                  "whole-register",
+                  "per-transfer",
+                  "not-guaranteed"
+                ]
+              },
+              "writeAtomicity": {
+                "enum": [
+                  "whole-register",
+                  "per-transfer",
+                  "not-guaranteed"
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
           }
         },
         "required": [
           "id",
           "kind",
+          "label",
           "entries"
         ],
         "additionalProperties": false

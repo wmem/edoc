@@ -9,6 +9,7 @@ export function validateRegisterData(graph:Graph){
    const path='/fields/'+index;
    if(field.lsb>field.msb||field.msb>=register.width)report(entry,'REGISTER_RANGE',path,'字段位范围必须满足0 ≤ lsb ≤ msb < width');
    for(let bit=field.lsb;bit<=Math.min(field.msb,register.width-1);bit++){if(used.has(bit)){report(entry,'REGISTER_OVERLAP',path,'字段位范围重叠：'+bit);break;}used.add(bit);}
+   if(field.enums){const seen=new Set<bigint>();for(const code of Object.keys(field.enums)){const value=BigInt(code);if(seen.has(value))report(entry,'REGISTER_ENUM_DUPLICATE',path+'/enums','枚举编码数值重复：'+code);seen.add(value);if(field.msb>=field.lsb&&value>=(1n<<BigInt(field.msb-field.lsb+1)))report(entry,'REGISTER_ENUM_RANGE',path+'/enums','枚举编码超过字段位宽：'+code);}}
    if(field.reset&&'value' in field.reset){const value=BigInt(field.reset.value);if(field.msb>=field.lsb&&value>=(1n<<BigInt(field.msb-field.lsb+1)))report(entry,'REGISTER_RESET',path+'/reset','复位位模式超出字段位宽，不自动截断或扩展');}
   });
  }

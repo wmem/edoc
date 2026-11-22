@@ -1,15 +1,34 @@
 {
-  "registers": [{
-    "id": "recipe:control",
-    "kind": "register",
-    "label": "控制寄存器",
-    "width": 32,
-    "fields": [{"id": "recipe:control.enable", "label": "使能", "msb": 0, "lsb": 0}]
-  }],
-  "registerBlocks": [{
-    "id": "recipe:register-block",
-    "kind": "register-block",
-    "label": "模块寄存器块",
-    "entries": [{"id": "ctrl", "register": "recipe:control", "offset": "0"}]
-  }]
+  "registers": [
+    {
+      "id": "recipe:control",
+      "kind": "register",
+      "label": "控制寄存器",
+      "width": 32,
+      "fields": [
+        {
+          "id": "recipe:control.enable",
+          "label": "使能",
+          "msb": 0,
+          "lsb": 0
+        }
+      ]
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "recipe:register-block",
+      "kind": "register-block",
+      "label": "模块寄存器块",
+      "entries": [
+        {
+          "id": "ctrl",
+          "register": "recipe:control",
+          "offset": "0"
+        }
+      ],
+      "addressUnitBits": 8
+    }
+  ],
+  "irVersion": "2.0"
 }

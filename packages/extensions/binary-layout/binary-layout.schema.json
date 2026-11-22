@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://edoc.local/schema/v1/binary-layout.schema.json",
+  "$id": "https://edoc.local/schema/v2/binary-layout.schema.json",
   "type": "object",
   "properties": {
     "binaryLayouts": {

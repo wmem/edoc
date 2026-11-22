@@ -26,7 +26,7 @@ function tutorialData() {
 function graph(data: Record<string, any[]>) {
   return graphFromResources(Object.entries(data).map(([type, values]) => ({
     type: type as ResourceType, data: {[type]: values}, file: 'tutorial.json'
-  })), {projectId: 'protocol', irVersion: '1.8', resources: [], entryDocuments: [], requiredFeatures: ['sequences', 'binary-layouts']}, {root: repository, strict: true});
+  })), {projectId: 'protocol', irVersion: '2.0', resources: [], entryDocuments: [], requiredFeatures: ['sequences', 'binary-layouts']}, {root: repository, strict: true});
 }
 
 test('升级规范区分逐块推进与有限尝试，成功和失败是互斥的最终响应', () => {

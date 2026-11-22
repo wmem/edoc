@@ -17,7 +17,7 @@ function tutorialGraph() {
     return Object.entries(data).map(([type, items]) => ({type: type as ResourceType, data: {[type]: (items as {id: string; source?: unknown}[]).map(entity => ({...entity, source: entity.source ?? {file, selector: entity.id}}))}, file}));
   });
   parts.push({type: 'tables', data: controlTutorialData({root: process.cwd()}), file: 'docs/support/control-tutorials.mjs'});
-  return graphFromResources(parts, {projectId: 'tutorial', irVersion: '1.8', resources: [], entryDocuments: [], requiredFeatures: ['state-machines', 'flowcharts']}, {root: process.cwd(), strict: true});
+  return graphFromResources(parts, {projectId: 'tutorial', irVersion: '2.0', resources: [], entryDocuments: [], requiredFeatures: ['state-machines', 'flowcharts']}, {root: process.cwd(), strict: true});
 }
 
 test('1011逐沿表来自原迁移，命中结果与独立前缀扫描一致', () => {

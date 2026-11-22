@@ -1,22 +1,28 @@
+import {readResource,queryResource} from './resource-reading.ts';
+import {outlineResource} from './resource-navigation.ts';
+import type {ResourceRoute} from './routes.ts';
+import {emptyResourceCatalog} from './resource-pages.ts';
 import {isAbsolute,relative} from 'node:path';
 import type {Book,Navigation,OutlineOptions} from './book.ts';
 import {bookNavigation,selectOutline} from './book.ts';
-import type {Graph,Manifest,RecordEntry} from './types.ts';
+import type {Manifest,RecordEntry} from './types.ts';
 import {readDocument,validateReadOptions} from './read.ts';
 import type {ReadOptions} from './read.ts';
 import {composeClauses,selectedApplications} from '../extensions/clause/reading.ts';
 import type {Application} from '../extensions/clause/prepare.ts';
 import {readRange} from './read-range.ts';
+import {hydrateProjectGraphs,assertResourceContext} from './resource-context.ts';
 import {query,queryElement} from './query.ts';
 import {failure,EdocError} from './errors.ts';
 
 type Reading=Omit<ReturnType<typeof readDocument>,'range'|'applications'>;
 type Project={manifest:Manifest;records:RecordEntry[];adjacency:[string,string[]][];interfaces:[string,string][];applications:Application[];readings:Record<string,{self?:Reading;subtree:Reading}>};
-export type Manual={version:2;title:string;rootProject:string;navigation:Navigation[];projects:Record<string,Project>};
+export type Manual={resourceCatalog?:import('./resource-types.ts').ResourceCatalog;version:2;title:string;rootProject:string;navigation:Navigation[];projects:Record<string,Project>};
 
 // 只在发布构建中从同一 Book 生成；运行时不加载配置、不解析手册 HTML。
 export function compileManual(book:Book):Manual{
- const manual:Manual={version:2,title:book.root.config.title,rootProject:book.root.config.projectId,navigation:bookNavigation(book),projects:Object.create(null)};
+ for(const node of book.projects.values())assertResourceContext(node.graph);
+ const manual:Manual={resourceCatalog:book.resourceCatalog,version:2,title:book.root.config.title,rootProject:book.root.config.projectId,navigation:bookNavigation(book),projects:Object.create(null)};
  for(const node of book.projects.values()){
   const local=(file:string)=>isAbsolute(file)?relative(node.config.root,file).split('\\').join('/'):file;
   const records=[...node.graph.index.values()].map(record=>({...record,location:{...record.location,file:local(record.location.file)}}));
@@ -69,7 +75,14 @@ export function manualRead(manual:Manual,id:string,options:ReadOptions&{project?
 export function manualQuery(manual:Manual,id:string,options?:{project?:string;depth?:number;maxItems?:number;element?:undefined}):ReturnType<typeof query>;
 export function manualQuery(manual:Manual,id:string,options:{project?:string;depth?:number;maxItems?:number;element?:string}):ReturnType<typeof query>|ReturnType<typeof queryElement>;
 export function manualQuery(manual:Manual,id:string,options:{project?:string;depth?:number;maxItems?:number;element?:string}={}){
- const selected=project(manual,options.project),index=new Map(selected.records.map(r=>[r.id,r]));
- const graph:Graph={manifest:selected.manifest,projectRoot:'<manual>',irDirectory:'<manual>',index,connections:new Map(selected.records.filter(r=>r.type==='connection').map(r=>[r.id,r.entity as import('./types.ts').Connection])),adjacency:new Map(selected.adjacency.map(([id,links])=>[id,new Set(links)])),interfaceByPort:new Map(selected.interfaces)};
+ project(manual,options.project);
+ const graph=hydrateProjectGraphs(Object.values(manual.projects)).get(options.project??manual.rootProject)!;
  return options.element?queryElement(graph,id,options.element):query(graph,id,options);
+}
+
+export function manualResource(manual:Manual,route:ResourceRoute,command:'query'|'read'|'outline',options:{depth?:number;maxItems?:number;offset?:number;maxChars?:number;scope?:'self'|'subtree'}={}){
+ const context={projects:hydrateProjectGraphs(Object.values(manual.projects)),catalog:manual.resourceCatalog??emptyResourceCatalog()};
+ if(command==='outline')return outlineResource(context,route,options.depth??2);
+ if(command==='query')return queryResource(context,route,Math.min(options.maxItems??50,100));
+ return readResource(context,route,(project,id,scope,offset)=>manualRead(manual,id,{project,scope,offset,maxChars:100000}),options);
 }

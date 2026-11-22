@@ -1,0 +1,100 @@
+{% section id="ref:resource-navigation" title="资源目录与虚拟页" %}
+
+资源目录从 IR 事实派生阅读入口，适用于一个地址空间、多实例 IP 以及独立资源定义。作者只声明挂载位置和补充正文；资源页在进入路由时生成，不为每个数组元素维护文章。文件目录、index.mdoc、directory-order、原生标题和 Section 继续沿用原规则。
+
+可运行例子见[SoC 与独立 UART IP](ir.mdoc#ref:address-projects)。在例子中，UART0、UART1 共享 uart-ip 的同一 RegisterBlock，却保留不同的实例路径、地址和面包屑；规划保留、RAM 切片和 Window 也有各自的入口。
+
+{% section id="ref:resource-mount" title="在作者位置挂载目录" %}
+
+```text {% process=false %}
+{% resource-directory id="soc:cpu" mount="manual:address" /%}
+```
+
+{% section id="ref:tag-resource-directory" title="resource-directory 属性" %}
+
+id 指向本工程已有资源，project 可显式选择已组合工程的稳定 projectId。mount 是整本 Book 内唯一的稳定挂载 ID。同一资源可以多次挂载，但每次 mount 必须不同；重复 file include 或 partial 产生相同 mount 也报错。
+
+挂载以声明所在文章和最近的 Section 为父节点，按 AST 位置插入资源子树。资源页面节点的 kind=resource、page 为空，并携带独立 route；节点 project 属于挂载所在工程，route.project 保存目标定义或实例路径的源工程，跨工程挂载不会从源工程目录中消失。它不是文件，也不是作者标题。左侧仍按既有规则隐藏页内标题，挂载上下文保留在完整 outline 和面包屑中。
+
+条件分支未生效时仍预检引用，但不激活挂载。生效分支中的所有 Tab 挂载固定存在，切换 Tab 不改变全局目录。左侧初始最多展开两层，每个挂载的初始预算为 200 个节点，每批请求 20 个定义项。左树的“展开子项”和“继续加载”可逐批取得更深层或后续定义项，普通 IP 的所有寄存器均可在左树浏览；当前访问的完整路径会补入当前位置并与加载结果去重。全部展开只展开已加载节点，不自动遍历重复 count。
+
+数组汇总节点使用 kind=resource-summary，不伪造独立文件或实例页；从首个可见实例入口或父资源页的索引输入进入具体实例。重复数组只显示符号汇总及首个可见实例入口；Window 只覆盖阵列中段时，该入口使用实际可见索引，不根据 count 创建页面。资源页每次显示最多 50 个定义项/数组汇总，可以翻组；数组提供索引输入，支持直接进入第 999999999 项。显示的汇总项数量与数组实例总数分开，不把有限列表当成全量实例。
+
+{% /section %}
+{% /section %}
+{% section id="ref:resource-routes" title="定义、实例与直接链接" %}
+
+定义页只携带工程和定义 ID。独立 Block 页面显示原生单位及相对布局，不推断 SoC 基址。AddressSpace 实例路由保存源工程、原空间 ID、挂载和全部步骤；穿 Window 时下一 RegionStep 属于目标空间，目标工程与定义由 resolver 逐跳确定。
+
+```json
+{"kind":"resource","project":"address-v2-composed","id":"soc:apb","spaceId":"soc:apb","view":"instance","mountId":"demo:apb","segments":[{"kind":"region","regionId":"uart0"},{"kind":"entry","entryId":"ctrl"}]}
+```
+
+project 是源工程，id 是路径根。AddressSpace 实例的 spaceId 与 id 相同；独立 Block 的相对布局路径不带 spaceId。segments 使用 RegionStep/EntryStep，数组 index 为安全非负整数；规范化后仅重复项保留 index，空路径归一为根定义页。不同挂载或实例有不同路由，不能只用 Register 定义 ID 替代。可选 definitionId 若存在，必须与强解析结果一致。
+
+可复制整个 URL 直达、刷新或前进后退；PDF 返回也保留原路径与挂载。Reserved、Memory 切片和 Window 可作为终点，不要求虚构 definitionId。被 Window 截断的 Register 槽位明确诊断，不生成正常可用的寄存器页。
+
+不挂载也可以显式链接资源页：
+
+```text {% process=false %}
+{% resource-link target={"kind":"definition","project":"uart-ip","id":"uart:csr"} label="UART 原生定义" /%}
+{% resource-link target={"kind":"instance","space":"soc:apb","segments":[{"kind":"region","regionId":"uart0"}]} mount="demo:apb" label="UART0" /%}
+```
+
+{% section id="ref:tag-resource-link" title="resource-link 属性" %}
+
+target 必需，使用上述判别联合；mount、anchor、label 可选。mount 必须存在且包含该目标；anchor 必须位于实际资源页。资源声明和资源链接使用强解析，不自动加载其他工程；普通 reference/page 等文档弱跳转保持原语义。目标联合的正式 Schema 为 packages/schema/resource-target.schema.json，路径的合法步骤由 provider 校验。
+
+{% /section %}
+{% /section %}
+{% section id="ref:resource-content" title="绑定已有作者 Section" %}
+
+```text {% process=false %}
+{% resource-content target={"kind":"definition","project":"uart-ip","id":"uart:csr"} section="manual:uart-usage" /%}
+{% resource-content target={"kind":"instance","space":"soc:apb","segments":[{"kind":"region","regionId":"uart0"}]} section="manual:uart0-wiring" /%}
+```
+
+{% section id="ref:tag-resource-content" title="resource-content 属性" %}
+
+target 和 section 必需，target 使用 definition/instance 判别联合。section 必须属于声明所在工程，且是已经参与发布的真实 Section。上例的 manual:uart-usage 属于声明工程，即使目标是 uart-ip。当前地址 provider 的实例正文绑定以 AddressSpace 为根；独立 Block 使用定义绑定。
+
+标签只声明绑定，不在当前位置渲染第二份正文。原文章仍然可读；虚拟页先呈现定义正文，再追加当前实例正文，按声明顺序保留多段 Section。同一目标重复绑定同一源 Section 严格失败，不能覆盖 IP 精确事实。
+
+正文保留原生 Markdoc、partial 词法变量、排版、图表、图片和来源。副本不会再次登记实体、挂载或绑定。副本的局部锚点与链接位于本次虚拟页；指向其他文章、资源或 PDF 的链接仍按原 Section 所属工程解析。两项目同名 Section 使用各自的锚点命名空间；自动区块使用 resource-auto- 前缀，作者正文使用 resource-author- 前缀，不能互相覆盖。
+
+右侧目录只包含本页实际自动区块和绑定正文的真实标题，不把所有寄存器灌入标题目录。未绑定正文时，资源页仍显示基本事实、范围、来源和下级入口。
+
+{% /section %}
+{% /section %}
+{% section id="ref:resource-query" title="CLI 与离线数据" %}
+
+outline 的资源节点携带 route。保留整个 route JSON，可交给项目命令；随包手册使用 docs 前缀：
+
+```sh
+edoc docs outline --project address-v2-composed --id demo:apb --depth 2
+edoc docs query --route '{"kind":"resource","project":"address-v2-composed","id":"soc:apb","view":"instance","mountId":"demo:apb","segments":[{"kind":"region","regionId":"uart0"}]}'
+edoc docs read --route '{"kind":"resource","project":"address-v2-composed","id":"soc:apb","view":"instance","mountId":"demo:apb","segments":[{"kind":"region","regionId":"uart0"}]}' --max-chars 2000
+```
+
+项目命令去掉 docs，并按需要指定 --config。--route 不能并用 --id、--project 或 --element。query 返回规范路由、provider 页面事实、有限下级汇总、面包屑和绑定来源；max-items 最多请求 100 个定义项。outline --route 的默认深度为 2，节点预算仍为 200。read --route 读取当前页事实及绑定正文，不递归生成子实例页；scope 默认 subtree，作用于绑定作者 Section，self 只取其本段。offset/max-chars 使用既有 Unicode 分页规则。
+
+ReaderData 按工程携带事实，另有有限的 resourceCatalog（挂载与绑定）及 resourceBodies（每个作者 Section 一份渲染模板）。pages 只保存真实文章。浏览器用同一 Book resolver 派生当前虚拟页；随包查询使用同一 provider 和目录元数据，不读取 HTML。发布的 location 使用所属工程相对路径，source.file 保持原声明。
+
+provider 接口位于 packages/core/resource-types.ts，由 accepts、resolve、可选 list 和 validateContent 组成；核心负责路由、挂载、分页与绑定，provider 负责领域事实和路径校验。list 提供有界的专业明细集合：列定义、带完整 target 的行、后续 cursor 和扫描说明；通用页面与导航不解释领域地址。导航节点的 resourceChildren 携带 target、offset 和 total，可按 provider 分批继续加载，不会把省略项永久隐藏。首个地址 provider 覆盖 AddressSpace、Region、RegisterBlock、Register 和 Memory；未接入类型明确报错。未来接口等 provider 可以复用同一导航与页面协议。
+
+专业资源页显示 Region 的每项分配 size、实际 mappedSize、目标类型和起点，IP Block 显示原生相对偏移、嵌套分组以及当前实例的源空间坐标。size 与 mappedSize 的单位跟随声明空间；Block 的内部偏移和跨度使用它自己的单位。Memory 页面保留共享的物理身份与可见切片，Reserved 不推断访问能力，Window 显示来源、目标、转换公式与坐标链。访问策略逐字段显示，缺失为“未声明”。单 Register 先呈现位域图，再呈现字段表；位宽不等于事务宽度。
+
+“可见寄存器”列表穿越所有 Window，并对完整实例路径求所有 mapped 区间的交集。每页最多 50 行，按源 bit 坐标升序；被截断的槽位显示 PARTIAL_REGISTER_WINDOW 和精确范围，不提供完整寄存器跳转。Memory、Reserved 与空洞不计入寄存器行。数组汇总的 count 是精确实例数；叶列表不预先枚举或伪造尚未扫描的跨窗口叶总数。每页至多扫描 2000 个符号节点，稀疏窗口可能本页没有寄存器但仍有后续范围，此时继续按钮和 nextCursor 保留进度。cursor 是源空间 bit 下界，不是整数地址或列表下标；可用页面的位坐标输入直接定位远端范围。分页进度在浏览器返回与刷新时恢复。
+
+同一列表也可通过事实查询获取：
+
+```sh
+edoc docs query --project address-v2-composed --id soc:engineering --element '{"kind":"leaves","path":[{"kind":"region","regionId":"multihop"}],"limit":50}'
+```
+
+path 是从查询根开始的完整步骤，省略表示根范围；limit 为 1..100。结果 leaves 返回 items、扫描预算、hasMore 和可选 nextCursor，续页把 nextCursor 原样放入 cursor。独立 Block 查询的坐标是相对坐标；AddressSpace 查询的坐标属于源空间，子单位余数不会被舍入。可运行样例的 engineering.mdoc 包含 64 项普通 IP、8 Channel、十亿 Channel、完整及截断多跳窗口。
+
+单寄存器图与图例通过明确的 presentationId 定位本组字段表，展开隐藏祖先、按需解除影响目标的筛选并聚焦行；页内定位不改变 URL 或历史。字段表的“查看详情”保留独立字段页与来源 PDF。普通实体页和虚拟页共用交互，作者副本隔离呈现身份；重复组的命名和缺失配对诊断见[配对契约](tags/registers.mdoc#ref:register-presentations)。
+
+{% /section %}
+{% /section %}

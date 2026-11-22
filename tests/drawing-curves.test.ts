@@ -49,7 +49,7 @@ test('曲线不能遗漏多端点，固定折线和位置仍按作者声明精�
  const s=await solveDrawing(d);assert.ok(!s.connections[0].paths[0].curves);assert.deepEqual(s.connections[0].paths[0].points.map(p=>({x:p.x,y:p.y})),[{x:160,y:44},{x:400,y:44}]);verifyDrawingScene(d,s);
 });
 test('状态图主示例默认输出曲线，SVG包含相同控制点及完整条件动作',async()=>{
- const data=JSON.parse(readFileSync('docs/ir/authoring/states.json','utf8')),m=data.stateMachines[0],g=graphFromResources([{type:'stateMachines',data,file:'states.json'}],{projectId:'t',irVersion:'1.7',resources:[],entryDocuments:[],requiredFeatures:['state-machines']},{root:process.cwd(),strict:true}),s=await scene(g,m.id),xml=svg(s,false);
+ const data=JSON.parse(readFileSync('docs/ir/authoring/states.json','utf8')),m=data.stateMachines[0],g=graphFromResources([{type:'stateMachines',data,file:'states.json'}],{projectId:'t',irVersion:'2.0',resources:[],entryDocuments:[],requiredFeatures:['state-machines']},{root:process.cwd(),strict:true}),s=await scene(g,m.id),xml=svg(s,false);
  assert.equal(s.drawingInput!.layout!.routing,'curved');assert.equal(s.drawing!.connections.length,9);for(const c of s.drawing!.connections)for(const p of c.paths)assert.ok(xml.includes(pathD(p)));assert.match(xml,/matched = 1/);assert.match(xml,/din == 0/);assert.match(xml,/clk 上升沿/);
 });
 
@@ -76,7 +76,7 @@ test('相同物理端口的多条关系仍分开，闭合自环保留源端与�
 
 test('流程可显式选择曲线，判断与复杂泳道仍使用完整模型及严格几何检查',async()=>{
  for(const [file,id]of [['flows','author:init'],['control-complex','example:fulfillment']]){
-  const data=JSON.parse(readFileSync('docs/ir/authoring/'+file+'.json','utf8')),m=data.flowcharts.find((m:any)=>m.id===id),g=graphFromResources([{type:'flowcharts',data:{flowcharts:[m]},file:'flows.json'},{type:'views',data:{views:[{id:'view:curved',kind:'flowchart',model:m.id,layout:{routing:'curved'}}]},file:'view.json'}],{projectId:'t',irVersion:'1.7',resources:[],entryDocuments:[],requiredFeatures:['flowcharts']},{root:process.cwd(),strict:true}),s=await scene(g,'view:curved');
+  const data=JSON.parse(readFileSync('docs/ir/authoring/'+file+'.json','utf8')),m=data.flowcharts.find((m:any)=>m.id===id),g=graphFromResources([{type:'flowcharts',data:{flowcharts:[m]},file:'flows.json'},{type:'views',data:{views:[{id:'view:curved',kind:'flowchart',model:m.id,layout:{routing:'curved'}}]},file:'view.json'}],{projectId:'t',irVersion:'2.0',resources:[],entryDocuments:[],requiredFeatures:['flowcharts']},{root:process.cwd(),strict:true}),s=await scene(g,'view:curved');
   assert.equal(s.drawing!.connections.length,m.edges.length);assert.ok(s.drawing!.connections.every(c=>c.paths.every(p=>p.curves)));verifyDrawingScene(s.drawingInput!,s.drawing!);
  }
 });

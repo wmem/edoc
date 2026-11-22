@@ -1,0 +1,8 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"https://edoc.local/schema/v2/resource-target.schema.json",
+ "oneOf":[
+  {"type":"object","required":["kind","id"],"properties":{"kind":{"const":"definition"},"project":{"type":"string","minLength":1},"id":{"type":"string","minLength":1}},"additionalProperties":false},
+  {"type":"object","required":["kind","space","segments"],"properties":{"kind":{"const":"instance"},"project":{"type":"string","minLength":1},"space":{"type":"string","minLength":1},"segments":{"type":"array","items":{"type":"object","required":["kind"],"properties":{"kind":{"type":"string","minLength":1}}}}},"additionalProperties":false}
+ ]
+}

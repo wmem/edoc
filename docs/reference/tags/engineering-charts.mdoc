@@ -86,23 +86,42 @@ id 指向 registerBlocks 中 kind=register-block 或 addressSpaces 中 kind=addr
 
 Register 仍按原契约保存 width/fields/access/reset；新组织只引用它，不覆盖或复制 fields。
 
-RegisterBlock 的 entries 各有局部 id，register 或 block 二选一，offset 必需，可选 count/stride/span；size 是显式块范围，可选 description 说明块用途。AddressSpace 的 mappings 各有 id/block/base，可选 count/stride；addressUnitBits 默认 8，可选 addressWidth。所有地址量用十进制或十六进制整数字符串，精确计算；count 省略表示 1，数组必须显式给 stride。地址单位、寄存器位宽和总线事务宽度互不推断。
+RegisterBlock 的 entries 使用局部 id，register/block 二选一；offset、span、stride 均使用所属 Block 自身 addressUnitBits（默认 8），不会继承外层 AddressSpace 的单位。size 是 IP 逻辑覆盖；项目分配大小另写在 Region.size。子块完整范围必须精确转换为父单位；子块内部寄存器可以投影到父坐标的子单位位置，不舍入成另一个整数地址。Register 的槽位按 ceil(width / Block.addressUnitBits) 分配，支持 1～64 bit。
 
-缺少基址时只展示块内相对地址；size 缺省只计算最小覆盖，不认定硬件 aperture 或保留地址。检查范围、循环、跨度和重叠，不能用 allowOverlap 放行；别名/窗口须有专门选择语义，尚未定义的形式明确拒绝。重复实例有独立路径，原 Register ID 保持定义身份。
+AddressSpace 必需 id、kind、label、addressWidth、addressUnitBits、base、size、regions。范围为 [base,base+size)，Region.base 已是该空间坐标，不再加 Space.base；endExclusive 不含，lastAddress 含末地址。地址量用十进制/十六进制非负整数字符串，BigInt 计算；count 使用安全正整数，count>1 必须有 stride。
 
-query --id SPACE --element '["ports",2,"ctrl"]' 查询映射、索引与块内路径；块内路径也使用 JSON 数组，避免拼接名称产生歧义。根查询不枚举海量数组；网页列表按声明范围给出汇总和按需定位，点击定义进入原位域图与字段表。模型及局部条目来源可追溯，地址值不得经 JavaScript Number 损失精度。块独立阅读时按 8 bit 地址单位计算，放入 AddressSpace 时继承它的 addressUnitBits；寄存器跨度按位宽向上取整。校验沿每个实际地址空间递归，复用块在不同单位的空间中分别检查；未映射块使用 8 bit 默认。仅在 32 bit 等空间合法的块可以随该空间构建，但独立 query/图表仍按 8 bit 检查，若冲突则明确诊断，应从有效地址空间进入。当前冲突检查以条目分配范围为单位，包括子块最小覆盖范围中的间隙；需要交错布置时应将真实条目放到同一层，不把子块间隙当作可独立分配范围。根查询与图表默认展示前 120 个叶寄存器并返回总数/truncated，任意实例可直接路径定位；count 为安全正整数，不枚举后再裁剪。
-
-| 对象 | 字段与含义 |
+| Region.kind | 定义与边界 |
 | --- | --- |
-| 通用身份 | id、kind 必需；label、source 可选 |
-| 块 | kind=register-block，entries 必需，size、description 可选 |
-| 块内条目 | id、offset 必需，register/block 二选一；label、source、count、stride、span 可选。span 不得小于被引用定义所需范围 |
-| 地址空间 | kind=address-space，mappings 必需；addressUnitBits 默认 8，addressWidth 可选，范围 1～4096 |
-| 映射 | id、block、base 必需；label、source、count、stride 可选 |
+| resource | target={project?,id} 指向 RegisterBlock 或 Memory；size 为显式项目分配范围，全部参与碰撞；resourceOffset 使用目标资源单位 |
+| reserved | 只有分配与用途，不允许 target，也不赋予硬件访问属性 |
+| window | target 指向 AddressSpace，targetBase 使用目标单位；线性映射位区间，支持目标空洞和 Reserved，禁止循环 |
 
-可读实例名优先使用 entry.label，再使用 Register.label，最后保留 ID；上层路径沿 mapping/entry/block 的 label 派生并保留数组索引，精确 path/definition 不变。列表用途读取 Register.description，区域用途读取 RegisterBlock.description。query 投影追加 label、description、pathLabels、region 和 regionOffset；regionOffset 是地址减去当前区域实例的基址，包含嵌套偏移和寄存器数组步长，按同一地址单位计算。现有 offset 字段含义不变：地址空间投影中仍是累计绝对值，独立块投影中是相对块起点的偏移。区域数组用 count/stride 汇总，不枚举后再裁剪；区域起止是分配范围，不把空洞当作寄存器。
+mappedSize 使用 Region 所属空间单位。Block 默认映射完整原生覆盖范围，必须精确换算到空间单位，resourceOffset 必须为 0；显式 mappedSize 也必须对应完整块。Memory 和 Window 默认映射 Region.size，可显式缩短。分配尾部不会自动响应。Memory 是 memories 中的具名实体，capacityBytes 用字节表示，resourceOffset 默认 0；实际切片不能超过容量。同空间直接映射的同一 Memory 切片不能重叠；经 Window 的显式多路径允许共享该存储。Window 只按目标位范围检验包含，允许映射终点落在目标地址单位内部；不要求 mappedSize 能整除目标单位，查询保留子单位位余数。重复 Window 必须声明正 targetStride，目标片段不能重叠；该字段使用目标空间单位。
 
-块引用最多嵌套 64 层。网页按叶寄存器行汇总；完整 SVG 保留该汇总范围与截断说明，不声称枚举了海量实例。精确实例查询独立于展示限额。
+路径为有序判别步骤：Space 内使用 {kind:"region",regionId,index?}，Block 内使用 {kind:"entry",entryId,index?}。Window 后的 RegionStep 属于目标空间。路径可以停在 Reserved、Window 或资源 Region；定义身份与局部实例身份分开。旧字符串路径不提供兼容。
+
+~~~sh
+edoc query --id space:csr --element '[{"kind":"region","regionId":"device"},{"kind":"entry","entryId":"ports","index":2},{"kind":"entry","entryId":"ctrl"}]'
+edoc query --id space:csr --element '{"kind":"address","address":"0x1000000000000300"}'
+~~~
+
+路径查询返回 coordinate（bitPosition、unitIndex、subUnitBitOffset、addressUnitBits）、原空间坐标链、instancePath、定义身份、来源及 range/visibleRange。仅余数为零时提供该坐标的整数 address；独立 Block 查询使用 relativeOffset，不提供绝对地址。地址点查询另返回 addressPoint，区分 resource、reserved、unallocated 和 unmapped。Window 可见性为沿途映射区间交集，切断 Register 完整槽位时返回 PARTIAL_REGISTER_WINDOW 及结构化范围，不伪装成完整可用实例。
+
+实例的 range 返回 endExclusive 与精确 lastBit；仅非空且起止边界均为源地址单位整数时返回 lastAddress=endExclusive-1，不把子单位坐标舍入成整数地址。
+
+根查询 registerMap 的 totalKind=immediate-instances，total 统计当前层 Region/entry 实例，rows 默认最多 120 条；intervals 保留数组汇总及半开端点。寄存器表继续按直接 Block 映射投影叶寄存器，独立标记 directRegisterTotal；实例虚拟页和完整 Window 叶列表见[资源导航](../resource-navigation.mdoc#ref:resource-query)。叶查询使用 --element 的 {kind:"leaves",path?:Step[],limit?:1..100,cursor?:源bit下界}，返回精确路径与有界续页，不将尚未扫描的窗口叶总数冒充零。count 再大也不先枚举再截断；Block 最多嵌套 64 层。
+
+Block 可选 accessPolicy 保存 allowedTransferBits、alignment、byteOrder、splitOrder、readConsistency、writeAtomicity。父子逐字段继承；alignment 保留声明处单位并返回 bitAlignment，显式覆盖才用子单位。whole-register 是作者声明的整寄存器读快照或写提交保证，per-transfer 只保证单次事务；缺失为未声明，splitOrder 不暗示原子性。Schema 不接受含混的 atomic 布尔值。
+
+外部 target.project 使用稳定工程 ID，只解析显式 include 的 Book 工程集合，不自动加载其他工程。加载先验证各工程本地事实，再用同一 ResourceResolver 完成目标、范围、Memory alias 与跨工程 Window 环路终校验；缺失目标或类型不符严格失败。内部准备过程可携带 deferred，公开 Graph 加载/查询/读取/渲染拒绝未解析状态。CLI、离线 HTML 与随包手册从各自独立的工程事实重建同一上下文。
+
+query 的 expansion.items 增加 projectId，跨工程同名 ID 不合并；实例返回 originProjectId、definitionProjectId 和带 projectId 的来源链。默认定义链接进入定义所属工程。definitions 和 register 的裸 ID 仍指本工程定义，不能用父工程同名 Register 覆盖外部定义。源文查询的 location 可以是绝对路径；离线与随包数据将它转换为所属工程的相对路径，source.file 声明保持原样。
+
+单工程 SoC 样例位于 examples/address-space-v2/，覆盖 Memory、Reserved、Window 和跨单位坐标；[跨工程地址资源](../ir.mdoc#ref:address-projects)包含实际组合样例及独立 IP 构建入口。通用挂载、实例路由和 Section 绑定见[资源目录与虚拟页](../resource-navigation.mdoc)。以下给出仓库内单工程运行命令。
+
+{% code file="examples/address-space-v2/README.md" language="markdown" /%}
+
+{% code file="examples/address-space-v2/docs/index.mdoc" language="markdoc" /%}
 
 {% /section %}
 {% /section %}

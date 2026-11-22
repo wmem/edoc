@@ -2,6 +2,8 @@
 
 以 Markdown/Markdoc 为正文基础，保留 Markdoc 原生能力，扩展页面编排、数据图表和原文引用，生成可导航、可查询的离线工程文档。作者和 Agent 维护源数据与说明，工具负责渲染，不手工维护生成的 HTML/SVG。
 
+当前发布为 edoc 3.0.0，工程数据协议为 IR 2.0。统一地址手册覆盖 RegisterBlock、Memory、Reserved 和 Window，并从同一份 IR 生成实例目录、专业页面与字段表定位；版本边界及不兼容变化见[数据契约](docs/reference/ir.mdoc)。
+
 ## 使用说明与 Agent 入口
 
 文档主入口是 [docs/index.mdoc](docs/index.mdoc)，安装包也携带同一份源文。Agent 可以从安装目录直接读取它，沿相对链接进入相应教程与字段参考，无需读取 HTML，也无需先克隆仓库或配置当前项目。
@@ -28,7 +30,7 @@ edoc docs outline --format text
 
 ```sh
 npm pack git+ssh://git@github.com/wmem/edoc.git
-npm install -g ./edoc-2.0.0.tgz
+npm install -g ./edoc-3.0.0.tgz
 edoc --version
 ```
 

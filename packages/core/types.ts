@@ -15,7 +15,7 @@ import type {ControlModel,ControlView} from '../extensions/control-diagram/types
 import type {Sequence,SequenceView} from '../extensions/sequence/types.ts';
 import type {BinaryLayout,BinaryView} from '../extensions/binary-layout/types.ts';
 import type {PlotView} from '../extensions/plot/types.ts';
-import type {RegisterBlock,AddressSpace} from '../extensions/register-map/types.ts';
+import type {RegisterBlock,AddressSpace,Memory} from '../extensions/register-map/types.ts';
 export type * from '../extensions/sequence/types.ts';
 export type * from '../extensions/binary-layout/types.ts';
 export type * from '../extensions/plot/types.ts';
@@ -23,19 +23,19 @@ export type * from '../extensions/register-map/types.ts';
 export type ChartModel=Sequence|BinaryLayout|RegisterBlock|AddressSpace;
 export type ChartView=SequenceView|BinaryView|PlotView;
 export type * from '../extensions/control-diagram/types.ts';
-export type Entity = ChartModel | ChartView | ControlModel | ControlView | Node | Interface | Group | Port | Connection | RelationView | Table | Waveform | Reference | DocumentEntity | Clause | Row | Register | RegisterField;
-export type ResourceType = 'objects' | 'relations' | 'views' | 'tables' | 'waveforms' | 'references' | 'clauses' | 'registers' | 'stateMachines' | 'flowcharts' | 'sequences' | 'binaryLayouts' | 'registerBlocks' | 'addressSpaces';
+export type Entity = Memory | ChartModel | ChartView | ControlModel | ControlView | Node | Interface | Group | Port | Connection | RelationView | Table | Waveform | Reference | DocumentEntity | Clause | Row | Register | RegisterField;
+export type ResourceType = 'objects' | 'relations' | 'views' | 'tables' | 'waveforms' | 'references' | 'clauses' | 'registers' | 'stateMachines' | 'flowcharts' | 'sequences' | 'binaryLayouts' | 'registerBlocks' | 'addressSpaces' | 'memories';
 export type Manifest = {
   irVersion: string; projectId: string; resources: { type: ResourceType; path: string }[];
   entryDocuments: string[]; adapterVersion?: string; requiredFeatures?:string[];
 };
-export type Diagnostic = { code: string; file: string; path: string; message: string; id?: string };
+export type Diagnostic = { code: string; file: string; path: string; message: string; details?:unknown; id?: string };
 export type RecordEntry = {
-  id: string; type: 'sequence' | 'binary-layout' | 'register-block' | 'address-space' | 'state-machine' | 'flowchart' | 'node' | 'interface' | 'port' | 'group' | 'connection' | 'view' | 'table' | 'waveform' | 'reference' | 'document' | 'clause' | 'row' | 'register' | 'register-field'; entity: Entity;
+  id: string; type: 'memory' | 'sequence' | 'binary-layout' | 'register-block' | 'address-space' | 'state-machine' | 'flowchart' | 'node' | 'interface' | 'port' | 'group' | 'connection' | 'view' | 'table' | 'waveform' | 'reference' | 'document' | 'clause' | 'row' | 'register' | 'register-field'; entity: Entity;
   location: { file: string; path: string }; ownerId?: string;
   semanticKind?:import('../extensions/semantic-content/contract.ts').SemanticKind;
 };
-export type Graph = {controlDiagnostics?:Diagnostic[];
+export type Graph = {resourceCatalog?:import('./resource-types.ts').ResourceCatalog;addressResolver?:import('../extensions/register-map/resolver.ts').ResourceResolver;addressValidation?:import('../extensions/register-map/types.ts').AddressValidation;controlDiagnostics?:Diagnostic[];
   attachments?:Record<string,import('./attachments.ts').PdfAttachment>;
   clauses?:import('../extensions/clause/prepare.ts').ClausePlan;
   documentPlan?:import('./documents.ts').DocumentPlan;

@@ -10,7 +10,7 @@ import { projectPath, requireFile } from './paths.ts';
 import {runAdapter} from './adapter.ts';
 
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
-export const SUPPORTED_IR_VERSION = '1.8';
+export const SUPPORTED_IR_VERSION = '2.0';
 
 function finiteJson(value: unknown): boolean {
   if (typeof value === 'number') return Number.isFinite(value);
@@ -19,15 +19,14 @@ function finiteJson(value: unknown): boolean {
   return true;
 }
 
-export function readJson(file: string, schema: SchemaName,compatible=false): any {
+export function readJson(file: string, schema: SchemaName): any {
   requireFile(file);
   if (statSync(file).size > MAX_JSON_BYTES) failure('FILE_SIZE', file, '', '单个 JSON 分片不得超过 16 MiB，请拆分资源');
   let data: unknown;
   try { data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(file))); }
   catch { failure('JSON_PARSE', file, '', '不是有效的 UTF-8 JSON'); }
   if (!finiteJson(data)) failure('JSON_NUMBER', file, '', '数值超出有限 JSON 数值范围');
-  const minor= schema==='manifest'&&typeof (data as any)?.irVersion==='string'?Number((data as any).irVersion.split('.')[1]):0;
-  const errors = validateSchema(schema, data, file,compatible||minor>0);
+  const errors = validateSchema(schema, data, file);
   if (errors.length) throw new EdocError(errors);
   return data;
 }
@@ -48,8 +47,8 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
   const manifestFile = projectPath(root, ir, 'manifest.json');
   const manifest = readJson(manifestFile, 'manifest') as Manifest;
   for(const feature of manifest.requiredFeatures??[])if(!['graph','documents','tables','wavejson','references','interface-groups','layout-intent','clauses','registers','table-cell-links','native-drawing','state-machines','flowcharts','sequences','binary-layouts','plots','register-maps'].includes(feature))failure('IR_FEATURE',manifestFile,'/requiredFeatures',`未支持的必需能力：${feature}`);
-  // 同 major 的 minor 接受兼容新增的可选字段；必需能力逐项协商，未知类型仍失败。
-  if (manifest.irVersion.split('.')[0] !== '1')
+  // IR2 严格校验已知字段；拒绝旧 major，不提供旧模型转换。
+  if (manifest.irVersion.split('.')[0] !== '2')
     failure('IR_VERSION', manifestFile, '/irVersion', `当前仅支持 IR ${SUPPORTED_IR_VERSION}，收到 ${manifest.irVersion}`);
   if (options.projectId !== undefined && manifest.projectId !== options.projectId)
     failure('PROJECT_ID', manifestFile, '/projectId', 'manifest 与配置 projectId 不一致');
@@ -62,7 +61,7 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
   }
   const parts:ResourcePart[]=[];
   const diagnostics:Diagnostic[]=[];
-  const schemas: Record<ResourceType, SchemaName> = { objects: 'object', relations: 'relation', views: 'view', tables:'table', waveforms:'waveform', references:'reference', clauses:'clause',registers:'register',stateMachines:'state-machine',flowcharts:'flowchart',sequences:'sequence',binaryLayouts:'binary-layout',registerBlocks:'register-block',addressSpaces:'address-space' };
+  const schemas: Record<ResourceType, SchemaName> = { objects: 'object', relations: 'relation', views: 'view', tables:'table', waveforms:'waveform', references:'reference', clauses:'clause',registers:'register',stateMachines:'state-machine',flowcharts:'flowchart',sequences:'sequence',binaryLayouts:'binary-layout',registerBlocks:'register-block',addressSpaces:'address-space',memories:'memory' };
   const loaded = new Set<string>();
   for (const [resourceIndex, resource] of manifest.resources.entries()) {
     const file = projectPath(root, ir, resource.path);
@@ -70,7 +69,7 @@ export function loadIR(irDirectory: string, options: { projectRoot?: string; pro
     if (loaded.has(identity)) failure('DUPLICATE_RESOURCE', manifestFile, `/resources/${resourceIndex}/path`, '同一资源文件重复声明');
     loaded.add(identity);
     let data: any;
-    try { data = readJson(file, schemas[resource.type],Number(manifest.irVersion.split('.')[1])>0); }
+    try { data = readJson(file, schemas[resource.type]); }
     catch (error) {
       if (error instanceof EdocError) { diagnostics.push(...error.diagnostics); continue; }
       throw error;

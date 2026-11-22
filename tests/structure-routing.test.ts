@@ -49,7 +49,7 @@ for (const direction of ['LR', 'RL'] as const) test(`纵向对齐的双向接口
     {type: 'order', axis: 'x', nodes: ['recorder', 'storage'], gap: 80},
     {type: 'align', axis: 'y', nodes: ['recorder', 'storage']},
   ]}}]);
-  f.edit('manifest', d => {d.irVersion = '1.2'; d.requiredFeatures = ['interface-groups', 'layout-intent']; d.entryDocuments = [];});
+  f.edit('manifest', d => {d.irVersion = '2.0'; d.requiredFeatures = ['interface-groups', 'layout-intent']; d.entryDocuments = [];});
   const model = prepareInterfaceModel(f.load(), 'system')!, original = structuredClone(model);
   for (const mode of ['collapsed', 'expanded'] as const) {
     const state = {...initialInterfaceState(model), modes: Object.fromEntries(model.nodes.flatMap(n => n.interfaces!.map(i => [i.id, mode])))};
@@ -84,7 +84,7 @@ for (const direction of ['LR', 'RL'] as const) test(`双向控制接口的四种
   f.edit('objects', d => d.objects = objects);
   f.edit('relations', d => d.relations = relations);
   f.edit('views', d => d.views = [{id: 'control', kind: 'interface', include: {objects: ['host.control', 'recorder.control'], relations: members}, display: {interfaceMode: 'collapsed', showInterfaceDetails: false}, layout: {direction, constraints: [{type: 'order', axis: 'x', nodes: ['host', 'recorder'], gap: 80}]}}]);
-  f.edit('manifest', d => {d.irVersion = '1.2'; d.requiredFeatures = ['interface-groups', 'layout-intent']; d.entryDocuments = [];});
+  f.edit('manifest', d => {d.irVersion = '2.0'; d.requiredFeatures = ['interface-groups', 'layout-intent']; d.entryDocuments = [];});
   const model = prepareInterfaceModel(f.load(), 'control')!, original = structuredClone(model);
   for (let mask = 0; mask < 4; mask++) {
     const state = {...initialInterfaceState(model), modes: {'host.control': mask & 1 ? 'expanded' as const : 'collapsed' as const, 'recorder.control': mask & 2 ? 'expanded' as const : 'collapsed' as const}};

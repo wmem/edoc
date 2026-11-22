@@ -95,7 +95,7 @@ test('文档缺失或 include 循环在读取数据前失败',async t=>{
  p.write('docs/index.mdoc','{% include file="docs/index.mdoc" /%}');await assert.rejects(p.load,/DOCUMENT_INCLUDE_CYCLE/);
 });
 test('自动发现 docs/ir 下多级 IR，无清单也能建立完整关系及来源索引',async t=>{
- const p=project(t,`export default {views:[${JSON.stringify(view)}]};`);p.write('docs/index.mdoc','{% relation-diagram id="v" /%}');p.write('docs/ir/nested/objects.json',{objects:facts.objects});p.write('docs/ir/relations.ir.json',{irVersion:'1.2',relations:facts.relations});p.write('docs/ir/source-not-ir.json',{notes:'不是配置清单或 IR'});
+ const p=project(t,`export default {views:[${JSON.stringify(view)}]};`);p.write('docs/index.mdoc','{% relation-diagram id="v" /%}');p.write('docs/ir/nested/objects.json',{objects:facts.objects});p.write('docs/ir/relations.ir.json',{irVersion:'2.0',relations:facts.relations});p.write('docs/ir/source-not-ir.json',{notes:'不是配置清单或 IR'});
  p.write('docs/ir/raw-array.json',[1,2]);p.write('data/unrelated.json','{不是本次数据目录');
  const loaded=await p.load();assert.equal(loaded.dataFiles.length,2);assert.equal(loaded.graph.connections.get('ab')!.endpoints.length,2);assert.equal(loaded.documents.references[0].id,'v');assert.equal(loaded.graph.index.get('a')!.location.file,join(p.root,'docs/ir/nested/objects.json'));
 });

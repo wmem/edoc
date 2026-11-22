@@ -10,8 +10,8 @@ for (const [schema, resource] of [['manifest', 'manifest'], ['object', 'objects'
 test('config Schema 正例', () => assert.deepEqual(validateSchema('config', json(join(sample, 'edoc.config.json'))), []));
 
 const cases: [string, Parameters<typeof validateSchema>[0], any, string][] = [
-  ['manifest 缺少 projectId', 'manifest', { irVersion: '1.0', resources: [], entryDocuments: [] }, '/projectId'],
-  ['未知资源类型不能忽略', 'manifest', { irVersion: '1.0', projectId: 'p', resources: [{ type: 'unknown', path: 't.json' }], entryDocuments: [] }, '/resources/0/type'],
+  ['manifest 缺少 projectId', 'manifest', { irVersion: '2.0', resources: [], entryDocuments: [] }, '/projectId'],
+  ['未知资源类型不能忽略', 'manifest', { irVersion: '2.0', projectId: 'p', resources: [{ type: 'unknown', path: 't.json' }], entryDocuments: [] }, '/resources/0/type'],
   ['端口方向必须显式合法', 'object', { objects: [{ id: 'a', kind: 'node', label: 'A', ports: [{ id: 'a.p', label: 'p', direction: 'input' }] }] }, '/objects/0/ports/0/direction'],
   ['未知对象类型', 'object', { objects: [{ id: 'a', kind: 'magic', label: 'A' }] }, '/objects/0'],
   ['空 ID', 'object', { objects: [{ id: '', kind: 'node', label: 'A' }] }, '/objects/0/id'],

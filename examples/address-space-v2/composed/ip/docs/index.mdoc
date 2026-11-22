@@ -1,0 +1,21 @@
+{% section id="demo:uart-ip-home" title="独立 UART IP" %}
+
+本工程只定义原生字节布局，不固定 SoC 地址。可单独编译，也可被多个 SoC 区域引用；寄存器定义和来源始终属于 uart-ip。
+
+{% register-map id="uart:csr" mode="registers" /%}
+{% register-diagram id="uart:ctrl" /%}
+{% register-field-table id="uart:ctrl" /%}
+
+{% section id="uart:usage" title="IP 通用使用约定" %}
+
+同一份原生字节布局可以放入不同地址空间，实际可见范围由映射路径决定。位宽不自动证明总线事务的一致性。
+
+### 使用前提
+
+[本节](#uart:usage) · [IP 首页](index.mdoc#demo:uart-ip-home)
+
+{% /section %}
+{% resource-content target={"kind":"definition","id":"uart:csr"} section="uart:usage" /%}
+{% resource-content target={"kind":"definition","id":"uart:ctrl"} section="uart:usage" /%}
+
+{% /section %}

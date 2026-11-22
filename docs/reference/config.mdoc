@@ -90,7 +90,7 @@ views 仅引用已有对象和关系；tables 可从对象投影；waveforms 保
 
 局部组合别名到子配置路径的对象，默认空。只有正文 include project="别名" 真正接入后，工具才加载对应配置。父子使用同一工程模型，各自保留正文、数据和相对路径。
 
-禁止组合循环、重复真实配置、重复工程身份和重复接入同一子工程。弱跳转中的 project 是目标 projectId，不是此处别名；它不能触发配置读取。跨工程渲染取数与关系端点拼接不支持。
+禁止组合循环、重复真实配置、重复工程身份和重复接入同一子工程。弱跳转中的 project 是目标 projectId，不是此处别名；它不能触发配置读取。AddressRegion.target.project 同样使用 projectId，但属于强资源引用，必须在显式组合的 Book 中解析并通过终校验，见[跨工程地址资源](ir.mdoc#ref:address-projects)。其他图形的跨工程取数与关系端点拼接尚未开放。
 
 {% /section %}
 

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edoc.local/schema/v2/memory.schema.json",
+  "type": "object",
+  "properties": {
+    "memories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/source"
+          },
+          "description": {
+            "type": "string"
+          },
+          "kind": {
+            "const": "memory"
+          },
+          "capacityBytes": {
+            "type": "string",
+            "pattern": "^(0[xX][0-9a-fA-F]+|[0-9]+)$"
+          },
+          "memoryType": {
+            "enum": [
+              "ram",
+              "rom",
+              "flash",
+              "other"
+            ]
+          },
+          "readOnly": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "capacityBytes",
+          "memoryType"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "memories"
+  ],
+  "additionalProperties": false
+}

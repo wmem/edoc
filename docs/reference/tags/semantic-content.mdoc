@@ -95,7 +95,7 @@ read 的 content 保存格式化后的原文与追加正文，先组装再统一
 
 {% section id="ref:clauses" title="条款机器数据与错误边界" %}
 
-IR 1.6 的 clauses 数组表达有唯一来源的条款；requiredFeatures 为 clauses，普通项目配置自动处理。源文中的 clause 与机器数据共用身份，不得重复定义。数据项必需 id、kind="clause"、label、body={format:"markdoc",content:"完整条款正文"} 和 source。正文支持与源文相同的富文本、变量、片段、来源与依赖检查；不能嵌套能力、行为、条款或适用列表。
+当前 IR 2.0 的 clauses 数组表达有唯一来源的条款；requiredFeatures 为 clauses，普通项目配置自动处理。源文中的 clause 与机器数据共用身份，不得重复定义。数据项必需 id、kind="clause"、label、body={format:"markdoc",content:"完整条款正文"} 和 source。正文支持与源文相同的富文本、变量、片段、来源与依赖检查；不能嵌套能力、行为、条款或适用列表。
 
 旧 specification / spec-list 标签、common/specific 集合字段、--with-specs 和旧 specifications 资源已移除，出现时明确失败；没有自动改写或兼容别名。SDK 的 withSpecs 也会报错，改用 withClauses；读取结果仅保留 clauses、clauseFor 和 applications，不再提供 specifications / specFor 镜像字段。时序图 semantic="specification" 仍表示规范示意，属于独立的波形语义。Specification 作为规范总称仍可用于正文说明。已有文档升级时应保留原定义ID、完整内容、适用顺序和条件，逐项核对后改用 clause / clause-list 与 ids。
 

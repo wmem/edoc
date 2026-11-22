@@ -1,3 +1,10 @@
+import {resourcePage} from '../doc-theme/resource-page.ts';
+import {resourceContext,resourceRoute,resourceTarget} from '../core/resource-pages.ts';
+import {namespaceResourceBody} from '../core/resource-body.ts';
+import {parseRoute} from '../core/routes.ts';
+import {resourceSectionGraph} from '../core/resource-section.ts';
+import {resourceBodyKey} from '../core/resource-body.ts';
+import {assertResourceContext} from '../core/resource-context.ts';
 import {readFileSync,readdirSync,realpathSync} from 'node:fs';
 import {dirname,resolve,extname,relative,isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -20,15 +27,16 @@ import {assertSelfContained} from './index.ts';
 const directory=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url);
 const json=(value:unknown)=>JSON.stringify(value).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 export async function compileBook(book:Book,options:{scene?:typeof import('../render-graph/scene.ts').scene;headingLevel?:(project:string,page:string,id:string,level:number)=>number}={}):Promise<ReaderData>{
+ for(const node of book.projects.values())assertResourceContext(node.graph);
  preflightBook(book);
- const data:ReaderData={title:book.root.config.title,home:{project:book.root.config.projectId,id:pageId(book.root.documents.documents[0].file)},navigation:bookNavigation(book),pages:Object.create(null),projects:Object.create(null),pdfFiles:Object.create(null)};
+ const data:ReaderData={resourceCatalog:book.resourceCatalog,resourceBodies:Object.create(null),title:book.root.config.title,home:{project:book.root.config.projectId,id:pageId(book.root.documents.documents[0].file)},navigation:bookNavigation(book),pages:Object.create(null),projects:Object.create(null),pdfFiles:Object.create(null)};
  const filePayloads=new Map<string,string>();
  for(const node of book.projects.values()){
   const project=node.config.projectId,sections:Record<string,{page:string;anchor:string}>=Object.create(null);
   for(const document of node.documents.documents){const id=pageId(document.file);if(Object.hasOwn(data.pages,targetKey(project,id)))failure('PAGE_DUPLICATE',document.file,'','文档路由重复：'+id);const collect=(tag:any,namespace='')=>{if(tag.type==='tag'&&['section','clause'].includes(tag.tag)){sections[tag.attributes.id]={page:id,anchor:namespace+anchor(tag.attributes.id)};if(tag.tag==='clause')namespace=clauseNamespace(tag.attributes.id);}for(const child of [...Object.values(tag.slots??{}),...tag.children??[]])collect(child,namespace);};collect(document.ast);
    data.pages[targetKey(project,id)]={id,project,title:pageTitle(document),file:document.file,html:'',scenes:{},outline:[]};}
   const attachments:typeof node.graph.attachments=Object.create(null);for(const [key,attachment]of Object.entries(node.graph.attachments??{})){const identity=realpathSync(resolve(node.config.root,attachment.file));let payload=filePayloads.get(identity);if(!payload){payload='pdf-'+filePayloads.size;filePayloads.set(identity,payload);data.pdfFiles[payload]=attachment.data;}attachments![key]={...attachment,data:'',payload};}
-  data.projects[project]={id:project,title:node.config.title,irVersion:node.graph.manifest.irVersion,records:Object.fromEntries([...node.graph.index].map(([id,e])=>[id,{type:e.type,location:{...e.location,file:isAbsolute(e.location.file)?relative(node.config.root,e.location.file).split('\\').join('/'):e.location.file},...(e.ownerId?{ownerId:e.ownerId}:{}),...(e.semanticKind?{semanticKind:e.semanticKind}:{})}])),entities:Object.fromEntries([...node.graph.index].map(([id,entry])=>[id,entry.entity])),relations:Object.fromEntries(node.graph.connections),sections,attachments:attachments!};
+  data.projects[project]={id:project,title:node.config.title,irVersion:node.graph.manifest.irVersion,requiredFeatures:node.graph.manifest.requiredFeatures,records:Object.fromEntries([...node.graph.index].map(([id,e])=>[id,{type:e.type,location:{...e.location,file:isAbsolute(e.location.file)?relative(node.config.root,e.location.file).split('\\').join('/'):e.location.file},...(e.ownerId?{ownerId:e.ownerId}:{}),...(e.semanticKind?{semanticKind:e.semanticKind}:{})}])),entities:Object.fromEntries([...node.graph.index].map(([id,entry])=>[id,entry.entity])),relations:Object.fromEntries(node.graph.connections),sections,attachments:attachments!};
  }
  for(const node of book.projects.values())for(const document of node.documents.documents){
   const project=node.config.projectId,id=pageId(document.file),page=data.pages[targetKey(project,id)];
@@ -47,6 +55,27 @@ export async function compileBook(book:Book,options:{scene?:typeof import('../re
    const entity=[...node.graph.index.keys()].find(key=>anchor(key)===fragment);if(entity)return before+esc(routeHash({kind:'entity',project,id:entity}))+after;
    return before+esc(routeHash({kind:'page',project,id,anchor:fragment}))+after;
   });
+ }
+ // 每个作者 Section 只编译一个有限模板；实例页面由浏览器按路由派生。
+ for(const binding of book.resourceCatalog.bindings){
+  const project=binding.source.projectId,key=resourceBodyKey(project,binding.sectionId);if(data.resourceBodies![key])continue;
+  const node=book.projects.get(project)!,graph=resourceSectionGraph(node.graph,binding.sectionId),document=graph.documentPlan!.documents[0],id=pageId(document.file);
+  const rendered=await renderDocument(graph,binding.sectionId,{scene:options.scene,compactIndex:true,projectLink(alias){const child=node.children.get(alias)!;return {project:child.config.projectId,page:pageId(child.documents.documents[0].file),title:child.config.title};},documentLink(href,source){const link=localDocumentLink(node.config.root,source||document.file,href);return link?routeHash({kind:'page',project,id:pageId(link.file),...(link.anchor?{anchor:link.anchor}:{})}):href;}});
+  const links:Record<string,string>=Object.create(null);
+  const html=rendered.chapters.replace(/(<a\b[^>]*\bhref=")#([^"\s]*)(")/g,(all,before,fragment,after)=>{
+   if(fragment.startsWith('edoc='))return all;
+   try{fragment=decodeURIComponent(fragment);}catch{failure('DOCUMENT_LINK',document.file,'','正文链接编码错误');}
+   const section=Object.entries(data.projects[project].sections).find(([,s])=>s.anchor===fragment||s.anchor===anchor(fragment));
+   const entity=[...node.graph.index.keys()].find(key=>anchor(key)===fragment);
+   links[fragment]=routeHash(section?{kind:'page',project,id:section[1].page,anchor:section[1].anchor}:entity?{kind:'entity',project,id:entity}:{kind:'page',project,id,anchor:fragment});return all;
+  });
+  data.resourceBodies![key]={project,page:id,sectionId:binding.sectionId,sourceAnchor:data.projects[project].sections[binding.sectionId]?.anchor,links,html,outline:rendered.outline,scenes:rendered.scenes,anchorAliases:rendered.anchorAliases};
+ }
+ for(const binding of book.resourceCatalog.bindings)namespaceResourceBody(data.resourceBodies![resourceBodyKey(binding.source.projectId,binding.sectionId)],binding,resourceRoute(binding.target),0);
+ // 只校验作者显式写出的有限链接，不生成整个资源实例树。
+ for(const node of book.projects.values())for(const check of node.documents.checks??[])if(check.node.tag==='resource-link'&&check.node.attributes.anchor){
+  const attrs=check.node.attributes,route={...resourceRoute(resourceTarget(attrs.target,node.config.projectId),attrs.mount),anchor:attrs.anchor},page=resourcePage(resourceContext(node.graph),route,data.resourceBodies);
+  if(!resolveHTMLAnchor(page.html,attrs.anchor,page.anchorAliases))failure('RESOURCE_ANCHOR',check.file,'#L'+check.line,'资源页锚点不存在：'+attrs.anchor);
  }
  // 所有目标页生成后，再校验本地页与锚点。跨工程导航不扩大加载集合，也不阻止构建。
  for(const page of Object.values(data.pages)){

@@ -26,7 +26,7 @@ test('单框五类端口展示引线与范围，真实关系和方向不变',asy
 test('已有可见连接的端口不重复引线，分组反向握手展开保持真实方向',async t=>{
  const f=setup(t);f.edit('objects',d=>{d.objects[0].interfaces=[{id:'bus',label:'REQ_RESP',role:'target',members:['module.p0','module.p1']}];d.objects.push({id:'peer',kind:'node',label:'对端',ports:[{id:'peer.out',label:'req',direction:'out'}]});});
  f.edit('relations',d=>d.relations=[{id:'req',kind:'connection',class:'control',endpoints:['peer.out','module.p0'],direction:{sources:['peer.out'],targets:['module.p0']}}]);
- f.edit('views',d=>d.views[0].include.relations=['req']);f.edit('manifest',d=>{d.irVersion='1.1';d.requiredFeatures=['interface-groups'];});
+ f.edit('views',d=>d.views[0].include.relations=['req']);f.edit('manifest',d=>{d.irVersion='2.0';d.requiredFeatures=['interface-groups'];});
  const graph=f.load(),model=prepareInterfaceModel(graph,'single')!,state=initialInterfaceState(model);state.modes.bus='expanded';const expanded=await interfaceScene(model,state),a=expanded.nodes.find(n=>n.id==='module')!;
  assert.equal(a.ports.find(p=>p.id==='module.p0')!.lead,undefined);assert.equal(expanded.nodes.find(n=>n.id==='peer')!.ports[0].lead,undefined);assert.equal(a.ports.find(p=>p.id==='module.p1')!.lead!.startArrow,true);assert.equal(new Set(a.ports.filter(p=>p.interfaceId==='bus').map(p=>p.side)).size,1);
  // 无对端关系时，聚合接口可双向，但不把真实in/out改成RTL inout。
@@ -38,7 +38,7 @@ test('默认节点按内容缩减并换行，标题完整且端口避开多行�
  assert.ok(node.width<340);assert.ok(node.titleLines!.length>1);assert.equal(node.titleLines!.join(''),node.label);for(const line of node.titleLines!)assert.ok(measureText(line,node.titleSize)+32<=node.width);assert.ok(node.ports.every(p=>p.y>node.y+node.headerHeight!));
 });
 test('有子节点和约束的父框仍保留自身长端口所需宽度',async t=>{
- const f=setup(t);f.edit('objects',d=>{d.objects[0].ports[0].label='LONG_INTERFACE_SIGNAL_NAME_'.repeat(4);for(const id of ['a','b'])d.objects.push({id,kind:'node',label:id,parentId:'module'});});f.edit('views',d=>{d.views[0].include.objects.push('a','b');d.views[0].layout={constraints:[{type:'order',axis:'x',nodes:['a','b']}]};});f.edit('manifest',d=>{d.irVersion='1.2';d.requiredFeatures=['layout-intent'];});
+ const f=setup(t);f.edit('objects',d=>{d.objects[0].ports[0].label='LONG_INTERFACE_SIGNAL_NAME_'.repeat(4);for(const id of ['a','b'])d.objects.push({id,kind:'node',label:id,parentId:'module'});});f.edit('views',d=>{d.views[0].include.objects.push('a','b');d.views[0].layout={constraints:[{type:'order',axis:'x',nodes:['a','b']}]};});f.edit('manifest',d=>{d.irVersion='2.0';d.requiredFeatures=['layout-intent'];});
  const result=await scene(f.load(),'single'),parent=result.nodes.find(n=>n.id==='module')!;assert.ok(parent.width>=measureText(parent.ports[0].displayLabel!,14)+30);assert.ok(result.nodes.filter(n=>n.parentId==='module').every(n=>n.y>=parent.y+parent.headerHeight!));
 });
 test('初始主要文字可读、完整适配可显式切换、单框网页与SVG方向引线一致',{timeout:60000},async t=>{
@@ -54,7 +54,7 @@ test('初始主要文字可读、完整适配可显式切换、单框网页与SV
 });
 
 test('单模块、有接口分组、零连线可显示、合并展开及下载当前/完整SVG',{timeout:40000},async t=>{
- const f=setup(t);f.edit('objects',d=>d.objects[0].interfaces=[{id:'call',label:'CALL',role:'target',members:['module.p0','module.p1']}]);f.edit('manifest',d=>{d.irVersion='1.1';d.requiredFeatures=['interface-groups'];d.entryDocuments=['docs/zero.mdoc'];});writeFileSync(join(f.root,'docs/zero.mdoc'),'{% relation-diagram id="single" /%}');
+ const f=setup(t);f.edit('objects',d=>d.objects[0].interfaces=[{id:'call',label:'CALL',role:'target',members:['module.p0','module.p1']}]);f.edit('manifest',d=>{d.irVersion='2.0';d.requiredFeatures=['interface-groups'];d.entryDocuments=['docs/zero.mdoc'];});writeFileSync(join(f.root,'docs/zero.mdoc'),'{% relation-diagram id="single" /%}');
  const dir=mkdtempSync(join(tmpdir(),'edoc-zero-interface-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));writeFileSync(join(dir,'index.html'),await html(f.load(),'零连线接口'));
  const browser=await chromium.launch({executablePath:process.env.EDOC_CHROMIUM,args:['--no-sandbox']});t.after(()=>browser.close());const context=await browser.newContext({offline:true}),page=await context.newPage(),errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(pathToFileURL(join(dir,'index.html')).href);await page.waitForFunction(()=>window.EdocReady);
  const figure=page.locator('[data-diagram="single"]');assert.equal(await figure.locator('[data-display=relation-labels]').count(),0);assert.equal(await figure.locator('.canvas .x6-node').count(),1);assert.equal(await figure.locator('.canvas [data-port-lead]').count(),5);

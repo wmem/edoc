@@ -1,4 +1,5 @@
 import {figureControls} from './figure-client.ts';
+import {hydrateProjectGraphs} from '../core/resource-context.ts';
 import {commonClockCaption} from '../extensions/control-diagram/project.ts';
 import {elements} from '../extensions/control-diagram/types.ts';
 import {projectControl} from '../extensions/control-diagram/project.ts';
@@ -21,22 +22,25 @@ import {drawingSelection,drawingID} from '../drawing/reader-scene.ts';
 // 构建时注入纯数据，浏览器不读取旁路 JSON、不使用动态 import。
 declare global {interface Window {EdocReady:boolean; EdocGraphs:X6[];EdocControlViews:{holder:HTMLElement;state:{collapsed:string[];expandedCalls:string[]};restore:(state:{collapsed:string[];expandedCalls:string[]})=>Promise<void>}[];}}
 export type InterfaceRenderer=(holder:HTMLElement,context:{data:any;select:(id:string,detail?:unknown)=>void;signal?:AbortSignal;cleanup?:(fn:()=>void)=>void})=>void;
-export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[]}={}){
+export function start(interfaceRenderer?:InterfaceRenderer,options:{managed?:boolean;initialize?:number[];root?:HTMLElement;data?:any}={}){
 const abort=new AbortController(),cleanups:(()=>void)[]=[];let stopped=false;
-const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());window.EdocGraphs.forEach(g=>g.dispose());window.EdocGraphs=[];window.EdocControlViews=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];};
+const dispose=()=>{stopped=true;abort.abort();cleanups.forEach(fn=>fn());const owned=(holder:HTMLElement)=>!options.root||options.root.contains(holder);window.EdocGraphs.filter(g=>owned(g.container)).forEach(g=>g.dispose());window.EdocGraphs=window.EdocGraphs.filter(g=>!owned(g.container));window.EdocControlViews=window.EdocControlViews.filter(v=>!owned(v.holder));if(window.EdocInterfaceViews)window.EdocInterfaceViews=window.EdocInterfaceViews.filter(v=>!owned(v.holder));};
 const tables=options.managed?undefined:tableControls(document.querySelector<HTMLElement>('main')!);
 if(!options.managed)cleanups.push(sidebarLayout(),readingControls(document.querySelector<HTMLElement>('main')!),()=>tables?.dispose());
-const data=JSON.parse(document.querySelector('#edoc-data')!.textContent!);
-if(!options.managed)cleanups.push(figureControls(document.querySelector<HTMLElement>('main')!,{manifest:{projectId:data.projectId??document.title},index:new Map(Object.entries(data.entities).map(([id,entity])=>[id,{id,entity}]))} as any));
-if(!options.managed)cleanups.push(registerControls(document.querySelector<HTMLElement>('main')!,{manifest:{projectId:data.projectId??document.title},index:new Map(Object.entries(data.entities).map(([id,entity])=>[id,{id,entity}]))} as any));
-window.EdocGraphs=[];window.EdocControlViews=[];
+const scope=options.root??document;
+const data=options.data??JSON.parse(document.querySelector('#edoc-data')!.textContent!);
+if(!options.managed){
+ const graph=hydrateProjectGraphs(data.projects).get(data.projectId)!;
+ cleanups.push(figureControls(document.querySelector<HTMLElement>('main')!,graph),registerControls(document.querySelector<HTMLElement>('main')!,graph,{reveal:target=>tables?.reveal(target)}));
+}
+if(!options.root){window.EdocGraphs=[];window.EdocControlViews=[];}
 const panel=document.querySelector<HTMLElement>('#properties')!;
 function select(id:string,detail?:unknown,origin?:HTMLElement){
  const actions=document.querySelector('#selection-actions')!;actions.replaceChildren();panel.textContent=JSON.stringify(detail??data.entities[id]??{id},null,2);const detailNode=document.querySelector('#entity-detail');if(detailNode)detailNode.textContent=panel.textContent;const a=document.querySelector<HTMLAnchorElement>('#object-link')!;a.href='#'+anchor(id);a.hidden=!data.entities[id];
- const candidates=[...document.querySelectorAll<HTMLElement>('[data-diagram]')].filter(h=>{const m=data.scenes[h.dataset.diagram!]?.interfaceModel;return m?.visiblePorts.includes(id)&&m.nodes.some((n:any)=>n.interfaces?.some((i:any)=>i.members.includes(id)));});
+ const candidates=[...scope.querySelectorAll<HTMLElement>('[data-diagram]')].filter(h=>{const m=data.scenes[h.dataset.diagram!]?.interfaceModel;return m?.visiblePorts.includes(id)&&m.nodes.some((n:any)=>n.interfaces?.some((i:any)=>i.members.includes(id)));});
  const candidate=origin&&candidates.includes(origin)?origin:candidates.find(h=>h.getClientRects().length>0)??candidates[0];
  if(candidate&&!candidate.dataset.initialized){const button=document.createElement('button');button.textContent='图中定位信号';button.dataset.interfaceLocate=id;button.onclick=()=>{for(let p:HTMLElement|null=candidate;p;p=p.parentElement){if(p instanceof HTMLDetailsElement)p.open=true;if(p.classList.contains('tab'))p.hidden=false;}initialize(candidate);candidate.scrollIntoView({block:'center'});document.dispatchEvent(new CustomEvent('edoc-selection',{detail:{id,locate:true,holder:candidate}}));};actions.append(button);}
- document.dispatchEvent(new CustomEvent('edoc-selection',{detail:{id,holder:candidate}}));
+ document.dispatchEvent(new CustomEvent('edoc-selection',{detail:{id,holder:candidate,project:data.projectId}}));
 }
 function initialize(holder:HTMLElement){
  if(stopped||holder.dataset.initialized||holder.closest('details:not([open])'))return;
@@ -159,15 +163,15 @@ function initialize(holder:HTMLElement){
   holder.querySelector<HTMLButtonElement>('[data-control-full]')!.onclick=()=>void update({collapsed:[],expandedCalls:[]});
   back.onclick=()=>{const previous=history.pop();if(previous)void update(previous,false);};
  }
- visibility();viewport();const resize=new ResizeObserver(()=>{if(!stopped){graph.resize(holder.clientWidth,canvas.clientHeight);viewport();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
+ visibility();viewport();let measuredWidth=holder.clientWidth,measuredHeight=canvas.clientHeight;const resize=new ResizeObserver(()=>{const width=holder.clientWidth,height=canvas.clientHeight;if(!stopped&&(width!==measuredWidth||height!==measuredHeight)){measuredWidth=width;measuredHeight=height;graph.resize(width,height);viewport();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
 }
-const holders=[...document.querySelectorAll<HTMLElement>('[data-diagram]')];
+const holders=[...scope.querySelectorAll<HTMLElement>('[data-diagram]')];
 const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){initialize(entry.target as HTMLElement);observer.unobserve(entry.target);}},{rootMargin:'600px'});
 cleanups.push(()=>observer.disconnect());
 holders.forEach((holder,i)=>{if(i<2||options.initialize?.includes(i))initialize(holder);if(!holder.dataset.initialized)observer.observe(holder);});
 const opened=(event:Event)=>{if(event.target instanceof HTMLDetailsElement&&event.target.open)for(const holder of holders)if(event.target.contains(holder)){initialize(holder);if(holder.dataset.initialized)observer.unobserve(holder);}};
 document.addEventListener('toggle',opened,true);cleanups.push(()=>document.removeEventListener('toggle',opened,true));
-for(const tabs of document.querySelectorAll<HTMLElement>('.tabs')){
+for(const tabs of scope.querySelectorAll<HTMLElement>('.tabs')){
  const children=[...tabs.children].filter(e=>e.classList.contains('tab')) as HTMLElement[];
  const nav=document.createElement('div');nav.className='tab-nav';tabs.prepend(nav);
  children.forEach((tab,i)=>{tab.hidden=i!==0;const b=document.createElement('button');b.textContent=tab.dataset.name!;nav.append(b);b.onclick=()=>children.forEach(t=>t.hidden=t!==tab);});

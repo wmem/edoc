@@ -6,20 +6,24 @@ import {registerDocuments,validateDocuments} from './documents.ts';
 import type {DocumentPlan} from './documents.ts';
 import {validateResources} from './resource-validation.ts';
 import {prepareMachineClauses,registerClauses} from '../extensions/clause/prepare.ts';
-import {EdocError} from './errors.ts';
+import {EdocError,failure} from './errors.ts';
+import {prepareResourceCatalog} from './resource-declarations.ts';
+import {assertResourceContext} from './resource-context.ts';
 
 export type ResourcePart={type:ResourceType;data:any;file:string;prefix?:string};
 export {resourceSchemas} from './extension-contracts.ts';
 
 // 文件发现与工程索引解耦：调用方可以来自文件扫描或 JS 配置，不需要 manifest 文件。
-export function graphFromResources(parts:ResourcePart[],metadata:Manifest,options:{root:string;directory?:string;documents?:DocumentPlan;strict?:boolean;attachments?:Graph['attachments']}):Graph{
+export function graphFromResources(parts:ResourcePart[],metadata:Manifest,options:{root:string;directory?:string;documents?:DocumentPlan;strict?:boolean;attachments?:Graph['attachments'];deferAddressTargets?:boolean}):Graph{
+ if(!/^2\.\d+$/.test(metadata.irVersion))failure('IR_VERSION','<resources>','/irVersion','当前仅支持 IR2，拒绝旧版输入');
  const index=new Map<string,RecordEntry>(),connections=new Map<string,Connection>(),diagnostics:Diagnostic[]=[];
  const add=(entity:Entity,type:RecordEntry['type'],file:string,path:string,ownerId?:string)=>{
   if(index.has(entity.id)){diagnostics.push({code:'DUPLICATE_ID',file,path:path+'/id',id:entity.id,message:`稳定 ID 已在 ${index.get(entity.id)!.location.file}${index.get(entity.id)!.location.path} 定义`});return;}
   index.set(entity.id,{id:entity.id,entity,type,location:{file,path},...(ownerId?{ownerId}:{})});if(type==='connection')connections.set(entity.id,entity as Connection);
  };
  for(const part of parts){
-  const errors=validateSchema(resourceSchemas[part.type],part.data,part.file,!options.strict&&Number(metadata.irVersion.split('.')[1])>0);
+  if(!Object.hasOwn(resourceSchemas,part.type))failure('RESOURCE_TYPE',part.file,'','未知资源类型：'+part.type);
+  const errors=validateSchema(resourceSchemas[part.type],part.data,part.file);
   if(errors.length){diagnostics.push(...errors.map(d=>({...d,path:(part.prefix??'')+d.path})));continue;}
   for(const [i,entity]of part.data[part.type].entries()){
    const path=`${part.prefix??''}/${part.type}/${i}`;
@@ -35,7 +39,7 @@ export function graphFromResources(parts:ResourcePart[],metadata:Manifest,option
  }
  if(diagnostics.length)throw new EdocError(diagnostics);
  const graph:Graph={attachments:options.attachments,manifest:metadata,projectRoot:options.root,irDirectory:options.directory??options.root,index,connections,adjacency:new Map(),...(options.documents?{documentPlan:options.documents}:{})};
- prepareMachineClauses(graph);registerDocuments(graph);registerClauses(graph);validateResources(graph);validateDocuments(graph);graph.controlDiagnostics=controlDiagnostics(graph);
+ prepareMachineClauses(graph);registerDocuments(graph);registerClauses(graph);validateResources(graph);if(!options.deferAddressTargets)assertResourceContext(graph);validateDocuments(graph,{deferAddressTargets:options.deferAddressTargets});graph.controlDiagnostics=controlDiagnostics(graph);prepareResourceCatalog(new Map([[metadata.projectId,graph]]),{defer:options.deferAddressTargets});
  graph.interfaceByPort=new Map();for(const entry of index.values())if(entry.type==='interface')for(const id of (entry.entity as Interface).members)graph.interfaceByPort.set(id,entry.id);
  for(const connection of connections.values())for(const id of connection.endpoints){
   const ids=[id,index.get(id)!.ownerId,graph.interfaceByPort.get(id)].filter(Boolean) as string[];

@@ -145,7 +145,7 @@ export function registerDocuments(graph:Graph){
   graph.index.set(id,{id,type:'document',entity,location:{file:location.file,path:`#L${entity.source.line}`},...(semanticKind?{semanticKind,ownerId:node.attributes.__edocOwnerId}:{})});
  }
 }
-export function validateDocuments(graph:Graph){
+export function validateDocuments(graph:Graph,options:{deferAddressTargets?:boolean}={}){
  directoryOrders(graph.documentPlan??{documents:documentAST(graph),files:[],references:[]});
  const errors:any[]=[];
  const types=referenceTargets;
@@ -158,7 +158,7 @@ export function validateDocuments(graph:Graph){
    const file=locations.get(node)?.file??entryFile;
    if(node.type==='tag'&&Object.hasOwn(tags,node.tag??'')){
     const id=node.attributes.id;
-    if(node.tag==='register-map')for(const message of registerMapPresentationErrors(graph,id,node.attributes))errors.push({code:'DOCUMENT_REFERENCE',file,path:`#L${locations.get(node)?.line??1}`,id,message});
+    if(node.tag==='register-map')for(const message of registerMapPresentationErrors(graph,id,node.attributes,options.deferAddressTargets))errors.push({code:'DOCUMENT_REFERENCE',file,path:`#L${locations.get(node)?.line??1}`,id,message});
     if(['state-diagram','flowchart','sequence-diagram','binary-diagram','binary-field-table'].includes(node.tag)&&node.attributes.view){const v=graph.index.get(node.attributes.view);if(v?.type!=='view'||!('model'in v.entity)||v.entity.model!==id||v.entity.kind!==({'state-diagram':'state-machine',flowchart:'flowchart','sequence-diagram':'sequence','binary-diagram':'binary-layout','binary-field-table':'binary-layout'} as Record<string,string>)[node.tag])errors.push({code:'DOCUMENT_REFERENCE',file,path:`#L${locations.get(node)?.line??1}`,id:node.attributes.view,message:'显示视图必须引用标签指定的同种模型'});}
     if(node.attributes.project!==undefined&&(typeof node.attributes.project!=='string'||!node.attributes.project.trim()))errors.push({code:'DOCUMENT_PROJECT',file,path:`#L${locations.get(node)?.line??1}`,message:'project 必须是非空稳定项目 ID'});
     if(['reference','page','attachment'].includes(node.tag??'')&&typeof id==='string'&&!id.trim())errors.push({code:'DOCUMENT_REFERENCE_ID',file,path:`#L${locations.get(node)?.line??1}`,message:'跳转目标 ID 不能空白'});

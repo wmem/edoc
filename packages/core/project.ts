@@ -69,7 +69,7 @@ export async function resolveProjectConfig(requested?:string,cwd=process.cwd()):
 }
 
 // 配置、文档扫描先完成，再执行数据提供函数/扫描数据目录。无需用户手写资源清单。
-export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inputs:string[])=>void}={}):Promise<LoadedProject>{
+export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inputs:string[])=>void;deferAddressTargets?:boolean}={}):Promise<LoadedProject>{
  const documents=scanDocuments(config.root,config.documents,{markdoc:config.markdoc,configFile:config.file,projectRoots:Object.values(config.children).map(file=>configProjectRoot(resolve(config.root,file)))});await Promise.all(documents.pending??[]);if(!documents.documents.length)failure('DOCUMENT_EMPTY',config.file,'/documents','没有发现可发布的正文');directoryOrders(documents);const inputs=new Set<string>([...config.configInputs,...documents.files.map(p=>resolve(config.root,p))]);
  const dataFiles:string[]=[],parts:ResourcePart[]=[],required=new Set<string>(),versions=[SUPPORTED_IR_VERSION],seenFiles=new Set<string>(),seenDirectories=new Set<string>();
  const attachmentDefinitions:Record<string,AttachmentInput>=Object.assign(Object.create(null),config.attachments);
@@ -80,14 +80,14 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
   if(!keys.length&&!Object.hasOwn(raw,'attachments')){if(explicit)failure('DATA_FORMAT',file,prefix,'文件没有可识别的工程数据数组');return;}
   const allowed=[...resourceTypes,'irVersion','requiredFeatures','projectId','adapterVersion','attachments'];
   for(const key of Object.keys(raw))if(!allowed.includes(key as any))failure('DATA_FIELD',file,prefix+'/'+pointer(key),'未知数据字段：'+key);
-  if(raw.irVersion!==undefined){if(typeof raw.irVersion!=='string'||!/^1\.\d+$/.test(raw.irVersion))failure('IR_VERSION',file,prefix+'/irVersion','不支持的数据版本');versions.push(raw.irVersion);}
+  if(raw.irVersion!==undefined){if(typeof raw.irVersion!=='string'||!/^2\.\d+$/.test(raw.irVersion))failure('IR_VERSION',file,prefix+'/irVersion','不支持的数据版本');versions.push(raw.irVersion);}
   if(raw.projectId!==undefined&&raw.projectId!==config.projectId)failure('PROJECT_ID',file,prefix+'/projectId','数据 projectId 与配置不一致');
   if(raw.requiredFeatures!==undefined){if(!Array.isArray(raw.requiredFeatures)||raw.requiredFeatures.some((f:unknown)=>typeof f!=='string'||!features.includes(f)))failure('IR_FEATURE',file,prefix+'/requiredFeatures','数据要求了未知或不支持的能力');raw.requiredFeatures.forEach((f:string)=>required.add(f));}
   if(raw.attachments!==undefined){if(!record(raw.attachments))failure('DATA_FORMAT',file,prefix+'/attachments','附件定义需要对象');for(const [id,attachment]of Object.entries(raw.attachments)){if(Object.hasOwn(attachmentDefinitions,id))failure('DUPLICATE_ID',file,prefix+'/attachments/'+id,'附件重复定义：'+id);attachmentDefinitions[id]=attachment;}}
   if(Array.isArray(raw.views)&&raw.views.some((v:any)=>v?.drawing))required.add('native-drawing');
   if(keys.includes('sequences'))required.add('sequences');
   if(keys.includes('binaryLayouts'))required.add('binary-layouts');
-  if(keys.includes('registerBlocks')||keys.includes('addressSpaces'))required.add('register-maps');
+  if(keys.includes('registerBlocks')||keys.includes('addressSpaces')||keys.includes('memories'))required.add('register-maps');
   if(Array.isArray(raw.views)&&raw.views.some((v:any)=>v?.kind==='plot'))required.add('plots');
   if(keys.includes('stateMachines'))required.add('state-machines');
   if(keys.includes('flowcharts'))required.add('flowcharts');
@@ -134,7 +134,7 @@ export async function loadProject(config:ResolvedConfig,options:{onInputs?:(inpu
  for(const file of documents.files)inputs.add(resolve(config.root,file));
  if(documents.documents.some(d=>[...d.ast.walk()].some(n=>n.type==='tag'&&n.tag==='clause')))required.add('clauses');
  metadata.requiredFeatures=[...required];const allInputs=[...inputs];options.onInputs?.(allInputs);
- const graph=graphFromResources(parts,metadata,{root:config.root,documents,strict:true,attachments});
+ const graph=graphFromResources(parts,metadata,{root:config.root,documents,strict:true,attachments,deferAddressTargets:options.deferAddressTargets});
 
  return {config,graph,documents,inputs:allInputs,dataFiles};
 }

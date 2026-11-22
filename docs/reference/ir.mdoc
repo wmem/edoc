@@ -1,6 +1,8 @@
 {% section id="ref:ir" title="数据契约" %}
 
-当前支持 IR 1.8；原生绘图使用 native-drawing 能力，条款使用 clauses 能力。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Register、RegisterField、Waveform、Clause，以及 StateMachine、Flowchart 分属不同数据模型；状态/流程的局部身份和字段见[专用契约](tags/control-diagrams.mdoc)；[标签职责](tags/index.mdoc)说明各自如何展示。新增 Sequence、BinaryLayout、RegisterBlock、AddressSpace 与 PlotView 的字段见[工程图契约](tags/engineering-charts.mdoc)。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+当前支持 IR 2.0；不接受旧 IR 或 AddressSpace.mappings；原生绘图使用 native-drawing 能力，条款使用 clauses 能力。关系图的 Node、Port、Interface、Group、Connection、RelationView 与 Table、Register、RegisterField、Waveform、Clause，以及 StateMachine、Flowchart 分属不同数据模型；状态/流程的局部身份和字段见[专用契约](tags/control-diagrams.mdoc)；[标签职责](tags/index.mdoc)说明各自如何展示。新增 Sequence、BinaryLayout、RegisterBlock、AddressSpace 与 PlotView 的字段见[工程图契约](tags/engineering-charts.mdoc)。标准数据按资源数组组织，不限定每类只有一个文件。对象身份跨分片唯一，显示名称与身份分开。
+
+npm 软件包现为 3.0.0，IR 数据协议为 2.0；软件版本与协议版本分别管理。相对原 npm 2.0.0，本版破坏性移除 AddressSpace.mappings 与 IR1.x 正式输入，没有旧 Schema 兼容层或自动转换器。配置数据、独立 manifest、公开 Graph 及离线已发布事实都拒绝旧 major；现有工程须按 regions/resource/reserved/window 和显式 size 重新描述地址分配。Drawing.schemaVersion=1.0 等独立领域版本不随 IR major 改成 2.0。
 
 | 外层字段 | 内容 | 本页条目 |
 | --- | --- | --- |
@@ -8,6 +10,7 @@
 | relations | 真实连接 | ref:connections |
 | views | 引用范围和展示 | 图形参考 |
 | tables | 投影或权威表格行 | ref:tables |
+| registerBlocks / addressSpaces / memories | 原生寄存器布局、地址规划与具名存储 | [地址模型](tags/engineering-charts.mdoc#ref:tag-register-map) |
 | registers | 寄存器及嵌套字段 | [位域契约](tags/registers.mdoc) |
 | stateMachines | 状态、区域及迁移 | [StateMachine](tags/control-diagrams.mdoc#ref:state-machine) |
 | flowcharts | 步骤、网关、泳道及控制边 | [Flowchart](tags/control-diagrams.mdoc#ref:flowchart) |
@@ -153,4 +156,14 @@ source.file 必需，selector 和 line 可选。file 以工程根定位，select
 数据可声明 irVersion 和 requiredFeatures。当前已知能力为 graph、documents、tables、wavejson、references、interface-groups、layout-intent、pdf-attachments、clauses、registers、table-cell-links、native-drawing、state-machines、flowcharts、sequences、binary-layouts、plots、register-maps；未知必需能力明确失败。工具会识别已知结构需要的能力，普通配置无需手填版本清单。
 
 {% /section %}
+{% section id="ref:address-projects" title="跨工程地址资源" %}
+
+AddressRegion 的 target.project 是稳定工程 ID；省略时指向声明区域的工程。资源强引用只在显式 include 的 Book 工程集合中解析，缺少工程、资源不存在或类型不符均使 validate/build 失败。独立 Graph 遇到外部强引用必须使用 Book 上下文；正文 reference/page 等跨工程弱跳转保持原有语义。
+
+组合还演示[资源目录挂载、实例页面与作者 Section 绑定](resource-navigation.mdoc)：目录来自 IR，UART0 的项目接线说明追加在 IP 通用说明之后。下面的可运行组合位于 examples/address-space-v2/composed/。在仓库根执行 node packages/cli/edoc.ts build --config examples/address-space-v2/composed/docs/edoc.config.js；只编译 IP 时改用 examples/address-space-v2/composed/ip/docs/edoc.config.js。query --project uart-ip 查询原生定义，query --id soc:apb 查询 SoC 的实例坐标；随包手册可用 docs query --project address-v2-composed --id soc:apb 查询相同事实。
+
+{% include project="addressV2" /%}
+
+{% /section %}
+
 {% /section %}

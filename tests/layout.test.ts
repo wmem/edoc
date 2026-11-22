@@ -10,7 +10,7 @@ import {drawnPaths} from '../packages/render-graph/net-tree.ts';
 import {interfaceFixture} from './interface-fixture.ts';
 import {prepareInterfaceModel,interfaceScene,initialInterfaceState} from '../packages/render-graph/interfaces.ts';
 
-function enable(f:ReturnType<typeof fixture>){f.edit('manifest',d=>{d.irVersion='1.2';d.requiredFeatures=[...d.requiredFeatures??[],'layout-intent'];d.entryDocuments=[];});}
+function enable(f:ReturnType<typeof fixture>){f.edit('manifest',d=>{d.irVersion='2.0';d.requiredFeatures=[...d.requiredFeatures??[],'layout-intent'];d.entryDocuments=[];});}
 function mac(f:ReturnType<typeof fixture>){
  const data=JSON.parse(readFileSync(join(repository,'examples/fpga-mac/project/semantics.json'),'utf8'));
  f.edit('objects',d=>d.objects=data.nodes);f.edit('relations',d=>d.relations=data.relations);f.edit('views',d=>d.views=[data.views[0]]);f.edit('manifest',d=>d.entryDocuments=[]);

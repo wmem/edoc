@@ -32,7 +32,7 @@ edoc docs query --id board:net.FLASH_SCK --depth 1
 
 docs 默认显示随包 .mdoc 主入口、使用目录及查询方法，Agent 可直接读取源文与相对链接；不加载当前项目配置。--format json 提供 root、readme、entry、usage、sources、html、url、projects 和 build；源文入口也出现在 edoc --help 及各手册子命令的 --help/-h 中。build 的版本来源见本页最后一节。
 
-docs outline 缺省 depth=0，只返回当前入口；--depth 0–10 按分支逐层展开，--all 返回完整树，两者不能同时使用。text 目录同时显示 project 与 sectionId，JSON 的 sectionId 才可传给 read/outline，id/anchor 用于网页导航。项目 edoc outline 的默认完整范围不变。
+docs outline 缺省 depth=0，只返回当前入口；--depth 0–10 按分支逐层展开，--all 返回完整树，两者不能同时使用。text 目录同时显示 project 与 sectionId，真实章节的 sectionId 可传给 read/outline，id/anchor 用于网页导航；资源节点另有 route，使用 --route 查询虚拟页，挂载 ID 可传给 outline --id，见[资源命令](resource-navigation.mdoc#ref:resource-query)。项目 edoc outline 的默认完整范围不变。
 
 docs read 读取 section 默认 self，返回当前正文及子章节身份，显式 subtree 才展开，分页见 read 参考。源文、目录、章节和事实查询不依赖 HTML 文件；serve 才需要预构建 HTML，仅在 127.0.0.1 提供本机阅读，默认端口 5176，允许 0 自动分配，Ctrl+C 结束。
 

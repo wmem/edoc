@@ -1,0 +1,57 @@
+{% section id="demo:composed-home" title="跨工程 SoC 地址资源" %}
+
+UART 子工程维护唯一的 64 位寄存器事实。SoC 为 UART0、UART1 分配不同地址，两者 target 都指向 uart-ip 工程的 uart:csr。SoC 自己另有同名的 8 位寄存器和块，用于核对工程身份。
+
+{% section id="demo:composed-addresses" title="分配与实例地址" %}
+
+每个 UART 分配 0x1000 字节，实际映射原生块的 0x100 字节。CTRL 的原生偏移为 8 字节，因此 UART0、UART1 的地址分别是 0x1000000000001008、0x1000000000002008。实例身份和坐标保留在查询结果中，下面的定义链接进入 UART 子工程。
+
+{% resource-directory id="soc:apb" mount="demo:apb" /%}
+{% resource-directory id="soc:cpu" mount="demo:cpu" /%}
+
+{% tabs %}
+{% tab name="说明" %}
+资源目录也可放在 Tab 中；切换 Tab 不改变已经生效的全局挂载。
+{% /tab %}
+{% tab name="备用入口" %}
+{% resource-directory id="soc:apb" mount="demo:apb-secondary" /%}
+{% /tab %}
+{% /tabs %}
+{% if $showExtra %}
+{% resource-directory id="soc:cpu" mount="demo:inactive" /%}
+{% /if %}
+
+{% resource-link target={"kind":"instance","space":"soc:apb","segments":[{"kind":"region","regionId":"uart0"},{"kind":"entry","entryId":"ctrl"}]} mount="demo:apb" label="直接进入 UART0 CTRL 实例" /%}
+
+{% register-map id="soc:apb" mode="regions" /%}
+{% register-map id="soc:apb" /%}
+
+CPU 的 32 bit 地址单位经 APB 字节空间和 IP 的 16 bit 空间做两跳转换；目标 IP CTRL 在 CPU 中的地址为 0x4802。窗口中的空洞仍为空洞，窗口不会生成新资源。
+
+{% register-map id="soc:cpu" mode="regions" /%}
+
+{% /section %}
+{% section id="demo:composed-ip" title="独立 UART 工程" %}
+
+children 只声明配置别名，下方 include 才把 UART 工程接入 Book。移除 include 后，外部强引用报错；普通文档的跨工程跳转仍保持弱链接。
+
+{% include project="uart" /%}
+
+{% /section %}
+{% section id="demo:uart0-use" title="UART0 的项目接线" %}
+
+UART0 是本项目的第一个 UART 实例。这段项目说明追加在 IP 定义说明之后，不覆盖原 IP 的接口限制。
+
+[本段](#demo:uart0-use) · [项目首页](index.mdoc#demo:composed-home)
+
+{% /section %}
+{% resource-content target={"kind":"instance","space":"soc:apb","segments":[{"kind":"region","regionId":"uart0"}]} section="demo:uart0-use" /%}
+{% resource-content target={"kind":"instance","space":"soc:apb","segments":[{"kind":"region","regionId":"uart0"},{"kind":"entry","entryId":"ctrl"}]} section="demo:uart0-use" /%}
+{% section id="demo:large-arrays" title="十亿实例的符号阵列" %}
+
+这个独立地址空间用十亿个 UART 模板实例检验目录与索引导航。目录只携带数组汇总，资源页可输入 999999999 进入末项，再沿 ctrl 进入寄存器；CTRL 地址为 0x1000000000000000 + 999999999 × 0x1000 + 8。
+
+{% resource-directory id="soc:large" mount="demo:large" /%}
+
+{% /section %}
+{% /section %}

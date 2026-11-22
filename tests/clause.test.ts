@@ -153,11 +153,11 @@ test('移除旧写法：源码、隐藏分支、配置、机器数据与读取�
 });
 
 
-test('公开条款IR要求1.6与clauses能力，机器定义保留语义身份，最小模板可独立使用',async t=>{
+test('公开条款IR要求2.0与clauses能力，机器定义保留语义身份，最小模板可独立使用',async t=>{
  const p=specimen(t),entity={id:'M',kind:'clause',label:'机器要求',body:{format:'markdoc',content:'必须保留完整前提。'},source:{file:'source.mdoc'}};
  const parts:any=[{type:'clauses',data:{clauses:[entity]},file:'machine.json'}];
- const metadata={projectId:'machine',irVersion:'1.6',requiredFeatures:['clauses'],resources:[{type:'clauses' as const,path:'machine.json'}],entryDocuments:[]};
- assert.throws(()=>graphFromResources(parts,{...metadata,irVersion:'1.5'},{root:p.root,strict:true}),/IR_VERSION/);
+ const metadata={projectId:'machine',irVersion:'2.0',requiredFeatures:['clauses'],resources:[{type:'clauses' as const,path:'machine.json'}],entryDocuments:[]};
+ assert.throws(()=>graphFromResources(parts,{...metadata,irVersion:'1.6'},{root:p.root,strict:true}),/IR_VERSION/);
  assert.throws(()=>graphFromResources(parts,{...metadata,requiredFeatures:[]},{root:p.root,strict:true}),/IR_FEATURE_REQUIRED/);
  const graph=graphFromResources(parts,metadata,{root:p.root,strict:true});
  assert.equal(query(graph,'M').target.semanticKind,'clause');
@@ -166,4 +166,7 @@ test('公开条款IR要求1.6与clauses能力，机器定义保留语义身份�
  const book=await template.load(),reading=readDocument(book.root.graph,'behavior:timeout');
  assert.match(reading.content,/迟到事件/);assert.match(reading.content,/截止时刻/);
  assert.deepEqual(reading.clauses.map(c=>c.id),['clause:timeout','clause:deadline']);
+ const publishedTemplate=await loadBook(await resolveProjectConfig('templates/clauses/docs/edoc.config.js'));
+ assert.equal(publishedTemplate.root.graph.manifest.irVersion,'2.0');
+ assert.equal(query(publishedTemplate.root.graph,'clause:deadline').target.type,'clause');
 });

@@ -1,0 +1,25 @@
+{% section id="demo:engineering" title="工程对象手册" %}
+
+本页把普通 IP、重复 Channel 和总线窗口放在同一地址空间中。进入下方手册首页，可依次查看 Region 分配、IP 相对布局和单寄存器位域。定义事实来自 IR；本页只说明阅读方式。
+
+{% resource-directory id="soc:engineering" mount="demo:engineering-address" /%}
+
+{% section id="demo:engineering-browse" title="普通寄存器与 Channel" %}
+
+“普通 IP”有 64 个寄存器。左侧目录每批加载 20 个定义项，可一直加载到 R63；这与十亿 Channel 的阵列汇总不同。Channel 页面按索引进入单个实例，父块的 32-bit 单位与子块的 8-bit 单位分别保留。
+
+{% resource-link target={"kind":"instance","space":"soc:engineering","segments":[{"kind":"region","regionId":"bank"}]} mount="demo:engineering-address" label="浏览普通 64 项 IP" /%}
+
+{% resource-link target={"kind":"instance","space":"soc:engineering","segments":[{"kind":"region","regionId":"dma"}]} mount="demo:engineering-address" label="浏览 DMA 8 Channel" /%}
+
+{% /section %}
+{% section id="demo:engineering-windows" title="完整与截断窗口" %}
+
+完整窗口保留 CPU、APB 和 IP 的逐跳坐标。截断窗口只暴露 CTRL 的 32 bit，不能作为完整的 64-bit 寄存器使用；页面列出 PARTIAL_REGISTER_WINDOW 诊断。规划窗口中的 Reserved、RAM 和空洞也不会被伪装成寄存器。
+
+{% resource-link target={"kind":"instance","space":"soc:engineering","segments":[{"kind":"region","regionId":"partial"}]} mount="demo:engineering-address" label="检查截断多跳窗口" /%}
+
+{% resource-link target={"kind":"instance","space":"soc:engineering","segments":[{"kind":"region","regionId":"multihop"}]} mount="demo:engineering-address" label="浏览完整多跳窗口" /%}
+
+{% /section %}
+{% /section %}

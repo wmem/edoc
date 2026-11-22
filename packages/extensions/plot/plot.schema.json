@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://edoc.local/schema/v1/plot.schema.json",
+  "$id": "https://edoc.local/schema/v2/plot.schema.json",
   "$defs": {
     "view": {
       "type": "object",

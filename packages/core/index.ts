@@ -28,3 +28,15 @@ export {solveDrawing} from '../drawing/solve.ts';
 export {validateDrawing} from '../drawing/validate.ts';
 
 export {queryElement} from './query.ts';
+
+export {createAddressResolver,ResourceResolver} from '../extensions/register-map/resolver.ts';
+export type {AddressResolver,AddressInstance} from '../extensions/register-map/resolver.ts';
+export {connectResourceGraphs,hydrateProjectGraphs} from './resource-context.ts';
+
+export {resourceRoute,resourceContext,resolveResource,routeResource,resourceProviders,resourceCollection} from './resource-pages.ts';
+export {queryResource,readResource} from './resource-reading.ts';
+export {outlineResource,loadResourceNavigation} from './resource-navigation.ts';
+export type * from './resource-types.ts';
+export type {ResourceRoute} from './routes.ts';
+
+export {addressLeaves} from '../extensions/register-map/leaves.ts';

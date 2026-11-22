@@ -1,0 +1,121 @@
+{% section id="accept:address-v2" title="IR 2.0 地址手册 A—F 最终验收" %}
+
+2026-11-22，针对[已审定设计](../design/address-handbook-v2.mdoc)验收 A—F 的完整实现，比较基线为 Git 11fae4b。记录只证明工具、虚构样例和实际执行的回归；访问保证来自作者声明，不证明真实硬件提供一致快照或原子写入。
+
+{% section id="accept:address-v2:contract" title="冻结契约与实现证据" %}
+
+以下逐组覆盖设计正文、第一轮精确契约和最高优先级的第二轮边界决策；后者覆盖前文 atomic 等已被明确替代的示意。冻结设计本身未修改。当前使用入口为[寄存器教程](../../../charts/data-layout/registers.mdoc#use:registers:resource-handbook)、[目录与资源页参考](../../../reference/resource-navigation.mdoc)和[地址模型参考](../../../reference/tags/engineering-charts.mdoc)。
+
+| 冻结要求 | 交付及证据 |
+| --- | --- |
+| 顶层资源与局部身份，严格 IR2 输入 | types/schema/load/graph 注册 AddressSpace、RegisterBlock、Register/Field、Memory；Region/Entry ID 仅在所属容器唯一。address-v2、address-book、schema、core 的正反例拒绝旧 major、mappings、错误目标及字段。 |
+| 半开区间、分配/映射/容量三段 | register-map/resolver.ts、intervals.ts：碰撞始终按 Region.size；Block 原生 size 独立。测试和真实页面保留 Region=0x1000、Block=0x100、mappedSize=0x100 不变量，尾部碰撞失败、相邻合法。Memory 非零切片及容量检查独立。 |
+| BigInt、跨单位、嵌套、12/64 位、alignment | numeric.ts/resolver.ts 全程位坐标；保留 unitIndex/subUnitBitOffset，只有整除才返回 address。子块跨度精确换算，Register 槽位可向上取整；继承 alignment 保留声明单位。address-v2 包含父32/子8、12/64位、不能整除和超大地址。 |
+| mappedSize 默认及 Window 多跳交集 | Block 默认完整原生跨度且不可截断；Memory/Window 默认 Region.size，显式映射可更短。各跳求位区间交集，目标允许空洞/Reserved；部分 Register 返回 PARTIAL_REGISTER_WINDOW。最终补入源8/目标32的子单位终点，不要求 Window 目标边界整除。 |
+| Memory 身份及别名 | 同一空间直接映射重叠资源切片严格失败；Window 显式多路径及不同空间共享 Memory 保持同一身份。重复 Window 必需 targetStride，按位检查正数、不重叠、目标范围；环路按项目+空间检测。 |
+| 数组和全量规模 | count 不枚举；BigInt 总数、符号汇总、目录分批加载、页上限和直接索引。address-pages、resource-navigation 及离线浏览器覆盖8 Channel、64寄存器/R63、十亿末项、Window 中段及多跳叶分页。 |
+| 强引用及独立 Graph | Book 两阶段加载，内部 deferred 不能公开冒充成功；resource-context.ts 统一连接各项目独立 Graph，禁止偷偷加载未 include 工程。CLI/HTML/ReaderData/随包手册同一 resolver。address-book 的12项包含同名ID、UART0/1、未组合/错误类型、跨项目环路；独立 IP 可 build。 |
+| 实例路径及非定义终点 | routes/resource-pages 使用 RegionStep/EntryStep 有序联合路径，原空间/项目/mount 保留；Reserved/Window 自身可为终点。冗余目标身份篡改拒绝，定义视图不虚构绝对地址。 |
+| 通用目录且保留文件/index/标题 | resource-directory 显式稳定 mount，全 Book 唯一；通用 provider 接口与资源导航独立节点类型。directory-order、outline、reader/sidebar/browser 全部回归；不把虚拟节点伪装成文件。 |
+| 条件/Tab 与作者 Section | 未生效分支预检但不激活，Tab 切换不增删全局挂载。resource-content 按声明源项目绑定现有 Section，定义正文在前、实例追加；AST/变量/partial/源链接保留，展示克隆不重复注册实体/挂载，重复绑定失败。 |
+| 虚拟页和专业视图 | ReaderData 保存有限模型与每个作者 Section 的一个模板，按路由生成页面。AddressSpace/Region/Block/Register/Memory/Reserved/Window 各有区块锚点、来源和面包屑；直达/刷新/返回、左右目录、390px横向表格、PDF返回均有浏览器测试。 |
+| 访问声明与位域事实 | accessPolicy 逐字段继承/覆盖；readConsistency/writeAtomicity/splitOrder 含义独立，缺失不推断保证，atomic 布尔拒绝。enums 用 BigInt 校验编码与重复；readEffect/writeEffect 只认显式声明。查询、页面及严格Schema同源。 |
+| 位域图/图例只定位本页表行 | presentation.ts 稳定限定项目/Register/呈现作用域，图/图例/表精准配对；重复组不猜最近。reveal 隐藏祖先及影响目标的筛选，提示、高亮、聚焦、滚动；Enter/Space 不改URL/历史。显式详情是独立次级入口，保留字段/PDF来源。 |
+| 静态SVG、离线与其它图表 | 独立SVG保留字段ID/原项目/来源，不带HTML定位动作；32/64位仍完整。所有浏览器组及包测试验证离线字体、PDF、静态SVG、其它图表和搜索/表格行为。 |
+
+查询范围统一返回 start、endExclusive、sizeBits，非空范围另有 lastBit；仅起止均为当前单位整数地址时返回 lastAddress，避免把子单位末位伪装成整数地址。Window/Block/Memory 的可见区间和来源始终与原定义区分。
+
+{% /section %}
+{% section id="accept:address-v2:independent" title="真正独立的只读审查与缺陷关闭" %}
+
+主会话通过 spawn_agent 创建实际任务 /root/independent_f_audit，fork_turns=none，未传主会话总结。子 Agent 自行读取冻结设计和Git基线，围绕冻结设计审阅相关未提交实现、Schema、数据与测试，独立执行CLI、数值实验及指定Chromium离线浏览器；只在 /tmp 创建调查脚本，不编辑仓库。工具没有返回另外的UUID，以上规范任务ID即实际标识。
+
+| 等级及发现 | 修复与原审查 Agent 复审 |
+| --- | --- |
+| P1：Window 对目标单位强求整除 | resolver.ts 原 exactUnits(mappedBits,targetUnit) 错拒绝1-byte→32-bit目标的[0,8)位窗口，违背设计第二轮§2。移除此单一限制，保留位边界/容量/循环/targetStride检查；A新增反例及多跳测试。原Agent独立脚本确认接受子单位窗口，部分32bit Register仍诊断，越界与重叠仍拒绝，关闭。 |
+| P2：实例末地址表达缺项 | 补入 lastBit 与有明确整数地址时的 lastAddress；整数[0x1000,0x1004)末地址0x1003，子单位范围不伪造整数。Agent独立查询确认关闭。 |
+| P2：主教程缺少可执行新IR入口 | 教程引用正式 SoC IR 与 resource-directory 配方，首页可达。Agent按教程逐字复制到全新临时工程，validate/build/query均成功，关闭。 |
+| P2：现行说明残留IR1.5/1.6 | graph与semantic-content参考更新为IR2；历史记录保持当时事实，Agent确认关闭。 |
+
+原 Agent 最终独立结论为审查通过、无剩余P0/P1/P2；其复审覆盖主会话修复。独立数值实验用100000组有限随机区间与逐项枚举对照、100组随机Window与字节算式/分页对照，均一致；另测多跳子单位余数和窗口越界、targetStride重叠等反例。
+
+独立CLI核对跨项目同名对象身份和来源。独立离线浏览器检查1440/390、R63、十亿末项/刷新、IP内A/B反序非相邻重复呈现、隐藏Tab/Section、筛选reveal、Enter/Space不加历史、显式详情/PDF返回焦点、SVG标识及Memory/Reserved；排序及同页跨项目字段组由主会话完整浏览器回归覆盖。报告0 pageerror、0 HTTP请求。单次含PDF/字体HTML约12MB，十亿末项页面DOM645节点；加载183.6ms、构建482.6ms属于本机一次测量，不是性能承诺。
+
+{% /section %}
+{% section id="accept:address-v2:tests" title="完整回归与可复现命令" %}
+
+测试目录全部71个 .test.ts 分为45个非浏览器、25个浏览器和1个包测试文件，三组无重复也无遗漏。Node v24.15.0；浏览器为用户指定已安装 Chromium，不下载或全局安装。最终结果不累加中途失败/重复运行数字。
+
+| 最终组 | 通过 | 失败 | 跳过 |
+| --- | --- | --- | --- |
+| 全部非浏览器测试（包括四项真实工程Drawing） | 519 | 0 | 0 |
+| 全部真实Chromium浏览器 | 61 | 0 | 0 |
+| npm包消费与临时prefix安装 | 2 | 0 | 0 |
+| 合计 | 582 | 0 | 0 |
+
+精确执行命令如下。两个真实工程环境路径启用 drawing-projects 的四项检查；只读取相关工程输入，不代表实际硬件功能验证。
+
+~~~bash process=false
+EDOC_CHROMIUM=/home/mem/work/software/playwright-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell EDOC_HARDWARE_PROJECT=/home/mem/work/project/kunyi/ky3134-v01/work/device EDOC_FPGA_PROJECT=/home/mem/work/project/kunyi/ky3133-b00/fpga node --test --test-concurrency=4 tests/adapter.test.ts tests/address-book.test.ts tests/address-pages.test.ts tests/address-v2.test.ts tests/chart-recipes.test.ts tests/clause.test.ts tests/cli.test.ts tests/control-alignment.test.ts tests/control-diagram.test.ts tests/control-tutorials.test.ts tests/core.test.ts tests/directory-order.test.ts tests/document.test.ts tests/drawing-curves.test.ts tests/drawing-interfaces.test.ts tests/drawing-projects.test.ts tests/drawing-prototype.test.ts tests/drawing-public.test.ts tests/drawing-verification.test.ts tests/engineering-charts.test.ts tests/graph.test.ts tests/interface.test.ts tests/layout.test.ts tests/manual-capabilities.test.ts tests/manual-snapshot.test.ts tests/manual.test.ts tests/markdoc.test.ts tests/outline.test.ts tests/preflight.test.ts tests/project.test.ts tests/protocol-tutorials.test.ts tests/quality.test.ts tests/query.test.ts tests/read.test.ts tests/reader.test.ts tests/reading-structure.test.ts tests/records-tutorials.test.ts tests/register-map.test.ts tests/register-presentation.test.ts tests/register.test.ts tests/resource-navigation.test.ts tests/schema.test.ts tests/semantic-content.test.ts tests/structure-routing.test.ts tests/table-controls.test.ts
+~~~
+
+~~~bash process=false
+EDOC_CHROMIUM=/home/mem/work/software/playwright-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell node --test --test-concurrency=2 tests/address-book-browser.test.ts tests/address-pages-browser.test.ts tests/browser.test.ts tests/clause-browser.test.ts tests/control-diagram-browser.test.ts tests/drawing-interfaces-browser.test.ts tests/drawing-reader.test.ts tests/engineering-charts-browser.test.ts tests/entity-references-browser.test.ts tests/graphics-reading.test.ts tests/interface-browser.test.ts tests/manual-browser.test.ts tests/manual-capabilities-browser.test.ts tests/media-browser.test.ts tests/reader-browser.test.ts tests/reading-controls-browser.test.ts tests/register-browser.test.ts tests/register-interaction-browser.test.ts tests/resource-navigation-browser.test.ts tests/semantic-content-browser.test.ts tests/sidebar-layout-browser.test.ts tests/svg-font.test.ts tests/table-controls-browser.test.ts tests/toc-alignment-browser.test.ts tests/wave.test.ts
+~~~
+
+~~~bash process=false
+EDOC_CHROMIUM=/home/mem/work/software/playwright-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell node --test --test-concurrency=1 tests/package.test.ts
+~~~
+
+包测试实际 npm pack、仓库外安装与ESM/CJS/TypeScript消费、已安装CLI的项目/随包手册查询；另在临时Git快照通过prepare打包并以 npm install --global --prefix 临时目录 安装。该prefix是临时目录，系统全局edoc未更改。组合SoC与独立IP均由已安装CLI实际validate/build/query，核对同名ID、来源归属、UART两实例不同地址、分配/映射不变量及部分Window诊断。
+
+构建与入口另执行：
+
+~~~bash process=false
+npm run typecheck
+npm run docs:build
+npm run build:package
+npm run demo:build
+node packages/cli/edoc.ts build --config examples/address-space-v2/composed/docs/edoc.config.js
+node packages/cli/edoc.ts build --config examples/address-space-v2/composed/ip/docs/edoc.config.js
+node packages/cli/edoc.ts build --config examples/address-space-v2/docs/edoc.config.js
+node packages/cli/edoc.ts build --config examples/behavior-contract/docs/edoc.config.js
+node packages/cli/edoc.ts build --config examples/document-first/docs/edoc.config.js
+node packages/cli/edoc.ts build --config examples/quickstart/docs/edoc.config.js
+node packages/cli/edoc.ts build --config templates/clauses/docs/edoc.config.js
+git diff --check
+~~~
+
+上面7项项目/模板build全部成功。board-flash与fpga-mac的JSON配置是SDK Adapter入口，不是CLI JS配置；按各自公开API实际转换、校验、渲染，两项成功且均为IR2.0：
+
+~~~javascript process=false
+import {loadConfig, loadIR} from './packages/core/index.ts';
+import {html} from './packages/pack-html/index.ts';
+import {writeFileSync} from 'node:fs';
+for (const name of ['board-flash', 'fpga-mac']) {
+  const config = loadConfig('examples/' + name + '/edoc.config.json');
+  const graph = loadIR(config.irDirectory, config);
+  writeFileSync('/tmp/edoc-f-' + name + '.html', await html(graph, config.title));
+  console.log(graph.manifest.irVersion);
+}
+~~~
+
+以上代码以 node --input-type=module 执行。手册/包构建、Gallery构建、类型检查和差异检查均成功。最初全仓回归暴露Drawing错误码断言和SVG字体夹具漏label，分别改为严格SCHEMA及精确错误路径、补齐必需label；完整对应组随后重跑通过。额外入口检查修复孤立旧模板配置位置，以及Gallery漏state-machines能力声明/层级状态数据接入；新增验收页也由回归发现正文链接顺序与导航不一致，已同步其显式directory-order，并重跑完整非浏览器组。没有放宽IR2校验或删除覆盖来获得通过。
+
+主会话另外使用 playwright-cli 在正式组合样例中实际点击 UART0 的 EN 图块及图例：URL/history.length 保持，目标TR获焦；1440/390截图已视觉检查，390px整页宽度=390，字段表局部横向滚动，EN行边框清晰。截图仅保存在 .playwright-cli/edoc-f-field-wide.png 与 edoc-f-field-narrow.png。
+
+原始日志保存在本机 /tmp/edoc-f-unit.log、edoc-f-browser.log、edoc-f-package.log、edoc-f-typecheck.log、edoc-f-build-package.log、edoc-f-example-builds.json、edoc-f-demo.log。临时日志和浏览器截图不进入Git；长期回归在 tests 中。
+
+{% /section %}
+{% section id="accept:address-v2:release" title="版本、迁移与交付边界" %}
+
+基线npm包已经是2.0.0，本次移除旧Schema/地址模型是又一次破坏性升级，因此npm版本提升到3.0.0；IR主版本独立提升到2.0。两者不需要同号。package与lock一致，CLI/HTML版本来自buildInfo，正式安装说明使用3.0.0。旧IR1.x、AddressSpace.mappings、atomic布尔及旧offset含义均不是兼容输入；负面测试、旧原始记录和历史验收中出现旧写法具有明确身份，不改写历史以伪装迁移。
+
+正式资源示例、Adapter输出、教程和数据夹具已经迁移；Drawing自身schemaVersion=1与IR版本属于不同协议。模板配置归到当前clauses模板，不保留空的specifications工程入口。未引入文件内容hash跟踪；Git revision仅记录构建来源。
+
+全部交付仅本地提交；不push、不发布远程包、不修改系统全局npm安装。HTML、截图、浏览器缓存及工作锚点不进版本库。提交后重新构建包，使buildInfo记录最终本地提交且dirty=false。
+
+离线Chromium和本地Git prepare路径已实测；远程仓库网络/SSH安装未在本轮执行。真实硬件总线事务、IP读一致性及写原子性由作者事实和硬件验证负责；工具不会从64位图或splitOrder推断这些保证。
+
+{% /section %}
+{% /section %}

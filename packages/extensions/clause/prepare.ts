@@ -91,7 +91,7 @@ export function registerClauses(graph:Graph){
 // 仅生成展示 AST；原始 AST、稳定实体和适用关系不随展示次数复制。
 export function presentationGraph(graph:Graph):Graph{
  const plan=graph.documentPlan;if(!plan||!graph.clauses?.definitions.size)return graph;
- let occurrence=0,scopeCounter=0;const renderScopes=new Map<string,any>();
+ let occurrence=0,scopeCounter=0;const renderScopes=new Map<string,any>(plan.renderScopes);
  const documents=plan.documents.map(document=>{
   const locations=new WeakMap<object,{file:string;line:number}>();
   const copy=(node:any,origin:Document,namespace=''):any=>{

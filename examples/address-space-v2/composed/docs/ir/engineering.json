@@ -1,0 +1,2719 @@
+{
+  "irVersion": "2.0",
+  "registers": [
+    {
+      "id": "bank:r00",
+      "kind": "register",
+      "label": "R00",
+      "width": 32,
+      "description": "普通寄存器 0；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r00.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r00.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r00"
+      }
+    },
+    {
+      "id": "bank:r01",
+      "kind": "register",
+      "label": "R01",
+      "width": 32,
+      "description": "普通寄存器 1；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r01.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r01.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r01"
+      }
+    },
+    {
+      "id": "bank:r02",
+      "kind": "register",
+      "label": "R02",
+      "width": 32,
+      "description": "普通寄存器 2；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r02.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r02.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r02"
+      }
+    },
+    {
+      "id": "bank:r03",
+      "kind": "register",
+      "label": "R03",
+      "width": 32,
+      "description": "普通寄存器 3；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r03.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r03.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r03"
+      }
+    },
+    {
+      "id": "bank:r04",
+      "kind": "register",
+      "label": "R04",
+      "width": 32,
+      "description": "普通寄存器 4；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r04.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r04.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r04"
+      }
+    },
+    {
+      "id": "bank:r05",
+      "kind": "register",
+      "label": "R05",
+      "width": 32,
+      "description": "普通寄存器 5；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r05.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r05.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r05"
+      }
+    },
+    {
+      "id": "bank:r06",
+      "kind": "register",
+      "label": "R06",
+      "width": 32,
+      "description": "普通寄存器 6；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r06.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r06.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r06"
+      }
+    },
+    {
+      "id": "bank:r07",
+      "kind": "register",
+      "label": "R07",
+      "width": 32,
+      "description": "普通寄存器 7；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r07.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r07.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r07"
+      }
+    },
+    {
+      "id": "bank:r08",
+      "kind": "register",
+      "label": "R08",
+      "width": 32,
+      "description": "普通寄存器 8；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r08.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r08.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r08"
+      }
+    },
+    {
+      "id": "bank:r09",
+      "kind": "register",
+      "label": "R09",
+      "width": 32,
+      "description": "普通寄存器 9；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r09.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r09.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r09"
+      }
+    },
+    {
+      "id": "bank:r10",
+      "kind": "register",
+      "label": "R10",
+      "width": 32,
+      "description": "普通寄存器 10；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r10.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r10.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r10"
+      }
+    },
+    {
+      "id": "bank:r11",
+      "kind": "register",
+      "label": "R11",
+      "width": 32,
+      "description": "普通寄存器 11；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r11.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r11.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r11"
+      }
+    },
+    {
+      "id": "bank:r12",
+      "kind": "register",
+      "label": "R12",
+      "width": 32,
+      "description": "普通寄存器 12；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r12.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r12.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r12"
+      }
+    },
+    {
+      "id": "bank:r13",
+      "kind": "register",
+      "label": "R13",
+      "width": 32,
+      "description": "普通寄存器 13；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r13.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r13.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r13"
+      }
+    },
+    {
+      "id": "bank:r14",
+      "kind": "register",
+      "label": "R14",
+      "width": 32,
+      "description": "普通寄存器 14；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r14.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r14.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r14"
+      }
+    },
+    {
+      "id": "bank:r15",
+      "kind": "register",
+      "label": "R15",
+      "width": 32,
+      "description": "普通寄存器 15；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r15.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r15.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r15"
+      }
+    },
+    {
+      "id": "bank:r16",
+      "kind": "register",
+      "label": "R16",
+      "width": 32,
+      "description": "普通寄存器 16；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r16.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r16.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r16"
+      }
+    },
+    {
+      "id": "bank:r17",
+      "kind": "register",
+      "label": "R17",
+      "width": 32,
+      "description": "普通寄存器 17；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r17.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r17.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r17"
+      }
+    },
+    {
+      "id": "bank:r18",
+      "kind": "register",
+      "label": "R18",
+      "width": 32,
+      "description": "普通寄存器 18；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r18.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r18.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r18"
+      }
+    },
+    {
+      "id": "bank:r19",
+      "kind": "register",
+      "label": "R19",
+      "width": 32,
+      "description": "普通寄存器 19；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r19.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r19.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r19"
+      }
+    },
+    {
+      "id": "bank:r20",
+      "kind": "register",
+      "label": "R20",
+      "width": 32,
+      "description": "普通寄存器 20；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r20.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r20.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r20"
+      }
+    },
+    {
+      "id": "bank:r21",
+      "kind": "register",
+      "label": "R21",
+      "width": 32,
+      "description": "普通寄存器 21；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r21.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r21.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r21"
+      }
+    },
+    {
+      "id": "bank:r22",
+      "kind": "register",
+      "label": "R22",
+      "width": 32,
+      "description": "普通寄存器 22；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r22.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r22.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r22"
+      }
+    },
+    {
+      "id": "bank:r23",
+      "kind": "register",
+      "label": "R23",
+      "width": 32,
+      "description": "普通寄存器 23；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r23.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r23.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r23"
+      }
+    },
+    {
+      "id": "bank:r24",
+      "kind": "register",
+      "label": "R24",
+      "width": 32,
+      "description": "普通寄存器 24；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r24.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r24.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r24"
+      }
+    },
+    {
+      "id": "bank:r25",
+      "kind": "register",
+      "label": "R25",
+      "width": 32,
+      "description": "普通寄存器 25；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r25.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r25.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r25"
+      }
+    },
+    {
+      "id": "bank:r26",
+      "kind": "register",
+      "label": "R26",
+      "width": 32,
+      "description": "普通寄存器 26；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r26.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r26.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r26"
+      }
+    },
+    {
+      "id": "bank:r27",
+      "kind": "register",
+      "label": "R27",
+      "width": 32,
+      "description": "普通寄存器 27；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r27.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r27.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r27"
+      }
+    },
+    {
+      "id": "bank:r28",
+      "kind": "register",
+      "label": "R28",
+      "width": 32,
+      "description": "普通寄存器 28；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r28.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r28.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r28"
+      }
+    },
+    {
+      "id": "bank:r29",
+      "kind": "register",
+      "label": "R29",
+      "width": 32,
+      "description": "普通寄存器 29；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r29.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r29.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r29"
+      }
+    },
+    {
+      "id": "bank:r30",
+      "kind": "register",
+      "label": "R30",
+      "width": 32,
+      "description": "普通寄存器 30；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r30.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r30.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r30"
+      }
+    },
+    {
+      "id": "bank:r31",
+      "kind": "register",
+      "label": "R31",
+      "width": 32,
+      "description": "普通寄存器 31；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r31.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r31.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r31"
+      }
+    },
+    {
+      "id": "bank:r32",
+      "kind": "register",
+      "label": "R32",
+      "width": 32,
+      "description": "普通寄存器 32；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r32.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r32.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r32"
+      }
+    },
+    {
+      "id": "bank:r33",
+      "kind": "register",
+      "label": "R33",
+      "width": 32,
+      "description": "普通寄存器 33；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r33.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r33.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r33"
+      }
+    },
+    {
+      "id": "bank:r34",
+      "kind": "register",
+      "label": "R34",
+      "width": 32,
+      "description": "普通寄存器 34；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r34.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r34.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r34"
+      }
+    },
+    {
+      "id": "bank:r35",
+      "kind": "register",
+      "label": "R35",
+      "width": 32,
+      "description": "普通寄存器 35；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r35.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r35.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r35"
+      }
+    },
+    {
+      "id": "bank:r36",
+      "kind": "register",
+      "label": "R36",
+      "width": 32,
+      "description": "普通寄存器 36；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r36.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r36.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r36"
+      }
+    },
+    {
+      "id": "bank:r37",
+      "kind": "register",
+      "label": "R37",
+      "width": 32,
+      "description": "普通寄存器 37；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r37.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r37.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r37"
+      }
+    },
+    {
+      "id": "bank:r38",
+      "kind": "register",
+      "label": "R38",
+      "width": 32,
+      "description": "普通寄存器 38；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r38.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r38.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r38"
+      }
+    },
+    {
+      "id": "bank:r39",
+      "kind": "register",
+      "label": "R39",
+      "width": 32,
+      "description": "普通寄存器 39；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r39.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r39.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r39"
+      }
+    },
+    {
+      "id": "bank:r40",
+      "kind": "register",
+      "label": "R40",
+      "width": 32,
+      "description": "普通寄存器 40；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r40.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r40.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r40"
+      }
+    },
+    {
+      "id": "bank:r41",
+      "kind": "register",
+      "label": "R41",
+      "width": 32,
+      "description": "普通寄存器 41；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r41.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r41.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r41"
+      }
+    },
+    {
+      "id": "bank:r42",
+      "kind": "register",
+      "label": "R42",
+      "width": 32,
+      "description": "普通寄存器 42；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r42.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r42.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r42"
+      }
+    },
+    {
+      "id": "bank:r43",
+      "kind": "register",
+      "label": "R43",
+      "width": 32,
+      "description": "普通寄存器 43；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r43.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r43.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r43"
+      }
+    },
+    {
+      "id": "bank:r44",
+      "kind": "register",
+      "label": "R44",
+      "width": 32,
+      "description": "普通寄存器 44；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r44.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r44.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r44"
+      }
+    },
+    {
+      "id": "bank:r45",
+      "kind": "register",
+      "label": "R45",
+      "width": 32,
+      "description": "普通寄存器 45；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r45.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r45.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r45"
+      }
+    },
+    {
+      "id": "bank:r46",
+      "kind": "register",
+      "label": "R46",
+      "width": 32,
+      "description": "普通寄存器 46；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r46.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r46.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r46"
+      }
+    },
+    {
+      "id": "bank:r47",
+      "kind": "register",
+      "label": "R47",
+      "width": 32,
+      "description": "普通寄存器 47；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r47.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r47.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r47"
+      }
+    },
+    {
+      "id": "bank:r48",
+      "kind": "register",
+      "label": "R48",
+      "width": 32,
+      "description": "普通寄存器 48；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r48.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r48.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r48"
+      }
+    },
+    {
+      "id": "bank:r49",
+      "kind": "register",
+      "label": "R49",
+      "width": 32,
+      "description": "普通寄存器 49；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r49.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r49.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r49"
+      }
+    },
+    {
+      "id": "bank:r50",
+      "kind": "register",
+      "label": "R50",
+      "width": 32,
+      "description": "普通寄存器 50；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r50.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r50.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r50"
+      }
+    },
+    {
+      "id": "bank:r51",
+      "kind": "register",
+      "label": "R51",
+      "width": 32,
+      "description": "普通寄存器 51；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r51.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r51.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r51"
+      }
+    },
+    {
+      "id": "bank:r52",
+      "kind": "register",
+      "label": "R52",
+      "width": 32,
+      "description": "普通寄存器 52；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r52.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r52.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r52"
+      }
+    },
+    {
+      "id": "bank:r53",
+      "kind": "register",
+      "label": "R53",
+      "width": 32,
+      "description": "普通寄存器 53；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r53.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r53.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r53"
+      }
+    },
+    {
+      "id": "bank:r54",
+      "kind": "register",
+      "label": "R54",
+      "width": 32,
+      "description": "普通寄存器 54；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r54.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r54.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r54"
+      }
+    },
+    {
+      "id": "bank:r55",
+      "kind": "register",
+      "label": "R55",
+      "width": 32,
+      "description": "普通寄存器 55；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r55.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r55.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r55"
+      }
+    },
+    {
+      "id": "bank:r56",
+      "kind": "register",
+      "label": "R56",
+      "width": 32,
+      "description": "普通寄存器 56；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r56.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r56.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r56"
+      }
+    },
+    {
+      "id": "bank:r57",
+      "kind": "register",
+      "label": "R57",
+      "width": 32,
+      "description": "普通寄存器 57；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r57.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r57.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r57"
+      }
+    },
+    {
+      "id": "bank:r58",
+      "kind": "register",
+      "label": "R58",
+      "width": 32,
+      "description": "普通寄存器 58；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r58.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r58.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r58"
+      }
+    },
+    {
+      "id": "bank:r59",
+      "kind": "register",
+      "label": "R59",
+      "width": 32,
+      "description": "普通寄存器 59；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r59.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r59.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r59"
+      }
+    },
+    {
+      "id": "bank:r60",
+      "kind": "register",
+      "label": "R60",
+      "width": 32,
+      "description": "普通寄存器 60；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r60.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r60.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r60"
+      }
+    },
+    {
+      "id": "bank:r61",
+      "kind": "register",
+      "label": "R61",
+      "width": 32,
+      "description": "普通寄存器 61；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r61.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r61.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r61"
+      }
+    },
+    {
+      "id": "bank:r62",
+      "kind": "register",
+      "label": "R62",
+      "width": 32,
+      "description": "普通寄存器 62；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r62.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r62.mode",
+          "label": "MODE",
+          "msb": 31,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r62"
+      }
+    },
+    {
+      "id": "bank:r63",
+      "kind": "register",
+      "label": "R63",
+      "width": 64,
+      "description": "普通寄存器 63；用于核对目录后续批次与相对偏移。",
+      "fields": [
+        {
+          "id": "bank:r63.en",
+          "label": "EN",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          }
+        },
+        {
+          "id": "bank:r63.mode",
+          "label": "MODE",
+          "msb": 63,
+          "lsb": 16,
+          "access": "RW",
+          "reset": {
+            "unknown": true
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:r63"
+      }
+    },
+    {
+      "id": "dma:control",
+      "kind": "register",
+      "label": "Channel CONTROL",
+      "width": 32,
+      "fields": [
+        {
+          "id": "dma:control.enable",
+          "label": "ENABLE",
+          "msb": 0,
+          "lsb": 0,
+          "access": "RW",
+          "reset": {
+            "value": "0"
+          },
+          "writeEffect": "normal"
+        }
+      ],
+      "description": "启动所选 Channel。",
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "dma:control"
+      }
+    },
+    {
+      "id": "dma:counter",
+      "kind": "register",
+      "label": "Channel COUNTER",
+      "width": 64,
+      "fields": [
+        {
+          "id": "dma:counter.value",
+          "label": "VALUE",
+          "msb": 63,
+          "lsb": 0,
+          "access": "RO",
+          "readEffect": "none",
+          "reset": {
+            "value": "0"
+          }
+        }
+      ],
+      "description": "64 位计数值；读一致性由 accessPolicy 显式声明。",
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "dma:counter"
+      }
+    }
+  ],
+  "registerBlocks": [
+    {
+      "id": "bank:csr",
+      "kind": "register-block",
+      "label": "64 项普通寄存器 IP",
+      "addressUnitBits": 8,
+      "size": "0x200",
+      "description": "包含 64 个不同寄存器定义，用于验证普通 IP 的目录可完整浏览。",
+      "accessPolicy": {
+        "allowedTransferBits": [
+          32
+        ],
+        "alignment": "4",
+        "byteOrder": "little",
+        "splitOrder": "low-first",
+        "readConsistency": "whole-register",
+        "writeAtomicity": "per-transfer"
+      },
+      "entries": [
+        {
+          "id": "r00",
+          "register": "bank:r00",
+          "offset": "0x0"
+        },
+        {
+          "id": "r01",
+          "register": "bank:r01",
+          "offset": "0x8"
+        },
+        {
+          "id": "r02",
+          "register": "bank:r02",
+          "offset": "0x10"
+        },
+        {
+          "id": "r03",
+          "register": "bank:r03",
+          "offset": "0x18"
+        },
+        {
+          "id": "r04",
+          "register": "bank:r04",
+          "offset": "0x20"
+        },
+        {
+          "id": "r05",
+          "register": "bank:r05",
+          "offset": "0x28"
+        },
+        {
+          "id": "r06",
+          "register": "bank:r06",
+          "offset": "0x30"
+        },
+        {
+          "id": "r07",
+          "register": "bank:r07",
+          "offset": "0x38"
+        },
+        {
+          "id": "r08",
+          "register": "bank:r08",
+          "offset": "0x40"
+        },
+        {
+          "id": "r09",
+          "register": "bank:r09",
+          "offset": "0x48"
+        },
+        {
+          "id": "r10",
+          "register": "bank:r10",
+          "offset": "0x50"
+        },
+        {
+          "id": "r11",
+          "register": "bank:r11",
+          "offset": "0x58"
+        },
+        {
+          "id": "r12",
+          "register": "bank:r12",
+          "offset": "0x60"
+        },
+        {
+          "id": "r13",
+          "register": "bank:r13",
+          "offset": "0x68"
+        },
+        {
+          "id": "r14",
+          "register": "bank:r14",
+          "offset": "0x70"
+        },
+        {
+          "id": "r15",
+          "register": "bank:r15",
+          "offset": "0x78"
+        },
+        {
+          "id": "r16",
+          "register": "bank:r16",
+          "offset": "0x80"
+        },
+        {
+          "id": "r17",
+          "register": "bank:r17",
+          "offset": "0x88"
+        },
+        {
+          "id": "r18",
+          "register": "bank:r18",
+          "offset": "0x90"
+        },
+        {
+          "id": "r19",
+          "register": "bank:r19",
+          "offset": "0x98"
+        },
+        {
+          "id": "r20",
+          "register": "bank:r20",
+          "offset": "0xa0"
+        },
+        {
+          "id": "r21",
+          "register": "bank:r21",
+          "offset": "0xa8"
+        },
+        {
+          "id": "r22",
+          "register": "bank:r22",
+          "offset": "0xb0"
+        },
+        {
+          "id": "r23",
+          "register": "bank:r23",
+          "offset": "0xb8"
+        },
+        {
+          "id": "r24",
+          "register": "bank:r24",
+          "offset": "0xc0"
+        },
+        {
+          "id": "r25",
+          "register": "bank:r25",
+          "offset": "0xc8"
+        },
+        {
+          "id": "r26",
+          "register": "bank:r26",
+          "offset": "0xd0"
+        },
+        {
+          "id": "r27",
+          "register": "bank:r27",
+          "offset": "0xd8"
+        },
+        {
+          "id": "r28",
+          "register": "bank:r28",
+          "offset": "0xe0"
+        },
+        {
+          "id": "r29",
+          "register": "bank:r29",
+          "offset": "0xe8"
+        },
+        {
+          "id": "r30",
+          "register": "bank:r30",
+          "offset": "0xf0"
+        },
+        {
+          "id": "r31",
+          "register": "bank:r31",
+          "offset": "0xf8"
+        },
+        {
+          "id": "r32",
+          "register": "bank:r32",
+          "offset": "0x100"
+        },
+        {
+          "id": "r33",
+          "register": "bank:r33",
+          "offset": "0x108"
+        },
+        {
+          "id": "r34",
+          "register": "bank:r34",
+          "offset": "0x110"
+        },
+        {
+          "id": "r35",
+          "register": "bank:r35",
+          "offset": "0x118"
+        },
+        {
+          "id": "r36",
+          "register": "bank:r36",
+          "offset": "0x120"
+        },
+        {
+          "id": "r37",
+          "register": "bank:r37",
+          "offset": "0x128"
+        },
+        {
+          "id": "r38",
+          "register": "bank:r38",
+          "offset": "0x130"
+        },
+        {
+          "id": "r39",
+          "register": "bank:r39",
+          "offset": "0x138"
+        },
+        {
+          "id": "r40",
+          "register": "bank:r40",
+          "offset": "0x140"
+        },
+        {
+          "id": "r41",
+          "register": "bank:r41",
+          "offset": "0x148"
+        },
+        {
+          "id": "r42",
+          "register": "bank:r42",
+          "offset": "0x150"
+        },
+        {
+          "id": "r43",
+          "register": "bank:r43",
+          "offset": "0x158"
+        },
+        {
+          "id": "r44",
+          "register": "bank:r44",
+          "offset": "0x160"
+        },
+        {
+          "id": "r45",
+          "register": "bank:r45",
+          "offset": "0x168"
+        },
+        {
+          "id": "r46",
+          "register": "bank:r46",
+          "offset": "0x170"
+        },
+        {
+          "id": "r47",
+          "register": "bank:r47",
+          "offset": "0x178"
+        },
+        {
+          "id": "r48",
+          "register": "bank:r48",
+          "offset": "0x180"
+        },
+        {
+          "id": "r49",
+          "register": "bank:r49",
+          "offset": "0x188"
+        },
+        {
+          "id": "r50",
+          "register": "bank:r50",
+          "offset": "0x190"
+        },
+        {
+          "id": "r51",
+          "register": "bank:r51",
+          "offset": "0x198"
+        },
+        {
+          "id": "r52",
+          "register": "bank:r52",
+          "offset": "0x1a0"
+        },
+        {
+          "id": "r53",
+          "register": "bank:r53",
+          "offset": "0x1a8"
+        },
+        {
+          "id": "r54",
+          "register": "bank:r54",
+          "offset": "0x1b0"
+        },
+        {
+          "id": "r55",
+          "register": "bank:r55",
+          "offset": "0x1b8"
+        },
+        {
+          "id": "r56",
+          "register": "bank:r56",
+          "offset": "0x1c0"
+        },
+        {
+          "id": "r57",
+          "register": "bank:r57",
+          "offset": "0x1c8"
+        },
+        {
+          "id": "r58",
+          "register": "bank:r58",
+          "offset": "0x1d0"
+        },
+        {
+          "id": "r59",
+          "register": "bank:r59",
+          "offset": "0x1d8"
+        },
+        {
+          "id": "r60",
+          "register": "bank:r60",
+          "offset": "0x1e0"
+        },
+        {
+          "id": "r61",
+          "register": "bank:r61",
+          "offset": "0x1e8"
+        },
+        {
+          "id": "r62",
+          "register": "bank:r62",
+          "offset": "0x1f0"
+        },
+        {
+          "id": "r63",
+          "register": "bank:r63",
+          "offset": "0x1f8"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "bank:csr"
+      }
+    },
+    {
+      "id": "dma:channel",
+      "kind": "register-block",
+      "label": "DMA Channel 原生字节块",
+      "addressUnitBits": 8,
+      "size": "0x20",
+      "entries": [
+        {
+          "id": "control",
+          "register": "dma:control",
+          "offset": "0"
+        },
+        {
+          "id": "counter",
+          "register": "dma:counter",
+          "offset": "8"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "dma:channel"
+      }
+    },
+    {
+      "id": "dma:csr",
+      "kind": "register-block",
+      "label": "DMA 8 Channel",
+      "addressUnitBits": 32,
+      "size": "0x40",
+      "description": "父 Block 使用 32-bit 单位，Channel 子块使用 8-bit 单位。",
+      "accessPolicy": {
+        "allowedTransferBits": [
+          32
+        ],
+        "alignment": "1",
+        "readConsistency": "whole-register"
+      },
+      "entries": [
+        {
+          "id": "channels",
+          "label": "Channel",
+          "block": "dma:channel",
+          "offset": "0",
+          "count": 8,
+          "stride": "8"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "dma:csr"
+      }
+    },
+    {
+      "id": "dma:large",
+      "kind": "register-block",
+      "label": "DMA 十亿 Channel",
+      "addressUnitBits": 8,
+      "entries": [
+        {
+          "id": "channels",
+          "label": "Channel",
+          "block": "dma:channel",
+          "offset": "0",
+          "count": 1000000000,
+          "stride": "0x20"
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "dma:large"
+      }
+    }
+  ],
+  "addressSpaces": [
+    {
+      "id": "soc:engineering",
+      "kind": "address-space",
+      "label": "SoC 工程对象手册",
+      "addressWidth": 64,
+      "addressUnitBits": 8,
+      "base": "0",
+      "size": "0x10000000000000000",
+      "description": "普通寄存器、嵌套 DMA、多跳窗口和存储规划共用一套地址事实。",
+      "regions": [
+        {
+          "id": "bank",
+          "kind": "resource",
+          "label": "普通 IP · 64 寄存器",
+          "base": "0x10000",
+          "size": "0x1000",
+          "target": {
+            "id": "bank:csr"
+          },
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.bank"
+          }
+        },
+        {
+          "id": "dma",
+          "kind": "resource",
+          "label": "DMA · 8 Channel",
+          "base": "0x20000",
+          "size": "0x1000",
+          "target": {
+            "id": "dma:csr"
+          },
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.dma"
+          }
+        },
+        {
+          "id": "partial",
+          "kind": "window",
+          "label": "截断多跳窗口",
+          "base": "0x30000",
+          "size": "4",
+          "target": {
+            "id": "soc:cpu"
+          },
+          "targetBase": "0x4802",
+          "description": "只覆盖 64-bit CTRL 的前 32 bit；完整 Register 必须诊断。",
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.partial"
+          }
+        },
+        {
+          "id": "multihop",
+          "kind": "window",
+          "label": "完整多跳窗口",
+          "base": "0x40000",
+          "size": "0x3000",
+          "target": {
+            "id": "soc:cpu"
+          },
+          "targetBase": "0x4000",
+          "description": "经 CPU、APB 与 IP 空间逐跳求交集。",
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.multihop"
+          }
+        },
+        {
+          "id": "planning",
+          "kind": "window",
+          "label": "规划与 RAM 窗口",
+          "base": "0x60000",
+          "size": "0x3000",
+          "target": {
+            "id": "soc:apb"
+          },
+          "targetBase": "0x8000",
+          "description": "可见 Reserved、RAM 及未分配空洞；不生成寄存器。",
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.planning"
+          }
+        },
+        {
+          "id": "memory",
+          "kind": "resource",
+          "label": "物理 RAM 切片",
+          "base": "0x70000",
+          "size": "0x200",
+          "target": {
+            "id": "soc:ram"
+          },
+          "resourceOffset": "0",
+          "description": "和 APB 的 RAM 保留同一 Memory 身份。",
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.memory"
+          }
+        },
+        {
+          "id": "reserved",
+          "kind": "reserved",
+          "label": "工程规划保留",
+          "base": "0x80000",
+          "size": "0x100",
+          "description": "规划保留；没有声明读写能力。",
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.reserved"
+          }
+        },
+        {
+          "id": "large",
+          "kind": "resource",
+          "label": "DMA · 十亿 Channel",
+          "base": "0x100000000",
+          "size": "0x1000000000",
+          "target": {
+            "id": "dma:large"
+          },
+          "source": {
+            "file": "docs/ir/engineering.json",
+            "selector": "soc:engineering.large"
+          }
+        }
+      ],
+      "source": {
+        "file": "docs/ir/engineering.json",
+        "selector": "soc:engineering"
+      }
+    }
+  ]
+}

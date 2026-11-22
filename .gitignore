@@ -6,6 +6,7 @@ coverage/
 .playwright-cli/
 .agent/task-*.md
 dist/
-examples/*/output/
+examples/**/output/
+templates/**/output/
 output/
 docs/component/output/

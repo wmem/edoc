@@ -14,7 +14,7 @@ const load=(models:ControlModel[],views:ControlView[]=[])=>graphFromResources([
  {type:'stateMachines',data:{stateMachines:models.filter(m=>m.kind==='state-machine')},file:'models.json'},
  {type:'flowcharts',data:{flowcharts:models.filter(m=>m.kind==='flowchart')},file:'models.json'},
  {type:'views',data:{views},file:'views.json'},
-],{projectId:'control-test',irVersion:'1.7',resources:[],entryDocuments:[],requiredFeatures:['state-machines','flowcharts']},{root:process.cwd(),strict:true});
+],{projectId:'control-test',irVersion:'2.0',resources:[],entryDocuments:[],requiredFeatures:['state-machines','flowcharts']},{root:process.cwd(),strict:true});
 const simple=():StateMachine=>({id:'sm:test',kind:'state-machine',initial:'idle',states:[{id:'idle',label:'空闲'},{id:'busy',label:'处理',entry:['锁存'],do:['处理'],exit:['报告']}],transitions:[{id:'submit',from:'idle',to:'busy',trigger:'请求',guard:'合法'},{id:'done',from:'busy',to:'idle',trigger:'完成'},{id:'tick',from:'busy',to:'busy',kind:'internal',trigger:{kind:'clock',clock:'clk'},actions:['更新进度']}]});
 const rejects=(model:ControlModel,code:string)=>assert.throws(()=>load([model]),(e:any)=>e.diagnostics?.some((d:any)=>d.code===code));
 test('局部身份独立于模型和全局对象，查询、来源与分页read同源',()=>{
@@ -66,7 +66,7 @@ test('公开复杂案例使用同一求解器与独立几何校验',async()=>{
  const data=JSON.parse(readFileSync('docs/ir/authoring/control-complex.json','utf8'));for(const m of [...JSON.parse(readFileSync('docs/ir/authoring/state-hierarchy.json','utf8')).stateMachines,...data.stateMachines,...data.flowcharts]){const s=await scene(load([m]),m.id);assert.ok(s.drawing);verifyDrawingScene(s.drawingInput!,s.drawing!);assert.ok(!svg(s,false).includes('<script'));}
 });
 test('旧state关系视图拒绝，不降低Connection的电气约束',()=>{
- assert.throws(()=>graphFromResources([{type:'views',data:{views:[{id:'old',kind:'state',include:{objects:[],relations:[]}}]},file:'old.json'}],{projectId:'p',irVersion:'1.7',resources:[],entryDocuments:[]},{root:process.cwd(),strict:true}));
+ assert.throws(()=>graphFromResources([{type:'views',data:{views:[{id:'old',kind:'state',include:{objects:[],relations:[]}}]},file:'old.json'}],{projectId:'p',irVersion:'2.0',resources:[],entryDocuments:[]},{root:process.cwd(),strict:true}));
 });
 
 test('判断、静态连接点与I/O形状贯通投影和轮廓检查',async()=>{

@@ -1,3 +1,7 @@
+import {prepareResourceCatalog} from './resource-declarations.ts';
+import {resourceMountNavigation} from './resource-navigation.ts';
+import type {ResourceCatalog} from './resource-types.ts';
+import type {Route} from './routes.ts';
 import {realpathSync,statSync} from 'node:fs';
 import {relative,extname,dirname,resolve} from 'node:path';
 import {loadProject,resolveProjectConfig} from './project.ts';
@@ -6,11 +10,14 @@ import {projectPath} from './paths.ts';
 import {failure} from './errors.ts';
 import {prepareOutline} from './outline.ts';
 import {anchor} from './identity.ts';
+import {connectResourceGraphs} from './resource-context.ts';
+import {validateDocuments} from './documents.ts';
+import type {ResourceResolver} from '../extensions/register-map/resolver.ts';
 import {directoryOrders,orderDirectory} from './directory-order.ts';
 
 export type ProjectNode=LoadedProject&{children:Map<string,ProjectNode>};
-export type Book={root:ProjectNode;projects:Map<string,ProjectNode>;inputs:string[]};
-export type Navigation={number?:string;label:string;project:string;page:string;anchor?:string;children:Navigation[];source?:{file:string;line:number};id?:string;sectionId?:string;level?:number;depth?:number;parentId?:string;childrenOmitted?:number};
+export type Book={root:ProjectNode;projects:Map<string,ProjectNode>;inputs:string[];resourceResolver:ResourceResolver;resourceCatalog:ResourceCatalog};
+export type Navigation={number?:string;label:string;project:string;page:string;anchor?:string;children:Navigation[];source?:{file:string;line:number};id?:string;sectionId?:string;level?:number;depth?:number;parentId?:string;childrenOmitted?:number;route?:Route;kind?:'resource'|'resource-summary'|'section'|'heading';mountId?:string;resourceCount?:string;resourceOrdinal?:number;resourceChildren?:{target:import('./resource-types.ts').ResourceTarget;offset:number;total:string}};
 export {routeHash} from './routes.ts';
 export type {Route} from './routes.ts';
 export const pageId=(file:string)=>file.slice(0,-extname(file).length);
@@ -21,7 +28,7 @@ export async function loadBook(config:ResolvedConfig,options:{onInputs?:(inputs:
   const identity=realpathSync(current.file);if(chain.includes(identity))failure('PROJECT_CYCLE',current.file,'/children','工程组合构成循环');
   if(seen.has(identity))failure('PROJECT_DUPLICATE',current.file,'/children','同一真实配置被重复接入');seen.add(identity);
   if(projects.has(current.projectId))failure('PROJECT_ID_DUPLICATE',current.file,'/projectId',`项目 ID ${current.projectId} 已由 ${projects.get(current.projectId)!.config.file} 使用`);
-  const local=await loadProject(current,{onInputs(files){files.forEach(f=>inputs.add(f));options.onInputs?.([...inputs]);}}),node:ProjectNode={...local,children:new Map()};projects.set(current.projectId,node);
+  const local=await loadProject(current,{deferAddressTargets:true,onInputs(files){files.forEach(f=>inputs.add(f));options.onInputs?.([...inputs]);}}),node:ProjectNode={...local,children:new Map()};projects.set(current.projectId,node);
   for(const document of local.documents.documents)for(const tag of document.ast.walk())if(tag.type==='tag'&&tag.tag==='include'&&tag.attributes.project!==undefined){
    const alias=tag.attributes.project;
    if(!Object.hasOwn(current.children,alias))failure('PROJECT_INCLUDE',document.file,`#L${document.locations.get(tag)?.line??1}`,'未声明子工程：'+alias);
@@ -31,7 +38,11 @@ export async function loadBook(config:ResolvedConfig,options:{onInputs?:(inputs:
   }
   return node;
  };
- const root=await load(config,[]);return {root,projects,inputs:[...inputs]};
+ const root=await load(config,[]);
+ const resourceResolver=connectResourceGraphs(new Map([...projects].map(([id,node])=>[id,node.graph])));
+ for(const node of projects.values())validateDocuments(node.graph);
+ const resourceCatalog=prepareResourceCatalog(resourceResolver.projects);
+ return {root,projects,inputs:[...inputs],resourceResolver,resourceCatalog};
 }
 export function bookNavigation(book:Book):Navigation[]{
  const build=(node:ProjectNode):Navigation[]=>{const visible=node.documents.documents.filter(d=>!d.hidden),pages=visible.map(document=>{
@@ -39,6 +50,7 @@ export function bookNavigation(book:Book):Navigation[]{
   const walk=(ast:any,section:Navigation)=>{
    const candidate=plan.entries.get(ast),outline=candidate?.local?undefined:candidate;let context=section;
    if(outline&&outline===plan.flat[0]&&outline.label===label){Object.assign(root,{source:outline.source,anchor:outline.id,id:outline.id,...(outline.sectionId?{sectionId:outline.sectionId}:{}),level:outline.level,depth:0});entries.set(outline.id,root);context=root;}else if(outline){const entry:Navigation={...outline,label:outline.label,project:root.project,page:id,anchor:outline.id,children:[]};entries.set(outline.id,entry);(outline.parentId?entries.get(outline.parentId)?.children:root.children)?.push(entry);if(outline.kind==='section')context=entry;}
+   if(ast.type==='tag'&&ast.tag==='resource-directory'){const mount=book.resourceCatalog.mounts.find(m=>m.mountId===ast.attributes.mount);if(mount)context.children.push(resourceMountNavigation({projects:book.resourceResolver.projects,catalog:book.resourceCatalog},mount));}
    if(ast.type==='tag'&&ast.tag==='include'&&ast.attributes.project){const child=node.children.get(ast.attributes.project)!;const pages=build(child);context.children.push({label:child.config.title,project:child.config.projectId,page:pageId(child.documents.documents[0].file),children:pages});}
    for(const child of [...Object.values(ast.slots??{}),...ast.children??[]])walk(child,context);
   };walk(document.ast,root);return root;
@@ -72,7 +84,7 @@ export function selectOutline(navigation:Navigation[],rootProject:string,project
  const collect=(nodes:Navigation[],match:(node:Navigation)=>boolean):Navigation[]=>nodes.flatMap(node=>[...(match(node)?[node]:[]),...collect(node.children,match)]);
  const inProject=(nodes:Navigation[]):Navigation[]=>nodes.flatMap(node=>node.project===options.project?[{...node,children:inProject(node.children)}]:inProject(node.children));
  let chapters=options.project?inProject(navigation):navigation;
- if(options.id){chapters=collect(chapters,node=>node.sectionId===options.id);if(!chapters.length)failure('QUERY_NOT_FOUND','<outline>','/id','当前目录中没有此章节：'+options.id);if(chapters.length>1)failure('OUTLINE_AMBIGUOUS','<outline>','/id','多个工程存在同名章节，请用 --project 指定：'+options.id);}
+ if(options.id){chapters=collect(chapters,node=>node.sectionId===options.id||node.kind==='resource'&&node.id===options.id);if(!chapters.length)failure('QUERY_NOT_FOUND','<outline>','/id','当前目录中没有此章节：'+options.id);if(chapters.length>1)failure('OUTLINE_AMBIGUOUS','<outline>','/id','多个工程存在同名章节，请用 --project 指定：'+options.id);}
  const trim=(nodes:Navigation[],depth=0):Navigation[]=>nodes.map(node=>({...node,children:options.depth!==undefined&&depth>=options.depth?[]:trim(node.children,depth+1),...(options.depth!==undefined&&depth>=options.depth&&node.children.length?{childrenOmitted:node.children.length}:{})}));
  return {projectId:options.project??rootProject,projects:options.project?[options.project]:projects,chapters:trim(chapters),...(options.depth!==undefined?{maxDepth:options.depth}:{})};
 }

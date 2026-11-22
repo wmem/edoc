@@ -1,49 +1,46 @@
-import type { Graph } from '../../core/types.ts';
-import { validationContext } from '../../core/validation-context.ts';
-import { FigureError } from '../../figure/errors.ts';
-import { addressIntervals, blockSpan, intervalsOverlap } from './model.ts';
-import type { AddressSpace, RegisterBlock } from './types.ts';
-export function validateRegisterMaps(graph: Graph) {
-  const {
-    errors,
-    report,
-    reference
-  } = validationContext(graph);
-  // 已映射块按所有实际地址空间上下文校验；未映射块才使用独立阅读的 8 bit 默认。
-  const mapped = new Set<string>();
-  const markMapped = (id: string) => {
-    if (mapped.has(id)) return;
-    mapped.add(id);
-    const entry = graph.index.get(id);
-    if (entry?.type === 'register-block') for (const item of (entry.entity as RegisterBlock).entries) if (item.block) markMapped(item.block);
-  };
-  for (const entry of graph.index.values()) if (entry.type === 'address-space') for (const mapping of (entry.entity as AddressSpace).mappings) markMapped(mapping.block);
-  for (const entry of graph.index.values()) if (entry.type === 'register-block' || entry.type === 'address-space') {
-    if (!graph.manifest.requiredFeatures?.includes('register-maps')) report(entry, 'IR_FEATURE_REQUIRED', '', '需要 register-maps 必需能力');
-    const model = entry.entity as RegisterBlock | AddressSpace,
-      items = model.kind === 'address-space' ? model.mappings : model.entries,
-      ids = new Set<string>();
-    for (const [i, e] of items.entries()) {
-      const path = '/' + (model.kind === 'address-space' ? 'mappings' : 'entries') + '/' + i;
-      if (ids.has(e.id)) report(entry, 'ADDRESS_DUPLICATE', path, '局部条目 ID 重复：' + e.id);
-      ids.add(e.id);
-      if ('register' in e && e.register) reference(entry, e.register, path + '/register', ['register']);
-      if (e.block) reference(entry, e.block, path + '/block', ['register-block']);
-      if (e.source && (e.source.file.startsWith('/') || e.source.file.split('/').includes('..'))) report(entry, 'SOURCE_PATH', path + '/source', '来源必须在工程内');
-    }
-    try {
-      if (model.kind === 'register-block') {
-        if (mapped.has(model.id)) continue;
-        blockSpan(graph, model.id);
+import type {Graph, Memory, AddressSpace} from '../../core/types.ts';
+import {validationContext} from '../../core/validation-context.ts';
+import {FigureError} from '../../figure/errors.ts';
+import {createAddressResolver, DeferredAddressReference} from './resolver.ts';
+import {positive} from './numeric.ts';
+
+export function validateRegisterMaps(graph: Graph, options: {allowDeferred?: boolean} = {}) {
+  const {errors, report} = validationContext(graph), resolver = createAddressResolver(graph);
+  graph.addressValidation = {status: 'complete', deferred: []};
+  for (const record of graph.index.values()) {
+    if (!['register-block', 'address-space', 'memory'].includes(record.type)) continue;
+    if (!graph.manifest.requiredFeatures?.includes('register-maps')) report(record, 'IR_FEATURE_REQUIRED', '', '需要 register-maps 必需能力');
+    const check = (fn: () => unknown, path = '') => {
+      try { fn(); } catch (error) {
+        if (error instanceof DeferredAddressReference) {
+          graph.addressValidation!.status = 'deferred';
+          // 仅内部准备阶段可携带该状态；公开加载和查询必须显式拒绝。
+          graph.addressValidation!.deferred.push({projectId: graph.manifest.projectId, addressSpaceId: record.id, regionId: record.type==='address-space'?(record.entity as AddressSpace).regions.find((_r,i)=>path==='/regions/'+i)?.id??path:path, target: error.target});
+          if (options.allowDeferred === false) report(record, error.code, path + '/target', `[${graph.manifest.projectId}/${record.id}] ${error.message}；目标工程未参与当前 Book 组合`);
+        } else if (error instanceof FigureError) {
+          const region = record.type === 'address-space' ? (record.entity as AddressSpace).regions.find((_r,i) => path === '/regions/' + i) : undefined;
+          const target = region && region.kind !== 'reserved' ? `；目标 ${region.target.project ?? graph.manifest.projectId}/${region.target.id}` : '';
+          report(record, error.code, path + error.path, `[${graph.manifest.projectId}/${record.id}] ${error.message}${target}`);
+        }
+        else throw error;
       }
-      const ranges = addressIntervals(graph, model);
-      for (let i = 0; i < ranges.length; i++) {
-        const a = ranges[i];
-        if (model.kind === 'address-space' && model.addressWidth && a.start + a.total > 1n << BigInt(model.addressWidth)) report(entry, 'ADDRESS_RANGE', '', '地址超出 addressWidth');
-        for (const b of ranges.slice(i + 1)) if (intervalsOverlap(a, b)) report(entry, 'ADDRESS_OVERLAP', '', '地址条目重叠：' + a.id + ' / ' + b.id);
-      }
-    } catch (error) {
-      if (error instanceof FigureError) report(entry, error.code, error.path, error.message);else throw error;
+    };
+    if (record.type === 'memory') check(() => positive((record.entity as Memory).capacityBytes, record.id));
+    if (record.type === 'register-block') check(() => resolver.block(graph.manifest.projectId, record.id));
+    if (record.type === 'address-space') {
+      const space = record.entity as AddressSpace;
+      check(() => resolver.spaceRanges(graph.manifest.projectId, record.id));
+      const slices: {key: string; start: bigint; end: bigint; id: string}[] = [];
+      space.regions.forEach((region, index) => check(() => {
+        const info = resolver.resolveRegion(graph.manifest.projectId, space.id, region.id);
+        if (region.kind !== 'resource' || info.target?.entry.type !== 'memory') return;
+        const key = JSON.stringify([info.target.graph.manifest.projectId, info.target.entry.id]);
+        if ((region.count ?? 1) > 1) report(record, 'ADDRESS_MEMORY_ALIAS', '/regions/' + index, '重复直接 Memory Region 会重复映射同一切片');
+        const slice = {key, start: info.resourceOffsetBits, end: info.resourceOffsetBits + info.mappedBits, id: region.id};
+        for (const previous of slices) if (previous.key === key && slice.start < previous.end && previous.start < slice.end) report(record, 'ADDRESS_MEMORY_ALIAS', '/regions/' + index, '直接 Memory 切片重叠：' + previous.id + ' / ' + region.id);
+        slices.push(slice);
+      }, '/regions/' + index));
+      check(() => resolver.checkWindowCycles(graph.manifest.projectId, space.id));
     }
   }
   return errors;

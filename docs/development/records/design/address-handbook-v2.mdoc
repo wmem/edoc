@@ -1,0 +1,213 @@
+{% section id="design:address-handbook-v2" title="统一地址资源与寄存器手册 V2 设计基线（已审定）" %}
+
+## 目标与不变量
+
+这是破坏性设计升级，不保留旧 AddressSpace.mappings、旧 IR 兼容与转换器。保持已批准的如下要求：
+
+- 统一管理 FPGA/SoC 的寄存器、Memory、Reserved 和跨总线地址窗口。
+- 项目地址规划负责分配位置和大小；IP 自己负责寄存器定义与内部偏移；多实例共用一份定义，不复制事实。
+- 原有文件目录、index.mdoc、Markdoc 标题与 Section 导航规则不改变；增加通用的 IR 数据驱动目录挂载能力。
+- 寄存器手册阅读路径：地址空间首页 → 区域/IP 实例 → 寄存器块列表 → 寄存器 → 同页面的位域表。
+- 单击寄存器位域图或图例中的字段，应滚动并高亮同页字段表对应行，不能默认跳到独立对象详情；显式详情入口另保留。
+- 生成完全离线单 HTML，保留稳定 ID、Query、来源和原生 Markdoc；不使用内容 hash 做文件变更跟踪。
+
+## 数据类型及语义
+
+1. AddressSpace：一套独立地址坐标系（CPU、APB、PCIe BAR 等）。必需 id、kind、label、addressWidth、addressUnitBits、base、size、regions；可选 description/source。base 和 size 单位为此空间地址单位，范围采用半开区间 [base,base+size)，且 end <= 2^addressWidth。Region.base 使用此空间坐标，不再加 AddressSpace.base。
+2. AddressRegion：属于一个 AddressSpace 的分配实例。必需 id、label、kind、base、size；可选 description、source、alignment、count、stride。size 是**每个实例的项目级分配大小**，必须显式填写，不能由 IP 自动推断。count 默认为 1，count > 1 必须声明 stride，且 stride >= size。重复实例 i 的基址是 base + i*stride。alignment 为该空间地址单位的正整数，约束每个实例基址。
+3. RegisterBlock：IP 的寄存器布局定义。id、kind、label、entries 必需；addressUnitBits 默认 8，可选 size/description/source。Block.size 是 IP 逻辑地址覆盖范围，不与项目 Region.size 混用。entries 只引用 register 或子 block（二选一），定义 offset/count/stride/span 等内部偏移，不保存项目绝对地址；需要容纳子块和宽寄存器，拒绝错误重叠。父子地址单位不同须精确转换，不能强行视作字节。
+4. Register、RegisterField：保留寄存器 1..64 位、位域范围、access 原值、reset 常量/表达式/未知、gapPolicy 和 source。可选 enums 与读写副作用需明确 Schema/查询/校验，不自动根据访问字符串推断硬件行为。寄存器位宽与总线一次访问宽度不同，不应混淆。
+5. Memory：独立资源定义，必需 id、kind、label、capacityBytes（十进制或十六进制整数字符串）、memoryType（ram/rom/flash/other），可选 description/source/readOnly。物理容量不是项目映射窗口大小。一个资源可部分映射，但不能超过容量。
+6. 不可在真实 IP 定义中硬编码 UART0 的绝对地址；也不能为了表现项目 4KB 分配把只有 0x100 寄存器地址的 IP 本体 size 改成 0x1000。
+
+### AddressRegion.kind 判别联合
+
+- resource：target 必需，形式为 {project?:项目稳定ID,id:资源稳定ID}，目标须为 RegisterBlock、Memory 或显式支持的可寻址资源；resourceOffset 可选并指向资源内部，默认从 0 开始。
+- reserved：不得有 target，仅代表规划保留，不能虚构硬件可读写属性。
+- window：target 指向另一个 AddressSpace，targetBase 指定目标空间映射起点。只支持线性无状态地址转换：地址差按 source/target addressUnitBits 精确换算；无法整除/越界/循环须报错。别名、动态 Bank 切换及复杂重映射不猜测或静默支持。
+- 将来增加 resource 类型不应要求再发明一套 AddressRegion；未知 target 类型必须显式报错，不能误标为 Register。
+
+所有地址、size、offset、stride、resourceOffset 均为非负整数字符串并采用 BigInt 计算（size > 0），不会用 JavaScript Number 算大地址。内存容量按字节、地址与 IP Block 按各自 addressUnitBits 解释，跨单位换算必须精确。
+
+### 目标数据示例（不是当前已实现语法）
+
+~~~json
+{
+ "registers":[{"id":"uart:ctrl","kind":"register","label":"CTRL","width":32,
+   "fields":[{"id":"uart:ctrl.en","label":"EN","msb":0,"lsb":0,"access":"RW","reset":{"value":"0"}}]}],
+ "registerBlocks":[{"id":"uart:csr","kind":"register-block","label":"UART CSR","addressUnitBits":8,"size":"0x100",
+   "entries":[{"id":"ctrl","offset":"0x0","register":"uart:ctrl"}]}],
+ "memories":[{"id":"soc:sram","kind":"memory","label":"SRAM","memoryType":"ram","capacityBytes":"0x10000"}],
+ "addressSpaces":[{
+  "id":"soc:cpu","kind":"address-space","label":"CPU","addressWidth":32,
+  "addressUnitBits":8,"base":"0","size":"0x100000000",
+  "regions":[
+   {"id":"uart0","label":"UART0","kind":"resource","base":"0x40000000","size":"0x1000","target":{"id":"uart:csr"}},
+   {"id":"uart1","label":"UART1","kind":"resource","base":"0x40001000","size":"0x1000","target":{"id":"uart:csr"}},
+   {"id":"sram","label":"SRAM","kind":"resource","base":"0x20000000","size":"0x10000","target":{"id":"soc:sram"}},
+   {"id":"reserved","label":"Reserved","kind":"reserved","base":"0x40002000","size":"0x1000"}
+  ]}]
+}
+~~~
+
+独立 UART IP 工程可以只包含 RegisterBlock/Register；当组合工程的 Region 使用带 projectId 的 target 引用 UART IP 时才解析项目上下文。参考与资源定义保留项目身份，实例路径单独编码。
+
+## 校验与查询契约
+
+必须检验 Schema、ID 唯一、目标类型/存在性、size>0、地址上下界、对齐、Region 范围与重叠（Reserved 参与）、重复区间跨越、Block 内嵌套与重叠、Register 位段/reset、Memory 映射边界、window 变换和跨空间环路。旧版支持的海量 count 不得因新渲染先枚举后截断；继续支持符号总数、按需查询任意实例路径和可见列表限额。
+
+强跨工程引用：当前 Book 内已经明确组合的 projectId + resourceId 必须严格解析，查目标工程独立 Graph；不把所有工程事实复制到父图。独立 IP 构建不依赖 SoC。现有文档对未组合工程的**弱跳转**规则保持不变，不能因为资源强引用改变普通文档链接语义。
+
+Query 必须同时返回定义身份和当前实例 path、空间 ID、地址单位、分配大小、资源内部偏移、计算后的绝对地址（仅有明确坐标时）、来源；与原 API 字段语义相反的修改必须显式整理并测试。
+
+## 目录和渲染设计
+
+- 保留文件目录/index.mdoc 和 Markdown/Markdoc 标题及 Section 的原有行为。
+- 新增领域无关的目录挂载声明，示意：`{% resource-directory id="soc:cpu" /%}`。作者在寄存器手册首页放一个挂载点，IR provider 自动创建导航，不维护第二份手写目录。
+- 左侧目录：寄存器手册 → 地址空间 → AddressRegion（UART0/UART1/SRAM/Reserved）→ IP Block 内寄存器；重复 Channel 只显示汇总并按需展开，不能向目录插入数十万条。
+- 右侧文章内目录：当前页的概述/访问约定/地址列表/位域图/字段表/使用说明等真实标题和自动章节锚点；不要将 UART 的所有寄存器同时塞进一个页面标题目录。
+- 虚拟页面使用通用导航/路由能力。实例视图路由包含 projectId、spaceId、regionId、数组索引、嵌套 Block 路径、definitionId；同一 UART IP 在 UART0 与 UART1 下具有不同绝对地址与面包屑，但共用同一个寄存器定义。定义视图独立存在、不能推断实例绝对地址。
+- 允许作者将额外 Markdown/Markdoc 说明按稳定 ID 绑定到对象页面；绑定的是显示内容，不能覆盖 IR 精确字段。即使缺少手工文档，IR 也能生成完整的基本虚拟页。
+- 地址空间首页显示全部资源的基址、分配大小、用途、类型、链接；UART Block 显示相对偏移表、大小、实例基址与 Channel 分组；Memory 和 Reserved 有各自页面，不应伪装寄存器。
+- 单寄存器详情沿用“位域图在上、位域表在下”。单击图或图例→当前页面对应表行滚动与高亮；筛选隐藏时先 reveal，悬停/键盘焦点双向高亮。明确次级入口可进入独立 Field 详情，保留来源 PDF 和浏览器返回。
+- 标签的运行时、目录挂载和虚拟页在通用 doc/core 层实现，寄存器/地址模型只是可接入的 provider，不要硬编码全局导航为 register 专用。
+
+## 实施阶段和验收
+
+阶段 A：Schema/模型、跨单位地址计算、Region/Memory、查询；阶段 B：跨工程强引用；阶段 C：通用目录挂载与实例虚拟页；阶段 D：全局地址表、Block 和 Register 页面、导航；阶段 E：位域图→表内定位及完整交互；阶段 F：手册、示例、测试和全量回归。IR 主版本升级为 2.0，不保留旧 mappings 或旧 IR 兼容，更新所有内置旧样例与测试。所有阶段遵循进度、类型检查、单元与真实 Chromium/离线 HTML 验收。
+
+核心验收：
+1. UART Block.size=0x100，SoC 区域分配 0x1000；即使另一个 IP 放入 0x100～0xFFF 的预留窗口也须判重叠。
+2. UART0、UART1 共用同一个 IP Register，却有不同绝对地址、稳定上下文和返回路径；独立 UART IP 文档可单独构建。
+3. 同一 AddressSpace 有 RegisterBlock、Memory、Reserved、Window；Memory 可部分映射；跨单位转换精确，否则报错。
+4. DMA 重复 8 个 Channel 支持按需目录；海量 count 不导致目录爆炸。
+5. 点击 CTRL 位域图的 EN 只定位到同页 EN 表行，单独 Field 详情有明确入口；图例和筛选情况同样成立。
+6. 原有 edoc 文件目录、index 页、文章标题目录、其它图表/Query/离线 HTML 不回归。
+7. 子 Agent 以审定方案独立审阅源码、测试和浏览器效果；主 Codex 负责修复后复审。
+
+## 审查与审批门槛
+
+审查需区分：设计矛盾与实现风险、原有用户已批准的不变量与审查提出的新方向。P0/P1 逐项关闭，有实质语义方向变化须先与用户单独确认。设计批准后同一 Codex 会话分阶段实现。不要默认推送 GitHub 或全局 npm 安装；只在本地测试成功后提交。
+
+## 第一轮独立审核后的精确契约（P0/P1 关闭基线）
+
+本节覆盖前面的概要描述中的歧义；不改变用户批准的模型方向。无旧模型兼容。以下是实现须遵循的精确规则。
+
+### A. 统一数值与地址单位
+
+- addressWidth 为 1～4096；addressUnitBits 为 1～4096 的正整数；Region.size、Block.size、mappedSize、Memory.capacityBytes、offset、stride、alignment 用无符号整数字符串。count 为 1～Number.MAX_SAFE_INTEGER 的安全整数；嵌套总数使用 BigInt 字符串。默认项目地址单位 8 bit，独立 Block 默认自身 8 bit。
+- 所有间隔转换先归一化为**位坐标**，以 BigInt 表达：任意空间地址 a 的 bit 坐标是 a × space.addressUnitBits。检验从 source 单位转换到 target 单位时保留余数，不使用 Number 与小数舍入。Space.range 及 Region.range 半开 [base,base+size)，展示 lastAddress 时为 endExclusive-1，Query 返回明确的 endExclusive 和 lastAddress，绝不复用模糊 end。
+- Block.size、Block.entries 内 offset、span、stride 使用**其所属 Block 的 addressUnitBits**。子 Block 自身 size、内部 entries 使用**子 Block 的单位**。父 Block 对子 Block 的实例偏移 bitPos = parentEntry.offset×parentUnitBits，子寄存器真实偏移 bitPos + childEntry.offset×childUnitBits；子 Block 占用的 bit 范围转换到父 Block 时必须可由父单位完整表示，否则拒绝（不截断）。子 Block 和父 Block 不允许地址内容交错插入子块占用范围内的孔洞。
+- 普通寄存器的最小占用单位数为 ceil(register.width / parentBlock.addressUnitBits)；这是**寄存器实体的分配槽位**（例如 12-bit 寄存器在 8-bit 单位中占 2 个单位），不代表跨对象地址换算可以取整。
+- Region.resourceOffset 属于**目标资源自身单位**：RegisterBlock 单位为该 Block.addressUnitBits；Memory 单位恒为 bytes。没有声明即 0。window.targetBase 属于目标 AddressSpace 单位。
+- Window 转换 source bitDelta = (sourceAddress-region.base)×sourceUnitBits；targetBitPos = targetBase×targetUnitBits + source bitDelta。区间边界的转换必须精确，保证目标空间覆盖；中间源子地址落在目标较大地址单位内部时，Query 提供 {targetUnitIndex,subUnitBitOffset}，不得把 floor 结果冒充可直接寻址的 targetAddress；仅余数为 0 时提供精确 targetAddress。这表达坐标，不推断 byte enable 或访问合法性。跨窗口每跳保留空间身份与坐标。
+- 对齐 alignment 以当前 AddressSpace 地址单位计且 >0，约束每个实例基址。count=1 时 stride 若声明必须仍为正，但仅对未来实例有意义；count>1 要求 stride>=size，并满足每个实例对齐。阵列实例之间的空洞不自动标为 Reserved，且允许其他合法 Region 占用空洞；不允许不同普通实例或 Region 的实际分配区间重叠。
+
+### B. 三个区间：分配、映射、资源容量
+
+每个资源 Region 均有三个相互区分的范围：
+1. 分配区间：Region 的 [base,base+size)，只在**这个区间**上做空间分配碰撞检查，包含未实际映射的尾部保留范围。
+2. 实际映射区间：Region 从 base 开始实际响应/映射的前 mappedSize 单位；mappedSize 可选且不得大于 Region.size。默认映射长度按目标类型唯一确定：RegisterBlock → 其完整 Block.size（或最小覆盖范围）经无损精确换算为 Region 单位；Memory → Region.size；Window → Region.size。若显式声明 mappedSize，RegisterBlock 只允许等于其完整 Block.size（v2 不实现截断 IP 寄存器块），Memory/Window 可选择更短长度。mappedSize > 0，不能把未映射尾部当作可访问资源。
+3. 资源内部切片：resourceOffset + mappedSize 对应的目标位区间，必须落在目标 RegisterBlock/Memory 的定义范围内；Block v2 要求 resourceOffset=0，必须完整映射，避免切断真实寄存器；Memory 允许 bytes 单位的非零 resourceOffset，要求 bit 边界能无损转换且不超容量。若 Memory.capacityBytes 大于 Region.size，缺省只映射 Region 的 size 对应容量，不推断其余部分。
+
+- 不允许 Region.size=0；RegisterBlock 未声明 size 且 entries 为空时得到 0 覆盖，无法以 resource Region 映射，必须由 IP 显式声明 size。对 Reserved 无资源切片/映射语义，全部分配范围视作保留。
+- Window 的映射区间在目标 AddressSpace 必须位于其 [base,base+size)；允许目标范围含未分配空洞或 Reserved，但不得把它们展示成映射后的有效寄存器/Memory。多跳循环按 [projectId,addressSpaceId] 检测。跨不同源空间的 Region 不比较冲突。
+- 不允许 Region.kind=resource 指向不在显式支持列表的对象；初版目标仅为 RegisterBlock、Memory，其他设备以独立 Registered Resource 类型未来扩展，未知/无定义资源必须明确报错，不能把其它区域伪装为 Memory。
+- 同一 RegisterBlock 是 IP **模板**，多个 Region 引用该块表示不同硬件实例。Memory.id 是具名的**同一物理/逻辑存储实体**，多 Region 引用同一 ID 表示多视图/切片，不代表复制容量；同一空间内若不同 Region 的 Memory 内部切片重叠属于尚未声明的 alias，v2 明确拒绝；不同地址空间可以经 Window 访问同一 Memory，不误认为创建了新内存。两个直接独立映射到不同空间的同一 Memory 也保留共享的 Memory 身份；RegisterBlock 跨空间直接多次映射若需要同一实体身份，要求通过 Window 表达，不能默认合并 UART0 和 UART1。
+- Window 不代表“禁用别名”，线性总线桥接是允许的。count>1 的 Window 必须同时显式声明 targetStride（目标 AddressSpace 单位），目标实例 i 的起点为 targetBase+i×targetStride；不得自动使多个实例折叠到同一 targetBase。Memory 如需合法别名或 bank switching，另设计显式别名变体，不能用普通映射暗示。
+- 未分配空洞不等于显式 Reserved；内存内部划分给 DMA 的使用保留不作为同级 AddressRegion 与映射的 Memory 重叠。
+
+### C. 身份、跨工程与查询加载
+
+- 顶层 AddressSpace、RegisterBlock、Register、RegisterField、Memory 按每工程全局稳定 ID 唯一；AddressRegion.id 仅在所属 AddressSpace 内唯一；Block.entry.id 仅在所属 Block 内唯一。Region 具体身份为 projectId + spaceId + regionId + arrayIndex（如果重复）；不能将局部 Region ID 注册为顶层全局实体并错误查重。
+- 资源引用结构统一为 {project?:string,id:string}，省略 project 只表示**当前声明 Region 的项目**；用户配置必须提供已组合工程的真实 projectId，不用 include 别名或路径充当身份。Block.entries.register/block 仅引用 Block 所属项目本地对象；跨工程 IP 复用通过 AddressRegion.target 引用独立 IP Block，而不是让 RegisterBlock 隐式导入异工程 Register。必要的跨项目嵌套可在以后明确扩展。
+- Book 两阶段加载：第一阶段各项目独立解析、做 Schema 和本地可完成的事实验证，仅对标记为跨工程的 target 延迟**目标依赖校验**，不得在此阶段执行需要外部资源的投影，且不公开“全部校验通过”；第二阶段在 Book 显式组合所有项目后，统一强解析外部 target，执行目标跨度、窗口、循环、资源边界及所有引用校验。未组合目标报错，严禁自动加载旁边的工程配置或网络资源。
+- 所有 CLI、bookHTML、浏览器 ReaderData、安装包手册 query 使用相同的**已解析 Book 资源上下文**，提供唯一共享的 resolver 接口 {find(projectId,id),resolveRegion(...),resolveInstance(...)}；不能仅 CLI 成功而浏览器缺外部对象。对外单独 Graph 查询若需要跨工程目标必须返回明确“需 Book 上下文”诊断，不允许带有跳过的结果冒充完整。
+- 定义身份为 {projectId,definitionId}，实例身份为 {originProjectId,spaceId,path:[regionId,index?,blockEntryId,index?...]}。路由只保存这些稳定字段加可选 mountId 和 anchor，definitionId 从实例路径强解析获得；若 URL 中显式给出 definitionId 必须与解析值一致，否则拒绝，不凭它覆盖路径含义。Window 逐跳保留 {spaceId,originAddress,targetAddress或bitOffset} 的坐标链。
+- 查询返回明确 addressSpaceId、addressUnitBits、base/regionOffset（及其单位）、endExclusive、lastAddress、mappedSize、resourceOffset、originProjectId、definitionProjectId、instancePath、definitionId、来源。不能让旧 offset 同时表示块偏移和绝对地址；新 IR2.0 采用单一新命名，不兼容旧 offset 语义。
+- 数组总数用 BigInt 字符串，任何目录、构建页面、搜索、ReaderData、Query 根列表、点击“全部展开”都禁止根据 count 全量构造节点。针对数组只保留符号 summary，按页（固定上限例如 50/100）和直接索引查询选定实例；固定排序规则为地址升序、同地址 ID 升序；只对请求的有限列表展开。可以直达第 10^9 - 1 个实例，输出限额和总数必须明确。
+
+### D. 通用目录挂载、虚拟页与正文绑定
+
+- 目录挂载语法固定为示意：`{% resource-directory id="soc:cpu" mount="manual:address" /%}`（此处是字面示例）。mount 是稳定、同一编译 Book 中唯一的挂载 ID，声明所在文件/Section 是父导航节点；仅在作者显式挂载时出现 IR 子树。相同 target 在多个挂载中可分别出现，但 mount 必须不同；路由的 mountId 决定面包屑回到哪一挂载，资源定义 ID 不复制。
+- 保留现有真实文件/index/section 导航、directory-order 的语义和排序，不把虚拟节点伪装成虚构文件。侧栏插入点按文档 AST 位置确定；虚拟页提供新 kind=resource（或等价独立路由类型）并有统一导航节点渲染；CLI outline 返回带 route 的虚拟节点。只有当前页面真实 section/heading 与生成的文章区块进入右侧 TOC，二者以不同锚点命名空间不冲突。
+- 同页原有多个 include 或 Markdoc partial 会因同一 mount 重复而严格报重复挂载；不可悄悄产生两个同 ID 导航。隐藏 tab 内挂载遵守当前预校验原则，必须校验引用；是否显示随原 Markdoc 可见内容状态，不把隐藏内容自动变成新的全局目录。可不挂载而通过显式资源链接访问定义对象页。
+- 自由文本补充复用现有 Markdown/Markdoc Section，并新增纯声明绑定标签：`{% resource-content target={"id":"uart:csr"} section="uart:usage" /%}`。section 必须是已发布的真实作者 Section 稳定 ID。标签本身不渲染第二份正文；虚拟页按需引用 Section 原 AST/渲染树，正文唯一维护在原 Section（其原文章仍可阅读）。默认绑定到定义身份；若需某一实例专属内容，显式附加 space="soc:cpu" path=["uart0"]，不会修改通用 IP 定义。绑定冲突、未解析章节和重复锚点严格报错，渲染时为虚拟页生成独立 DOM 锚点命名空间；保留原生 Markdoc 变量/链接/文件依赖，不可退化为纯文本。
+- 虚拟页不全量预生成。ReaderData 只携带可查询的有限模型索引，进入路由时按需派生单页；排序/筛选/搜索不能触发所有实例枚举，搜索默认搜定义、区域汇总与显式索引，不索引亿级不存在的展开页。页内锚点来自标题 ID，自动区块用稳定专有命名空间（overview、address-map、register-list、bit-layout、field-table 等），不得覆盖用户 Section ID。
+- 自动页最低内容：AddressSpace 显示地址坐标、单位、合法范围、Region 列表；Region 显示分配区间、mappedSize、资源来源或保留/窗口目的；RegisterBlock 显示自身 size、访问说明（未声明则明确）、相对列表及实例基址；Register 显示宽度、位域图、字段表及当前实例地址；Memory 显示容量、映射切片/窗口、类型及说明；Reserved 显示用途与范围，不虚构访问；Window 显示源/目标空间、坐标换算、转译链与边界。
+- 实例页刷新直达、历史前进后退、PDF 返回、面包屑和当前位置必须保留 originProjectId、spaceId、mountId、instancePath；无上下文的定义页只显示 IP 相对偏移，不假设绝对地址。
+
+### E. 字段互动、访问声明及验证
+
+- 每一组位图+图例+字段表必须具有显式、唯一的 presentationId（呈现作用域），同一页即使重复 Register 不以“最近一个图”猜配对；字段内跳仅在本组定位。图/图例默认是页内动作，不生成新的浏览器历史；显式“独立详情”才切换实体路由。
+- 点击字段：确认本组对应表存在 → 展开祖先 Section/Tab → 使用 tableControls.reveal 清除影响目标行的过滤条件（有用户可见提示）→ 表格行滚动入视口 → 高亮与键盘聚焦；若缺少对应表，显示可见故障消息，不悄悄改成详情跳转。悬停/聚焦仍双向高亮。对键盘访问提供 Enter/Space 语义和可见焦点；离线 SVG 导出不依赖当前 DOM，独立 SVG 保留字段定义 ID、标题和来源，不承诺跳当前 HTML 表格行。
+- 64 位位图仅代表位分布，不代表 32 位事务顺序、原子读或硬件访问能力。RegisterBlock 可选 `accessPolicy`={allowedTransferBits?:正整数数组, alignment?:正整数字符串（Block单位）, byteOrder?:little|big, atomic?:boolean, splitOrder?:low-first|high-first}；全部未声明时显示未知，不能推断。RegisterField 可选 enums={编码整数字符串:说明}，编码用 BigInt 检查位宽及数值重复；可选 readEffect=none|clear、writeEffect=normal|w1c|w1s|pulse，这些枚举只有被作者明确提供才具有语义，不能根据 access 文本猜测。更复杂硬件自动更新/条件访问继续用 description 说明，不能输出伪精确行为。
+- 来源需区分：项目 Region 的映射来源、IP RegisterBlock/Register 的定义来源、Field 的自身或继承来源；不得用项目路径替换外部 IP 的原始来源。
+
+### F. 实施与验收附加门槛
+
+- 阶段 A 同时调整 IR major 入口、所有资源发现和显式版本拒绝、现行测试夹具及最小手册，使**每一阶段均有可运行正式入口**；不能等最后才升级入口。旧正式教程/样例在各阶段逐步迁移，历史原文/历史验收记录不篡改阶段结论。
+- 必须测试：边界刚好相邻不重叠；区域尾部分配碰撞；8/16/32 bit 单位互换、不能整除、父子 Block 嵌套；Register.width=12 和 64；Memory 非零 offset/容量边界；Window 多跳/空洞/Reserved/环路；跨工程同名 ID、缺失目标、独立 IP；十亿 count 末项直达且页面大小有界；目录挂载重复及隐藏内容、真实文件目录回归；位图点击/过滤/排序/键盘/重复图表/PDF；离线浏览器及静态 SVG。
+- 错误诊断包括源工程、源文件位置、关联目标、实例路径、地址单位；性能测量应分别覆盖加载、校验、虚拟页生成、DOM 节点数和 HTML 体积。只通过类型检查或 Schema 验证不得宣称阅读目标达成。
+
+
+## 第二轮复审的最终边界决策
+
+本节为后续修订的**最高优先级契约**，对前文有歧义的说明作精确覆盖，而不删除已批准功能。不涉及旧 IR 兼容。
+
+### 1. 任意资源中的子地址位坐标
+
+不只 Window，所有 Block、Register、Memory、Window 均使用统一的地址投影结构。模型计算以 BigInt bitPosition 为准，向某空间或父 Block 的地址单位转换时返回 unitIndex=floor(bitPosition/unitBits) 与 subUnitBitOffset=bitPosition % unitBits，单位/空间 ID 和原生资源偏移一起返回。仅 subUnitBitOffset==0 才提供作为直接整数地址的 address；有余数时仍允许描述对应位坐标，但不声称能通过该空间的整数地址直接独立访问。严禁舍入后把 unitIndex 冒充准确寄存器地址。前文 Window 专属的余数规则由此升级为**全部资源投影的共用规则**。
+
+### 2. Window 的局部可见性
+
+任意实例的可见区域是沿路径所有实际 mapped 区间映射后的**精确交集**。Window 允许只覆盖目标 AddressSpace 一部分。目标 Block 可以被部分窗口覆盖，页面明确显示部分可见状态与可见位区间；仅当 Register 的**完整地址占用槽位**落在整个可见区间内时，才将其列为完整可访问的寄存器实例并提供正常跳转。被窗口切断的 Register 不得伪装成完整寄存器，查询该目标要返回明确的 PARTIAL_REGISTER_WINDOW 诊断和范围信息，不应静默截断；Memory 返回精确可见切片，Reserved 和未分配范围保留其原本身份。多跳 Window 逐跳计算交集与坐标，不丢弃中间的位余数。Window 边界按转换位区间校验，不要求每个源子地址都能整除目标整数地址单位。
+
+### 3. 穿 Window 的实例路径与非定义终点
+
+规范化路径使用判别联合步骤，源头 space=(projectId,addressSpaceId)，segments 是有序数组：
+- RegionStep = {kind:"region",regionId:string,index?:安全整数}，属于当前 AddressSpace。
+- 遇到 kind=window，下一 RegionStep 被解释为**该 Window.target 所指的目标 AddressSpace**中的 Region（target 项目/空间从强引用确定，不由用户硬填）。可以连续多跳。
+- 在 resource=RegisterBlock 后，EntryStep={kind:"entry",entryId:string,index?:安全整数}，属于当前 RegisterBlock；不得在未穿 Window 时直接跳到另一个空间。
+- RegionStep 本身可作为路径终点，对 resource、reserved、window 都可直接形成 Region 详情。Reserved 不存在 definitionId；Window Region 页面是桥接窗口说明，不等同于目标 AddressSpace 定义页；继续穿窗导航才进入目标空间。
+- 解析结果是判别联合：address-space-definition、resource-definition、region、block-instance、register-instance、memory-slice，definitionId 仅对确实存在定义的变体提供。实例路由以最初空间、完整 segments、可选 mountId 为权威事实，其余目标项目、目标身份及所有空间坐标逐跳派生；显式冗余字段必须一致，不允许篡改路径所指目标。
+- Resource 内容绑定也采用明确的目标联合：definition={kind:"definition",project?:string,id:string} 或 region/instance={kind:"instance",project?:string,space:string,segments:Step[]}；不能要求 Reserved 有虚构的 RegisterBlock ID。旧的简单 target={id} 示例仅表达定义绑定，正式 Schema 以本节判别联合为准。
+
+### 4. Memory 映射别名检查边界
+
+Memory 是具名资源身份，多区域引用同一 Memory ID 是同一资源的不同映射或切片；不会因为多次 target 而复制容量。同一 AddressSpace 中的**直接 resource→Memory** Region（包括 count 阵列）若映射到同一 Memory 的资源内切片区间重叠，v2 拒绝该未声明的直接 alias；同一空间的 Region 分配区间仍一律做独立的空间碰撞校验。Window 是**显式声明的另一条访问路径**，从源空间穿 Window 到目标空间后与源空间另一条直接路径最终看到同一 Memory 是允许的，不反向纳入“直接 Memory alias”判据；Reader 必须展示经过 Window 的路径，不能以为这是不同的物理 Memory。不同 AddressSpace 中直接映射同一 Memory 也允许，不等于重复分配物理容量。
+
+Window 的重复实例必须显式声明 targetStride，targetStride 是目标 AddressSpace 的正整数地址单位，要求 targetStride > 0，且 targetStride × targetAddressUnitBits >= mappedSize × sourceAddressUnitBits，避免同一个重复 Window 自身映射到重叠的目标片段；若需要目标重叠的真别名，未来必须使用独立 alias 模型，不得隐式允许。
+
+### 5. 复用作者正文的确定规则
+
+声明绑定形式确定为 resource-content 标签，target 使用上一节的判别联合、section 是作者现有 Markdoc Section 稳定 ID。Section 属于**绑定声明所在项目**，记录 sourceProjectId、sourceFile、sectionId、target identity，而不是默认属于被引用资源的工程。允许同一资源有多段不同 Section，按声明顺序展示；同一 target 与同一 section 的重复绑定严格失败。
+
+当同时存在定义级正文与实例级正文时，**定义级正文排在前，实例级正文追加在后，二者不覆盖**。Region 特有的实例说明与 IP 通用说明可共存，不允许因页面是 UART0 而丢失 IP 的通用限制。
+
+引用 Section 的原 AST/渲染树应在虚拟页的命名空间下呈现，原文仍只在一个源文档中维护；呈现出的局部锚点/局部链接落到本次虚拟页，指向外部页面/资源的普通链接仍按**作者 Section 的原项目**解析。复制呈现不会二次登记工程实体、目录挂载、resource-content 声明或其他语义对象；否则会制造重复身份/循环。失效绑定及同页锚点冲突必须诊断。
+
+### 6. 条件分支和 Tab 的全局目录语义
+
+目录挂载由当前**实际生效的 Markdoc AST 分支**决定：条件分支未生效时仍按当前约定进行引用预检，但不在最终导航中激活对应挂载。对已生效 AST 的 Tab 内容，无论该 Tab 是否被浏览器当前选中，挂载都固定地存在于全局左侧目录；切换 Tab 只影响正文显隐，不重新增删目录节点。这一原则同时适用于离线浏览器刷新、历史前进后退及 CLI outline。挂载的 mountId 与所属原始文件/Section 稳定，不依赖当前 UI 选中状态。隐藏的未发布文档不自动对外暴露新的导航节点。
+
+### 7. 访问约定的精确能力边界
+
+此前简单 atomic 布尔值**不进入最终 Schema**。RegisterBlock 可选 accessPolicy={allowedTransferBits?:正整数数组, alignment?:正整数字符串（该 Block 地址单位）, byteOrder?:little|big, splitOrder?:low-first|high-first, readConsistency?:whole-register|per-transfer|not-guaranteed, writeAtomicity?:whole-register|per-transfer|not-guaranteed}。
+
+readConsistency=whole-register 只表示读取一个完整寄存器所得值的一致快照保证（即使需要多事务也须由实际硬件保障），per-transfer 只保证各单次事务内部；writeAtomicity=whole-register 只表示完整寄存器写入对硬件观察者为原子提交，per-transfer 只保证每次事务自身。not-guaranteed 表示明确没有整寄存器保证；字段缺失为未声明，**不能从默认协议或位图推断**。splitOrder 仅表示规定的多事务顺序，不暗示锁存、原子性或一致性。允许 64-bit 寄存器、32-bit transfer 且全寄存器读一致，但须由作者显式断言硬件保证；工具不能擅自补充硬件机制。
+
+accessPolicy.alignment 继承时保留声明处 Block 的地址单位，统一换算为位约束进行计算、查询和校验，不得按子 Block 单位重新解释同一数值；子 Block 显式覆盖 alignment 时才使用子 Block 自身单位。父 Block accessPolicy 逐字段继承给嵌套子 Block；子 Block 明确声明的字段逐字段覆盖，同一 Block 的 Register 只消费最终的有效策略（字段本身的访问权限仍独立）。不能以子块为空值覆盖已有父块已声明字段，缺失不等于取消保证。校验 allowedTransferBits 的每个元素为正整数、没有重复，alignment > 0、byteOrder/splitOrder/effect 枚举值合法。若规则不足以表达复杂时序，例如读锁存窗口或硬件自动清零的时间条件，仍通过说明文本和具体行为契约表达，不能伪造结构化保证。
+
+### 8. 补充验收反例
+
+- 父 Block 地址单位 32-bit，子 Block 8-bit、size 4，内部 Register 位于 offset=1：能表达 {unitIndex:0, subUnitBitOffset:8}，不声称具有新的整数地址；直接映射到 32-bit 空间也相同。
+- 64-bit Register 占 [0,8)，Window 仅指向 [0,4)：Region 和 Block 可描述部分覆盖，点击该寄存器必须收到 PARTIAL_REGISTER_WINDOW 诊断；完整映射才可正常进入。
+- CPU 通过 Window 进入另一个空间的 Memory，与 CPU 中该 Memory 的另一直接 Region 都存在：区分两条路径且允许，不混淆物理 Memory；同空间两条直接 Memory Region 映射重叠内存 slice 必须失败。
+- Window 数组 targetStride=0、targetStride 小于 mappedSize 位跨度：失败；合法大 count 不枚举。
+- 同一定义正文和某 UART0 专属正文同时绑定：两者按顺序保留、来源项目正确；重复绑定失败、局部链接正确。
+- Tab 切换/URL 直达/刷新前后 CLI outline 的挂载稳定；只有未生效条件分支的挂载不激活。
+- 64-bit Register、allowedTransferBits=[32]、readConsistency=whole-register：声明本身合法但不推断实现机制；splitOrder 不代表原子性；缺失保证显示未声明。
+
+
+{% /section %}

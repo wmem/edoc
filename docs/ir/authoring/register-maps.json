@@ -73,7 +73,8 @@
       "source": {
         "file": "docs/ir/authoring/register-maps.json",
         "selector": "block:port"
-      }
+      },
+      "addressUnitBits": 8
     },
     {
       "id": "block:device",
@@ -92,7 +93,8 @@
       "source": {
         "file": "docs/ir/authoring/register-maps.json",
         "selector": "block:device"
-      }
+      },
+      "addressUnitBits": 8
     }
   ],
   "addressSpaces": [
@@ -102,17 +104,25 @@
       "label": "CSR 地址空间",
       "addressUnitBits": 8,
       "addressWidth": 64,
-      "mappings": [
-        {
-          "id": "device",
-          "block": "block:device",
-          "base": "0x1000000000000000"
-        }
-      ],
       "source": {
         "file": "docs/ir/authoring/register-maps.json",
         "selector": "space:csr"
-      }
+      },
+      "base": "0",
+      "size": "0x10000000000000000",
+      "regions": [
+        {
+          "id": "device",
+          "base": "0x1000000000000000",
+          "label": "设备寄存器块",
+          "kind": "resource",
+          "size": "0x1000",
+          "target": {
+            "id": "block:device"
+          }
+        }
+      ]
     }
-  ]
+  ],
+  "irVersion": "2.0"
 }

@@ -18,3 +18,20 @@ html{scroll-behavior:auto}#breadcrumbs{display:flex;gap:12px;align-items:center;
  .semantic-references td:last-child { border-bottom: 0; }
  .semantic-references td::before { content: attr(data-label); display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
 }
+
+/* 资源页的基础排版；长地址和来源留在当前内容宽度内。 */
+.resource-page{min-width:0}.resource-facts{display:grid;grid-template-columns:minmax(7rem,.25fr) minmax(0,1fr);gap:.4rem 1rem}.resource-facts dt{font-weight:600}.resource-facts dd{margin:0;overflow-wrap:anywhere}.resource-page form[data-resource-index]{display:flex;flex-wrap:wrap;gap:.4rem}.resource-page input[type=number]{max-width:12rem;min-width:0}.resource-page pre{max-width:100%;overflow:auto}
+
+/* 工程对象表保持列的含义；窄屏仅滚动表格，不拉宽整页。 */
+.resource-page [data-resource-table],.resource-page [data-resource-leaves]{font-size:13px;min-width:900px;border-collapse:collapse}
+.resource-page [data-resource-table] td,.resource-page [data-resource-leaves] td{min-width:100px;max-width:300px;vertical-align:top;overflow-wrap:anywhere}
+.resource-page [data-resource-table] td:first-child,.resource-page [data-resource-leaves] td:first-child{min-width:160px;font-weight:600}
+.resource-page .register-map-scroll{margin:1rem 0;border:1px solid var(--line);border-radius:6px}
+.resource-page [role=status]{color:#9b3c13}.resource-view-mode{font-weight:600;color:var(--muted)}
+.resource-page form[data-resource-leaf-seek]{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}
+.resource-page input{max-width:100%;min-width:0;box-sizing:border-box}.resource-page li{overflow-wrap:anywhere}
+.resource-nav-more{font-size:12px;text-align:left;white-space:normal;margin:5px 0 8px 12px;padding:5px 8px}
+@media(max-width:750px){.resource-facts{grid-template-columns:minmax(0,1fr)}.resource-facts dt{margin-top:.6rem}}
+.resource-page [data-resource-table] td:first-child details{font-size:11px;font-weight:400;margin-top:8px}
+.resource-page [data-resource-table] .resource-facts{display:block}.resource-page [data-resource-table] .resource-facts dt{margin-top:.4rem}
+.resource-page [data-resource-table] th:last-child,.resource-page [data-resource-table] td:last-child{min-width:200px}
