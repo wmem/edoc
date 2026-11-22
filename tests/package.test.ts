@@ -15,6 +15,10 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  const run=(command:string,args:string[],cwd=repository)=>{
   const result=spawnSync(command,args,{cwd,encoding:'utf8',timeout:120000});assert.equal(result.status,0,result.stderr||result.stdout||result.error?.message||'命令未成功退出');return result.stdout;
  };
+ // 即使从未构建过样例，也用真实目录中的哨兵核验 npm 白名单下的嵌套排除。
+ for(const directory of ['docs/output','examples/address-space-v2/output','templates/clauses/output']){
+  const marker=join(repository,directory,'edoc-pack-exclusion-'+process.pid+'.txt');mkdirSync(dirname(marker),{recursive:true});writeFileSync(marker,'不应进入安装包');t.after(()=>rmSync(marker,{force:true}));
+ }
  const packed=JSON.parse(run('npm',['pack','--json','--pack-destination',root]))[0];
  assert.ok(packed.files.some((f:any)=>f.path==='dist/packages/cli/edoc.js'));
  assert.ok(packed.files.some((f:any)=>f.path==='LICENSE'));
@@ -25,7 +29,7 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.ok(!packed.files.some((f:any)=>f.path.startsWith('dist/packages/drawing-prototype/')));
  assert.ok(packed.files.some((f:any)=>f.path==='dist/manual/index.html'));
  assert.ok(packed.files.some((f:any)=>f.path==='examples/fpga-mac/docs/SPEC.mdoc'),'源文 include 引用的样例必须随包');
- assert.ok(!packed.files.some((f:any)=>/^(docs|examples)\//.test(f.path)&&f.path.includes('/output/')),'运行过文档构建也不能混入子工程 HTML');
+ assert.ok(!packed.files.some((f:any)=>/^(docs|examples|templates)\//.test(f.path)&&f.path.includes('/output/')),'运行过文档/样例/模板构建也不能混入任何 output 文件');
  const prefix=join(root,'prefix');run('npm',['install','--prefix',prefix,join(root,packed.filename),'--ignore-scripts','--omit=dev','--prefer-offline','--package-lock=false']);
  for(const name of ['playwright','@antv/x6','@fontsource/noto-sans-sc','vite','react','typescript','fontkit'])assert.ok(!existsSync(join(prefix,'node_modules',name)),name+' 不属于运行依赖');
  assert.ok(!packed.files.some((f:any)=>f.path.startsWith('dist/packages/render-pdf/')));

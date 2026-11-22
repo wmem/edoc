@@ -100,7 +100,7 @@ for (const name of ['board-flash', 'fpga-mac']) {
 }
 ~~~
 
-以上代码以 node --input-type=module 执行。手册/包构建、Gallery构建、类型检查和差异检查均成功。最初全仓回归暴露Drawing错误码断言和SVG字体夹具漏label，分别改为严格SCHEMA及精确错误路径、补齐必需label；完整对应组随后重跑通过。额外入口检查修复孤立旧模板配置位置，以及Gallery漏state-machines能力声明/层级状态数据接入；新增验收页也由回归发现正文链接顺序与导航不一致，已同步其显式directory-order，并重跑完整非浏览器组。没有放宽IR2校验或删除覆盖来获得通过。
+以上代码以 node --input-type=module 执行。手册/包构建、Gallery构建、类型检查和差异检查均成功。最初全仓回归暴露Drawing错误码断言和SVG字体夹具漏label，分别改为严格SCHEMA及精确错误路径、补齐必需label；完整对应组随后重跑通过。额外入口检查修复孤立旧模板配置位置，以及Gallery漏state-machines能力声明/层级状态数据接入；新增验收页也由回归发现正文链接顺序与导航不一致，已同步其显式directory-order，并重跑完整非浏览器组。提交后额外打包审计还发现npm白名单带入模板output；补入templates/.npmignore，并在包测试对docs、examples、templates真实输出目录放置临时哨兵，强制断言任何output文件都不入包；完整包测试和提交后安装冒烟随后重跑通过。没有放宽IR2校验或删除覆盖来获得通过。
 
 主会话另外使用 playwright-cli 在正式组合样例中实际点击 UART0 的 EN 图块及图例：URL/history.length 保持，目标TR获焦；1440/390截图已视觉检查，390px整页宽度=390，字段表局部横向滚动，EN行边框清晰。截图仅保存在 .playwright-cli/edoc-f-field-wide.png 与 edoc-f-field-narrow.png。
 
