@@ -34,6 +34,7 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
  edoc                                      读取当前项目 docs/edoc.config.js 并构建
  edoc --config path/to/custom.js            使用指定配置构建
  edoc build [--format html] [--output FILE] [--workers N]
+ edoc serve [--port PORT] [--workers N]       按需预览项目，修改源文件后自动刷新
  edoc validate [--format json|text]         扫描文档、发现数据并校验依赖
  edoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
  edoc query [--project PROJECT_ID] --id ID [--element ELEMENT] [--depth 0..10] [--max-items 1..10000] [--format json|text]
@@ -58,17 +59,17 @@ type Target={format:'html'|'svg';file:string};
 export async function main(argv:string[]):Promise<number>{
  let format='text',targets:Target[]=[],canClean=false,config:ResolvedConfig|undefined;
  try{
-  if((argv.length===1&&['--help','-h'].includes(argv[0]))||(['build','validate','outline','query','read','export','guide'].includes(argv[0])&&argv.slice(1).some(t=>['--help','-h'].includes(t)))){process.stdout.write(help);return 0;}
+  if((argv.length===1&&['--help','-h'].includes(argv[0]))||(['build','serve','validate','outline','query','read','export','guide'].includes(argv[0])&&argv.slice(1).some(t=>['--help','-h'].includes(t)))){process.stdout.write(help);return 0;}
   if(argv.length===1&&argv[0]==='--version'){const info=buildInfo();process.stdout.write(`edoc ${info.version} / IR ${SUPPORTED_IR_VERSION} / source ${info.revision??'unknown'}${info.dirty?' (dirty)':''}${info.builtAt?' / built '+info.builtAt:''}\n`);return 0;}
   if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
-  if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
-  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(['query','read','outline'].includes(command)?['--route']:[]),...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='build'?['--workers']:[]),...(command==='export'?['--view','--id']:[])]);
+  if(!['build','serve','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
+  const allowed=new Set(command==='serve'?['--config','--port','--workers']:command==='guide'?['--format','--full']:['--config','--format',...(['query','read','outline'].includes(command)?['--route']:[]),...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='build'?['--workers']:[]),...(command==='export'?['--view','--id']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
   if(command==='build'&&args['--format']==='text')throw new UsageError('build 的 --format 只接受 html');
-  if(!({build:['text','html'],validate:['json','text'],outline:['json','text'],query:['json','text'],read:['json','text'],export:['svg'],guide:['json','text']}[command]!).includes(format))throw new UsageError('命令输出格式不正确');
+  if(!({build:['text','html'],serve:['text'],validate:['json','text'],outline:['json','text'],query:['json','text'],read:['json','text'],export:['svg'],guide:['json','text']}[command]!).includes(format))throw new UsageError('命令输出格式不正确');
   if(command==='guide'){const source='docs/writing/'+(args['--full']?'guide.mdoc':'agent-guide.mdoc'),content=readFileSync(resolve(manualLocations().root,source),'utf8');process.stdout.write(format==='json'?JSON.stringify({guideVersion:'4.0',variant:args['--full']?'full':'short',source,content},null,2)+'\n':content);return 0;}
   if(args['--route']&&(args['--id']||args['--element']||args['--project']))throw new UsageError('--route 已包含目标身份，不能并用 --id/--element/--project');
   const resourceRequest=args['--route']?parseResourceRoute(args['--route']):undefined;
@@ -80,10 +81,17 @@ export async function main(argv:string[]):Promise<number>{
   if(command==='export'&&((!!args['--view']===!!args['--id'])||!args['--output']||!args['--output'].endsWith('.svg')))throw new UsageError('export 需要 --view 或 --id、--format svg 和 .svg 的 --output');
   const number=(key:string,fallback:number,min:number,max:number)=>{const value=args[key];if(value===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(value)||+value<min||+value>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +value;};
   let workers:number|undefined;
-  if(command==='build'){try{workers=drawingConcurrency(args['--workers']===undefined?undefined:number('--workers',1,1,Number.MAX_SAFE_INTEGER));}catch(error){throw new UsageError(error instanceof Error?error.message:String(error));}}
+  if(command==='build'||command==='serve'){try{workers=drawingConcurrency(args['--workers']===undefined?undefined:number('--workers',1,1,Number.MAX_SAFE_INTEGER));}catch(error){throw new UsageError(error instanceof Error?error.message:String(error));}}
   const depth=number('--depth',0,0,10),maxItems=number('--max-items',1000,1,10000);
   const readOffset=number('--offset',0,0,Number.MAX_SAFE_INTEGER),readLimit=number('--max-chars',12000,1,100000);
   if(command==='build'&&args['--output']){const inferred=format==='text'?(args['--output'].endsWith('.html')?'html':undefined):format;if(!inferred||!args['--output'].endsWith('.'+inferred))throw new UsageError('--output 需要与 html 格式一致');format=inferred;}
+  if(command==='serve'){
+   const {serveProject}=await import('../preview/server.ts');
+   const server=await serveProject({config:args['--config'],workers,port:number('--port',5175,1,65535)});
+   process.stdout.write('项目预览：'+server.url+'（按需编译，修改后自动刷新；Ctrl+C 停止）\n');
+   const stop=()=>{process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);void server.close().catch(error=>{console.error(error);process.exitCode=1;});};
+   process.on('SIGINT',stop);process.on('SIGTERM',stop);return 0;
+  }
   config=await resolveProjectConfig(args['--config']);
   if(command==='build'){
    if(format==='html')targets=[{format,file:args['--output']?resolve(args['--output']):config.outputs.find(t=>t.format===format)?.file??resolve(config.root,'output/index.'+format)}];

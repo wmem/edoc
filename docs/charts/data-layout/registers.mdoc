@@ -4,7 +4,7 @@
 
 {% section id="use:registers:resource-handbook" title="从 IR 生成统一地址手册" %}
 
-需要统一管理 SoC 地址、多个 IP 实例、Memory 和总线窗口时，先建立 IR 资源，再挂载自动手册。软件包使用 3.0.0，数据使用 IR 2.0；不把旧 mappings 当作新输入。下方传统采样器例子仍展示如何在作者文章中组合地址表、位图与说明；两种呈现读取相同的新模型。
+需要统一管理 SoC 地址、多个 IP 实例、Memory 和总线窗口时，先建立 IR 资源，再挂载自动手册。软件包使用 3.1.0，数据使用 IR 2.0；不把旧 mappings 当作新输入。下方传统采样器例子仍展示如何在作者文章中组合地址表、位图与说明；两种呈现读取相同的新模型。
 
 1. 在项目的 docs/edoc.config.js 保存 `export default {};`，创建 docs/ir/。将下面完整 JSON 保存为 docs/ir/soc.json。Block 的原生大小与 Region 的项目分配分别声明，不能为 4KB 分配把 IP.size 改成 4KB。
 2. 将后续正文保存为 docs/index.mdoc；resource-directory 的 mount 是本 Book 内唯一的稳定 ID，声明所在文件/Section 决定左树位置。

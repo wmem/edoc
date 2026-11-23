@@ -2,6 +2,21 @@
 
 docs 读取随包工具手册，guide、--help、--version 也无需项目配置；其他项目命令默认读取当前项目 docs/edoc.config.js，也可用 --config 指定。validate、outline、read、query 不生成图形布局或发布页面；当前仍会重新加载和校验参与工程。
 
+{% section id="ref:command-serve" title="项目预览服务" %}
+
+```sh
+edoc serve
+edoc serve --config docs/edoc.config.js --port 5176 --workers 4
+```
+
+serve 只接受 --config、--port、--workers。默认端口为 5175，--port 为 1–65535 的整数；服务只监听 127.0.0.1，不提供对外绑定参数。端口已被占用时明确报错。按 Ctrl+C 或发送 SIGTERM 会关闭服务及工作线程。
+
+图形线程默认 4，--workers > EDOC_WORKERS > 默认值，正安全整数约束与[构建并发](commands.mdoc#ref:build-workers)一致。线程池在一次预览会话内复用，源文件更新后释放旧会话及缓存。服务不写 output/index.html，也不发布构建结果。
+
+约每秒检查已发现输入及目录的元数据，变化后重新加载工程并通知浏览器刷新。详细阅读、搜索、缓存和验证边界见[按需预览项目](../reading/preview.mdoc)。edoc docs serve 仍用于随包工具手册的静态阅读，与项目 serve 区分。
+
+{% /section %}
+
 {% section id="ref:command-build" title="构建与校验" %}
 
 ```sh

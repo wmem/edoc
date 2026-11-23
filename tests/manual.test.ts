@@ -25,7 +25,7 @@ test('正式手册共享 Demo 源，渐进正文/参考/开发分组和章节读
  assert.deepEqual(branch('use:quickstart').children.map((n:any)=>n.label),['安装与运行环境','生成第一份文档']);
  assert.deepEqual(branch('use:writing').children.map((n:any)=>n.sectionId),['guide:agent','use:organize','use:markdown','use:markdoc','use:markdoc-reuse','use:page-layout','use:semantic-content','use:references','guide:home']);
  assert.deepEqual(branch('use:engineering').children.map((n:any)=>n.sectionId),['use:data','use:projects-pdf']);
- assert.deepEqual(branch('use:publishing').children.map((n:any)=>n.sectionId),['use:reading','use:reading-folding','use:query','use:publish']);
+ assert.deepEqual(branch('use:publishing').children.map((n:any)=>n.sectionId),['use:reading','use:reading-folding','use:query','use:preview','use:publish']);
  const domains=branch('use:rendering').children.filter((n:any)=>n.page!==branch('use:rendering').page);
  assert.deepEqual(domains.map((n:any)=>[n.sectionId,n.label]),[['use:diagrams','结构与连接'],['use:behavior-charts','行为与控制'],['use:timing-charts','时间与交互'],['use:data-layout-charts','数据布局'],['use:record-charts','记录与结果']],'图表只按工程含义设五领域，不把模型、用途和标签平铺');
  const domain=(id:string)=>domains.find((n:any)=>n.sectionId===id)!;

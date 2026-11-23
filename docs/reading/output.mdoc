@@ -16,7 +16,7 @@ edoc
 
 构建默认使用 4 个可复用工作线程，共同处理原生 Drawing 和工程关系图的布局、路由。可用 --workers 指定并发数，设置方法见[构建并发](../reference/commands.mdoc#ref:build-workers)。
 
-修改源文件后重新构建。工具仓库的 npm run docs:dev 只负责手册静态预览，不能把它误认为所有用户工程都必须提供的启动包装脚本。
+修改源文件后重新构建离线文件。日常编写可使用 [edoc serve 按需预览](preview.mdoc)，保存后自动刷新。工具仓库的 npm run docs:dev 只负责手册静态预览，不能把它误认为所有用户工程都必须提供的启动包装脚本。
 
 {% /section %}
 

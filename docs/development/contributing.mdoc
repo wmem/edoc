@@ -37,6 +37,8 @@ Schema、图形布局或接口变化另跑对应 test:schema、test:graph、test
 
 正文预检回归随 test:document 执行；本地静态 SVG 的独立 file:// 离线展示、内嵌字体/图片与窄屏行为使用 test:media-browser，并用 playwright-cli 观察正式教程图片。
 
+项目预览修改执行 `node --test tests/preview.test.ts tests/preview-browser.test.ts`，覆盖按需编译、请求合并、目录与搜索、跨工程资源、配置传递导入更新、错误恢复和浏览器阅读；安装包还须验证 serve 从 JS Worker 启动。
+
 渲染调度、图形共享或按文章生成 SVG 的变化执行 `node --test tests/render-performance.test.ts tests/render-performance-browser.test.ts`，检查跨文章与跨工程身份、锚点索引的首匹配顺序与重建隔离、旧工程图在线程中的几何和诊断保真、混合任务与线程取消恢复，以及离线图形、波形、导出和打印。性能比较使用相同源码版本与输入范围，分别报告加载、渲染和产物大小，不能将版本迁移算作优化收益。
 
 默认阅读、单框端口引线和静态SVG一致性使用 test:graphics-reading；长波形文字范围与原有像素检查使用 test:wave。字体子集变更时先运行 fonts:metrics，随包构建也会生成同源度量。fontkit仅开发阶段使用，不应加入最终运行依赖。

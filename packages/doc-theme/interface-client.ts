@@ -1,3 +1,4 @@
+import {documentStyle} from './style-source.ts';
 import {nodeHeading,addPortLeads,readableViewport} from './graph-presentation.ts';
 import {portLabel} from '../render-graph/ports.ts';
 import {drawnPaths} from '../render-graph/net-tree.ts';
@@ -111,7 +112,7 @@ export const initializeInterfaces:InterfaceRenderer=(holder,{data,select,signal,
  details.onchange=()=>{const next=structuredClone(desired);next.showInterfaceDetails=details.checked;void request(next,current.nodes[0]?.id);};
  attributes.onchange=()=>{for(const n of current.nodes)n.ports.forEach((p,i)=>{if(!p.slot&&!p.interfaceHeader)graph.getCellById(n.id).attr('a'+i+'/display',attributes.checked?'':'none');});staticSVG.querySelectorAll('[data-port-annotation]').forEach(e=>e.setAttribute('display',attributes.checked?'':'none'));};
  if(labels)labels.onchange=()=>{for(const n of current.nets)graph.getCellById(relationLabels.get(n.id)!)?.setVisible(relationLabelsVisible());staticSVG.querySelectorAll('[data-relation-label]').forEach(e=>e.setAttribute('display',relationLabelsVisible()?'':'none'));};
- function download(svg:Element,suffix:string){const clone=svg.cloneNode(true) as SVGSVGElement,style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'})),a=document.createElement('a');a.href=url;a.download=current.id.replace(/[^\w.-]/g,'_')+suffix+'.svg';a.click();URL.revokeObjectURL(url);}
+ function download(svg:Element,suffix:string){const clone=svg.cloneNode(true) as SVGSVGElement,style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=documentStyle();clone.prepend(style);const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'})),a=document.createElement('a');a.href=url;a.download=current.id.replace(/[^\w.-]/g,'_')+suffix+'.svg';a.click();URL.revokeObjectURL(url);}
  holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>download(staticSVG,'-signals'));
  holder.querySelector('[data-action=svg-current]')!.addEventListener('click',()=>{const svg=renderSVG({...current,display:{...current.display,showPortAttributes:attributes.checked,showRelationLabels:relationLabelsVisible()}},'',current.id+'-current');download(new DOMParser().parseFromString(svg,'image/svg+xml').documentElement,'-current');});
  holder.querySelector('[data-action=fit]')!.addEventListener('click',fit);

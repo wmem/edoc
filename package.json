@@ -1,6 +1,6 @@
 {
   "name": "edoc",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -47,7 +47,8 @@
     "test:graphics-reading": "node --test tests/graphics-reading.test.ts",
     "fonts:metrics": "node scripts/font-metrics.mjs",
     "test:engineering-charts": "node --test tests/engineering-charts.test.ts tests/register-map.test.ts tests/engineering-charts-browser.test.ts",
-    "test:render-performance": "node --test tests/render-performance.test.ts tests/render-performance-browser.test.ts"
+    "test:render-performance": "node --test tests/render-performance.test.ts tests/render-performance-browser.test.ts",
+    "test:preview": "node --test tests/preview.test.ts tests/preview-browser.test.ts"
   },
   "dependencies": {
     "@markdoc/markdoc": "0.5.11",

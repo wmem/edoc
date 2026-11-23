@@ -1,3 +1,4 @@
+import {previewSource} from './preview-source.ts';
 import {restoreScenes} from '../core/scene-storage.ts';
 import {resourcePage} from './resource-page.ts';
 import {resourceMountNavigation,loadResourceNavigation} from '../core/resource-navigation.ts';
@@ -36,26 +37,32 @@ type ReadingState={registers?:RegisterSnapshot[];resourceCursor?:string;resource
 export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const data:ReaderData=JSON.parse(document.querySelector('#edoc-book')!.textContent!),reader=document.querySelector<HTMLElement>('#reader')!,toc=document.querySelector<HTMLElement>('#toc')!,pageToc=document.querySelector<HTMLElement>('#page-toc')!,notice=document.querySelector<HTMLElement>('#notice')!,breadcrumbs=document.querySelector<HTMLElement>('#breadcrumbs')!,search=document.querySelector<HTMLInputElement>('#search')!;
  for(const page of [...Object.values(data.pages),...Object.values(data.resourceBodies??{})])restoreScenes(page,data.diagramScenes??{});
+ const live=data.live?previewSource(data,patchNavigation):undefined,loadedNavigation=new Set<string>();
  sidebarLayout();
  let registerViews:RegisterController[]=[];
  const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false,headingNumbers=true,resourceOffset=0,resourceCursor:string|undefined,resourceFailure='',tables:TableControls|undefined;
  const navigation=(nodes:Navigation[],depth=0,expandRoot=true):string=>'<ul>'+nodes.map(n=>{
   const route=n.route??(n.page?{kind:'page' as const,project:n.project,id:n.page,...(n.anchor?{anchor:n.anchor}:{})}:undefined),href=route?routeHash(route):'',link=route?'<a data-outline-link href="'+esc(href)+'">'+(n.number?'<span class="heading-number" aria-hidden="true">'+esc(n.number)+'</span>':'')+esc(n.label)+'</a>':'<span class="nav-group">'+esc(n.label)+'</span>';
-  const more=n.resourceChildren?'<button type="button" class="resource-nav-more" data-resource-more="'+esc(href)+'">'+(n.resourceChildren.offset?'继续加载':'展开子项')+'（余 '+esc(n.childrenOmitted??n.resourceChildren.total)+' 项，每批 20 项）</button>':'';
-  return '<li'+(n.mountId?' data-resource-mount="'+esc(n.mountId)+'"':'')+'>'+((n.children.length||more)?'<details'+(depth<1&&expandRoot?' open':'')+'><summary>'+link+'</summary>'+navigation(n.children,depth+1,expandRoot)+more+'</details>':link)+'</li>';
+  const more=!live&&n.resourceChildren?'<button type="button" class="resource-nav-more" data-resource-more="'+esc(href)+'">'+(n.resourceChildren.offset?'继续加载':'展开子项')+'（余 '+esc(n.childrenOmitted??n.resourceChildren.total)+' 项，每批 20 项）</button>':'';
+  return '<li'+(n.mountId?' data-resource-mount="'+esc(n.mountId)+'"':'')+'>'+((n.children.length||more||n.previewChildren)?'<details'+(n.previewKey?' data-preview-key="'+esc(n.previewKey)+'"':'')+(depth<1&&expandRoot?' open':'')+'><summary>'+link+'</summary>'+navigation(n.children,depth+1,expandRoot)+more+(live&&n.resourceChildren&&loadedNavigation.has(n.previewKey!)?'<button data-preview-more="'+esc(n.previewKey)+'">继续加载</button>':'')+'</details>':link)+'</li>';
  }).join('')+'</ul>';
  let sidebar=sidebarNavigation(data.navigation);
+ function patchNavigation(updates:{key:string;children:Navigation[];more:boolean}[]){
+  const find=(key:string,nodes:Navigation[]=sidebar):Navigation|undefined=>{for(const node of nodes){if(node.previewKey===key)return node;const result=find(key,node.children);if(result)return result;}};
+  for(const update of updates){const node=find(update.key);if(node){const previous=new Map(node.children.map(n=>[n.previewKey,n]));node.children=update.children.map(n=>previous.has(n.previewKey)?{...n,children:previous.get(n.previewKey)!.children}:n);loadedNavigation.add(update.key);if(!update.more)delete node.resourceChildren;}}
+ }
  toc.innerHTML=navigation(sidebar,0,false);
  const tocActions=document.createElement('div');tocActions.className='toc-actions';tocActions.setAttribute('role','group');tocActions.setAttribute('aria-label','文档目录操作');
  for(const [label,open]of [['全部展开',true],['全部折叠',false]]as const){
   const button=document.createElement('button');button.type='button';button.textContent=label;button.setAttribute('aria-controls','toc');button.disabled=!toc.querySelector('details');
-  button.onclick=()=>toc.querySelectorAll<HTMLDetailsElement>('details').forEach(details=>details.open=open);tocActions.append(button);
+  button.onclick=()=>toc.querySelectorAll<HTMLDetailsElement>('details').forEach(details=>{if(!live||!open||loadedNavigation.has(details.dataset.previewKey!))details.open=open;});tocActions.append(button);
  }
  toc.before(tocActions);
- const queryGraphs=hydrateProjectGraphs(Object.entries(data.projects).map(([projectId,project])=>({
+ const hydrate=()=>hydrateProjectGraphs(Object.entries(data.projects).map(([projectId,project])=>({
   manifest:{projectId,irVersion:project.irVersion,requiredFeatures:project.requiredFeatures,resources:[],entryDocuments:[]},
   records:Object.entries(project.entities).map(([id,entity])=>({id,entity,...project.records[id]} as RecordEntry)),attachments:project.attachments
  })));
+ let queryGraphs=hydrate();let hydratedProjects=Object.keys(data.projects).length;
  function evidence(projectId:string,id:string){const source=data.projects[projectId].entities[id]?.source?.attachment;if(!source)return '';return `<a class="source-attachment" href="${esc(routeHash({kind:'pdf',project:source.project??projectId,id:source.id,...(source.target?{target:source.target}:{})}))}">查看原始 PDF${source.target?' · '+esc(source.target):''}</a>`;}
  const graphFor=(projectId:string)=>queryGraphs.get(projectId)!;
  const resourceContext:ResourceContext={projects:queryGraphs,catalog:data.resourceCatalog??emptyResourceCatalog()};
@@ -71,8 +78,16 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  function save(){if(!current||restoring)return;const state:ReadingState={route:current,...(current.kind==='resource'?{resourceOffset,resourceCursor}:{}),tables:tables?.snapshot(),registers:registerViews.flatMap(view=>view.snapshot()),headingNumbers:!document.body.classList.contains('heading-numbers-hidden'),outlineDetails:[...pageToc.querySelectorAll<HTMLDetailsElement>('details')].map(d=>d.open),scroll:window.scrollY,details:[...reader.querySelectorAll<HTMLDetailsElement>('details[id]')].filter(d=>d.open).map(d=>d.id),tabs:[...reader.querySelectorAll<HTMLElement>('.tab')].map(t=>!!t.hidden),graphs:window.EdocGraphs?.map(g=>({figure:figureIndex(g.container.closest('[data-diagram]')),zoom:g.zoom(),translation:g.translate()})),displays:[...reader.querySelectorAll<HTMLInputElement>('[data-display],input[data-class]')].map(i=>i.checked),controls:window.EdocControlViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),interfaces:window.EdocInterfaceViews?.map(v=>({figure:figureIndex(v.holder),state:v.state})),pdf:currentPdf};history.replaceState(state,'');}
  function reveal(page:ReaderPage,id:string){const key=resolveAnchor(page,id),target=key?document.getElementById(key):undefined;if(!target)return;for(let parent:HTMLElement|null=target;parent&&parent!==reader;parent=parent.parentElement){if(parent instanceof HTMLDetailsElement)parent.open=true;if(parent.classList.contains('tab'))parent.hidden=false;}tables?.reveal(target);target.scrollIntoView({block:'start'});}
  async function display(route:Route,state?:ReadingState){
+  const version=++generation;
+  if(live){
+   notice.hidden=false;notice.textContent='正在加载页面…';window.EdocReady=false;
+   try{
+    route=await live.ensure(route);if(version!==generation)return;
+    if(hydratedProjects!==Object.keys(data.projects).length){queryGraphs=hydrate();resourceContext.projects=queryGraphs;hydratedProjects=Object.keys(data.projects).length;}
+   }catch(error){if(version===generation){notice.hidden=false;notice.textContent='页面加载失败：'+String(error);const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>void display(route,state);notice.append(retry);window.EdocReady=true;}return;}
+  }
   route=normalize(route);if(!exists(route)){if(!current)await display(home);showMissing(route);return;}
-  const version=++generation;dispose?.();dispose=undefined;tables=undefined;registerViews=[];current=route;resourceOffset=state?.resourceOffset??0;resourceCursor=state?.resourceCursor;currentPdf=state?.pdf;window.EdocReady=false;notice.hidden=true;restoring=true;
+  dispose?.();dispose=undefined;tables=undefined;registerViews=[];current=route;resourceOffset=state?.resourceOffset??0;resourceCursor=state?.resourceCursor;currentPdf=state?.pdf;window.EdocReady=false;notice.hidden=true;restoring=true;
   document.querySelector('#properties')!.textContent='点击图中对象查看来源与完整关系。';document.querySelector('#selection-actions')!.replaceChildren();document.querySelector<HTMLAnchorElement>('#object-link')!.hidden=true;
   const project=projectOf(route)!;document.body.dataset.readerKind=route.kind;if(route.kind==='pdf')document.title=project.attachments[route.id].title+' · '+data.title;else if(route.kind==='entity')document.title=(project.entities[route.id]?.label??'工程对象')+' · '+data.title;
   breadcrumbs.innerHTML=`<button data-reader-back>返回</button><a href="${esc(routeHash(home))}">${esc(data.title)}</a>${project.id===data.home.project?'':'<span>'+esc(project.title)+'</span>'}<a href="${esc(routeHash({kind:'entity',project:route.project,id:''}))}" data-object-index>工程对象</a>`;
@@ -160,10 +175,10 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
   renderSidebar(true);
  }
  function renderSidebar(revealCurrent=false){
-  const opened=new Set([...toc.querySelectorAll<HTMLDetailsElement>('details[open]')].map(d=>d.querySelector('summary a')?.getAttribute('href')));
+  const opened=new Set([...toc.querySelectorAll<HTMLDetailsElement>('details[open]')].map(d=>d.dataset.previewKey??d.querySelector('summary a')?.getAttribute('href')));
   const refresh=(nodes:Navigation[]):Navigation[]=>nodes.map(node=>node.id&&node.kind==='resource'&&node.mountId=== (current?.kind==='resource'?current.mountId:undefined)?resourceMountNavigation(resourceContext,resourceContext.catalog.mounts.find(m=>m.mountId===node.mountId)!,current as import('../core/routes.ts').ResourceRoute,node):({...node,children:refresh(node.children)}));
-  sidebar=refresh(sidebar);toc.innerHTML=navigation(sidebar,0,false);
-  toc.querySelectorAll<HTMLDetailsElement>('details').forEach(d=>{if(opened.has(d.querySelector('summary a')?.getAttribute('href')))d.open=true;});
+  if(!live)sidebar=refresh(sidebar);toc.innerHTML=navigation(sidebar,0,false);
+  toc.querySelectorAll<HTMLDetailsElement>('details').forEach(d=>{if(opened.has(d.dataset.previewKey??d.querySelector('summary a')?.getAttribute('href')))d.open=true;});
   toc.querySelectorAll<HTMLAnchorElement>('a').forEach(a=>{const dest=parseRoute(a.hash),route=current,inPage=route?.kind==='page'&&dest?.kind==='page'&&dest.project===route.project&&dest.id===route.id||route?.kind==='resource'&&dest?.kind==='resource'&&dest.project===route.project&&dest.id===route.id&&dest.mountId===route.mountId&&dest.view===route.view&&JSON.stringify(dest.segments)===JSON.stringify(route.segments);if(inPage){a.setAttribute('aria-current','page');for(let parent=a.parentElement;parent&&parent!==toc;parent=parent.parentElement)if(parent instanceof HTMLDetailsElement)parent.open=true;if(revealCurrent){const nav=a.closest<HTMLElement>('nav.sidebar');if(nav){const row=a.getBoundingClientRect(),box=nav.getBoundingClientRect();if(row.top<box.top)nav.scrollTop+=row.top-box.top-8;else if(row.bottom>box.bottom)nav.scrollTop+=row.bottom-box.bottom+8;}}}});
  }
  toc.addEventListener('click',event=>{
@@ -171,16 +186,36 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
   const find=(nodes:Navigation[]):Navigation|undefined=>{for(const node of nodes){if(node.route&&routeHash(node.route)===button.dataset.resourceMore)return node;const child=find(node.children);if(child)return child;}};
   const node=find(sidebar);if(node){loadResourceNavigation(resourceContext,node);renderSidebar();}
  });
- function navigate(route:Route){route=normalize(route);if(!exists(route)){showMissing(route);return;}save();const state:ReadingState={route,...((route.kind==='page'&&current?.kind==='page'||route.kind==='resource'&&current?.kind==='resource'&&JSON.stringify({...route,anchor:undefined})===JSON.stringify({...current,anchor:undefined}))&&route.project===current.project&&route.id===current.id?{tables:tables?.snapshot(),registers:registerViews.flatMap(view=>view.snapshot())}:{})};history.pushState(state,'',routeHash(route));void display(route,state);}
+ function navigate(route:Route){if(!live){route=normalize(route);if(!exists(route)){showMissing(route);return;}}save();const state:ReadingState={route,...((route.kind==='page'&&current?.kind==='page'||route.kind==='resource'&&current?.kind==='resource'&&JSON.stringify({...route,anchor:undefined})===JSON.stringify({...current,anchor:undefined}))&&route.project===current.project&&route.id===current.id?{tables:tables?.snapshot(),registers:registerViews.flatMap(view=>view.snapshot())}:{})};history.pushState(state,'',routeHash(route));void display(route,state);}
  document.addEventListener('click',event=>{const a=(event.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');if(!a||event.defaultPrevented||event instanceof MouseEvent&&(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey))return;const href=a.getAttribute('href')!,route=parseRoute(href);if(route){event.preventDefault();navigate(route);}else if(current?.kind==='resource'){event.preventDefault();navigate({...current,anchor:decodeURIComponent(href.slice(1))});}else if(current?.kind==='page'){event.preventDefault();const project=data.projects[current.project],fragment=decodeURIComponent(href.slice(1)),id=Object.keys(project.entities).find(id=>anchor(id)===fragment);navigate(id?{kind:'entity',project:current.project,id}:{...current,anchor:fragment});}});
  window.addEventListener('popstate',()=>{const route=parseRoute(location.hash)??home;void display(route,history.state??undefined);});
  window.addEventListener('hashchange',()=>{const route=parseRoute(location.hash);if(route&&JSON.stringify(route)!==JSON.stringify(current))void display(route,history.state??undefined);});
  let scrollTimer:ReturnType<typeof setTimeout>;window.addEventListener('scroll',()=>{clearTimeout(scrollTimer);scrollTimer=setTimeout(save,100);});
- search.addEventListener('input',()=>{const term=search.value.trim().toLowerCase(),results=document.querySelector('#results')!;results.replaceChildren();if(!term)return;let count=0;const add=(label:string,route:Route)=>{const a=document.createElement('a');a.textContent=label;a.href=routeHash(route);results.append(a);count++;};
+ search.addEventListener('input',async()=>{const term=search.value.trim().toLowerCase(),results=document.querySelector('#results')!;results.replaceChildren();if(!term)return;let count=0;const add=(label:string,route:Route)=>{const a=document.createElement('a');a.textContent=label;a.href=routeHash(route);results.append(a);count++;};
+  if(live){try{const matches=await live.request('search',{term});if(search.value.trim().toLowerCase()!==term)return;for(const item of matches)add(item.label,item.route);}catch(error){results.textContent=String(error);}return;}
   for(const page of Object.values(data.pages))if(count<30&&(page.title+' '+page.file+' '+page.html.replace(/<[^>]*>/g,' ')).toLowerCase().includes(term))add(data.projects[page.project].title+' / '+page.title,{kind:'page',project:page.project,id:page.id});
   for(const project of Object.values(data.projects))for(const [id,entity]of Object.entries(project.entities))if(count<30&&(id+' '+JSON.stringify(entity)).toLowerCase().includes(term))add(project.title+' / '+(entity.label??id),{kind:'entity',project:project.id,id});
  });
  window.addEventListener('beforeprint',()=>{save();reader.querySelectorAll('details').forEach(d=>d.open=true);reader.querySelectorAll<HTMLElement>('.tab').forEach(t=>t.hidden=false);});
  window.addEventListener('afterprint',()=>{if(current)void display(current,history.state);});
+ if(live){
+  const findNav=(key:string,nodes:Navigation[]=sidebar):Navigation|undefined=>{for(const node of nodes){if(node.previewKey===key)return node;const found=findNav(key,node.children);if(found)return found;}};
+  const navPending=new Set<string>();
+  const loadNav=async(key:string,more=false)=>{
+   const node=findNav(key);if(!node||navPending.has(key)||!more&&loadedNavigation.has(key))return;navPending.add(key);
+   try{const result=await live.request('navigation',{key,more});node.children=result.children;loadedNavigation.add(key);if(!result.more)delete node.resourceChildren;renderSidebar();}
+   catch(error){notice.hidden=false;notice.textContent='目录加载失败：'+String(error);}
+   finally{navPending.delete(key);}
+  };
+  toc.addEventListener('toggle',event=>{const details=event.target;if(details instanceof HTMLDetailsElement&&details.open&&details.dataset.previewKey)void loadNav(details.dataset.previewKey);},true);
+  toc.addEventListener('click',event=>{const button=(event.target as Element).closest<HTMLElement>('[data-preview-more]');if(button)void loadNav(button.dataset.previewMore!,true);});
+  // 预览只展开已经获取的目录，避免“全部展开”隐式请求整个工程树。
+  tocActions.querySelector('button')!.textContent='展开已加载目录';
+  let checking=false;
+  setInterval(async()=>{if(checking)return;checking=true;try{
+   const status=await(await fetch('/api/status')).json();
+   if(status.version!==data.live!.version){if(status.ready){save();location.reload();}else{notice.hidden=false;notice.textContent=status.error?'工程更新失败：'+status.error:'源文件已变化，正在更新工程索引…';}}
+  }catch{notice.hidden=false;notice.textContent='预览服务连接已断开';}finally{checking=false;}},1000);
+ }
  const initial=normalize(parseRoute(location.hash)??home);history.replaceState({...(history.state??{}),route:initial},'',routeHash(initial));void display(initial,history.state??undefined);
 }

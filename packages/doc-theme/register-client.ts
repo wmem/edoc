@@ -1,3 +1,4 @@
+import {documentStyle} from './style-source.ts';
 import type {Graph} from '../core/types.ts';
 import type {Register} from '../extensions/register/types.ts';
 import {registerSVG} from '../extensions/register/render.ts';
@@ -15,7 +16,7 @@ export function registerControls(root:HTMLElement,graph:Graph,options:{reveal?:(
  const abort=new AbortController(),signal=abort.signal,groups:{snapshot:()=>RegisterSnapshot;restore:(state:RegisterSnapshot)=>void}[]=[];
  for(const holder of root.querySelectorAll<HTMLElement>('[data-register]'))holder.querySelector<HTMLButtonElement>('[data-register-export]')?.addEventListener('click',()=>{
   const register=graph.index.get(holder.dataset.register!)?.entity as Register|undefined;if(!register)return;
-  const current=holder.querySelector<HTMLElement>('[data-register-bits]'),css=document.querySelector('#edoc-document-style')?.textContent??'',fontCSS=(css.match(/@font-face\s*\{[^}]*\}/g)??[]).join('\n');
+  const current=holder.querySelector<HTMLElement>('[data-register-bits]'),css=documentStyle(),fontCSS=(css.match(/@font-face\s*\{[^}]*\}/g)??[]).join('\n');
   // 独立 SVG 不带 HTML 的 presentationId、按钮或页内定位链接。
   const output=registerSVG(register,{project:graph.manifest.projectId,bitsPerRow:Number(current?.dataset.registerBits??32),fontCSS,licenses:JSON.parse(document.querySelector('#edoc-licenses')?.textContent??'{}')}),url=URL.createObjectURL(new Blob([output],{type:'image/svg+xml'})),a=document.createElement('a');
   a.href=url;a.download=register.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);

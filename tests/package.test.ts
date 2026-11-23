@@ -103,6 +103,17 @@ test('实际 npm 包仅用 JS 即可执行命令、读取指南、离线构建�
  assert.equal(JSON.parse(run(bin,['query','--id','installed:clause'],project)).target.semanticKind,'clause');
  assert.equal(JSON.parse(run(bin,['read','--id','installed:clause'],project)).clauses[0].id,'installed:clause');
 
+ // 从实际安装目录启动预览，Worker 与前端均不能借用源码 TS 或开发依赖。
+ const {serveProject}=await import(join(prefix,'node_modules/edoc/dist/packages/preview/server.js'));
+ const preview=await serveProject({config:join(project,'docs/edoc.config.js'),port:0,workers:2});
+ try{
+  let status:any;for(let i=0;i<100;i++){status=await(await fetch(preview.url+'api/status')).json();if(status.ready||status.error)break;await new Promise(resolve=>setTimeout(resolve,100));}
+  assert.ok(status.ready,status.error);const shell=await(await fetch(preview.url)).text();assert.match(shell,/assets\/reader.js/);
+  const script=shell.match(/src="(\/assets\/reader.js[^"]+)"/)![1];assert.equal((await fetch(new URL(script,preview.url))).status,200);
+  const args=JSON.stringify({route:{kind:'page',project:'project',id:'docs/index'}}),response=await fetch(preview.url+'api/route?'+new URLSearchParams({version:String(status.version),args}));
+  assert.equal(response.status,200);assert.match(JSON.stringify(await response.json()),/安装版机器条款/);
+ }finally{await preview.close();}
+
  writeFileSync(join(project,'docs/edoc.config.js'),"throw Error('工具手册不得执行当前工程配置')");
  const server=spawn(bin,['docs','serve','--port','0'],{cwd:project,stdio:['ignore','pipe','pipe']});
  const exited=once(server,'exit');

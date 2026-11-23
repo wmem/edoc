@@ -1,3 +1,4 @@
+import {documentStyle} from './style-source.ts';
 import {namespaceHTML} from '../extensions/clause/render.ts';
 import {sceneSVG} from '../render-graph/scene-svg.ts';
 import {figureControls} from './figure-client.ts';
@@ -105,7 +106,7 @@ function initialize(holder:HTMLElement){
  holder.querySelector('[data-action=minus]')!.addEventListener('click',()=>graph.zoom(-.15));
  holder.querySelector('[data-action=reset]')!.addEventListener('click',()=>{graph.getEdges().forEach(e=>e.attr('line/opacity',1));s.nodes.forEach(n=>graph.getCellById(n.id).attr('body/stroke','#93a9bd'));panel.textContent='选择图中对象查看工程属性';viewport();});
  const fullControlSVG=s.control?holder.querySelector('.static-svg svg')!.cloneNode(true):undefined;
- holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const clone=(fullControlSVG??holder.querySelector('.static-svg svg')!).cloneNode(true) as SVGSVGElement;const style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=document.getElementById('edoc-document-style')!.textContent;clone.prepend(style);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
+ holder.querySelector('[data-action=svg]')!.addEventListener('click',()=>{const clone=(fullControlSVG??holder.querySelector('.static-svg svg')!).cloneNode(true) as SVGSVGElement;const style=document.createElementNS('http://www.w3.org/2000/svg','style');style.textContent=documentStyle();clone.prepend(style);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=s.id.replace(/[^\w.-]/g,'_')+'.svg';a.click();URL.revokeObjectURL(a.href);});
  const filtered=new Set<string>(s.visibleClasses?s.nets.filter(n=>!s.visibleClasses!.includes(n.class)).map(n=>n.class):[]),collapsed=new Set<string>();
  let showRelationLabels=s.display.showRelationLabels;
  function visibility(){for(const edge of graph.getEdges())if(edge.getData()?.portLead)edge.setVisible(graph.getCellById(edge.getData().ownerId).isVisible());for(const net of s.nets){const hide=filtered.has(net.class)||[...collapsed].some(id=>s.groups.find(g=>g.id===id)!.members.some(p=>net.endpoints.includes(p)));const cells=connectionCells.get(net.id)!;for(const id of cells)graph.getCellById(id).setVisible(!hide&&(!labelCells.has(id)||showRelationLabels));}}
@@ -147,7 +148,7 @@ function initialize(holder:HTMLElement){
     s={...drawingReaderScene(input,geometry,s.id,s.label,{...s.display,showRelationLabels}),control,kind:s.kind,layoutEngine:'drawing'};
     graph.clearCells();labelCells.clear();connectionCells=drawDrawing(graph,s,cellID,labelCells);
     // 下载保持同一份几何；完整模型按钮和返回视图不会改动语义来源。
-    const font=document.querySelector('#edoc-document-style')?.textContent??'';
+    const font=documentStyle();
     const exported=new DOMParser().parseFromString(renderDrawingSVG(geometry,input,font,s.display,s.id,s.control?commonClockCaption(s.control):''),'image/svg+xml').documentElement;
     holder.querySelector('.static-svg')!.replaceChildren(exported);staticSVG=exported;
     holder.querySelectorAll<HTMLButtonElement>('[data-control-fold]').forEach(b=>{const id=b.dataset.controlFold!;b.setAttribute('aria-pressed',String(state.collapsed.includes(id)));b.textContent=(state.collapsed.includes(id)?'展开 ':'折叠 ')+((control.model.kind==='state-machine'?control.model.states:control.model.lanes??[]).find(n=>n.id===id)?.label??id);});
