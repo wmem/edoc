@@ -1,3 +1,6 @@
+import {svgAnchors} from '../core/deferred-svg.ts';
+import {anchorIndex} from '../core/identity.ts';
+import type {AnchorIndex} from '../core/identity.ts';
 import {resourceTarget,resourceRoute,resourceContext,routeResource} from '../core/resource-pages.ts';
 import {assertResourceContext} from '../core/resource-context.ts';
 import {engineeringSVG,engineeringHTML} from '../figure/render.ts';
@@ -26,9 +29,10 @@ import {presentation} from '../extensions/control-diagram/project.ts';
 import {relationDiagramHTML} from '../extensions/relation-diagram/render.ts';
 import {interfaceTableHTML} from '../extensions/relation-diagram/interface-table.ts';
 export {tableHTML,field} from '../extensions/data-table/render.ts';
-export async function renderDocument(graph:Graph,title:string,options:{scene?:typeof scene;compactIndex?:boolean;headingLevel?:(id:string,level:number)=>number;projectLink?:(alias:string)=>{project:string;page:string;title:string};documentLink?:(href:string,source:string)=>string}={}){
+export async function renderDocument(graph:Graph,title:string,options:{anchors?:AnchorIndex;scene?:typeof scene;compactIndex?:boolean;deferDiagramSVG?:boolean;headingLevel?:(id:string,level:number)=>number;projectLink?:(alias:string)=>{project:string;page:string;title:string};documentLink?:(href:string,source:string)=>string}={}){
  assertResourceContext(graph);
  graph=presentationGraph(graph);
+ const anchors=options.anchors??anchorIndex(graph.index.keys());
  const aliases=new Map<string,string|undefined>();
  const scenes:Record<string,Scene>={},printScenes:Record<string,Scene>={};
  const usedViews=new Set<string>();for(const {ast}of documentAST(graph))for(const node of ast.walk())if(node.type==='tag'&&['relation-diagram','state-diagram','flowchart'].includes(node.tag))usedViews.add(node.attributes.view??node.attributes.id);
@@ -71,7 +75,7 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
    if(type==='section'){const specSource=a.clause?graph.clauses!.definitions.get(a.clause)!.entity.source:undefined;if(a.clause)return clauseHTML({clause:a.clause,bodyNamespace:a.bodyNamespace,renderAnchor:a.renderAnchor,namespace:a.namespace,title:a.title,collapsed:a.collapsed},children(),{
     source:specSource!,evidenceHref:specSource?.attachment?routeHash({kind:'pdf',project:specSource.attachment.project??graph.manifest.projectId,id:specSource.attachment.id,...(specSource.attachment.target?{target:specSource.attachment.target}:{})}):undefined,
     canonicalHref:routeHash({kind:'entity',project:graph.manifest.projectId,id:a.clause}),
-    fallback(fragment){if([...graph.index.keys()].some(id=>anchor(id)===fragment))return '#'+fragment;return esc(routeHash({kind:'page',project:graph.manifest.projectId,id:pageId(graph.clauses!.definitions.get(a.clause)!.document.file),anchor:fragment}));},
+    fallback(fragment){if(anchors.entities.has(fragment))return '#'+fragment;return esc(routeHash({kind:'page',project:graph.manifest.projectId,id:pageId(graph.clauses!.definitions.get(a.clause)!.document.file),anchor:fragment}));},
     alias(local,value){if(!aliases.has(local))aliases.set(local,value);else if(aliases.get(local)!==value)aliases.set(local,undefined);}
    });
     const semantic=a.semanticKind?` data-content-kind="${esc(a.semanticKind)}"`:'';
@@ -93,9 +97,9 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
    if(type==='data-table')return renderTable(graph.index.get(id)!.entity as Table,scope,a);
    if(type==='register-diagram')return registerDiagramHTML(graph.index.get(id)!.entity as Register,graph.manifest.projectId,registerPresentations.get(tree));
    if(type==='register-field-table'){const register=graph.index.get(id)!.entity as Register;return renderTable(registerFieldTable(register,graph),scope,{},rowNamespace=>registerFieldTableHTML(register,graph,{rowNamespace,presentationId:registerPresentations.get(tree)}));}
-   if(type==='waveform')return waveform(graph.index.get(id)!.entity as Waveform,wave++);
-   if(type==='state-diagram'||type==='flowchart'){const target=a.view??id;return relationDiagramHTML(target,scenes[target],printScenes[target],++counter);}
-   if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter);
+   if(type==='waveform'){const index=wave++,html=waveform(graph.index.get(id)!.entity as Waveform,index);return options.deferDiagramSVG?`<div data-waveform-pending="${esc(id)}" data-waveform-instance="${index}" data-svg-namespace="">${svgAnchors(html)}</div>`:html;}
+   if(type==='state-diagram'||type==='flowchart'){const target=a.view??id;return relationDiagramHTML(target,scenes[target],printScenes[target],++counter,options.deferDiagramSVG);}
+   if(type==='relation-diagram')return relationDiagramHTML(id,scenes[id],printScenes[id],++counter,options.deferDiagramSVG);
    if(type==='interface-table')return interfaceTableHTML(graph,id,a.mode??'detailed');
   }
   if(n==='img'){if(graph.documentPlan&&!graph.documentPlan.files.includes(a.src))throw new Error('Schema 图片须通过 Markdown 图片节点或 render:img 的声明式属性记录来源：'+a.src);const asset=graph.documentPlan?.media?.get(a.src)??loadImageAsset(graph.projectRoot,a.src);return `<img class="doc-image${a.class?' '+esc(a.class):''}"${a.id?` id="${esc(a.id)}"`:''}${a.title?` title="${esc(a.title)}"`:''} alt="${esc(a.alt??'')}" src="data:${asset.mime};base64,${asset.data}"/>`;}
@@ -142,6 +146,6 @@ export async function renderDocument(graph:Graph,title:string,options:{scene?:ty
  const chapters=plan.documents.map(({file},index)=>`<article data-source="${esc(file)}">${render(trees[index])}</article>`).join('');
  const allEntities=Object.fromEntries([...graph.index].map(([id,e])=>[id,e.entity]));
  const existing=new Set([...chapters.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));
- const facts=[...graph.index.values()].filter(e=>!existing.has(anchor(e.id))).map(e=>options.compactIndex?`<span id="${anchor(e.id)}" data-entity-id="${esc(e.id)}"></span>`:`<details class="fact" id="${anchor(e.id)}" data-entity-id="${esc(e.id)}"><summary>${esc(e.entity.label??e.id)} · ${esc(e.type)}</summary><pre>${esc(JSON.stringify({...e.entity,...('ports' in e.entity?{ports:e.entity.ports?.map(p=>({id:p.id}))}:{})}))}</pre></details>`).join('');
- return {anchorAliases:Object.fromEntries([...aliases].filter((entry):entry is [string,string]=>entry[1]!==undefined)),chapters,facts:options.compactIndex?facts+'<p>全量对象可通过页面搜索查看，精确机器读取使用项目 query。详情按需显示。</p><pre id="entity-detail">选择搜索结果查看完整属性与来源。</pre>':facts,toc:plan.flat.map(e=>({...e,...(reading.numbers.has(e.id)?{number:reading.numbers.get(e.id)}:{})})),outline:reading.roots,scenes,entities:allEntities};
+ const facts=[...graph.index.values()].filter(e=>!existing.has(anchors.encoded.get(e.id)!)).map(e=>options.compactIndex?`<span id="${anchors.encoded.get(e.id)!}" data-entity-id="${esc(e.id)}"></span>`:`<details class="fact" id="${anchors.encoded.get(e.id)!}" data-entity-id="${esc(e.id)}"><summary>${esc(e.entity.label??e.id)} · ${esc(e.type)}</summary><pre>${esc(JSON.stringify({...e.entity,...('ports' in e.entity?{ports:e.entity.ports?.map(p=>({id:p.id}))}:{})}))}</pre></details>`).join('');
+ return {anchorAliases:Object.fromEntries([...aliases].filter((entry):entry is [string,string]=>entry[1]!==undefined)),chapters,facts:options.compactIndex?facts+'<p>全量对象可通过页面搜索查看，精确机器读取使用项目 query。详情按需显示。</p><pre id="entity-detail">选择搜索结果查看完整属性与来源。</pre>':facts,toc:plan.flat.map(e=>({...e,...(reading.numbers.has(e.id)?{number:reading.numbers.get(e.id)}:{})})),outline:reading.roots,scenes,printScenes,entities:allEntities};
 }

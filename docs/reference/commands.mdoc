@@ -14,6 +14,29 @@ edoc validate --format json
 
 validate 与 build 共用静态正文预检：普通同页/跨页标题、section、显式 ID、表行与 page 标签的本地目标，以及图片格式和 SVG 资源边界。自定义 Markdoc transform 生成的未知 ID 留待 build 校验，validate 的 JSON 用 deferredAnchors 列出，text 给出数量提示；跨工程跳转仍为弱引用。validate 不生成图形或 HTML，不能替代最终构建与浏览器验收。
 
+{% section id="ref:build-workers" title="构建并发" %}
+
+构建默认使用 4 个工作线程。--workers N 可指定整本 HTML 的文章并发数与图形工作线程池上限；N 必须是正安全整数，不再设置固定的 64 线程上限。线程按任务需要创建，不会为了达到上限创建无任务的线程。
+
+优先级为命令行 --workers > 环境变量 EDOC_WORKERS > 默认 4。显式参数覆盖环境变量，即使环境变量无效也使用参数值；没有显式参数时，无效环境变量会报错。
+
+每次构建的线程池独立，任务完成后复用线程，构建结束后释放，不会改变其他构建或进程的环境。
+
+原生 Drawing 与工程关系图的布局、路由共用这个上限。配置加载、正文处理和 HTML 组装仍有主线程开销；这个设置不控制浏览器交互，也不保证所有图形算法都并行执行。
+
+```sh
+edoc build
+edoc build --workers 8
+edoc --workers 1
+EDOC_WORKERS=4 edoc build
+```
+
+并发越高，可能同时占用更多内存；小工程或单张慢图不一定受益。同一工程中同名图与相同模式在单次构建内复用结果，不跨构建保留缓存。
+
+每张原生图形仍有独立计算预算，排队时间不占用预算；超时或取消会终止对应线程，后续任务使用替换线程。工程关系图沿用原有算法与诊断，不新增单图超时限制。构建失败不会发布部分页面。
+
+{% /section %}
+
 {% /section %}
 
 {% section id="ref:command-docs" title="docs：工具自身手册" %}

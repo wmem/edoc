@@ -12,7 +12,7 @@ import {DrawingError} from './types.ts';
 import type {Drawing, Constraint, Point} from './types.ts';
 
 // 仅桥接显示投影。工程 Interface/Port/Connection 的事实及聚合规则仍由既有模块维护。
-export function drawingFromProjection(graph: Graph, view: RelationView, hints: SceneHints): Drawing {
+export function drawingFromProjection(graph: Pick<Graph, 'index' | 'connections'>, view: RelationView, hints: SceneHints): Drawing {
   const nodes = [...graph.index.values()].filter(e => e.type === 'node' && view.include.objects.includes(e.id)).map(e => e.entity as FactNode);
   const owner = (id: string) => graph.index.get(id)?.ownerId ?? id;
   const constraints: Constraint[] = [];
@@ -65,7 +65,7 @@ function branchToHub(start: Point, hub: Point, paths: {points: Point[]}[]): Poin
   throw new DrawingError('DRAWING_TOPOLOGY', 'projection', [], '求解树无法追踪到实际汇合点');
 }
 
-async function drawingLayoutScene(graph: Graph, id: string, hints: SceneHints = {}, execute = solveDrawingModel): Promise<Scene> {
+async function drawingLayoutScene(graph: Pick<Graph, 'index' | 'connections'>, id: string, hints: SceneHints = {}, execute = solveDrawingModel): Promise<Scene> {
   const view = graph.index.get(id)!.entity as RelationView, drawing = drawingFromProjection(graph, view, hints), geometry = await execute(drawing);
   const shift = {x: -geometry.viewBox.x + 20, y: -geometry.viewBox.y + 30}, move = (p: {x: number; y: number}) => ({x: p.x + shift.x, y: p.y + shift.y});
   const result: Scene = {id, label: view.label ?? id, kind: view.kind, layoutEngine: 'drawing', drawing: geometry, width: geometry.width + 40, height: geometry.height + 70, display: {showPortAttributes: view.display?.showPortAttributes ?? false, showRelationLabels: view.display?.showRelationLabels ?? true, showInterfaceDetails: view.display?.showInterfaceDetails ?? true}, collapsedGroups: [], groups: [], nodes: geometry.nodes.map(n => {

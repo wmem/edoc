@@ -1,7 +1,6 @@
 import type {Graph,RelationView} from '../core/types.ts';
 import {EdocError} from '../core/errors.ts';
-import {scene as engineeringScene} from './scene.ts';
-import {solveDrawing} from '../drawing/solve.ts';
+import {solveDrawing,solveEngineeringScene} from '../drawing/solve.ts';
 import {DrawingError} from '../drawing/types.ts';
 import {drawingReaderScene} from '../drawing/reader-scene.ts';
 import {drawingInterfaceScene} from '../drawing/interface-scene.ts';
@@ -34,5 +33,5 @@ export async function scene(graph:Graph,id:string,options:{interfaces?:'expanded
     }
     throw new EdocError([{code:error.code,file:entry.location.file,path:entry.location.path+(view.drawing?'/drawing':'')+(path||(!view.drawing?'/layout':'')),id,message:`${error.message}（${error.stage}；${error.ids.join('、')}）`}]);
   }
-  return engineeringScene(graph,id,options);
+  return solveEngineeringScene(graph,id);
 }

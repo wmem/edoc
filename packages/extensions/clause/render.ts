@@ -1,7 +1,8 @@
+import {namespacePendingSVG} from '../../core/deferred-svg.ts';
 // 每个显示实例隔离 DOM 身份，同时重写实例内部的锚点与 SVG 引用。
 // 图表的稳定 IR ID、data-* 属性和语义跳转不改写。
 import {anchorCandidates} from '../../core/identity.ts';
-import {esc} from '../../render-graph/index.ts';
+import {esc} from '../../core/html.ts';
 import type {Source} from '../../core/types.ts';
 export function namespaceHTML(html:string,namespace:string,fallback?:(id:string)=>string):string{
  if(!namespace)return html;
@@ -10,7 +11,7 @@ export function namespaceHTML(html:string,namespace:string,fallback?:(id:string)
   const id=match[1],local=id.startsWith(namespace)?id.slice(namespace.length):id;
   ids.set(local,namespace+local);ids.set(id,namespace+local);
  }
- return html.replace(/(?<![\w:-])id="([^"]+)"/g,(_all,id)=>`id="${ids.get(id)}"`)
+ return namespacePendingSVG(html,namespace).replace(/(?<![\w:-])id="([^"]+)"/g,(_all,id)=>`id="${ids.get(id)}"`)
   .replace(/(?<![\w:-])(href|xlink:href)="#([^"]+)"/g,(all,key,id)=>{
    if(id.startsWith('edoc='))return all;
    let decoded=id;try{decoded=decodeURIComponent(id);}catch{}

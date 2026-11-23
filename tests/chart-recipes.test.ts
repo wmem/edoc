@@ -62,7 +62,10 @@ for (const recipe of recipes) {
       return result.stdout;
     };
     cli([]);
-    assert.match(readFileSync(join(root, 'output/index.html'), 'utf8'), recipe.kind === 'table' ? /<table\b/ : /<svg\b/);
+    const output=readFileSync(join(root,'output/index.html'),'utf8'),payload=JSON.parse(output.match(/<script id="edoc-book" type="application\/json">([\s\S]*?)<\/script>/)![1]);
+    const pages=Object.values(payload.pages) as {html:string;sceneRefs?:Record<string,string>}[];
+    if(['architecture','interface','state-machine','flowchart'].includes(recipe.kind))assert.ok(pages.some(page=>Object.values(page.sceneRefs??{}).some(key=>{const scene=payload.diagramScenes[key];return scene&&(scene.id===recipe.id||scene.control?.model.id===recipe.id);})),'离线图形必须携带共享布局引用');
+    else assert.match(pages.map(page=>page.html).join(''),recipe.kind==='table'?/<table\b/:/<svg\b/);
     const facts = JSON.parse(cli(['query', '--id', recipe.id]));
     assert.equal(facts.target.entity.kind, recipe.kind);
     if (!['architecture', 'interface', 'table'].includes(recipe.kind)) {

@@ -46,7 +46,8 @@
     "test:manual-cli": "node --test tests/manual-snapshot.test.ts",
     "test:graphics-reading": "node --test tests/graphics-reading.test.ts",
     "fonts:metrics": "node scripts/font-metrics.mjs",
-    "test:engineering-charts": "node --test tests/engineering-charts.test.ts tests/register-map.test.ts tests/engineering-charts-browser.test.ts"
+    "test:engineering-charts": "node --test tests/engineering-charts.test.ts tests/register-map.test.ts tests/engineering-charts-browser.test.ts",
+    "test:render-performance": "node --test tests/render-performance.test.ts tests/render-performance-browser.test.ts"
   },
   "dependencies": {
     "@markdoc/markdoc": "0.5.11",

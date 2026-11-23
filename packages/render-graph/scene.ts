@@ -21,7 +21,7 @@ export type SceneNode = {id:string;label:string;x:number;y:number;width:number;h
 export type SceneNet = {endpointMap?:Record<string,Record<string,string>>;layoutWarnings?:{code:string;message:string}[];paths?:{points:{x:number;y:number}[];curves?:import('../drawing/types.ts').CurveControl[];arrow:boolean;endArrow?:boolean;endpoint?:string}[];junctions?:{x:number;y:number}[];bundle?:boolean;sourceRelations?:Connection[];originalEndpoints?:Record<string,string[]>;interfaceIds?:string[];id:string;label:string;class:string;endpoints:string[];source?:Source;junction:boolean;labelBox:LabelBox;hub:{x:number;y:number};branches:{endpoint:string;points:{x:number;y:number}[];arrow:boolean}[]};
 export type Scene = {control?:import('../extensions/control-diagram/types.ts').ControlPresentation;drawingInput?:import('../drawing/types.ts').Drawing;layoutEngine?:'drawing';drawing?:import('../drawing/types.ts').DrawingScene;interfaceModel?:InterfaceModel;interfaceState?:InterfaceState;interfaces?:SceneInterface[];internalRelations?:Record<string,string[]>;id:string;label:string;kind:string;width:number;height:number;display:{showPortAttributes:boolean;showRelationLabels:boolean;showInterfaceDetails:boolean};visibleClasses?:string[];nodes:SceneNode[];nets:SceneNet[];collapsedGroups:string[];groups:{id:string;label:string;members:string[]}[]};
 
-export async function layoutScene(graph:Graph, id:string,hints:SceneHints={}):Promise<Scene> {
+export async function layoutScene(graph:Pick<Graph,'index'|'connections'>, id:string,hints:SceneHints={}):Promise<Scene> {
  const entry=graph.index.get(id);
  if(entry?.type!=='view') failure('VIEW_NOT_FOUND','<view>','',`视图不存在：${id}`);
  const view=entry.entity as RelationView;

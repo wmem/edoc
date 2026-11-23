@@ -1,3 +1,5 @@
+import {namespaceHTML} from '../extensions/clause/render.ts';
+import {sceneSVG} from '../render-graph/scene-svg.ts';
 import {figureControls} from './figure-client.ts';
 import {hydrateProjectGraphs} from '../core/resource-context.ts';
 import {commonClockCaption} from '../extensions/control-diagram/project.ts';
@@ -166,6 +168,8 @@ function initialize(holder:HTMLElement){
  visibility();viewport();let measuredWidth=holder.clientWidth,measuredHeight=canvas.clientHeight;const resize=new ResizeObserver(()=>{const width=holder.clientWidth,height=canvas.clientHeight;if(!stopped&&(width!==measuredWidth||height!==measuredHeight)){measuredWidth=width;measuredHeight=height;graph.resize(width,height);viewport();}});resize.observe(holder);cleanups.push(()=>resize.disconnect());
 }
 const holders=[...scope.querySelectorAll<HTMLElement>('[data-diagram]')];
+// 只为当前文章创建静态图；同步绘制已验证布局，折叠内容与打印无需等待后台求解。
+for(const holder of holders){const target=holder.querySelector<HTMLElement>('.static-svg');if(target?.hasAttribute('data-svg-pending')){const id=holder.dataset.diagram!,scene=data.printScenes?.[id]??data.scenes[id];target.innerHTML=namespaceHTML(sceneSVG(scene,'',id+'-instance-'+holder.dataset.instance),target.dataset.svgNamespace??'');target.removeAttribute('data-svg-pending');}}
 const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){initialize(entry.target as HTMLElement);observer.unobserve(entry.target);}},{rootMargin:'600px'});
 cleanups.push(()=>observer.disconnect());
 holders.forEach((holder,i)=>{if(i<2||options.initialize?.includes(i))initialize(holder);if(!holder.dataset.initialized)observer.observe(holder);});

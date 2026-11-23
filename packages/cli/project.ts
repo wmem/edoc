@@ -1,3 +1,4 @@
+import {drawingConcurrency} from '../drawing/pool.ts';
 import {parseResourceRoute,queryResource,readResource} from '../core/resource-reading.ts';
 import {outlineResource} from '../core/resource-navigation.ts';
 import {resourceContext} from '../core/resource-pages.ts';
@@ -32,7 +33,7 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
 用法：
  edoc                                      读取当前项目 docs/edoc.config.js 并构建
  edoc --config path/to/custom.js            使用指定配置构建
- edoc build [--format html] [--output FILE]
+ edoc build [--format html] [--output FILE] [--workers N]
  edoc validate [--format json|text]         扫描文档、发现数据并校验依赖
  edoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
  edoc query [--project PROJECT_ID] --id ID [--element ELEMENT] [--depth 0..10] [--max-items 1..10000] [--format json|text]
@@ -41,6 +42,7 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
  edoc export [--project PROJECT_ID] (--view ID | --id MODEL_ID) --format svg --output FILE
  edoc guide [--full] [--format text|json]    文档组织指南，默认简版；--full 完整版
  edoc docs [serve|outline|read|query]        定位 .mdoc 源文或按需查询工具手册
+构建并发：--workers N 优先于 EDOC_WORKERS，默认使用 4 个工作线程。
 项目命令均可使用 --config；省略时只查找当前目录下的 docs/edoc.config.js。
 标准 docs/edoc.config.js 的工程根为 docs 上一级；其他显式配置以配置目录为工程根。
 配置内容直接写在 JS 中；不要求 manifest、command 或 inputs 清单。
@@ -61,7 +63,7 @@ export async function main(argv:string[]):Promise<number>{
   if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
-  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(['query','read','outline'].includes(command)?['--route']:[]),...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='export'?['--view','--id']:[])]);
+  const allowed=new Set(command==='guide'?['--format','--full']:['--config','--format',...(['query','read','outline'].includes(command)?['--route']:[]),...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='build'?['--workers']:[]),...(command==='export'?['--view','--id']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
@@ -77,6 +79,8 @@ export async function main(argv:string[]):Promise<number>{
   if(command==='read'&&args['--scope']!==undefined&&!['self','subtree'].includes(args['--scope']))throw new UsageError('--scope 只接受 self/subtree');
   if(command==='export'&&((!!args['--view']===!!args['--id'])||!args['--output']||!args['--output'].endsWith('.svg')))throw new UsageError('export 需要 --view 或 --id、--format svg 和 .svg 的 --output');
   const number=(key:string,fallback:number,min:number,max:number)=>{const value=args[key];if(value===undefined)return fallback;if(!/^(0|[1-9][0-9]*)$/.test(value)||+value<min||+value>max)throw new UsageError(`${key} 范围 ${min}–${max}`);return +value;};
+  let workers:number|undefined;
+  if(command==='build'){try{workers=drawingConcurrency(args['--workers']===undefined?undefined:number('--workers',1,1,Number.MAX_SAFE_INTEGER));}catch(error){throw new UsageError(error instanceof Error?error.message:String(error));}}
   const depth=number('--depth',0,0,10),maxItems=number('--max-items',1000,1,10000);
   const readOffset=number('--offset',0,0,Number.MAX_SAFE_INTEGER),readLimit=number('--max-chars',12000,1,100000);
   if(command==='build'&&args['--output']){const inferred=format==='text'?(args['--output'].endsWith('.html')?'html':undefined):format;if(!inferred||!args['--output'].endsWith('.'+inferred))throw new UsageError('--output 需要与 html 格式一致');format=inferred;}
@@ -110,7 +114,7 @@ export async function main(argv:string[]):Promise<number>{
   // 所有目标先生成到临时文件，再发布；不把部分成功当作整次成功。
   const generated:{pending:string;target:Target}[]=[],staged:{directory:string;file:string;target:Target}[]=[],temporary=mkdtempSync(join(tmpdir(),'edoc-build-'));
   try{
-   const content=command==='build'&&targets.some(t=>t.format==='html')?await bookHTML(book):undefined;
+   const content=command==='build'&&targets.some(t=>t.format==='html')?await bookHTML(book,{workers}):undefined;
    for(const [i,target]of targets.entries()){
     mkdirSync(dirname(target.file),{recursive:true});const pending=join(temporary,`document-${i}.`+target.format);
     if(target.format==='svg'){const id=args['--id']??args['--view'],entry=graph.index.get(id);if(args['--id']&&entry?.type!=='register'&&!isEngineering(graph,id))failure(entry?'EXPORT_TYPE':'QUERY_NOT_FOUND',config.file,'/id','--id 必须指向可绘图模型：'+id);writeFileSync(pending,isEngineering(graph,id)?(await engineeringSVG(graph,id,true)).replace('><title>','><style>'+esc(fontCSS())+'</style><title>'):args['--id']&&entry?.type==='register'?registerSVG(entry.entity as Register,{project:graph.manifest.projectId,fontCSS:fontCSS()}):svg(await scene(graph,id,{interfaces:'expanded',control:'full'})));}

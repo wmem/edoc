@@ -1,3 +1,4 @@
+import {restoreScenes} from '../core/scene-storage.ts';
 import {resourcePage} from './resource-page.ts';
 import {resourceMountNavigation,loadResourceNavigation} from '../core/resource-navigation.ts';
 import {resourceRoute,routeResource,emptyResourceCatalog} from '../core/resource-pages.ts';
@@ -34,6 +35,7 @@ const own=<T>(object:Record<string,T>,key:string):T|undefined=>Object.hasOwn(obj
 type ReadingState={registers?:RegisterSnapshot[];resourceCursor?:string;resourceOffset?:number;controls?:{figure:number;state:{collapsed:string[];expandedCalls:string[]}}[];tables?:TableSnapshot[];headingNumbers?:boolean;outlineDetails?:boolean[];route:Route;scroll?:number;details?:string[];tabs?:boolean[];graphs?:{figure:number;zoom:number;translation:{tx:number;ty:number}}[];displays?:boolean[];interfaces?:{figure:number;state:InterfaceState}[];pdf?:PdfPosition};
 export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
  const data:ReaderData=JSON.parse(document.querySelector('#edoc-book')!.textContent!),reader=document.querySelector<HTMLElement>('#reader')!,toc=document.querySelector<HTMLElement>('#toc')!,pageToc=document.querySelector<HTMLElement>('#page-toc')!,notice=document.querySelector<HTMLElement>('#notice')!,breadcrumbs=document.querySelector<HTMLElement>('#breadcrumbs')!,search=document.querySelector<HTMLInputElement>('#search')!;
+ for(const page of [...Object.values(data.pages),...Object.values(data.resourceBodies??{})])restoreScenes(page,data.diagramScenes??{});
  sidebarLayout();
  let registerViews:RegisterController[]=[];
  const home:Route={kind:'page',...data.home};let current:Route|undefined,dispose:(()=>void)|undefined,generation=0,currentPdf:PdfPosition|undefined,restoring=false,headingNumbers=true,resourceOffset=0,resourceCursor:string|undefined,resourceFailure='',tables:TableControls|undefined;
@@ -80,7 +82,7 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
    const page=data.pages[targetKey(route.project,route.id)];document.title=page.title+' · '+data.title;
    reader.innerHTML=`<header class="cover"><div class="eyebrow">ENGINEERING DOCUMENT</div><h1>${esc(page.title)}</h1><p>${esc(project.title)} · ${esc(page.file)}</p></header>`+page.html;
    const firstHeading=reader.querySelector<HTMLElement>('article [data-heading-level]');if(firstHeading?.textContent===page.title&&!firstHeading.closest('details'))firstHeading.remove();
-   document.querySelector('#edoc-data')!.textContent=JSON.stringify({scenes:page.scenes,entities:project.entities});
+   document.querySelector('#edoc-data')!.textContent=JSON.stringify({scenes:page.scenes,printScenes:page.printScenes,entities:project.entities});
    const outline=(nodes:typeof page.outline):Navigation[]=>nodes.map(n=>({label:n.label,project:route.project,page:route.id,anchor:n.id,number:n.number,children:outline(n.children)}));pageToc.innerHTML='<h4>本页目录</h4>'+navigation(outline(page.outline));
    if(state){pageToc.querySelectorAll<HTMLDetailsElement>('details').forEach((d,i)=>{if(state.outlineDetails?.[i]!==undefined)d.open=state.outlineDetails[i];});if(state.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details?.includes(d.id)??false);reader.querySelectorAll<HTMLElement>('.tab').forEach((t,i)=>{if(state.tabs?.[i]!==undefined)t.hidden=state.tabs[i];});}
    const stopFigures=figureControls(reader,graphFor(route.project));const stopRegisters=registerControls(reader,graphFor(route.project),{reveal:target=>tables?.reveal(target),onChange:save});registerViews.push(stopRegisters);
@@ -120,8 +122,8 @@ export function startReader(interfaces?:InterfaceRenderer,pdfReader?:PdfReader){
    pageToc.innerHTML='<h4>本页目录</h4>'+navigation(toNav(page.outline));
    window.EdocGraphs=[];window.EdocControlViews=[];if(window.EdocInterfaceViews)window.EdocInterfaceViews=[];
    if(state?.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details!.includes(d.id));
-   const stops:(()=>void)[]=[],areas=[{root:reader.querySelector<HTMLElement>('[data-resource-auto]')!,project:page.view.presentation?.project??route.project,scenes:{}},...page.bodyParts.map((part,index)=>({root:reader.querySelector<HTMLElement>('[data-resource-author="'+index+'"]')!,project:part.body.project,scenes:part.body.scenes}))];
-   for(const area of areas){const graph=graphFor(area.project),registers=registerControls(area.root,graph,{reveal:target=>tables?.reveal(target),onChange:save});registerViews.push(registers);stops.push(figureControls(area.root,graph),registers,start(interfaces,{managed:true,root:area.root,initialize:state?.graphs?.map(saved=>[...area.root.querySelectorAll('[data-diagram]')].indexOf([...reader.querySelectorAll('[data-diagram]')][saved.figure])).filter(index=>index>=0),data:{projectId:area.project,scenes:area.scenes,entities:data.projects[area.project].entities}}));}
+   const stops:(()=>void)[]=[],areas=[{root:reader.querySelector<HTMLElement>('[data-resource-auto]')!,project:page.view.presentation?.project??route.project,scenes:{},printScenes:undefined},...page.bodyParts.map((part,index)=>({root:reader.querySelector<HTMLElement>('[data-resource-author="'+index+'"]')!,project:part.body.project,scenes:part.body.scenes,printScenes:part.body.printScenes}))];
+   for(const area of areas){const graph=graphFor(area.project),registers=registerControls(area.root,graph,{reveal:target=>tables?.reveal(target),onChange:save});registerViews.push(registers);stops.push(figureControls(area.root,graph),registers,start(interfaces,{managed:true,root:area.root,initialize:state?.graphs?.map(saved=>[...area.root.querySelectorAll('[data-diagram]')].indexOf([...reader.querySelectorAll('[data-diagram]')][saved.figure])).filter(index=>index>=0),data:{projectId:area.project,scenes:area.scenes,printScenes:area.printScenes,entities:data.projects[area.project].entities}}));}
    tables=tableControls(reader,{state:state?.tables,onChange:save});stops.push(readingControls(reader,{numbers:state?.headingNumbers??headingNumbers,onChange:save}));
    if(state?.details)reader.querySelectorAll<HTMLDetailsElement>('details[id]').forEach(d=>d.open=state.details!.includes(d.id));
    if(state?.tabs)reader.querySelectorAll<HTMLElement>('.tab').forEach((tab,index)=>{if(state.tabs?.[index]!==undefined)tab.hidden=state.tabs[index];});

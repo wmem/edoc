@@ -2,6 +2,14 @@
 export const anchor=(id:string)=>'ed-'+Array.from(new TextEncoder().encode(id),b=>b.toString(16).padStart(2,'0')).join('');
 export const anchorCandidates=(id:string)=>[id,anchor(id),'heading-'+id.toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'')];
 
+// 由一次构建持有；同一工程的不同文章共享编码，不跨构建缓存可变工程状态。
+export function anchorIndex(ids:Iterable<string>){
+ const encoded=new Map<string,string>(),entities=new Map<string,string>();
+ for(const id of ids){const value=anchor(id);encoded.set(id,value);if(!entities.has(value))entities.set(value,id);}
+ return {encoded,entities};
+}
+export type AnchorIndex=ReturnType<typeof anchorIndex>;
+
 // 源文规范的局部 ID 可从其他页面引用；实例自己的前缀 ID 仍精确定位。
 export function resolveHTMLAnchor(html:string,id:string,aliases:Record<string,string>={}){
  const escaped=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));

@@ -1,6 +1,6 @@
 import WaveDrom from 'wavedrom';
 import type {Waveform} from '../core/types.ts';
-import {esc} from '../render-graph/index.ts';
+import {esc} from '../core/html.ts';
 import {fitWaveText} from './bounds.ts';
 
 type Rule={selector:string;style:string;specificity:number};
@@ -12,8 +12,8 @@ function walk(node:any,visit:(node:any[])=>void){if(!Array.isArray(node))return;
 
 // WaveDrom skin 的简单类型/类选择器转为图元自身样式。
 // SVG use 的实例树不能依赖外层祖先选择器；内联可保留描边、彩色总线与箭头，同时不污染正文。
-function isolate(tree:any[],index:number){
- const rules:Rule[]=[],ids=new Map<string,string>(),prefix=`edoc-wave-${index}-`;
+function isolate(tree:any[],index:number,namespace:string){
+ const rules:Rule[]=[],ids=new Map<string,string>(),prefix=`${namespace}edoc-wave-${index}-`;
  walk(tree,node=>{
   const attrs=attributes(node);if(attrs.id)ids.set(attrs.id,prefix+attrs.id);
   if(node[0]==='style'){
@@ -42,11 +42,11 @@ function isolate(tree:any[],index:number){
  });
  return tree;
 }
-export function waveform(w:Waveform,index:number):string{
+export function waveform(w:Waveform,index:number,namespace=''):string{
  if(!Number.isSafeInteger(index)||index<0)throw new Error('波形实例序号必须为非负整数');
  // renderAny 会修改 skin；每个实例使用独立副本，避免共享 defs 与上一次输出残留。
  const tree=WaveDrom.renderAny(index,structuredClone(w.data),structuredClone(WaveDrom.waveSkin));
- const output=WaveDrom.onml.stringify(fitWaveText(isolate(tree,index),w.data));
+ const output=WaveDrom.onml.stringify(fitWaveText(isolate(tree,index,namespace),w.data));
  if(/<script|<foreignObject|(?:href|src)=["'](?:https?:|javascript:|file:)/i.test(output))throw new Error('WaveJSON 输出包含不允许的资源或标记');
  return `<figure class="wave" data-waveform-id="${esc(w.id)}"><figcaption>${esc(w.label)} · ${w.semantic==='specification'?'规范示意':'实际仿真记录'}</figcaption>${output}</figure>`;
 }

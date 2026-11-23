@@ -1,8 +1,11 @@
+import {waveform} from '../render-wave/index.ts';
+import type {Waveform} from '../core/types.ts';
 import type {Graph,Sequence,SequenceView,BinaryLayout,BinaryView} from '../core/types.ts';
 import {queryElement,query} from '../core/query.ts';
 import {sequenceSVG} from '../extensions/sequence/render.ts';
 import {binarySVG} from '../extensions/binary-layout/render.ts';
 export function figureControls(root:HTMLElement,graph:Graph){
+ for(const holder of root.querySelectorAll<HTMLElement>('[data-waveform-pending]')){const id=holder.dataset.waveformPending!,entry=graph.index.get(id);if(entry?.type!=='waveform')throw new Error('缺少波形模型：'+id);holder.outerHTML=waveform(entry.entity as Waveform,Number(holder.dataset.waveformInstance),holder.dataset.svgNamespace??'');}
  const abort=new AbortController(),signal=abort.signal,observers:ResizeObserver[]=[];
  for(const holder of root.querySelectorAll<HTMLElement>('[data-engineering-figure]')){
   const viewport=holder.querySelector<HTMLElement>('.engineering-viewport')!,status=holder.querySelector<HTMLOutputElement>('[data-figure-status]')!,detail=holder.querySelector<HTMLElement>('[data-figure-detail]')!;

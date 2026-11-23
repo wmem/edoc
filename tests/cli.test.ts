@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { fixture, repository } from './helpers.ts';
 
-function run(args: string[], cwd = repository) {
-  const result = spawnSync(process.execPath, [join(repository, 'packages/cli/edoc.ts'), ...args], { cwd, encoding: 'utf8', timeout: 10000 });
+function run(args: string[], cwd = repository, env = process.env) {
+  const result = spawnSync(process.execPath, [join(repository, 'packages/cli/edoc.ts'), ...args], { cwd, env, encoding: 'utf8', timeout: 10000 });
   assert.ifError(result.error);
   return result;
 }
@@ -105,4 +105,12 @@ test('CLI 帮助、版本与可执行文件入口', () => {
   assert.match(run(['--version']).stdout, /3\.0\.0/);
   const executable = spawnSync(join(repository, 'packages/cli/edoc.ts'), ['--version'], { encoding: 'utf8', timeout: 10000 });
   assert.equal(executable.status, 0, executable.stderr);
+});
+
+test('构建线程参数支持显式与默认命令，优先于环境变量并严格拒绝非法输入',t=>{
+ const f=fixture(t),env={...process.env,EDOC_WORKERS:'invalid'};
+ for(const args of [['build','--workers','1'],['--workers','2']]){const result=run([...args,'--config','edoc.config.js'],f.root,env);assert.equal(result.status,0,result.stderr);}
+ assert.equal(run(['build'],f.root,env).status,2);
+ for(const args of [['build','--workers'],['build','--workers','0'],['build','--workers','-1'],['build','--workers','1.5'],['build','--workers','NaN'],['build','--workers','9007199254740992'],['build','--workers','1','--workers','2'],['validate','--workers','2']])assert.equal(run(args,f.root).status,2,args.join(' '));
+ assert.match(run(['build','--help']).stdout,/--workers N/);
 });
