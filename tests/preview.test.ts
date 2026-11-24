@@ -71,3 +71,25 @@ test('加载失败前保存的修复不会被失败快照吞掉',{timeout:15000}
  await pause(400);f.write('edoc.config.js',`export default {documents:'docs',title:'加载期间已修复'};`);
  const state=await until(status,s=>s.ready);assert.ok(state.version>=2);assert.match(await(await fetch(server.url)).text(),/加载期间已修复/);
 });
+
+test('默认通过网卡地址访问，校验 Host 与 Origin，并支持限制回环监听',async t=>{
+ const {networkInterfaces}=await import('node:os');
+ const {request}=await import('node:http');
+ const f=readerFixture(t),config=join(f.root,'edoc.config.js');
+ const server=await serveProject({config,port:0});t.after(()=>server.close());
+ const port=new URL(server.url).port;
+ const addresses=[...new Set(Object.values(networkInterfaces()).flatMap(entries=>(entries??[]).filter(entry=>entry.family==='IPv4'&&!entry.internal).map(entry=>entry.address)))];
+ assert.deepEqual(server.networkUrls,addresses.map(address=>`http://${address}:${port}/`));
+ for(const url of [server.url,...server.networkUrls]){
+  assert.equal((await fetch(url+'api/status',{headers:{Origin:new URL(url).origin}})).status,200);
+  assert.equal((await fetch(url+'api/status',{headers:{Origin:'http://example.invalid'}})).status,403);
+ }
+ const forged=await new Promise<number|undefined>((resolve,reject)=>{
+  const req=request(server.url+'api/status',{headers:{Host:`example.invalid:${port}`,Origin:`http://example.invalid:${port}`}},res=>{res.resume();resolve(res.statusCode);});req.on('error',reject);req.end();
+ });
+ assert.equal(forged,403);
+ const local=await serveProject({config,host:'127.0.0.1',port:0});t.after(()=>local.close());
+ assert.deepEqual(local.networkUrls,[]);assert.equal((await fetch(local.url+'api/status')).status,200);
+ for(const address of addresses)await assert.rejects(fetch(`http://${address}:${new URL(local.url).port}/api/status`));
+ await assert.rejects(serveProject({config,host:'invalid'}),/IPv4/);
+});

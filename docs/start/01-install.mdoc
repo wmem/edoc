@@ -4,13 +4,13 @@
 
 ```sh
 npm pack git+ssh://git@github.com/wmem/edoc.git
-npm install -g ./edoc-3.1.0.tgz
+npm install -g ./edoc-3.1.1.tgz
 edoc --version
 ```
 
 第一步在 npm 临时目录完成源码构建，并将 tgz 写入当前目录；打包成功后再执行第二步。文件名随版本变化，以 npm pack 输出为准。第二步仍是全局安装，安装后的包名和命令名均为 edoc，之后可从任意目录使用命令。
 
-当前包为 edoc 3.1.0，工程数据协议为 IR 2.0。旧 IR1.x 与 mappings 不作为兼容输入；升级前先核对[数据契约与版本边界](../reference/ir.mdoc)。
+当前包为 edoc 3.1.1，工程数据协议为 IR 2.0。旧 IR1.x 与 mappings 不作为兼容输入；升级前先核对[数据契约与版本边界](../reference/ir.mdoc)。
 
 Git 打包需要下载构建依赖，不能禁用 prepare 脚本；安装已生成的 tgz 不需要再次编译前端或手册。最终安装只保留运行依赖，无需准备浏览器。团队或 CI 也可把该包安装为项目本地依赖，见[本地依赖与固定版本](#use:install:local)。
 

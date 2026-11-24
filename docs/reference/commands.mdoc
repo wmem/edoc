@@ -9,7 +9,9 @@ edoc serve
 edoc serve --config docs/edoc.config.js --port 5176 --workers 4
 ```
 
-serve 只接受 --config、--port、--workers。默认端口为 5175，--port 为 1–65535 的整数；服务只监听 127.0.0.1，不提供对外绑定参数。端口已被占用时明确报错。按 Ctrl+C 或发送 SIGTERM 会关闭服务及工作线程。
+serve 只接受 --config、--host、--port、--workers。默认端口为 5175，--port 为 1–65535 的整数。默认监听 0.0.0.0（所有 IPv4 网卡），启动时打印本机地址及各非回环网卡的访问 URL；多网卡时选择客户端能够到达的地址。端口已被占用时明确报错。
+
+--host 接受 IPv4 地址：使用 `edoc serve --host 127.0.0.1` 限制为本机访问，或指定某个网卡地址。默认局域网内可连接此端口的设备能够读取工程预览，服务不提供身份认证；实际可达性取决于路由与防火墙。按 Ctrl+C 或发送 SIGTERM 会关闭服务及工作线程。
 
 图形线程默认 4，--workers > EDOC_WORKERS > 默认值，正安全整数约束与[构建并发](commands.mdoc#ref:build-workers)一致。线程池在一次预览会话内复用，源文件更新后释放旧会话及缓存。服务不写 output/index.html，也不发布构建结果。
 

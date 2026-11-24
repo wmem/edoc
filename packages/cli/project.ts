@@ -34,7 +34,7 @@ Agent 可直接读取该 .mdoc；也可运行 edoc docs --help，或 edoc docs r
  edoc                                      读取当前项目 docs/edoc.config.js 并构建
  edoc --config path/to/custom.js            使用指定配置构建
  edoc build [--format html] [--output FILE] [--workers N]
- edoc serve [--port PORT] [--workers N]       按需预览项目，修改源文件后自动刷新
+ edoc serve [--host IP] [--port PORT] [--workers N]       按需预览项目，修改源文件后自动刷新
  edoc validate [--format json|text]         扫描文档、发现数据并校验依赖
  edoc outline [--project PROJECT_ID] [--id SECTION_ID] [--depth 0..10] [--format json|text]
  edoc query [--project PROJECT_ID] --id ID [--element ELEMENT] [--depth 0..10] [--max-items 1..10000] [--format json|text]
@@ -64,7 +64,7 @@ export async function main(argv:string[]):Promise<number>{
   if(argv[0]==='docs')return await manualMain(argv.slice(1));
   const implicit=!argv.length||argv[0].startsWith('--'),command=implicit?'build':argv[0],tokens=implicit?argv:argv.slice(1);
   if(!['build','serve','validate','outline','query','read','export','guide'].includes(command))throw new UsageError('未知命令；使用 edoc --help 查看用法');
-  const allowed=new Set(command==='serve'?['--config','--port','--workers']:command==='guide'?['--format','--full']:['--config','--format',...(['query','read','outline'].includes(command)?['--route']:[]),...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='build'?['--workers']:[]),...(command==='export'?['--view','--id']:[])]);
+  const allowed=new Set(command==='serve'?['--config','--host','--port','--workers']:command==='guide'?['--format','--full']:['--config','--format',...(['query','read','outline'].includes(command)?['--route']:[]),...(command==='query'?['--id','--element','--depth','--max-items']:[]),...(command==='outline'?['--id','--depth']:[]),...(command==='read'?['--id','--scope','--offset','--max-chars','--with-clauses']:[]),...(['query','read','outline','export'].includes(command)?['--project']:[]),...(['build','export'].includes(command)?['--output']:[]),...(command==='build'?['--workers']:[]),...(command==='export'?['--view','--id']:[])]);
   const args:Record<string,string>=Object.create(null);
   for(let i=0;i<tokens.length;){const key=tokens[i++];if(!allowed.has(key))throw new UsageError(`未知选项 ${key}`);if(Object.hasOwn(args,key))throw new UsageError(`重复选项 ${key}`);if(key==='--full'||key==='--with-clauses'){args[key]='true';continue;}if(tokens[i]===undefined||tokens[i].startsWith('--'))throw new UsageError(`${key} 缺少值`);args[key]=tokens[i++];}
   format=args['--format']??(['query','outline','read'].includes(command)?'json':'text');
@@ -87,8 +87,9 @@ export async function main(argv:string[]):Promise<number>{
   if(command==='build'&&args['--output']){const inferred=format==='text'?(args['--output'].endsWith('.html')?'html':undefined):format;if(!inferred||!args['--output'].endsWith('.'+inferred))throw new UsageError('--output 需要与 html 格式一致');format=inferred;}
   if(command==='serve'){
    const {serveProject}=await import('../preview/server.ts');
-   const server=await serveProject({config:args['--config'],workers,port:number('--port',5175,1,65535)});
+   const server=await serveProject({config:args['--config'],host:args['--host'],workers,port:number('--port',5175,1,65535)});
    process.stdout.write('项目预览：'+server.url+'（按需编译，修改后自动刷新；Ctrl+C 停止）\n');
+   for(const url of server.networkUrls)process.stdout.write('网络访问：'+url+'\n');
    const stop=()=>{process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);void server.close().catch(error=>{console.error(error);process.exitCode=1;});};
    process.on('SIGINT',stop);process.on('SIGTERM',stop);return 0;
   }

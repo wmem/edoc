@@ -1,4 +1,6 @@
 import {createServer} from 'node:http';
+import {networkInterfaces} from 'node:os';
+import {isIPv4} from 'node:net';
 import {Worker} from 'node:worker_threads';
 import {statSync,existsSync,readdirSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
@@ -9,8 +11,9 @@ import type {ReaderData} from '../core/reader-model.ts';
 const stamp=(file:string)=>{try{const s=statSync(file,{bigint:true});if(s.isDirectory())return JSON.stringify(readdirSync(file).filter(name=>!name.includes('.bundled_')).sort().map(name=>{try{const entry=statSync(resolve(file,name),{bigint:true});return entry.isDirectory()?[name,'directory']:[name,String(entry.mtimeNs),String(entry.ctimeNs),String(entry.size),String(entry.ino)];}catch{return [name,'missing'];}}));return `${s.mtimeNs}:${s.ctimeNs}:${s.size}:${s.ino}`;}catch{return 'missing';}};
 const loading='<!doctype html><meta charset="utf-8"><title>edoc 预览</title><p id="status">正在加载工程索引…</p><script>setInterval(async()=>{try{const s=await(await fetch("/api/status")).json();if(s.ready)location.reload();else document.getElementById("status").textContent=s.error||"正在加载工程索引…";}catch{document.getElementById("status").textContent="预览服务连接已断开";}},1000)</script>';
 
-export async function serveProject(options:{config?:string;port?:number;workers?:number;pollMs?:number}={}){
- const config=resolve(options.config??'docs/edoc.config.js'),workers=drawingConcurrency(options.workers),port=options.port??5175;
+export async function serveProject(options:{config?:string;host?:string;port?:number;workers?:number;pollMs?:number}={}){
+ const config=resolve(options.config??'docs/edoc.config.js'),workers=drawingConcurrency(options.workers),port=options.port??5175,host=options.host??'0.0.0.0';
+ if(!isIPv4(host))throw Error('--host 必须是 IPv4 地址，例如 0.0.0.0 或 127.0.0.1');
  if(!Number.isInteger(port)||port<0||port>65535)throw Error('端口必须在 0–65535 范围内');
  if(!existsSync(config))throw Error('指定的配置文件不存在：'+config);
  const assetVersion=String(Date.now());let assets:ReturnType<typeof readerAssets>|undefined;
@@ -40,8 +43,8 @@ export async function serveProject(options:{config?:string;port?:number;workers?
   const json=(code:number,value:unknown)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(value));};
   try{
    const address=server.address(),actual=typeof address==='object'&&address?address.port:port;
-   const hosts=[`127.0.0.1:${actual}`,`localhost:${actual}`];
-   if(!hosts.includes(req.headers.host??'')||req.headers.origin&&!hosts.some(host=>req.headers.origin==='http://'+host)){json(403,{error:'仅接受本地预览来源'});return;}
+   const hosts=[`127.0.0.1:${actual}`,`localhost:${actual}`,`${req.socket.localAddress}:${actual}`];
+   if(!hosts.includes(req.headers.host??'')||req.headers.origin&&!hosts.some(host=>req.headers.origin==='http://'+host)){json(403,{error:'仅接受当前预览服务来源'});return;}
    if(req.method!=='GET'){json(405,{error:'仅支持读取'});return;}
    const url=new URL(req.url??'/','http://127.0.0.1');
    if(['/assets/reader.js','/assets/reader.css'].includes(url.pathname)){
@@ -64,7 +67,7 @@ export async function serveProject(options:{config?:string;port?:number;workers?
    json(200,value);
   }catch(cause){if(!res.headersSent)json(400,{error:String(cause)});else res.end();}
  });
- await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',()=>{server.removeListener('error',reject);resolve();});});
+ await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(port,host,()=>{server.removeListener('error',reject);resolve();});});
  reload();
  // 同时检查文件和父目录：替换写入、删除、新增正文/子目录均会失效。不递归扫描整个仓库。
  const timer=setInterval(()=>{
@@ -72,5 +75,7 @@ export async function serveProject(options:{config?:string;port?:number;workers?
   if([...inputs].some(file=>stamps.has(file)&&stamps.get(file)!==stamp(file))){snapshot();reload();}
  },options.pollMs??1000);
  const address=server.address() as {port:number};
- return {url:`http://127.0.0.1:${address.port}/`,async close(){if(closed)return;closed=true;clearInterval(timer);rejectPending();await worker.terminate();server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));}};
+ const url=`http://${host==='0.0.0.0'?'127.0.0.1':host}:${address.port}/`;
+ const networkUrls=host==='0.0.0.0'?[...new Set(Object.values(networkInterfaces()).flatMap(entries=>(entries??[]).filter(entry=>entry.family==='IPv4'&&!entry.internal).map(entry=>`http://${entry.address}:${address.port}/`)))]:[];
+ return {url,networkUrls,async close(){if(closed)return;closed=true;clearInterval(timer);rejectPending();await worker.terminate();server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));}};
 }
